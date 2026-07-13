@@ -445,7 +445,7 @@ export default function TenantProfile() {
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-4">
           <Link
-            to="/dashboard/superadmin/tenants"
+            to="/console/tenants"
             className="p-2 rounded-lg bg-surface-secondary border border-foreground/10 text-muted-foreground hover:text-white transition-colors"
           >
             <ArrowLeftIcon className="w-5 h-5" />
