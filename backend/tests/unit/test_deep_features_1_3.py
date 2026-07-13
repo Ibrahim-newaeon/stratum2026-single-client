@@ -1245,8 +1245,8 @@ class TestEnforcementAddRule:
         # NOTE (STRAT-SC-001 / Task A1): this endpoint no longer performs
         # a tier-limit check, so that patch was dropped. It also referenced
         # app.services.tenant, which can no longer be imported now that the
-        # tier core module is gone (services/tenant/ is deleted wholesale
-        # in Task A2/A3).
+        # tier core module is gone (services/tenant/ was deleted wholesale
+        # in Task A3).
         with patch(
             "app.api.v1.endpoints.autopilot_enforcement.AutopilotEnforcer"
         ) as MockEnf, patch(

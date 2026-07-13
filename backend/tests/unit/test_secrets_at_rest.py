@@ -7,8 +7,8 @@ Tests for P0-6:
 
 NOTE (STRAT-SC-001 / Task A1): the license HMAC signing secret tests that
 used to live here (``app.services.tenant.licensing``) were removed —
-``services/tenant/`` imports the now-deleted tier core module and is
-itself deleted wholesale in Task A2/A3.
+``services/tenant/`` imported the now-deleted tier core module and was
+itself deleted wholesale in Task A3.
 """
 
 from app.db.types import EncryptedString
