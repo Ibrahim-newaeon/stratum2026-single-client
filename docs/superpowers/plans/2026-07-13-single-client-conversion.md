@@ -453,7 +453,7 @@ export default function LegacyTenantRedirect() {
 - [ ] Auth: MFA login flow integration tests green; blacklist fail-open test green; no PII/tenant claims in JWT
 - [ ] `alembic upgrade head` + `downgrade base` clean on fresh DB
 - [ ] Playwright: `npx playwright test --project=chromium` (auth/dashboard/onboarding at minimum)
-- [ ] Commit any fixups; open PR to main with the §0.1 ledger table in the description
+- [ ] Commit any fixups; leave branch local (user directive: no push/PR) and summarize against the §0.1 ledger
 
 ---
 
