@@ -42,13 +42,24 @@ class TenantContext:
 
     @property
     def is_super_admin(self) -> bool:
-        """Check if the user is a super admin."""
-        return self.role.lower() == "superadmin"
+        """Check if the user is a super admin.
+
+        NOTE(fix-loop/STRAT-SC-001): this module is on the Phase-C skip
+        list (rewritten/deleted wholesale in C2) but is still live/mounted
+        pre-Phase-C — tenant_dashboard.py's routes depend on it. B1 renamed
+        the RBAC role string "superadmin" -> "owner" everywhere else; this
+        checks both literals (rather than renaming outright) so real
+        "owner"-role tokens get the same bypass treatment without breaking
+        the frozen "superadmin" literal still asserted by
+        test_exceptions_tenant_context.py (deliberately left untouched by
+        B1 since it tests this skip-listed module directly).
+        """
+        return self.role.lower() in ("owner", "superadmin")
 
     @property
     def is_tenant_admin(self) -> bool:
         """Check if the user is a tenant admin or higher."""
-        return self.role.lower() in ("superadmin", "admin")
+        return self.role.lower() in ("owner", "superadmin", "admin")
 
     @property
     def can_bypass_tenant(self) -> bool:
@@ -104,7 +115,10 @@ def get_tenant_context(request: Request) -> Optional[TenantContext]:
     is_bypass = request.headers.get("X-Superadmin-Bypass", "").lower() == "true"
 
     # Only super admins can use the bypass
-    if is_bypass and role.lower() != "superadmin":
+    # NOTE(fix-loop/STRAT-SC-001): accept both "owner" (post-B1-rename) and
+    # the legacy "superadmin" literal here — see is_super_admin docstring
+    # above for why this file keeps both instead of a straight rename.
+    if is_bypass and role.lower() not in ("owner", "superadmin"):
         is_bypass = False
 
     # Build context
