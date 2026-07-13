@@ -18,31 +18,18 @@ _MISSING = 99999999
 
 
 @pytest.fixture
-def enterprise_plan(monkeypatch):
-    """Elevate the test tenant to Enterprise so the GDPR FeatureGate passes.
+def enterprise_plan():
+    """No-op (STRAT-SC-001 / Task A1).
 
-    GDPR tools are gated behind ``FeatureGate(Feature.GDPR_TOOLS)`` (Enterprise
-    only). The shared ``test_tenant`` fixture creates a Professional-plan
-    tenant; patch the lookup so the gate sees Enterprise. Subscription status
-    stays ACTIVE.
+    GDPR tools used to be gated behind a tier-aware ``FeatureGate``
+    (Enterprise only), so tests elevated the test tenant's tier via a
+    ``get_subscription_info`` patch. ``FeatureGate`` is now purely
+    env-driven (``Feature.GDPR_TOOLS`` -> ``settings.feature_gdpr_compliance``,
+    default True) and no longer looks at tenant/tier at all, so there is
+    nothing left to elevate. Kept as a no-op fixture so call sites below
+    don't need to change.
     """
-    from app.core import subscription as sub_mod
-    from app.core.tiers import SubscriptionTier
-
-    async def _enterprise(tenant_id: int, db=None) -> "sub_mod.SubscriptionInfo":
-        return sub_mod.SubscriptionInfo(
-            tenant_id=tenant_id,
-            plan="enterprise",
-            tier=SubscriptionTier.ENTERPRISE,
-            status=sub_mod.SubscriptionStatus.ACTIVE,
-            expires_at=None,
-            days_until_expiry=None,
-            days_in_grace=None,
-            is_access_restricted=False,
-            restriction_reason=None,
-        )
-
-    monkeypatch.setattr(sub_mod, "get_subscription_info", _enterprise)
+    return None
 
 
 # =============================================================================

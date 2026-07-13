@@ -53,7 +53,6 @@ from app.api.v1.endpoints import (  # Previously unregistered endpoints; Gap end
     onboarding_agent,
     outbound_integrations,
     pacing,
-    payments,
     predictions,
     profit,
     programmatic,
@@ -64,21 +63,24 @@ from app.api.v1.endpoints import (  # Previously unregistered endpoints; Gap end
     sendgrid_webhook,
     simulator,
     slack,
-    stripe_webhook,
-    subscription,
     superadmin,
     superadmin_analytics,
     tenant_dashboard,
     tenants,
-    tier,
     trust_layer,
     users,
     webhooks,
     whatsapp,
 )
 from app.auth.permissions import require_super_admin
-from app.core.feature_gate import FeatureGate
-from app.core.tiers import Feature
+from app.core.feature_gate import Feature, FeatureGate
+
+# NOTE (STRAT-SC-001 / Task A1): the ``subscription``, ``tier``, ``payments``,
+# and ``stripe_webhook`` endpoint modules are NOT imported here. They still
+# import symbols from the now-deleted tier/subscription core modules and are
+# slated for wholesale deletion in Task A2/A3 — importing them here would
+# break `from app.main import app`. A2/A3 removes this comment along with
+# the endpoint files themselves.
 
 api_router = APIRouter()
 
@@ -433,38 +435,11 @@ api_router.include_router(
     tags=["Knowledge Graph"],
 )
 
-# Tier Management (Subscription tiers and feature gates)
-# Note: tier.router already has prefix="/tier"
-api_router.include_router(
-    tier.router,
-    tags=["Tier"],
-)
-
 # Webhooks (Inbound webhook processing)
 # Note: webhooks.router already has prefix="/webhooks"
 api_router.include_router(
     webhooks.router,
     tags=["Webhooks"],
-)
-
-# Payments (Stripe payment processing)
-# Note: payments.router already has prefix="/payments"
-api_router.include_router(
-    payments.router,
-    tags=["Payments"],
-)
-
-# Stripe Webhooks (Stripe event processing)
-api_router.include_router(
-    stripe_webhook.router,
-    tags=["Stripe Webhooks"],
-)
-
-# Subscription Management
-# Note: subscription.router already has prefix="/subscription"
-api_router.include_router(
-    subscription.router,
-    tags=["Subscription"],
 )
 
 # Slack Integration

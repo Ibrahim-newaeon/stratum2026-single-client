@@ -59,21 +59,6 @@ def enforcer():
     return instance
 
 
-@pytest.fixture(autouse=True)
-def _no_db_subscription(monkeypatch):
-    """check_action() calls get_subscription_info(), which opens its own DB
-    session. These enforcer tests run without a database (db=None), so stub it
-    to a non-restricted subscription — the subscription gate becomes a no-op
-    and no real connection is attempted."""
-    from types import SimpleNamespace
-
-    info = SimpleNamespace(is_access_restricted=False)
-    monkeypatch.setattr(
-        "app.core.subscription.get_subscription_info",
-        AsyncMock(return_value=info),
-    )
-
-
 @pytest.fixture
 def default_settings():
     """Create default enforcement settings."""
@@ -1242,45 +1227,6 @@ class TestUpdateSettingsDbPaths:
         assert inserted[0].threshold_value == 2500.0
         assert inserted[0].tenant_id == 1
         db.commit.assert_awaited_once()
-
-
-class TestSubscriptionGate:
-    """Tests for the subscription gate in check_action()."""
-
-    @pytest.mark.asyncio
-    async def test_restricted_subscription_forces_advisory(self, monkeypatch):
-        """A lapsed subscription blocks execution with an advisory violation."""
-        info = SimpleNamespace(
-            is_access_restricted=True,
-            restriction_reason="Trial expired",
-            plan="starter",
-            status=SimpleNamespace(value="expired"),
-            days_in_grace=3,
-        )
-        monkeypatch.setattr(
-            "app.core.subscription.get_subscription_info",
-            AsyncMock(return_value=info),
-        )
-        enforcer = AutopilotEnforcer(db=None)
-
-        result = await enforcer.check_action(
-            tenant_id=1,
-            action_type="set_budget",
-            entity_type="campaign",
-            entity_id="camp_123",
-            proposed_value={"budget": 100.0},
-        )
-
-        assert result.allowed is False
-        assert result.mode == EnforcementMode.ADVISORY
-        assert len(result.violations) == 1
-        violation = result.violations[0]
-        assert violation["type"] == ViolationType.SUBSCRIPTION_EXPIRED.value
-        assert violation["message"] == "Trial expired"
-        assert violation["plan"] == "starter"
-        assert violation["status"] == "expired"
-        assert violation["days_in_grace"] == 3
-        assert result.warnings
 
 
 class TestCheckActionDbPaths:

@@ -1242,10 +1242,12 @@ class TestEnforcementAddRule:
         assert resp.status_code == 403
 
     async def test_happy_path(self, api_client, admin_headers, mock_db):
+        # NOTE (STRAT-SC-001 / Task A1): this endpoint no longer performs
+        # a tier-limit check, so that patch was dropped. It also referenced
+        # app.services.tenant, which can no longer be imported now that the
+        # tier core module is gone (services/tenant/ is deleted wholesale
+        # in Task A2/A3).
         with patch(
-            "app.services.tenant.limits.check_tenant_limit",
-            new_callable=AsyncMock,
-        ), patch(
             "app.api.v1.endpoints.autopilot_enforcement.AutopilotEnforcer"
         ) as MockEnf, patch(
             "app.api.v1.endpoints.autopilot_enforcement.ViolationType"

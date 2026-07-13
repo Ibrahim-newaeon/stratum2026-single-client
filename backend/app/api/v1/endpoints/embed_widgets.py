@@ -21,12 +21,9 @@ from sqlalchemy import func, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.config import settings
-from app.core.feature_gate import get_current_tier
-from app.core.tiers import Feature, SubscriptionTier, get_tier_limit, has_feature
 from app.db.session import get_db
 from app.models import Campaign
 from app.models.embed_widgets import (
-    BrandingLevel,
     EmbedToken,
     EmbedWidget,
     WidgetType,
@@ -102,24 +99,8 @@ async def create_widget(
     tenant_id: int = Depends(get_tenant_id),
     service: EmbedWidgetService = Depends(get_widget_service),
 ):
-    """
-    Create a new embed widget.
-
-    Branding level is automatically determined by subscription tier:
-    - Starter: Full Stratum branding
-    - Professional: Minimal "Powered by Stratum" branding
-    - Enterprise: No branding (white-label)
-    """
-    tier = get_current_tier()
-
-    # Check feature access
-    if not has_feature(tier, Feature.EMBED_WIDGETS_BASIC):
-        raise HTTPException(
-            status_code=status.HTTP_403_FORBIDDEN,
-            detail="Embed widgets not available in your plan",
-        )
-
-    widget = await service.create_widget(tenant_id, data, tier)
+    """Create a new embed widget."""
+    widget = await service.create_widget(tenant_id, data)
     return widget
 
 
@@ -158,8 +139,7 @@ async def update_widget(
     service: EmbedWidgetService = Depends(get_widget_service),
 ):
     """Update an existing widget."""
-    tier = get_current_tier()
-    widget = await service.update_widget(tenant_id, widget_id, data, tier)
+    widget = await service.update_widget(tenant_id, widget_id, data)
     return widget
 
 
@@ -195,12 +175,10 @@ async def create_token(
     IMPORTANT: The token value is only returned once at creation.
     Store it securely - it cannot be retrieved again.
     """
-    tier = get_current_tier()
     token, plaintext_token, refresh_token = await service.create_token(
         tenant_id=tenant_id,
         widget_id=widget_id,
         allowed_domains=data.allowed_domains,
-        tier=tier,
         expires_in_days=data.expires_in_days,
     )
 
@@ -289,12 +267,10 @@ async def add_domain(
     Domains must be whitelisted before they can be used with tokens.
     Supports wildcards like *.example.com
     """
-    tier = get_current_tier()
     domain = await service.add_domain_to_whitelist(
         tenant_id=tenant_id,
         domain_pattern=data.domain_pattern,
         description=data.description,
-        tier=tier,
     )
     return domain
 
@@ -374,42 +350,6 @@ async def get_embed_code(
         preview_url=codes["preview_url"],
         documentation_url=codes["documentation_url"],
     )
-
-
-# =============================================================================
-# Tier Information
-# =============================================================================
-
-
-@router.get("/tier-info")
-async def get_embed_tier_info():
-    """
-    Get embed widget limits and features for current tier.
-    """
-    tier = get_current_tier()
-
-    return {
-        "tier": tier.value,
-        "branding_level": _get_branding_level(tier),
-        "limits": {
-            "max_widgets": get_tier_limit(tier, "max_embed_widgets"),
-            "max_domains": get_tier_limit(tier, "max_embed_domains"),
-        },
-        "features": {
-            "basic_widgets": has_feature(tier, Feature.EMBED_WIDGETS_BASIC),
-            "minimal_branding": has_feature(tier, Feature.EMBED_WIDGETS_MINIMAL),
-            "white_label": has_feature(tier, Feature.EMBED_WIDGETS_WHITELABEL),
-        },
-    }
-
-
-def _get_branding_level(tier: SubscriptionTier) -> str:
-    if has_feature(tier, Feature.EMBED_WIDGETS_WHITELABEL):
-        return BrandingLevel.NONE.value
-    elif has_feature(tier, Feature.EMBED_WIDGETS_MINIMAL):
-        return BrandingLevel.MINIMAL.value
-    else:
-        return BrandingLevel.FULL.value
 
 
 # =============================================================================

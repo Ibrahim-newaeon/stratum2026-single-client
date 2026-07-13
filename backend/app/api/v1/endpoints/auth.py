@@ -870,14 +870,11 @@ async def register(
             detail="Email already registered",
         )
 
-    # 3. Auto-create tenant with a 14-day Starter trial.
+    # 3. Auto-create the tenant workspace.
     #
-    # Previous behaviour set plan="free" — but the SubscriptionTier enum
-    # has no FREE value, so feature-gates silently fell through to
-    # STARTER (per licensing.py:200) anyway. Making it explicit here:
-    # new signups get full Starter capabilities for 14 days; after that
-    # plan_expires_at fires the standard expiry → grace → restricted
-    # flow already implemented in core/subscription.py.
+    # Tier/subscription gating was removed in the Single-Client conversion
+    # (STRAT-SC-001); plan/trial fields remain on the Tenant model only
+    # until the billing endpoints and columns are deleted in Task A2/A3.
     slug_base = re.sub(r"[^a-z0-9]+", "-", email_lower.split("@")[0]).strip("-")
     slug = f"{slug_base}-{secrets.token_hex(4)}"
     tenant_name = (

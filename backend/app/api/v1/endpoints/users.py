@@ -273,16 +273,6 @@ async def invite_user(
             detail="User with this email already exists",
         )
 
-    # Tier-limit gate — raises 402 with structured upgrade payload
-    # when the tenant's max_users ceiling is hit (see services/
-    # tenant/limits.py + frontend UpgradePromptProvider listener).
-    # Skipped when refreshing a pending invite: that user already
-    # counts against the ceiling, and a lost email must be resendable.
-    from app.services.tenant.limits import LimitType, check_tenant_limit
-
-    if tenant_id and existing_user is None:
-        await check_tenant_limit(db, tenant_id, LimitType.USERS, raise_on_exceeded=True)
-
     # Map role string to enum
     role_map = {
         "admin": UserRole.ADMIN,

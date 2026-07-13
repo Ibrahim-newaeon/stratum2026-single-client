@@ -23,16 +23,17 @@ from sqlalchemy import func, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.config import settings
-from app.core.tiers import (
-    SubscriptionTier,
-    get_tier_limit,
-)
 from app.models.embed_widgets import (
     EmbedDomainWhitelist,
     EmbedToken,
     EmbedWidget,
     TokenStatus,
 )
+
+# Fixed caps — formerly tier-scaled, now flat for every tenant
+# (Single-Client conversion, STRAT-SC-001).
+MAX_EMBED_DOMAINS = 999999
+DEFAULT_RATE_LIMIT_PER_MINUTE = 1000
 
 
 class EmbedTokenService:
@@ -61,7 +62,6 @@ class EmbedTokenService:
         tenant_id: int,
         widget_id: UUID,
         allowed_domains: list[str],
-        tier: SubscriptionTier,
         expires_in_days: int = DEFAULT_TOKEN_EXPIRY_DAYS,
     ) -> tuple[EmbedToken, str, str]:
         """
@@ -71,7 +71,6 @@ class EmbedTokenService:
             tenant_id: Tenant ID
             widget_id: Widget ID
             allowed_domains: List of allowed domains (supports wildcards)
-            tier: Current subscription tier
             expires_in_days: Token expiration in days
 
         Returns:
@@ -113,7 +112,7 @@ class EmbedTokenService:
             )
 
         # Validate domains against whitelist
-        await self._validate_domains(tenant_id, allowed_domains, tier)
+        await self._validate_domains(tenant_id, allowed_domains)
 
         # Generate tokens
         full_token, token_prefix, token_hash = EmbedToken.generate_token()
@@ -125,8 +124,7 @@ class EmbedTokenService:
             days=self.DEFAULT_REFRESH_EXPIRY_DAYS
         )
 
-        # Determine rate limit based on tier
-        rate_limit = self._get_rate_limit_for_tier(tier)
+        rate_limit = DEFAULT_RATE_LIMIT_PER_MINUTE
 
         # Create token record
         token = EmbedToken(
@@ -341,15 +339,12 @@ class EmbedTokenService:
         self,
         tenant_id: int,
         domains: list[str],
-        tier: SubscriptionTier,
     ) -> None:
-        """Validate domains against whitelist and tier limits."""
-        # Check domain count limit
-        max_domains = get_tier_limit(tier, "max_embed_domains")
-        if len(domains) > max_domains:
+        """Validate domains against whitelist and domain-count limits."""
+        if len(domains) > MAX_EMBED_DOMAINS:
             raise HTTPException(
                 status_code=status.HTTP_400_BAD_REQUEST,
-                detail=f"Maximum {max_domains} domains allowed for {tier.value} tier",
+                detail=f"Maximum {MAX_EMBED_DOMAINS} domains allowed",
             )
 
         # Get whitelisted domains for tenant
@@ -449,15 +444,6 @@ class EmbedTokenService:
             return True
 
         return False
-
-    def _get_rate_limit_for_tier(self, tier: SubscriptionTier) -> int:
-        """Get rate limit per minute for tier."""
-        limits = {
-            SubscriptionTier.STARTER: 60,
-            SubscriptionTier.PROFESSIONAL: 300,
-            SubscriptionTier.ENTERPRISE: 1000,
-        }
-        return limits.get(tier, 60)
 
     # =========================================================================
     # Data Signing

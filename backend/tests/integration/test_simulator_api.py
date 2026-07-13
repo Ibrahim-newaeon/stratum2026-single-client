@@ -25,32 +25,17 @@ _BASE = "/api/v1/simulate"
 
 
 @pytest.fixture(autouse=True)
-def _enterprise_tier(monkeypatch):
-    """Elevate the test tenant to ENTERPRISE for the simulator router.
+def _enterprise_tier():
+    """No-op (STRAT-SC-001 / Task A1).
 
-    The What-If Simulator is gated behind ``Feature.WHAT_IF_SIMULATOR`` (enterprise
-    tier). The shared ``test_tenant`` fixture creates a PROFESSIONAL-plan tenant,
-    which the ``FeatureGate`` dependency rejects with 403. Patch
-    ``get_subscription_info`` so the gate sees enterprise — letting requests reach
-    the endpoint bodies under test.
+    The What-If Simulator used to be gated behind a tier-aware
+    ``FeatureGate`` (Enterprise only), so this fixture elevated the test
+    tenant's tier via a ``get_subscription_info`` patch. ``FeatureGate`` is
+    now purely env-driven (``Feature.WHAT_IF_SIMULATOR`` ->
+    ``settings.feature_what_if_simulator``, default True) and no longer
+    looks at tenant/tier at all, so there is nothing left to elevate.
     """
-    from app.core import subscription as sub_mod
-    from app.core.tiers import SubscriptionTier
-
-    async def _enterprise(tenant_id: int, db=None) -> "sub_mod.SubscriptionInfo":
-        return sub_mod.SubscriptionInfo(
-            tenant_id=tenant_id,
-            plan="enterprise",
-            tier=SubscriptionTier.ENTERPRISE,
-            status=sub_mod.SubscriptionStatus.ACTIVE,
-            expires_at=None,
-            days_until_expiry=None,
-            days_in_grace=None,
-            is_access_restricted=False,
-            restriction_reason=None,
-        )
-
-    monkeypatch.setattr(sub_mod, "get_subscription_info", _enterprise)
+    return None
 
 
 class TestModelStatus:

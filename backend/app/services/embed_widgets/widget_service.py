@@ -2,12 +2,12 @@
 # Stratum AI - Embed Widget Service
 # =============================================================================
 """
-Service for managing embed widgets with tier-based branding.
+Service for managing embed widgets.
 
-Tier Alignment:
-- Starter: Full Stratum branding, 3 widgets, 2 domains
-- Professional: Minimal branding, 10 widgets, 10 domains
-- Enterprise: White-label (no branding), unlimited
+Single-Client conversion (STRAT-SC-001): branding level and widget/domain
+caps used to be derived from the tenant's subscription tier. There is no
+tier concept anymore, so every tenant gets the same (formerly
+"Enterprise") behavior: white-label branding and generous fixed caps.
 
 NOTE: This service is async — the API layer injects an ``AsyncSession``
 (``Depends(get_db)``), so every DB access must be awaited. Pure helpers
@@ -21,12 +21,6 @@ from fastapi import HTTPException, status
 from sqlalchemy import func, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from app.core.tiers import (
-    Feature,
-    SubscriptionTier,
-    get_tier_limit,
-    has_feature,
-)
 from app.models.embed_widgets import (
     BrandingLevel,
     EmbedDomainWhitelist,
@@ -47,25 +41,17 @@ WIDGET_DIMENSIONS = {
     WidgetSize.LARGE.value: (400, 300),
 }
 
+# Fixed caps and branding — formerly tier-scaled, now flat for every tenant.
+MAX_EMBED_WIDGETS = 999999
+MAX_EMBED_DOMAINS = 999999
+DEFAULT_BRANDING_LEVEL = BrandingLevel.NONE
+
 
 class EmbedWidgetService:
     """Service for managing embed widgets."""
 
     def __init__(self, db: AsyncSession):
         self.db = db
-
-    # =========================================================================
-    # Branding Level Determination
-    # =========================================================================
-
-    def get_branding_level_for_tier(self, tier: SubscriptionTier) -> BrandingLevel:
-        """Determine branding level based on subscription tier."""
-        if has_feature(tier, Feature.EMBED_WIDGETS_WHITELABEL):
-            return BrandingLevel.NONE
-        elif has_feature(tier, Feature.EMBED_WIDGETS_MINIMAL):
-            return BrandingLevel.MINIMAL
-        else:
-            return BrandingLevel.FULL
 
     # =========================================================================
     # Widget CRUD
@@ -75,7 +61,6 @@ class EmbedWidgetService:
         self,
         tenant_id: int,
         data: WidgetCreate,
-        tier: SubscriptionTier,
     ) -> EmbedWidget:
         """
         Create a new embed widget.
@@ -83,7 +68,6 @@ class EmbedWidgetService:
         Args:
             tenant_id: Tenant ID
             data: Widget creation data
-            tier: Current subscription tier
 
         Returns:
             Created widget
@@ -92,7 +76,6 @@ class EmbedWidgetService:
             HTTPException: If limits exceeded or validation fails
         """
         # Check widget limit
-        max_widgets = get_tier_limit(tier, "max_embed_widgets")
         current_count = await self.db.scalar(
             select(func.count())
             .select_from(EmbedWidget)
@@ -102,23 +85,13 @@ class EmbedWidgetService:
             )
         )
 
-        if current_count >= max_widgets:
+        if current_count >= MAX_EMBED_WIDGETS:
             raise HTTPException(
                 status_code=status.HTTP_400_BAD_REQUEST,
-                detail=f"Maximum {max_widgets} widgets allowed for {tier.value} tier",
+                detail=f"Maximum {MAX_EMBED_WIDGETS} widgets allowed",
             )
 
-        # Validate custom branding (Enterprise only)
-        if data.custom_branding and not has_feature(
-            tier, Feature.EMBED_WIDGETS_WHITELABEL
-        ):
-            raise HTTPException(
-                status_code=status.HTTP_403_FORBIDDEN,
-                detail="Custom branding requires Enterprise tier",
-            )
-
-        # Determine branding level
-        branding_level = self.get_branding_level_for_tier(tier)
+        branding_level = DEFAULT_BRANDING_LEVEL
 
         # Get dimensions
         if data.widget_size == WidgetSize.CUSTOM:
@@ -196,7 +169,6 @@ class EmbedWidgetService:
         tenant_id: int,
         widget_id: UUID,
         data: WidgetUpdate,
-        tier: SubscriptionTier,
     ) -> EmbedWidget:
         """Update an existing widget."""
         widget = await self.get_widget(tenant_id, widget_id)
@@ -228,14 +200,8 @@ class EmbedWidgetService:
         if data.is_active is not None:
             widget.is_active = data.is_active
 
-        # Update custom branding (Enterprise only)
+        # Update custom branding
         if data.custom_branding:
-            if not has_feature(tier, Feature.EMBED_WIDGETS_WHITELABEL):
-                raise HTTPException(
-                    status_code=status.HTTP_403_FORBIDDEN,
-                    detail="Custom branding requires Enterprise tier",
-                )
-
             widget.custom_logo_url = data.custom_branding.custom_logo_url
             widget.custom_accent_color = data.custom_branding.custom_accent_color
             widget.custom_background_color = (
@@ -269,11 +235,9 @@ class EmbedWidgetService:
         tenant_id: int,
         domain_pattern: str,
         description: Optional[str],
-        tier: SubscriptionTier,
     ) -> EmbedDomainWhitelist:
         """Add a domain to the whitelist."""
         # Check domain limit
-        max_domains = get_tier_limit(tier, "max_embed_domains")
         current_count = await self.db.scalar(
             select(func.count())
             .select_from(EmbedDomainWhitelist)
@@ -283,10 +247,10 @@ class EmbedWidgetService:
             )
         )
 
-        if current_count >= max_domains:
+        if current_count >= MAX_EMBED_DOMAINS:
             raise HTTPException(
                 status_code=status.HTTP_400_BAD_REQUEST,
-                detail=f"Maximum {max_domains} domains allowed for {tier.value} tier",
+                detail=f"Maximum {MAX_EMBED_DOMAINS} domains allowed",
             )
 
         # Check if already exists
