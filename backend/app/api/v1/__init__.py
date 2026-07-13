@@ -75,13 +75,6 @@ from app.api.v1.endpoints import (  # Previously unregistered endpoints; Gap end
 from app.auth.permissions import require_super_admin
 from app.core.feature_gate import Feature, FeatureGate
 
-# NOTE (STRAT-SC-001 / Task A1): the ``subscription``, ``tier``, ``payments``,
-# and ``stripe_webhook`` endpoint modules are NOT imported here. They still
-# import symbols from the now-deleted tier/subscription core modules and are
-# slated for wholesale deletion in Task A2/A3 — importing them here would
-# break `from app.main import app`. A2/A3 removes this comment along with
-# the endpoint files themselves.
-
 api_router = APIRouter()
 
 # Authentication

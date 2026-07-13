@@ -7,7 +7,6 @@ Tests verifying that the Settings class correctly validates configuration:
 - Database URL normalization works
 - Required security fields are enforced
 - Environment-specific behavior (dev vs production)
-- Stripe configuration validation
 """
 
 import os

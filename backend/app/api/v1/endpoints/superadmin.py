@@ -1901,13 +1901,6 @@ async def credentials_health(request: Request):
                 "ad_account_id_default": present(settings.snapchat_ad_account_id),
             },
         },
-        "billing": {
-            "stripe": {
-                "secret_key": present(settings.stripe_secret_key),
-                "publishable_key": present(settings.stripe_publishable_key),
-                "webhook_secret": present(settings.stripe_webhook_secret),
-            },
-        },
         "email": {
             "smtp": {
                 "host": present(settings.smtp_host),

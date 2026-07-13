@@ -147,8 +147,8 @@ omit =
 # measured 46.28%) -> 46.3 (knowledge graph Problem/Solution
 # serialization + severity/category enums; pacing alert helpers: metric->
 # alert-type mapping + DailyKPI metric extraction with cents->dollars;
-# full unit suite measured 46.33%) -> 46.35 (Stripe tier<->price-id
-# round-trip mapping + configure_stripe secret gating; Google Ads
+# full unit suite measured 46.33%) -> 46.35 (billing mappings, since
+# removed in the single-client conversion; Google Ads
 # integration helpers: change-type mapping, resource-id extraction,
 # SHA-256 hashing, E.164 phone normalization; full unit suite measured
 # 46.38%) -> 46.7 (server-events formatters: Meta CAPI event/user-data

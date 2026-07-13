@@ -16,7 +16,6 @@ Modules:
 - audit: Audit logging tasks
 - whatsapp: WhatsApp messaging tasks
 - ml: Live predictions and alerts
-- billing: Cost allocation and usage
 - monitoring: Pipeline health checks
 - scores: Daily scoring tasks
 - cdp: Customer Data Platform tasks
@@ -26,10 +25,6 @@ Modules:
 # Import all tasks for celery autodiscover
 from app.workers.tasks.audit import (
     process_audit_log_queue,
-)
-from app.workers.tasks.billing import (
-    calculate_cost_allocation,
-    calculate_usage_rollup,
 )
 from app.workers.tasks.cdp import (
     compute_all_cdp_funnels,
@@ -89,12 +84,9 @@ from app.workers.tasks.whatsapp import (
 __all__ = [
     # Creative tasks
     "calculate_all_fatigue_scores",
-    # Billing tasks
-    "calculate_cost_allocation",
     # Score tasks
     "calculate_daily_scores",
     "calculate_task_confidence",
-    "calculate_usage_rollup",
     # Monitoring tasks
     "check_pipeline_health",
     "compute_all_cdp_funnels",

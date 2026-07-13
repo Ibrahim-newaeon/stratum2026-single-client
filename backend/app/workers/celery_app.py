@@ -118,18 +118,6 @@ celery_app.conf.beat_schedule = {
         "schedule": crontab(minute="*"),
         "options": {"queue": "default"},
     },
-    # Cost allocation daily at 2 AM UTC
-    "calculate-cost-allocation": {
-        "task": "app.workers.tasks.calculate_cost_allocation",
-        "schedule": crontab(minute=0, hour=2),
-        "options": {"queue": "default"},
-    },
-    # Usage rollup daily at 1 AM UTC
-    "calculate-usage-rollup": {
-        "task": "app.workers.tasks.calculate_usage_rollup",
-        "schedule": crontab(minute=0, hour=1),
-        "options": {"queue": "default"},
-    },
     # Pipeline health check hourly
     "check-pipeline-health": {
         "task": "app.workers.tasks.check_pipeline_health",

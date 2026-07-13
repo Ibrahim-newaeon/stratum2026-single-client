@@ -68,7 +68,6 @@ class TestSkips:
         [
             "/health",
             "/metrics",
-            "/api/v1/stripe-webhook",
             "/api/v1/whatsapp/webhooks/inbound",
         ],
     )

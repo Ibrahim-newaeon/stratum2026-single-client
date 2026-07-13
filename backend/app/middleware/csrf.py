@@ -25,7 +25,6 @@ logger = get_logger(__name__)
 # Endpoints that receive external webhooks and should skip CSRF checks
 CSRF_EXEMPT_PATHS = (
     "/api/v1/whatsapp/webhooks/",
-    "/api/v1/stripe-webhook",
     "/health",
     "/metrics",
 )

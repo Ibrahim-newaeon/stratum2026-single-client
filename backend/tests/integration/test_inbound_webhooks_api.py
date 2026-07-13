@@ -1,17 +1,13 @@
 # =============================================================================
 # Stratum AI - Inbound Webhook Endpoint Integration Tests
 # =============================================================================
-"""Integration tests for the unauthenticated inbound webhook receivers:
+"""Integration tests for the unauthenticated inbound webhook receiver:
 
-- ``POST /api/v1/webhooks/stripe`` — Stripe event receiver. Verifies the
-  ``stripe-signature`` header against ``stripe_webhook_secret``. In the test env
-  Stripe is unconfigured (503); patching ``STRIPE_CONFIGURED`` + the secret
-  exposes the missing-signature and invalid-signature 400 branches.
 - ``POST /api/v1/webhooks/sendgrid`` — SendGrid Event Webhook. Verified by a URL
   ``?token=`` matched (constant-time) against ``sendgrid_webhook_token``.
 
-These pin the signature/token verification contracts — the security-critical
-branches — without needing live Stripe/SendGrid credentials.
+This pins the token verification contract — the security-critical branch —
+without needing live SendGrid credentials.
 
 NOTE: run with the session-scoped event loop CI uses
 (``-o asyncio_default_test_loop_scope=session``).
@@ -22,61 +18,7 @@ from httpx import AsyncClient
 
 pytestmark = [pytest.mark.integration, pytest.mark.asyncio]
 
-_STRIPE = "/api/v1/webhooks/stripe"
 _SENDGRID = "/api/v1/webhooks/sendgrid"
-
-
-class TestStripeWebhook:
-    async def test_unconfigured_503(self, client: AsyncClient, monkeypatch):
-        # Default test env: Stripe not configured -> 503 before any parsing.
-        from app.services import stripe_service
-
-        monkeypatch.setattr(stripe_service, "STRIPE_CONFIGURED", False)
-        resp = await client.post(_STRIPE, content=b"{}")
-        assert resp.status_code == 503, resp.text
-
-    async def test_missing_signature_400(self, client: AsyncClient, monkeypatch):
-        from app.core.config import settings
-        from app.services import stripe_service
-
-        monkeypatch.setattr(stripe_service, "STRIPE_CONFIGURED", True)
-        monkeypatch.setattr(
-            settings, "stripe_webhook_secret", "whsec_test", raising=False
-        )
-
-        resp = await client.post(_STRIPE, content=b"{}")
-        assert resp.status_code == 400, resp.text
-        assert "signature" in resp.json()["detail"].lower()
-
-    async def test_invalid_signature_400(self, client: AsyncClient, monkeypatch):
-        from app.core.config import settings
-        from app.services import stripe_service
-
-        monkeypatch.setattr(stripe_service, "STRIPE_CONFIGURED", True)
-        monkeypatch.setattr(
-            settings, "stripe_webhook_secret", "whsec_test", raising=False
-        )
-
-        resp = await client.post(
-            _STRIPE,
-            content=b'{"id": "evt_1", "type": "ping"}',
-            headers={"stripe-signature": "t=123,v1=deadbeef"},
-        )
-        assert resp.status_code == 400, resp.text
-
-    async def test_secret_not_configured_503(self, client: AsyncClient, monkeypatch):
-        from app.core.config import settings
-        from app.services import stripe_service
-
-        monkeypatch.setattr(stripe_service, "STRIPE_CONFIGURED", True)
-        monkeypatch.setattr(settings, "stripe_webhook_secret", "", raising=False)
-
-        resp = await client.post(
-            _STRIPE,
-            content=b"{}",
-            headers={"stripe-signature": "t=123,v1=deadbeef"},
-        )
-        assert resp.status_code == 503, resp.text
 
 
 class TestSendgridWebhook:

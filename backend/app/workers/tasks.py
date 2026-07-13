@@ -21,7 +21,6 @@ The canonical definitions live in:
     - app.workers.tasks.audit       (audit log processing)
     - app.workers.tasks.whatsapp    (WhatsApp messaging)
     - app.workers.tasks.ml          (live predictions & alerts)
-    - app.workers.tasks.billing     (cost allocation & usage)
     - app.workers.tasks.monitoring  (pipeline health checks)
     - app.workers.tasks.scores      (daily scoring)
     - app.workers.tasks.cdp         (Customer Data Platform)
@@ -39,10 +38,8 @@ domain module under ``app/workers/tasks/`` instead.
 # Sync tasks
 from app.workers.tasks import (  # noqa: F401 – re-exports
     calculate_all_fatigue_scores,
-    calculate_cost_allocation,
     calculate_daily_scores,
     calculate_task_confidence,
-    calculate_usage_rollup,
     check_pipeline_health,
     compute_all_cdp_funnels,
     compute_all_cdp_segments,
@@ -74,12 +71,9 @@ from app.workers.tasks import (  # noqa: F401 – re-exports
 __all__ = [
     # Creative
     "calculate_all_fatigue_scores",
-    # Billing
-    "calculate_cost_allocation",
     # Scores
     "calculate_daily_scores",
     "calculate_task_confidence",
-    "calculate_usage_rollup",
     # Monitoring
     "check_pipeline_health",
     "compute_all_cdp_funnels",

@@ -360,28 +360,6 @@ class Settings(BaseSettings):
     )
 
     # -------------------------------------------------------------------------
-    # Stripe Payments Configuration
-    # -------------------------------------------------------------------------
-    stripe_secret_key: Optional[str] = Field(
-        default=None, description="Stripe secret API key"
-    )
-    stripe_publishable_key: Optional[str] = Field(
-        default=None, description="Stripe publishable key"
-    )
-    stripe_webhook_secret: Optional[str] = Field(
-        default=None, description="Stripe webhook signing secret"
-    )
-    stripe_starter_price_id: Optional[str] = Field(
-        default=None, description="Stripe Price ID for Starter tier"
-    )
-    stripe_professional_price_id: Optional[str] = Field(
-        default=None, description="Stripe Price ID for Professional tier"
-    )
-    stripe_enterprise_price_id: Optional[str] = Field(
-        default=None, description="Stripe Price ID for Enterprise tier"
-    )
-
-    # -------------------------------------------------------------------------
     # Asset / object storage (INF-001)
     # -------------------------------------------------------------------------
     # Where uploaded creative assets are persisted. "local" writes to

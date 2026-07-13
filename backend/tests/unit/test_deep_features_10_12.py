@@ -489,16 +489,15 @@ class TestWhatsAppWebhook:
         assert resp.json()["status"] == "received"
 
 
-# FEATURE 11 - Payments (Stripe) — removed (STRAT-SC-001 / Task A1).
+# FEATURE 11 - Payments (Stripe) — removed (STRAT-SC-001 / Task A1-A2).
 #
 # TestPaymentsOverview / TestPaymentsCheckout / TestPaymentsSubscription /
-# TestStripeWebhook / TestSubscriptionEndpoints exercised
-# app.api.v1.endpoints.{payments,stripe_webhook,subscription}, which import
-# from the now-deleted tier/subscription core modules and are no longer
-# registered on api_router (see app/api/v1/__init__.py). Those endpoint
-# modules are deleted wholesale in Task A2/A3, at which point this comment
-# (and the corresponding integration tests under tests/integration/) should
-# go with them.
+# TestStripeWebhook / TestSubscriptionEndpoints used to exercise
+# app.api.v1.endpoints.{payments,stripe_webhook,subscription} and
+# app.services.stripe_service. Task A1 unregistered the routers; Task A2
+# deleted the endpoint modules, the Stripe service, and the corresponding
+# integration test files (test_payments_api.py, test_subscription_api.py,
+# test_tier_api.py) outright.
 
 # =============================================================================
 # FEATURE 12 - Multi-tenancy
