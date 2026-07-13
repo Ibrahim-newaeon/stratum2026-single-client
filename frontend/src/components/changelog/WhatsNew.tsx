@@ -87,18 +87,8 @@ const RELEASES: Release[] = [
     changes: [
       {
         type: 'feature',
-        title: 'Stripe Integration',
-        description: 'Subscription payments and billing portal',
-      },
-      {
-        type: 'feature',
         title: 'MFA Authentication',
         description: 'Two-factor authentication with TOTP',
-      },
-      {
-        type: 'feature',
-        title: 'Subscription Enforcement',
-        description: 'Tier-based feature gating',
       },
       {
         type: 'improvement',

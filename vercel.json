@@ -19,7 +19,6 @@
     { "source": "/superadmin", "destination": "/index.html" },
     { "source": "/superadmin/:path*", "destination": "/index.html" },
     { "source": "/features", "destination": "/index.html" },
-    { "source": "/pricing", "destination": "/index.html" },
     { "source": "/about", "destination": "/index.html" },
     { "source": "/resources", "destination": "/index.html" },
     { "source": "/solutions", "destination": "/index.html" },

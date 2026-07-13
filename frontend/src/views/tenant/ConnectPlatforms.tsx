@@ -430,7 +430,7 @@ export default function ConnectPlatforms() {
           <li>&#8226; OAuth tokens are AES-256 encrypted at rest and auto-refreshed before expiry</li>
           <li>&#8226; All PII data (emails, phone numbers) is SHA-256 hashed before sending to any platform</li>
           <li>&#8226; API keys and secrets are encrypted with Fernet symmetric encryption</li>
-          <li>&#8226; Webhook signatures are verified using HMAC for Stripe, WhatsApp, and Slack</li>
+          <li>&#8226; Webhook signatures are verified using HMAC for WhatsApp and Slack</li>
           <li>&#8226; You can disconnect any platform at any time — this revokes access immediately</li>
           <li>&#8226; Campaign Builder requires at least one connected ad platform to launch campaigns</li>
         </ul>

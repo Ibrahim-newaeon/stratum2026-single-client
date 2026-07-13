@@ -139,7 +139,7 @@ export function ErrorScreen({
             {body}
           </motion.p>
 
-          {/* Diagnostic panel — hairline rows, mono key/value. No side-stripe. */}
+          {/* Diagnostic panel — hairline rows, mono key/value. No side accent bar. */}
           <motion.dl
             variants={item}
             className="mt-8 overflow-hidden rounded-xl border border-border bg-card/40 font-mono text-sm"

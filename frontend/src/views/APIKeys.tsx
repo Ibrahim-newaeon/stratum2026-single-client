@@ -10,8 +10,8 @@
  *   useDeleteApiKey  — revoke
  *
  * Security: the full secret is shown exactly once in the create flow,
- * then we display only `key_prefix...mask`. Treat this like Stripe or
- * AWS — keys never round-trip after creation.
+ * then we display only `key_prefix...mask`. Treat this like any other
+ * cloud provider secret — keys never round-trip after creation.
  */
 
 import { useState } from 'react';

@@ -165,18 +165,6 @@ apiClient.interceptors.response.use(
       }
     }
 
-    // Handle 402 Payment Required — backend returns structured payload
-    // when a tier limit is hit (see services/tenant/limits.py). Dispatch
-    // a global event so the UpgradePromptProvider can render the
-    // limit-triggered upgrade card without coupling every API caller
-    // to billing logic.
-    if (error.response?.status === 402) {
-      const payload = (error.response.data as { detail?: Record<string, unknown> })?.detail;
-      if (payload && typeof window !== 'undefined') {
-        window.dispatchEvent(new CustomEvent('stratum:upgrade-required', { detail: payload }));
-      }
-    }
-
     return Promise.reject(error);
   }
 );

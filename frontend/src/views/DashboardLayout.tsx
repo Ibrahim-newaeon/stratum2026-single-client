@@ -21,7 +21,6 @@ import { cn } from '@/lib/utils';
 import LearningHub from '@/components/guide/LearningHub';
 import { CommandPalette } from '@/components/ui/command-palette';
 import { DemoBanner } from '@/components/demo/DemoBanner';
-import { TrialBanner } from '@/components/billing/TrialBanner';
 import { NotificationCenter } from '@/components/notifications/NotificationCenter';
 import { useWhatsNew, WhatsNewModal } from '@/components/changelog/WhatsNew';
 import { KeyboardShortcutsModal } from '@/components/ui/keyboard-shortcuts';
@@ -305,10 +304,6 @@ export default function DashboardLayout() {
           <OnboardingChecklist variant="horizontal" />
 
           <main className="flex-1 overflow-y-auto p-6 lg:p-8">
-            <div className="mb-4">
-              <TrialBanner />
-            </div>
-
             <AnimatePresence mode="wait">
               <motion.div
                 key={location.pathname}

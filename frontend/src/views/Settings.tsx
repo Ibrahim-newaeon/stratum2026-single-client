@@ -9,7 +9,6 @@ import {
   ChevronDown,
   ChevronRight,
   Copy,
-  CreditCard,
   DollarSign,
   Download,
   Eye,
@@ -36,14 +35,6 @@ import { useToast } from '@/components/ui/use-toast';
 import { useFeatureFlagsStore, defaultFeatures } from '@/stores/featureFlagsStore';
 import { useFeatureFlags, useUpdateFeatureFlags } from '@/api/featureFlags';
 import {
-  useBillingOverview,
-  useInvoices,
-  useCreatePortal,
-  useCancelSubscription,
-  useReactivateSubscription,
-} from '@/api/payments';
-import { useAvailableTiers, useTierComparison } from '@/api/tier';
-import {
   METRIC_REGISTRY,
   METRIC_CATEGORIES,
   METRIC_LABELS,
@@ -63,7 +54,6 @@ type SettingsTab =
   | 'security'
   | 'integrations'
   | 'preferences'
-  | 'billing'
   | 'gdpr'
   | 'trust-engine';
 
@@ -74,7 +64,6 @@ const VALID_TABS: ReadonlySet<SettingsTab> = new Set([
   'security',
   'integrations',
   'preferences',
-  'billing',
   'gdpr',
   'trust-engine',
 ]);
@@ -108,7 +97,6 @@ export function Settings() {
     { id: 'security', label: t('settings.security'), icon: Shield },
     { id: 'integrations', label: t('settings.integrations'), icon: Link2 },
     { id: 'preferences', label: t('settings.preferences'), icon: Palette },
-    { id: 'billing', label: t('settings.billing'), icon: CreditCard },
     { id: 'gdpr', label: t('settings.gdpr'), icon: Download },
     { id: 'trust-engine', label: 'Trust Engine', icon: Gauge },
   ] as const;
@@ -146,8 +134,6 @@ export function Settings() {
         return <IntegrationsHub />;
       case 'preferences':
         return <PreferenceSettings />;
-      case 'billing':
-        return <BillingSettings />;
       case 'gdpr':
         return <GDPRSettings />;
       case 'trust-engine':
@@ -1209,11 +1195,6 @@ export function IntegrationSettings() {
           />
         </svg>
       ),
-      stripe: (
-        <svg viewBox="0 0 24 24" className="w-6 h-6" fill="currentColor">
-          <path d="M13.976 9.15c-2.172-.806-3.356-1.426-3.356-2.409 0-.831.683-1.305 1.901-1.305 2.227 0 4.515.858 6.09 1.631l.89-5.494C18.252.975 15.697 0 12.165 0 9.667 0 7.589.654 6.104 1.872 4.56 3.147 3.757 4.992 3.757 7.218c0 4.039 2.467 5.76 6.476 7.219 2.585.92 3.445 1.574 3.445 2.583 0 .98-.84 1.545-2.354 1.545-1.875 0-4.965-.921-6.99-2.109l-.9 5.555C5.175 22.99 8.385 24 11.714 24c2.641 0 4.843-.624 6.328-1.813 1.664-1.305 2.525-3.236 2.525-5.732 0-4.128-2.524-5.851-6.594-7.305h.003z" />
-        </svg>
-      ),
       wordpress: (
         <svg viewBox="0 0 24 24" className="w-6 h-6" fill="currentColor">
           <path d="M12 0C5.373 0 0 5.373 0 12s5.373 12 12 12 12-5.373 12-12S18.627 0 12 0zm-1.46 14.58L7.93 5.51c.46-.02.88-.07.88-.07.41-.05.36-.66-.05-.64 0 0-1.24.1-2.04.1-.14 0-.31 0-.48-.01C7.58 2.91 9.66 1.8 12 1.8c1.73 0 3.31.66 4.5 1.74-.03 0-.06-.01-.09-.01-.72 0-1.23.63-1.23 1.3 0 .6.35 1.11.72 1.72.28.48.6 1.1.6 2 0 .62-.24 1.34-.56 2.34l-.73 2.44-2.65-7.89c.44-.02.84-.07.84-.07.4-.05.35-.64-.05-.62 0 0-1.2.09-1.98.09-.07 0-.15 0-.22 0l2.87 8.58-1.96 5.86-3.82-11.34zM12 22.2c-1.22 0-2.39-.22-3.47-.62l3.68-10.69 3.77 10.33c.02.06.05.12.08.17-1.26.52-2.64.81-4.06.81zm8.4-5.14c.33-1.35.53-2.9.53-4.62 0-1.81-.33-3.38-.86-4.72l-4.7 13.62c3.03-1.46 5.03-4.57 5.03-8.28zm-17.9-4.62c0 3.27 1.61 6.16 4.07 7.93L2.92 9.45c-.28 1.03-.42 2.12-.42 3.25v.74z" />
@@ -1333,13 +1314,6 @@ export function IntegrationSettings() {
       description: 'Sync orders and product catalog',
     },
     {
-      id: 'stripe',
-      name: 'Stripe',
-      connected: false,
-      color: 'text-purple-500',
-      description: 'Track payments and subscriptions',
-    },
-    {
       id: 'wordpress',
       name: 'WordPress',
       connected: false,
@@ -1412,7 +1386,6 @@ export function IntegrationSettings() {
     'google-analytics': 'google-analytics',
     'google-tag-manager': 'google-tag-manager',
     shopify: 'shopify',
-    stripe: 'stripe',
     wordpress: 'wordpress',
   };
 
@@ -2111,414 +2084,6 @@ function MetricVisibilitySettings() {
             </div>
           );
         })}
-      </div>
-    </div>
-  );
-}
-
-function BillingSettings() {
-  const { t } = useTranslation();
-  const navigate = useNavigate();
-  const { toast } = useToast();
-  const tenant = useTenantStore((state) => state.tenant);
-
-  const { data: overview, isLoading: overviewLoading } = useBillingOverview();
-  const { data: invoices, isLoading: invoicesLoading } = useInvoices();
-  const createPortal = useCreatePortal();
-  const cancelSub = useCancelSubscription();
-  const reactivateSub = useReactivateSubscription();
-
-  const sub = overview?.subscription;
-  const planName = sub?.tier || tenant?.plan || 'free';
-  const hasActiveSub = sub?.has_subscription && sub.status === 'active';
-  const isCanceling = sub?.cancel_at_period_end;
-
-  const handleManageBilling = async () => {
-    try {
-      const { portal_url } = await createPortal.mutateAsync();
-      window.location.href = portal_url;
-    } catch {
-      toast({
-        title: 'Error',
-        description: 'Could not open billing portal.',
-        variant: 'destructive',
-      });
-    }
-  };
-
-  const handleCancel = async () => {
-    if (
-      !confirm(
-        'Are you sure you want to cancel your subscription? You will retain access until the end of the current period.'
-      )
-    )
-      {return;}
-    try {
-      await cancelSub.mutateAsync(undefined);
-      toast({
-        title: 'Subscription canceled',
-        description: 'Your plan will remain active until the end of the billing period.',
-      });
-    } catch {
-      toast({
-        title: 'Error',
-        description: 'Failed to cancel subscription.',
-        variant: 'destructive',
-      });
-    }
-  };
-
-  const handleReactivate = async () => {
-    try {
-      await reactivateSub.mutateAsync();
-      toast({
-        title: 'Subscription reactivated',
-        description: 'Your plan will continue as normal.',
-      });
-    } catch {
-      toast({
-        title: 'Error',
-        description: 'Failed to reactivate subscription.',
-        variant: 'destructive',
-      });
-    }
-  };
-
-  const statusColor = (status: string | null | undefined) => {
-    switch (status) {
-      case 'active':
-        return 'bg-green-500/15 text-green-600 border-green-500/30';
-      case 'trialing':
-        return 'bg-blue-500/15 text-blue-600 border-blue-500/30';
-      case 'past_due':
-        return 'bg-amber-500/15 text-amber-600 border-amber-500/30';
-      case 'canceled':
-        return 'bg-red-500/15 text-red-600 border-red-500/30';
-      default:
-        return 'bg-muted text-muted-foreground border-border';
-    }
-  };
-
-  const formatDate = (d: string | null | undefined) =>
-    d ? new Date(d).toLocaleDateString() : '--';
-  const formatCurrency = (amount: number, currency = 'usd') =>
-    new Intl.NumberFormat('en-US', { style: 'currency', currency }).format(amount / 100);
-
-  if (overviewLoading) {
-    return (
-      <div className="flex items-center justify-center py-12">
-        <Loader2 className="w-6 h-6 animate-spin text-muted-foreground" />
-      </div>
-    );
-  }
-
-  return (
-    <div className="space-y-6">
-      <h2 className="text-lg font-semibold">{t('settings.billingSettings')}</h2>
-
-      {/* Current Plan */}
-      <div className="p-4 rounded-lg border bg-primary/5 border-primary/20">
-        <div className="flex items-center justify-between">
-          <div className="flex items-center gap-3">
-            <div>
-              <p className="font-medium capitalize">{planName} Plan</p>
-              <div className="flex items-center gap-2 mt-1">
-                <span
-                  className={cn(
-                    'text-xs px-2 py-0.5 rounded-full border font-medium capitalize',
-                    statusColor(sub?.status)
-                  )}
-                >
-                  {sub?.status || 'inactive'}
-                </span>
-                {isCanceling && (
-                  <span className="text-xs text-amber-600">
-                    Cancels {formatDate(sub?.current_period_end)}
-                  </span>
-                )}
-              </div>
-              {hasActiveSub && !isCanceling && (
-                <p className="text-sm text-muted-foreground mt-1">
-                  {formatDate(sub?.current_period_start)} - {formatDate(sub?.current_period_end)}
-                </p>
-              )}
-              {sub?.trial_end && (
-                <p className="text-sm text-blue-600 mt-1">Trial ends {formatDate(sub.trial_end)}</p>
-              )}
-            </div>
-          </div>
-          <div className="flex items-center gap-2">
-            {isCanceling ? (
-              <button
-                onClick={handleReactivate}
-                disabled={reactivateSub.isPending}
-                className="flex items-center gap-2 px-4 py-2 rounded-lg bg-primary text-primary-foreground hover:bg-primary/90 transition-colors text-sm disabled:opacity-50"
-              >
-                {reactivateSub.isPending && <Loader2 className="w-3 h-3 animate-spin" />}
-                Reactivate
-              </button>
-            ) : (
-              <button
-                onClick={() => navigate('/checkout')}
-                className="px-4 py-2 rounded-lg bg-primary text-primary-foreground hover:bg-primary/90 transition-colors text-sm"
-              >
-                Upgrade Plan
-              </button>
-            )}
-          </div>
-        </div>
-      </div>
-
-      {/* Upcoming Invoice */}
-      {overview?.upcoming_invoice && (
-        <div className="p-4 rounded-lg border">
-          <div className="flex items-center justify-between">
-            <div>
-              <p className="text-sm text-muted-foreground">Next payment</p>
-              <p className="font-medium">
-                {formatCurrency(
-                  overview.upcoming_invoice.amount_due,
-                  overview.upcoming_invoice.currency
-                )}
-              </p>
-            </div>
-            <p className="text-sm text-muted-foreground">
-              {formatDate(overview.upcoming_invoice.next_payment_date)}
-            </p>
-          </div>
-        </div>
-      )}
-
-      {/* Payment Methods */}
-      <div>
-        <div className="flex items-center justify-between mb-3">
-          <h3 className="font-medium">{t('settings.paymentMethod')}</h3>
-          <button
-            onClick={handleManageBilling}
-            disabled={createPortal.isPending}
-            className="flex items-center gap-2 px-3 py-1.5 rounded-lg border hover:bg-muted transition-colors text-sm disabled:opacity-50"
-          >
-            {createPortal.isPending && <Loader2 className="w-3 h-3 animate-spin" />}
-            Manage Subscription
-          </button>
-        </div>
-        <div className="p-4 rounded-lg border">
-          {overview?.payment_methods && overview.payment_methods.length > 0 ? (
-            <div className="space-y-3">
-              {overview.payment_methods.map((pm) => (
-                <div key={pm.id} className="flex items-center justify-between">
-                  <div className="flex items-center gap-3">
-                    <CreditCard className="w-5 h-5 text-muted-foreground" />
-                    <div>
-                      <p className="text-sm font-medium capitalize">
-                        {pm.brand || pm.type} {pm.last4 ? `**** ${pm.last4}` : ''}
-                      </p>
-                      {pm.exp_month && (
-                        <p className="text-xs text-muted-foreground">
-                          Expires {pm.exp_month}/{pm.exp_year}
-                        </p>
-                      )}
-                    </div>
-                  </div>
-                  {pm.is_default && (
-                    <span className="text-xs px-2 py-0.5 rounded-full bg-primary/10 text-primary font-medium">
-                      Default
-                    </span>
-                  )}
-                </div>
-              ))}
-            </div>
-          ) : (
-            <p className="text-muted-foreground text-center py-2">No payment method on file.</p>
-          )}
-        </div>
-      </div>
-
-      {/* Invoice History */}
-      <div>
-        <h3 className="font-medium mb-3">{t('settings.billingHistory')}</h3>
-        <div className="rounded-lg border overflow-hidden">
-          {invoicesLoading ? (
-            <div className="flex items-center justify-center py-6">
-              <Loader2 className="w-5 h-5 animate-spin text-muted-foreground" />
-            </div>
-          ) : invoices && invoices.length > 0 ? (
-            <div className="overflow-x-auto">
-              <table className="w-full text-sm">
-                <thead>
-                  <tr className="border-b bg-muted/50">
-                    <th
-                      scope="col"
-                      className="text-left px-4 py-2 font-medium text-muted-foreground"
-                    >
-                      Date
-                    </th>
-                    <th
-                      scope="col"
-                      className="text-left px-4 py-2 font-medium text-muted-foreground"
-                    >
-                      Amount
-                    </th>
-                    <th
-                      scope="col"
-                      className="text-left px-4 py-2 font-medium text-muted-foreground"
-                    >
-                      Status
-                    </th>
-                    <th
-                      scope="col"
-                      className="text-right px-4 py-2 font-medium text-muted-foreground"
-                    >
-                      Invoice
-                    </th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {invoices.map((inv) => (
-                    <tr key={inv.id} className="border-b last:border-0">
-                      <td className="px-4 py-3">{formatDate(inv.created)}</td>
-                      <td className="px-4 py-3">
-                        {formatCurrency(inv.amount_paid || inv.amount_due, inv.currency)}
-                      </td>
-                      <td className="px-4 py-3">
-                        <span
-                          className={cn(
-                            'text-xs px-2 py-0.5 rounded-full border font-medium capitalize',
-                            inv.status === 'paid'
-                              ? 'bg-green-500/15 text-green-600 border-green-500/30'
-                              : inv.status === 'open'
-                                ? 'bg-amber-500/15 text-amber-600 border-amber-500/30'
-                                : 'bg-muted text-muted-foreground border-border'
-                          )}
-                        >
-                          {inv.status}
-                        </span>
-                      </td>
-                      <td className="px-4 py-3 text-right">
-                        {inv.invoice_pdf ? (
-                          <a
-                            href={inv.invoice_pdf}
-                            target="_blank"
-                            rel="noopener noreferrer"
-                            className="inline-flex items-center gap-1 text-primary hover:underline"
-                          >
-                            <Download className="w-3.5 h-3.5" />
-                            PDF
-                          </a>
-                        ) : inv.hosted_invoice_url ? (
-                          <a
-                            href={inv.hosted_invoice_url}
-                            target="_blank"
-                            rel="noopener noreferrer"
-                            className="text-primary hover:underline"
-                          >
-                            View
-                          </a>
-                        ) : (
-                          <span className="text-muted-foreground">--</span>
-                        )}
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
-          ) : (
-            <div className="p-6 text-center text-muted-foreground">
-              <CreditCard className="w-8 h-8 mx-auto mb-2 opacity-50" />
-              <p>No billing history available</p>
-              <p className="text-sm mt-1">Invoices will appear here once billing is configured</p>
-            </div>
-          )}
-        </div>
-      </div>
-
-      {/* Cancel Subscription */}
-      {hasActiveSub && !isCanceling && (
-        <div className="pt-4 border-t">
-          <button
-            onClick={handleCancel}
-            disabled={cancelSub.isPending}
-            className="flex items-center gap-2 text-sm text-red-600 hover:text-red-700 transition-colors disabled:opacity-50"
-          >
-            {cancelSub.isPending && <Loader2 className="w-3 h-3 animate-spin" />}
-            Cancel Subscription
-          </button>
-        </div>
-      )}
-
-      <ComparePlansPanel />
-    </div>
-  );
-}
-
-function ComparePlansPanel() {
-  const tiersQuery = useAvailableTiers();
-  const compareQuery = useTierComparison();
-
-  if (tiersQuery.isLoading || compareQuery.isLoading) {
-    return null;
-  }
-  const tiers = tiersQuery.data?.tiers ?? [];
-  if (tiers.length === 0) return null;
-
-  const limits = compareQuery.data?.limits;
-  const limitKeys = limits
-    ? Array.from(
-        new Set(
-          Object.values(limits)
-            .filter((v): v is Record<string, number | string | null> => Boolean(v))
-            .flatMap((v) => Object.keys(v))
-        )
-      )
-    : [];
-
-  return (
-    <div className="pt-6 border-t space-y-3">
-      <h3 className="text-base font-semibold">Compare plans</h3>
-      <p className="text-sm text-muted-foreground">
-        What's included in each tier. Limits sourced from the backend tier registry.
-      </p>
-      <div className="overflow-x-auto rounded-lg border">
-        <table className="w-full text-sm">
-          <thead className="bg-muted/40 text-left font-mono text-xs uppercase tracking-wider text-muted-foreground">
-            <tr>
-              <th className="px-4 py-2">Limit</th>
-              {tiers.map((t) => (
-                <th key={t.tier} className="px-4 py-2 capitalize">
-                  {t.tier}
-                  {t.is_current && (
-                    <span className="ml-1 rounded-full bg-primary/15 px-2 py-0.5 text-[10px] text-primary">
-                      current
-                    </span>
-                  )}
-                </th>
-              ))}
-            </tr>
-          </thead>
-          <tbody>
-            {limitKeys.map((key) => (
-              <tr key={key} className="border-t">
-                <td className="px-4 py-2 font-mono text-xs text-muted-foreground">{key}</td>
-                {tiers.map((t) => (
-                  <td key={t.tier} className="px-4 py-2 tabular-nums">
-                    {String(limits?.[t.tier]?.[key] ?? '—')}
-                  </td>
-                ))}
-              </tr>
-            ))}
-            {limitKeys.length === 0 && (
-              <tr>
-                <td
-                  colSpan={tiers.length + 1}
-                  className="px-4 py-3 text-center text-muted-foreground"
-                >
-                  No limit data available.
-                </td>
-              </tr>
-            )}
-          </tbody>
-        </table>
       </div>
     </div>
   );

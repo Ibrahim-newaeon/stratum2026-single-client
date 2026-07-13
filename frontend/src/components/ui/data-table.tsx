@@ -19,7 +19,7 @@ const tableVariants = cva('w-full caption-bottom text-sm', {
   variants: {
     variant: {
       default: '',
-      striped: '[&_tbody_tr:nth-child(odd)]:bg-muted/50',
+      pinline: '[&_tbody_tr:nth-child(odd)]:bg-muted/50',
       bordered: '[&_th]:border [&_td]:border',
     },
     size: {

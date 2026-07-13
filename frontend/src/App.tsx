@@ -9,7 +9,6 @@ import { JoyrideProvider } from './components/guide/JoyrideWrapper';
 import { ThemeProvider } from './components/primitives/theme/ThemeProvider';
 import { AuthProvider } from './contexts/AuthContext';
 import { DemoProvider } from './contexts/DemoContext';
-import { UpgradePromptProvider } from './components/billing/UpgradePromptProvider';
 import AuthLoader from './components/auth/AuthLoader';
 import ProtectedRoute from './components/auth/ProtectedRoute';
 import CMSProtectedRoute from './components/auth/CMSProtectedRoute';
@@ -59,7 +58,6 @@ const ResetPassword = lazyWithRetry(() => import('./views/ResetPassword'));
 const VerifyEmail = lazyWithRetry(() => import('./views/VerifyEmail'));
 const Onboarding = lazyWithRetry(() => import('./views/Onboarding'));
 const Overview = lazyWithRetry(() => import('./views/dashboard/Overview'));
-const Plans = lazyWithRetry(() => import('./views/dashboard/Plans'));
 const CustomDashboard = lazyWithRetry(() => import('./views/CustomDashboard'));
 const Campaigns = lazyWithRetry(() => import('./views/Campaigns'));
 const CampaignDetail = lazyWithRetry(() => import('./views/CampaignDetail'));
@@ -138,7 +136,6 @@ const SuperAdminTenantsList = lazyWithRetry(() => import('./views/superadmin/Ten
 const SuperAdminTenantProfile = lazyWithRetry(() => import('./views/superadmin/TenantProfile'));
 const SuperAdminBenchmarks = lazyWithRetry(() => import('./views/superadmin/Benchmarks'));
 const SuperAdminAudit = lazyWithRetry(() => import('./views/superadmin/Audit'));
-const SuperAdminBilling = lazyWithRetry(() => import('./views/superadmin/Billing'));
 const SuperAdminSystem = lazyWithRetry(() => import('./views/superadmin/System'));
 // SuperAdminCMS removed — CMS is now a separate portal at /cms
 const SuperAdminUsers = lazyWithRetry(() => import('./views/superadmin/Users'));
@@ -156,7 +153,6 @@ const CMSAuthors = lazyWithRetry(() => import('./views/cms/CMSAuthors'));
 const CMSContacts = lazyWithRetry(() => import('./views/cms/CMSContacts'));
 const CMSLandingFeatures = lazyWithRetry(() => import('./views/cms/CMSLandingFeatures'));
 const CMSLandingFAQ = lazyWithRetry(() => import('./views/cms/CMSLandingFAQ'));
-const CMSLandingPricing = lazyWithRetry(() => import('./views/cms/CMSLandingPricing'));
 const CMSSettingsView = lazyWithRetry(() => import('./views/cms/CMSSettings'));
 const CMSUsers = lazyWithRetry(() => import('./views/cms/CMSUsers'));
 
@@ -214,12 +210,8 @@ const AcceptInvite = lazyWithRetry(() => import('./views/AcceptInvite'));
 // Client Assignments (admin UI)
 const ClientAssignments = lazyWithRetry(() => import('./views/tenant/ClientAssignments'));
 
-// Tier-specific landing pages
-const TierLandingPage = lazyWithRetry(() => import('./views/plans/TierLandingPage'));
-
 // Public pages (Product)
 const FeaturesPage = lazyWithRetry(() => import('./views/pages/Features'));
-const PricingPage = lazyWithRetry(() => import('./views/pages/Pricing'));
 const IntegrationsPage = lazyWithRetry(() => import('./views/pages/Integrations'));
 const ApiDocsPage = lazyWithRetry(() => import('./views/pages/ApiDocs'));
 
@@ -259,11 +251,6 @@ const GlossaryPage = lazyWithRetry(() => import('./views/pages/resources/Glossar
 const NotFound = lazyWithRetry(() => import('./views/NotFound'));
 const Unauthorized = lazyWithRetry(() => import('./views/Unauthorized'));
 
-// Checkout flow
-const CheckoutPage = lazyWithRetry(() => import('./views/checkout/CheckoutPage'));
-const CheckoutSuccess = lazyWithRetry(() => import('./views/checkout/CheckoutSuccess'));
-const CheckoutCancel = lazyWithRetry(() => import('./views/checkout/CheckoutCancel'));
-
 // Announcement pages
 const AudienceSyncLaunch = lazyWithRetry(
   () => import('./views/pages/announcements/AudienceSyncLaunch')
@@ -290,9 +277,8 @@ function App() {
           <DemoProvider>
             <TooltipProvider delayDuration={300}>
               <JoyrideProvider>
-                <UpgradePromptProvider>
-                  {/* Sync HTML lang/dir with i18n */}
-                  <DocumentDirectionHandler />
+                {/* Sync HTML lang/dir with i18n */}
+                <DocumentDirectionHandler />
                   {/* Skip to content link for keyboard accessibility */}
                   <SkipToContent />
                   <div className="min-h-screen bg-background" id="main-content" role="main">
@@ -491,15 +477,6 @@ function App() {
                             </LazyRoute>
                           }
                         />
-                        {/* Landing Content - Pricing */}
-                        <Route
-                          path="landing/pricing"
-                          element={
-                            <LazyRoute>
-                              <CMSLandingPricing />
-                            </LazyRoute>
-                          }
-                        />
                         {/* CMS Settings */}
                         <Route
                           path="settings"
@@ -536,30 +513,12 @@ function App() {
                         }
                       />
 
-                      {/* Tier-specific landing pages (public) */}
-                      <Route
-                        path="/plans/:tier"
-                        element={
-                          <LazyRoute>
-                            <TierLandingPage />
-                          </LazyRoute>
-                        }
-                      />
-
                       {/* Product pages (public) */}
                       <Route
                         path="/features"
                         element={
                           <LazyRoute>
                             <FeaturesPage />
-                          </LazyRoute>
-                        }
-                      />
-                      <Route
-                        path="/pricing"
-                        element={
-                          <LazyRoute>
-                            <PricingPage />
                           </LazyRoute>
                         }
                       />
@@ -857,38 +816,6 @@ function App() {
                         }
                       />
 
-                      {/* Checkout flow (protected) */}
-                      <Route
-                        path="/checkout"
-                        element={
-                          <ProtectedRoute>
-                            <LazyRoute>
-                              <CheckoutPage />
-                            </LazyRoute>
-                          </ProtectedRoute>
-                        }
-                      />
-                      <Route
-                        path="/checkout/success"
-                        element={
-                          <ProtectedRoute>
-                            <LazyRoute>
-                              <CheckoutSuccess />
-                            </LazyRoute>
-                          </ProtectedRoute>
-                        }
-                      />
-                      <Route
-                        path="/checkout/cancel"
-                        element={
-                          <ProtectedRoute>
-                            <LazyRoute>
-                              <CheckoutCancel />
-                            </LazyRoute>
-                          </ProtectedRoute>
-                        }
-                      />
-
                       {/* Protected dashboard routes - wrapped with onboarding guard + ErrorBoundary */}
                       <Route
                         path="/dashboard"
@@ -923,14 +850,6 @@ function App() {
                           element={
                             <LazyRoute>
                               <Overview />
-                            </LazyRoute>
-                          }
-                        />
-                        <Route
-                          path="plans"
-                          element={
-                            <LazyRoute>
-                              <Plans />
                             </LazyRoute>
                           }
                         />
@@ -1952,14 +1871,6 @@ function App() {
                           }
                         />
                         <Route
-                          path="billing"
-                          element={
-                            <LazyRoute>
-                              <SuperAdminBilling />
-                            </LazyRoute>
-                          }
-                        />
-                        <Route
                           path="control-tower"
                           element={
                             <LazyRoute>
@@ -2115,10 +2026,6 @@ function App() {
                         element={<Navigate to="/console/audit" replace />}
                       />
                       <Route
-                        path="/dashboard/superadmin/billing"
-                        element={<Navigate to="/console/billing" replace />}
-                      />
-                      <Route
                         path="/dashboard/superadmin/system"
                         element={<Navigate to="/console/system" replace />}
                       />
@@ -2147,7 +2054,6 @@ function App() {
                     <Toaster />
                     <OfflineIndicator />
                   </div>
-                </UpgradePromptProvider>
               </JoyrideProvider>
             </TooltipProvider>
           </DemoProvider>

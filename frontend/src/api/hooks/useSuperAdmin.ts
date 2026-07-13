@@ -102,7 +102,7 @@ export interface Invoice {
   status: string
   due_date: string
   paid_at: string | null
-  stripe_invoice_id: string | null
+  external_invoice_id: string | null
 }
 
 export interface Subscription {

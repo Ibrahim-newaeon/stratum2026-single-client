@@ -12,7 +12,6 @@ import {
   Bars3Icon,
   ChevronDownIcon,
   Cog6ToothIcon,
-  CurrencyDollarIcon,
   DocumentTextIcon,
   EnvelopeIcon,
   HomeIcon,
@@ -49,7 +48,6 @@ const navigation: NavItem[] = [
 const landingContent: NavItem[] = [
   { name: 'Features', href: '/cms/landing/features', icon: SparklesIcon, permission: 'manage_pages' },
   { name: 'FAQ', href: '/cms/landing/faq', icon: QuestionMarkCircleIcon, permission: 'manage_pages' },
-  { name: 'Pricing', href: '/cms/landing/pricing', icon: CurrencyDollarIcon, permission: 'manage_pages' },
 ];
 
 export default function CMSLayout() {

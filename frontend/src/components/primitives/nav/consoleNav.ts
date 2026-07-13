@@ -17,7 +17,6 @@ import {
   AlertOctagon,
   BarChart3,
   Beaker,
-  Briefcase,
   Building2,
   CloudUpload,
   Cog,
@@ -48,7 +47,6 @@ export const consoleNavGroups: SidebarGroup[] = [
       { label: 'Tenants', href: '/console/tenants', icon: Building2 },
       { label: 'Users', href: '/console/users', icon: Users },
       { label: 'Feature Flags', href: '/console/feature-flags', icon: Flag },
-      { label: 'Billing Plans', href: '/console/billing', icon: Briefcase },
     ],
   },
   {

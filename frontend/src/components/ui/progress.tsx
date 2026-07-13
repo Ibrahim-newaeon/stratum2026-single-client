@@ -61,7 +61,7 @@ export interface ProgressProps
   showValue?: boolean;
   indicatorClassName?: string;
   animated?: boolean;
-  striped?: boolean;
+  pinlined?: boolean;
   label?: string;
 }
 
@@ -75,7 +75,7 @@ const Progress = React.forwardRef<React.ElementRef<typeof ProgressPrimitive.Root
       showValue = false,
       indicatorClassName,
       animated = false,
-      striped = false,
+      pinlined = false,
       label,
       ...props
     },
@@ -104,7 +104,7 @@ const Progress = React.forwardRef<React.ElementRef<typeof ProgressPrimitive.Root
           <ProgressPrimitive.Indicator
             className={cn(
               indicatorVariants({ variant, animated }),
-              striped && 'bg-stripes',
+              pinlined && 'bg-pinline',
               indicatorClassName
             )}
             style={{ transform: `translateX(-${100 - percentage}%)` }}
