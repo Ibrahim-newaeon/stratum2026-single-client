@@ -23,26 +23,26 @@ export {
   type CommandCenterResponse,
 } from './useTenantDashboard'
 
-// Super Admin hooks
+// Owner Console hooks
 export {
-  useSuperAdminOverview,
-  useSuperAdminTenants,
-  useSuperAdminTenantDetails,
-  useSuperAdminSystemHealth,
-  useSuperAdminBillingPlans,
+  useConsoleOverview,
+  useConsoleTenants,
+  useConsoleTenantDetails,
+  useConsoleSystemHealth,
+  useConsoleBillingPlans,
   useUpdateBillingPlan,
   useAuditLogs,
-  useSuperAdminInvoices,
-  useSuperAdminSubscriptions,
-  superAdminQueryKeys,
-  type SuperAdminOverview,
+  useConsoleInvoices,
+  useConsoleSubscriptions,
+  consoleQueryKeys,
+  type ConsoleOverview,
   type TenantSummary,
   type SystemHealth,
   type BillingPlan,
   type AuditLogEntry,
   type Invoice,
   type Subscription,
-} from './useSuperAdmin'
+} from './useConsole'
 
 // Re-export from API modules
 // Note: Some modules export conflicting types (User, AlertSeverity)

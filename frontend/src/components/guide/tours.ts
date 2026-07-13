@@ -7,7 +7,7 @@
 
 import { Step } from 'react-joyride'
 
-export type TourRole = 'superadmin' | 'account_manager' | 'tenant_admin' | 'media_buyer' | 'data_team' | 'general'
+export type TourRole = 'owner' | 'account_manager' | 'tenant_admin' | 'media_buyer' | 'data_team' | 'general'
 
 export interface TourConfig {
   id: string
@@ -18,18 +18,18 @@ export interface TourConfig {
 }
 
 /**
- * Super Admin Tour
+ * Owner Tour
  * Focus: Platform profitability, tenant health, systemic risk
  */
-export const superAdminTour: TourConfig = {
-  id: 'superadmin-tour',
-  role: 'superadmin',
+export const ownerTour: TourConfig = {
+  id: 'owner-tour',
+  role: 'owner',
   name: 'Platform Control Tour',
   description: 'Learn how to monitor and manage your entire platform',
   steps: [
     {
       target: 'body',
-      content: 'Welcome to the Super Admin Control Tower! This tour will show you how to monitor platform health and manage tenants.',
+      content: 'Welcome to the Owner Control Tower! This tour will show you how to monitor platform health and manage tenants.',
       placement: 'center',
       disableBeacon: true,
     },
@@ -285,8 +285,8 @@ export const generalTour: TourConfig = {
  */
 export function getTourByRole(role: TourRole): TourConfig {
   switch (role) {
-    case 'superadmin':
-      return superAdminTour
+    case 'owner':
+      return ownerTour
     case 'account_manager':
       return accountManagerTour
     case 'tenant_admin':
@@ -305,7 +305,7 @@ export function getTourByRole(role: TourRole): TourConfig {
  */
 export function getAllTours(): TourConfig[] {
   return [
-    superAdminTour,
+    ownerTour,
     accountManagerTour,
     tenantAdminTour,
     mediaBuyerTour,

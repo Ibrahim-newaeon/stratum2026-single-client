@@ -1,7 +1,7 @@
 /**
- * Stratum AI - Superadmin Analytics API Hooks
+ * Stratum AI - Console (Owner) Analytics API Hooks
  *
- * React Query hooks for superadmin platform analytics:
+ * React Query hooks for platform-owner console analytics:
  * - Platform overview
  * - Tenant profitability
  * - Signal health trends
@@ -82,10 +82,10 @@ export interface ActionsAnalytics {
  */
 export function usePlatformOverview(days: number = 7) {
   return useQuery({
-    queryKey: ['superadmin-platform-overview', days],
+    queryKey: ['console-platform-overview', days],
     queryFn: async () => {
       const response = await apiClient.get<{ data: PlatformOverview }>(
-        `/superadmin/platform-overview?days=${days}`
+        `/console/platform-overview?days=${days}`
       );
       return response.data.data;
     },
@@ -98,10 +98,10 @@ export function usePlatformOverview(days: number = 7) {
  */
 export function useTenantProfitability(days: number = 30) {
   return useQuery({
-    queryKey: ['superadmin-tenant-profitability', days],
+    queryKey: ['console-tenant-profitability', days],
     queryFn: async () => {
       const response = await apiClient.get<{ data: TenantProfitabilityResponse }>(
-        `/superadmin/tenant-profitability?days=${days}`
+        `/console/tenant-profitability?days=${days}`
       );
       return response.data.data;
     },
@@ -114,10 +114,10 @@ export function useTenantProfitability(days: number = 30) {
  */
 export function useSignalHealthTrends(days: number = 14) {
   return useQuery({
-    queryKey: ['superadmin-signal-health-trends', days],
+    queryKey: ['console-signal-health-trends', days],
     queryFn: async () => {
       const response = await apiClient.get<{ data: SignalHealthTrendsResponse }>(
-        `/superadmin/signal-health-trends?days=${days}`
+        `/console/signal-health-trends?days=${days}`
       );
       return response.data.data;
     },
@@ -130,10 +130,10 @@ export function useSignalHealthTrends(days: number = 14) {
  */
 export function useActionsAnalytics(days: number = 7) {
   return useQuery({
-    queryKey: ['superadmin-actions-analytics', days],
+    queryKey: ['console-actions-analytics', days],
     queryFn: async () => {
       const response = await apiClient.get<{ data: ActionsAnalytics }>(
-        `/superadmin/actions-analytics?days=${days}`
+        `/console/actions-analytics?days=${days}`
       );
       return response.data.data;
     },
@@ -185,13 +185,13 @@ export interface AnomaliesRollupResponse {
  */
 export function useAnomaliesRollup(severity?: 'critical' | 'high' | 'medium' | 'low') {
   return useQuery({
-    queryKey: ['superadmin-anomalies-rollup', severity ?? 'all'],
+    queryKey: ['console-anomalies-rollup', severity ?? 'all'],
     queryFn: async () => {
       const params = new URLSearchParams();
       if (severity) params.set('severity', severity);
       const qs = params.toString();
       const response = await apiClient.get<{ data: AnomaliesRollupResponse }>(
-        `/superadmin/anomalies-rollup${qs ? `?${qs}` : ''}`
+        `/console/anomalies-rollup${qs ? `?${qs}` : ''}`
       );
       return response.data.data;
     },

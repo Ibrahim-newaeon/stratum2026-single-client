@@ -8,7 +8,7 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { apiClient, ApiResponse, PaginatedResponse } from './client'
 
 // Types
-export type UserRole = 'superadmin' | 'admin' | 'user' | 'viewer'
+export type UserRole = 'owner' | 'admin' | 'user' | 'viewer'
 export type TenantStatus = 'active' | 'suspended' | 'trial' | 'churned'
 export type PlanTier = 'starter' | 'pro' | 'enterprise'
 

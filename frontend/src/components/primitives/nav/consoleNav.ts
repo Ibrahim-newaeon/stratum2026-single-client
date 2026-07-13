@@ -1,7 +1,7 @@
 /**
  * consoleNav — IA configuration for the Platform Owner console.
  *
- * Reserved for `superadmin` only. Lives at `/console/*`, separate
+ * Reserved for `owner` only. Lives at `/console/*`, separate
  * shell from the operator dashboard so platform-level concerns don't
  * clutter the agency operator's mental model.
  *
@@ -37,7 +37,7 @@ import {
 import type { SidebarGroup } from './Sidebar';
 
 /** Owner-only IA. No role gating needed at config time — the entire
- *  /console/* prefix is gated at the route level (superadmin only). */
+ *  /console/* prefix is gated at the route level (owner only). */
 export const consoleNavGroups: SidebarGroup[] = [
   {
     id: 'platform',

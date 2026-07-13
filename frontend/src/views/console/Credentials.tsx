@@ -1,7 +1,7 @@
 /**
  * Credentials Health — Platform Owner page at /console/credentials.
  *
- * Reads /superadmin/credentials/health and renders a presence map of
+ * Reads /console/credentials/health and renders a presence map of
  * every external-service env var the platform expects. No actual
  * values surface — only "set" / "not set". Useful as an
  * "what-do-I-still-need-to-configure" checklist without having to
@@ -27,10 +27,10 @@ interface CredentialsHealth {
 
 function useCredentialsHealth() {
   return useQuery({
-    queryKey: ['superadmin-credentials-health'],
+    queryKey: ['console-credentials-health'],
     queryFn: async () => {
       const res = await apiClient.get<{ data: CredentialsHealth }>(
-        '/superadmin/credentials/health'
+        '/console/credentials/health'
       );
       return res.data.data;
     },

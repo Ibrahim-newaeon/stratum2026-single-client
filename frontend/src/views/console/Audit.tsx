@@ -1,5 +1,5 @@
 /**
- * Audit Logs (Super Admin View)
+ * Audit Logs (Owner Console View)
  *
  * System-wide audit trail for compliance and debugging
  * Shows user actions, system events, and API activity

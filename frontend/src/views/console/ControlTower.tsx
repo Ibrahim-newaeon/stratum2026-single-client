@@ -1,5 +1,5 @@
 /**
- * Super Admin Control Tower
+ * Platform Owner Control Tower
  *
  * Primary goal: Platform profitability + tenant health + systemic risk
  * Shows portfolio KPIs, system risk, and action queue safety
@@ -13,8 +13,8 @@ import {
 import {
   useEmqBenchmarks,
   useEmqPortfolio,
-  useSuperAdminOverview,
-  useSuperAdminTenants,
+  useConsoleOverview,
+  useConsoleTenants,
   useRevenue,
   useChurnRisks,
 } from '@/api/hooks'
@@ -44,8 +44,8 @@ export default function ControlTower() {
   // Fetch data from multiple endpoints
   const { data: portfolioData } = useEmqPortfolio()
   const { data: benchmarksData } = useEmqBenchmarks()
-  const { data: overviewData } = useSuperAdminOverview()
-  const { data: tenantsData } = useSuperAdminTenants()
+  const { data: overviewData } = useConsoleOverview()
+  const { data: tenantsData } = useConsoleTenants()
   const { data: revenueData } = useRevenue()
   const { data: churnRisksData } = useChurnRisks({ minRisk: 0.3, limit: 10 })
 
@@ -102,7 +102,7 @@ export default function ControlTower() {
         </div>
         <div className="flex items-center gap-3">
           <button
-            onClick={() => navigate('/dashboard/superadmin')}
+            onClick={() => navigate('/dashboard/owner')}
             className="flex items-center gap-2 px-4 py-2 rounded-lg bg-surface-secondary border border-foreground/10 text-muted-foreground hover:text-white transition-colors"
           >
             <Cog6ToothIcon className="w-4 h-4" />

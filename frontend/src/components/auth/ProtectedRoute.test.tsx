@@ -73,16 +73,16 @@ function mockAuth(overrides: Partial<{
 // =============================================================================
 
 describe('meetsRoleRequirement', () => {
-  it('superadmin meets all role requirements', () => {
-    expect(meetsRoleRequirement('superadmin', 'superadmin')).toBe(true);
-    expect(meetsRoleRequirement('superadmin', 'admin')).toBe(true);
-    expect(meetsRoleRequirement('superadmin', 'manager')).toBe(true);
-    expect(meetsRoleRequirement('superadmin', 'analyst')).toBe(true);
-    expect(meetsRoleRequirement('superadmin', 'viewer')).toBe(true);
+  it('owner meets all role requirements', () => {
+    expect(meetsRoleRequirement('owner', 'owner')).toBe(true);
+    expect(meetsRoleRequirement('owner', 'admin')).toBe(true);
+    expect(meetsRoleRequirement('owner', 'manager')).toBe(true);
+    expect(meetsRoleRequirement('owner', 'analyst')).toBe(true);
+    expect(meetsRoleRequirement('owner', 'viewer')).toBe(true);
   });
 
-  it('admin meets admin and below but not superadmin', () => {
-    expect(meetsRoleRequirement('admin', 'superadmin')).toBe(false);
+  it('admin meets admin and below but not owner', () => {
+    expect(meetsRoleRequirement('admin', 'owner')).toBe(false);
     expect(meetsRoleRequirement('admin', 'admin')).toBe(true);
     expect(meetsRoleRequirement('admin', 'manager')).toBe(true);
     expect(meetsRoleRequirement('admin', 'analyst')).toBe(true);
@@ -90,7 +90,7 @@ describe('meetsRoleRequirement', () => {
   });
 
   it('manager meets manager and below', () => {
-    expect(meetsRoleRequirement('manager', 'superadmin')).toBe(false);
+    expect(meetsRoleRequirement('manager', 'owner')).toBe(false);
     expect(meetsRoleRequirement('manager', 'admin')).toBe(false);
     expect(meetsRoleRequirement('manager', 'manager')).toBe(true);
     expect(meetsRoleRequirement('manager', 'analyst')).toBe(true);
@@ -184,12 +184,12 @@ describe('ProtectedRoute', () => {
     expect(screen.queryByTestId('protected-content')).not.toBeInTheDocument();
   });
 
-  it('allows superadmin to access any required role', () => {
+  it('allows owner to access any required role', () => {
     mockAuth({
       isAuthenticated: true,
-      user: { role: 'superadmin', permissions: ['all'], user_type: 'agency' },
+      user: { role: 'owner', permissions: ['all'], user_type: 'agency' },
     });
-    renderProtectedRoute({ requiredRole: 'superadmin' });
+    renderProtectedRoute({ requiredRole: 'owner' });
 
     expect(screen.getByTestId('protected-content')).toBeInTheDocument();
   });

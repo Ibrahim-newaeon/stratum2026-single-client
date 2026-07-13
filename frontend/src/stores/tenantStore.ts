@@ -17,7 +17,7 @@ import { devtools } from 'zustand/middleware';
  * Semantic aliases: manager=account_mgr, analyst=media_buyer, viewer=client_viewer
  */
 export type UserRole =
-  | 'superadmin'
+  | 'owner'
   | 'admin'
   | 'manager'
   | 'analyst'
@@ -61,8 +61,8 @@ export interface TenantState {
   user: User | null;
 
   // UI state
-  isSuperAdminMode: boolean;
-  superAdminBypass: boolean;
+  isOwnerMode: boolean;
+  ownerBypass: boolean;
 
   // Date range for analytics
   dateRange: {
@@ -77,14 +77,14 @@ export interface TenantState {
   setTenantId: (tenantId: number | null) => void;
   setTenant: (tenant: Tenant | null) => void;
   setUser: (user: User | null) => void;
-  setSuperAdminMode: (enabled: boolean) => void;
-  setSuperAdminBypass: (enabled: boolean) => void;
+  setOwnerMode: (enabled: boolean) => void;
+  setOwnerBypass: (enabled: boolean) => void;
   setDateRange: (start: string, end: string) => void;
   setSelectedPlatforms: (platforms: string[]) => void;
   logout: () => void;
 
   // Computed
-  isSuperAdmin: () => boolean;
+  isOwner: () => boolean;
   isAdmin: () => boolean;
   hasRole: (roles: UserRole[]) => boolean;
   hasFeature: (feature: string) => boolean;
@@ -113,8 +113,8 @@ export const useTenantStore = create<TenantState>()(
         tenantId: null,
         tenant: null,
         user: null,
-        isSuperAdminMode: false,
-        superAdminBypass: false,
+        isOwnerMode: false,
+        ownerBypass: false,
         dateRange: initialDateRange(),
         selectedPlatforms: [],
 
@@ -138,25 +138,25 @@ export const useTenantStore = create<TenantState>()(
 
         setUser: (user) => {
           set({ user });
-          // Auto-enable super admin mode if user is superadmin
-          if (user?.role === 'superadmin') {
-            set({ isSuperAdminMode: true });
+          // Auto-enable owner mode if user is owner
+          if (user?.role === 'owner') {
+            set({ isOwnerMode: true });
           }
         },
 
-        setSuperAdminMode: (enabled) => {
+        setOwnerMode: (enabled) => {
           const state = get();
-          // Only allow if user is actually a superadmin
-          if (state.user?.role === 'superadmin') {
-            set({ isSuperAdminMode: enabled });
+          // Only allow if user is actually an owner
+          if (state.user?.role === 'owner') {
+            set({ isOwnerMode: enabled });
           }
         },
 
-        setSuperAdminBypass: (enabled) => {
+        setOwnerBypass: (enabled) => {
           const state = get();
-          // Only allow if user is superadmin
-          if (state.user?.role === 'superadmin') {
-            set({ superAdminBypass: enabled });
+          // Only allow if user is owner
+          if (state.user?.role === 'owner') {
+            set({ ownerBypass: enabled });
           }
         },
 
@@ -173,8 +173,8 @@ export const useTenantStore = create<TenantState>()(
             tenantId: null,
             tenant: null,
             user: null,
-            isSuperAdminMode: false,
-            superAdminBypass: false,
+            isOwnerMode: false,
+            ownerBypass: false,
             selectedPlatforms: [],
           });
           localStorage.removeItem('tenant_id');
@@ -183,14 +183,14 @@ export const useTenantStore = create<TenantState>()(
         },
 
         // Computed
-        isSuperAdmin: () => {
+        isOwner: () => {
           const state = get();
-          return state.user?.role === 'superadmin';
+          return state.user?.role === 'owner';
         },
 
         isAdmin: () => {
           const state = get();
-          return state.user?.role === 'superadmin' || state.user?.role === 'admin';
+          return state.user?.role === 'owner' || state.user?.role === 'admin';
         },
 
         hasRole: (roles) => {
@@ -209,12 +209,12 @@ export const useTenantStore = create<TenantState>()(
         name: 'stratum-tenant-store',
         storage: createJSONStorage(() => localStorage),
         // Only persist non-sensitive UI preferences — never persist privilege
-        // escalation flags like superAdminBypass (must be re-asserted each session).
+        // escalation flags like ownerBypass (must be re-asserted each session).
         partialize: (state) => ({
           tenantId: state.tenantId,
           dateRange: state.dateRange,
           selectedPlatforms: state.selectedPlatforms,
-          isSuperAdminMode: state.isSuperAdminMode,
+          isOwnerMode: state.isOwnerMode,
         }),
       }
     ),
@@ -229,7 +229,7 @@ export const useTenantStore = create<TenantState>()(
 export const selectTenantId = (state: TenantState) => state.tenantId;
 export const selectTenant = (state: TenantState) => state.tenant;
 export const selectUser = (state: TenantState) => state.user;
-export const selectIsSuperAdminMode = (state: TenantState) => state.isSuperAdminMode;
+export const selectIsOwnerMode = (state: TenantState) => state.isOwnerMode;
 export const selectDateRange = (state: TenantState) => state.dateRange;
 export const selectSelectedPlatforms = (state: TenantState) => state.selectedPlatforms;
 
@@ -240,7 +240,7 @@ export const selectSelectedPlatforms = (state: TenantState) => state.selectedPla
 export const useTenantId = () => useTenantStore(selectTenantId);
 export const useTenant = () => useTenantStore(selectTenant);
 export const useUser = () => useTenantStore(selectUser);
-export const useIsSuperAdminMode = () => useTenantStore(selectIsSuperAdminMode);
+export const useIsOwnerMode = () => useTenantStore(selectIsOwnerMode);
 export const useDateRange = () => useTenantStore(selectDateRange);
 export const useSelectedPlatforms = () => useTenantStore(selectSelectedPlatforms);
 
@@ -252,8 +252,8 @@ export const useTenantActions = () => {
   const setTenantId = useTenantStore((state) => state.setTenantId);
   const setTenant = useTenantStore((state) => state.setTenant);
   const setUser = useTenantStore((state) => state.setUser);
-  const setSuperAdminMode = useTenantStore((state) => state.setSuperAdminMode);
-  const setSuperAdminBypass = useTenantStore((state) => state.setSuperAdminBypass);
+  const setOwnerMode = useTenantStore((state) => state.setOwnerMode);
+  const setOwnerBypass = useTenantStore((state) => state.setOwnerBypass);
   const setDateRange = useTenantStore((state) => state.setDateRange);
   const setSelectedPlatforms = useTenantStore((state) => state.setSelectedPlatforms);
   const logout = useTenantStore((state) => state.logout);
@@ -262,8 +262,8 @@ export const useTenantActions = () => {
     setTenantId,
     setTenant,
     setUser,
-    setSuperAdminMode,
-    setSuperAdminBypass,
+    setOwnerMode,
+    setOwnerBypass,
     setDateRange,
     setSelectedPlatforms,
     logout,

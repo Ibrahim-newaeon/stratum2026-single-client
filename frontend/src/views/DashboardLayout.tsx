@@ -259,13 +259,13 @@ export default function DashboardLayout() {
                         <div className="px-3 py-2 border-b border-border">
                           <p className="text-sm font-medium text-foreground">{user?.name}</p>
                           <p className="text-xs text-muted-foreground">{user?.email}</p>
-                          {role === 'superadmin' && (
+                          {role === 'owner' && (
                             <p className="mt-1 text-[10px] font-mono uppercase tracking-wider text-primary">
                               Platform owner
                             </p>
                           )}
                         </div>
-                        {role === 'superadmin' && (
+                        {role === 'owner' && (
                           <NavLink
                             to="/console"
                             className="flex items-center gap-2 px-3 py-2 text-sm rounded-lg mx-1 text-primary hover:bg-primary/10 transition-colors duration-200"

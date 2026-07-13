@@ -1,5 +1,5 @@
 /**
- * EMQ Benchmarks (Super Admin View)
+ * EMQ Benchmarks (Owner Console View)
  *
  * Cross-tenant EMQ benchmarks by platform and industry
  * Shows P25/P50/P75 percentiles and trends

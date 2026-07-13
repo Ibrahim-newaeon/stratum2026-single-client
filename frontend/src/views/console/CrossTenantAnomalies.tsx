@@ -1,7 +1,7 @@
 /**
  * Cross-Tenant Anomalies — Platform Owner page at /console/anomalies.
  *
- * Backed by /superadmin/anomalies-rollup, which aggregates every
+ * Backed by /console/anomalies-rollup, which aggregates every
  * tenant's anomalies in one backend call (one async session, N
  * database queries, zero HTTP fan-out). Replaces the prior pattern
  * of N parallel useAnomalies() requests from the browser, which
@@ -9,7 +9,7 @@
  */
 
 import { useMemo, useState } from 'react';
-import { useAnomaliesRollup, type CrossTenantAnomaly } from '@/api/superadminAnalytics';
+import { useAnomaliesRollup, type CrossTenantAnomaly } from '@/api/consoleAnalytics';
 import { Card } from '@/components/primitives/Card';
 import { DataTable, type DataTableColumn } from '@/components/primitives/DataTable';
 import { StatusPill } from '@/components/primitives/StatusPill';

@@ -78,7 +78,7 @@ const Settings = lazyWithRetry(() => import('./views/Settings'));
 const Tenants = lazyWithRetry(() => import('./views/Tenants'));
 const MLTraining = lazyWithRetry(() => import('./views/MLTraining'));
 const CAPISetup = lazyWithRetry(() => import('./views/CAPISetup'));
-const SuperadminDashboard = lazyWithRetry(() => import('./views/SuperadminDashboard'));
+const ConsoleDashboard = lazyWithRetry(() => import('./views/console/ConsoleDashboard'));
 const ConsoleLayout = lazyWithRetry(() => import('./views/ConsoleLayout'));
 const ConsoleFeatureFlags = lazyWithRetry(() => import('./views/console/FeatureFlags'));
 const ConsolePlatformAnalytics = lazyWithRetry(() => import('./views/console/PlatformAnalytics'));
@@ -130,16 +130,17 @@ const KGRevenueAttribution = lazyWithRetry(
   () => import('./views/knowledge-graph/KGRevenueAttribution')
 );
 
-// Super Admin views
-const ControlTower = lazyWithRetry(() => import('./views/superadmin/ControlTower'));
-const SuperAdminTenantsList = lazyWithRetry(() => import('./views/superadmin/TenantsList'));
-const SuperAdminTenantProfile = lazyWithRetry(() => import('./views/superadmin/TenantProfile'));
-const SuperAdminBenchmarks = lazyWithRetry(() => import('./views/superadmin/Benchmarks'));
-const SuperAdminAudit = lazyWithRetry(() => import('./views/superadmin/Audit'));
-const SuperAdminSystem = lazyWithRetry(() => import('./views/superadmin/System'));
-// SuperAdminCMS removed — CMS is now a separate portal at /cms
-const SuperAdminUsers = lazyWithRetry(() => import('./views/superadmin/Users'));
-const SuperAdminLaunchReadiness = lazyWithRetry(() => import('./views/superadmin/LaunchReadiness'));
+// Platform Owner Console views
+const ControlTower = lazyWithRetry(() => import('./views/console/ControlTower'));
+// TenantsList/TenantProfile remain under views/superadmin/ pending Task D3 removal
+const ConsoleTenantsList = lazyWithRetry(() => import('./views/superadmin/TenantsList'));
+const ConsoleTenantProfile = lazyWithRetry(() => import('./views/superadmin/TenantProfile'));
+const ConsoleBenchmarks = lazyWithRetry(() => import('./views/console/Benchmarks'));
+const ConsoleAudit = lazyWithRetry(() => import('./views/console/Audit'));
+const ConsoleSystem = lazyWithRetry(() => import('./views/console/System'));
+// Console CMS removed — CMS is now a separate portal at /cms
+const ConsoleUsers = lazyWithRetry(() => import('./views/console/Users'));
+const ConsoleLaunchReadiness = lazyWithRetry(() => import('./views/console/LaunchReadiness'));
 
 // CMS (Content Management System) - Separate Portal
 const CMSLogin = lazyWithRetry(() => import('./views/CMSLogin'));
@@ -1452,8 +1453,8 @@ function App() {
                           }
                         />
 
-                        {/* Superadmin routes moved to /console/* shell.
-                            Sibling-level redirects from /dashboard/superadmin/*
+                        {/* Owner routes moved to /console/* shell.
+                            Sibling-level redirects from /dashboard/owner/*
                             preserve old links. See route block below the
                             dashboard route closer. */}
 
@@ -1806,14 +1807,15 @@ function App() {
                       {/* ═══════════════════════════════════════════════
                            Platform Console — owner-only shell at /console/*
                            Distinct from operator dashboard. Reuses
-                           existing superadmin/* views as their canonical
-                           home. Old /dashboard/superadmin/* paths still
-                           work (kept for back-compat).
+                           existing views/console/* (and, pending Task D3,
+                           views/superadmin/TenantsList + TenantProfile) as
+                           their canonical home. Old /dashboard/owner/*
+                           paths still work (kept for back-compat).
                          ═══════════════════════════════════════════════ */}
                       <Route
                         path="/console"
                         element={
-                          <ProtectedRoute requiredRole="superadmin">
+                          <ProtectedRoute requiredRole="owner">
                             <ErrorBoundary message="Something went wrong in the platform console. Please try refreshing.">
                               <LazyRoute>
                                 <ConsoleLayout />
@@ -1826,7 +1828,7 @@ function App() {
                           index
                           element={
                             <LazyRoute>
-                              <SuperadminDashboard />
+                              <ConsoleDashboard />
                             </LazyRoute>
                           }
                         />
@@ -1834,7 +1836,7 @@ function App() {
                           path="tenants"
                           element={
                             <LazyRoute>
-                              <SuperAdminTenantsList />
+                              <ConsoleTenantsList />
                             </LazyRoute>
                           }
                         />
@@ -1842,7 +1844,7 @@ function App() {
                           path="tenants/:tenantId"
                           element={
                             <LazyRoute>
-                              <SuperAdminTenantProfile />
+                              <ConsoleTenantProfile />
                             </LazyRoute>
                           }
                         />
@@ -1850,7 +1852,7 @@ function App() {
                           path="users"
                           element={
                             <LazyRoute>
-                              <SuperAdminUsers />
+                              <ConsoleUsers />
                             </LazyRoute>
                           }
                         />
@@ -1898,7 +1900,7 @@ function App() {
                           path="system"
                           element={
                             <LazyRoute>
-                              <SuperAdminSystem />
+                              <ConsoleSystem />
                             </LazyRoute>
                           }
                         />
@@ -1906,7 +1908,7 @@ function App() {
                           path="launch-readiness"
                           element={
                             <LazyRoute>
-                              <SuperAdminLaunchReadiness />
+                              <ConsoleLaunchReadiness />
                             </LazyRoute>
                           }
                         />
@@ -1922,7 +1924,7 @@ function App() {
                           path="benchmarks"
                           element={
                             <LazyRoute>
-                              <SuperAdminBenchmarks />
+                              <ConsoleBenchmarks />
                             </LazyRoute>
                           }
                         />
@@ -1930,7 +1932,7 @@ function App() {
                           path="audit"
                           element={
                             <LazyRoute>
-                              <SuperAdminAudit />
+                              <ConsoleAudit />
                             </LazyRoute>
                           }
                         />
@@ -1998,35 +2000,35 @@ function App() {
                         element={<Navigate to="/dashboard/overview" replace />}
                       />
                       <Route
-                        path="/dashboard/superadmin"
+                        path="/dashboard/owner"
                         element={<Navigate to="/console" replace />}
                       />
                       <Route
-                        path="/dashboard/superadmin/tenants"
+                        path="/dashboard/owner/tenants"
                         element={<Navigate to="/console/tenants" replace />}
                       />
                       <Route
-                        path="/dashboard/superadmin/users"
+                        path="/dashboard/owner/users"
                         element={<Navigate to="/console/users" replace />}
                       />
                       <Route
-                        path="/dashboard/superadmin/launch-readiness"
+                        path="/dashboard/owner/launch-readiness"
                         element={<Navigate to="/console/launch-readiness" replace />}
                       />
                       <Route
-                        path="/dashboard/superadmin/control-tower"
+                        path="/dashboard/owner/control-tower"
                         element={<Navigate to="/console/control-tower" replace />}
                       />
                       <Route
-                        path="/dashboard/superadmin/benchmarks"
+                        path="/dashboard/owner/benchmarks"
                         element={<Navigate to="/console/benchmarks" replace />}
                       />
                       <Route
-                        path="/dashboard/superadmin/audit"
+                        path="/dashboard/owner/audit"
                         element={<Navigate to="/console/audit" replace />}
                       />
                       <Route
-                        path="/dashboard/superadmin/system"
+                        path="/dashboard/owner/system"
                         element={<Navigate to="/console/system" replace />}
                       />
 

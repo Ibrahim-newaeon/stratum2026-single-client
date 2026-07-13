@@ -1,5 +1,5 @@
 /**
- * System Health (Super Admin View)
+ * System Health (Owner Console View)
  *
  * Pipeline health, API status, queue monitoring, and system metrics
  */

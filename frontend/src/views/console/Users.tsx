@@ -1,5 +1,5 @@
 /**
- * Superadmin Users Management
+ * Owner Console Users Management
  * Manage all users across tenants with role assignment
  */
 
@@ -44,7 +44,7 @@ interface User {
 }
 
 const roleColors: Record<string, string> = {
-  superadmin: 'bg-purple-600 text-purple-100',
+  owner: 'bg-purple-600 text-purple-100',
   admin: 'bg-blue-600 text-blue-100',
   manager: 'bg-green-600 text-green-100',
   analyst: 'bg-yellow-600 text-yellow-100',
@@ -52,14 +52,14 @@ const roleColors: Record<string, string> = {
 };
 
 const roleLabels: Record<string, string> = {
-  superadmin: 'Super Admin',
+  owner: 'Owner',
   admin: 'Admin',
   manager: 'Manager',
   analyst: 'Analyst',
   viewer: 'Viewer',
 };
 
-export default function SuperAdminUsers() {
+export default function ConsoleUsers() {
   const queryClient = useQueryClient();
   const [search, setSearch] = useState('');
   const [roleFilter, setRoleFilter] = useState<string>('');
@@ -76,7 +76,7 @@ export default function SuperAdminUsers() {
 
   // Fetch users
   const { data: usersData, isLoading } = useQuery({
-    queryKey: ['superadmin-users'],
+    queryKey: ['console-users'],
     queryFn: async () => {
       const response = await fetch(`${API_BASE}/users`, {
         headers: getAuthHeaders(),
@@ -98,7 +98,7 @@ export default function SuperAdminUsers() {
       return response.json();
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['superadmin-users'] });
+      queryClient.invalidateQueries({ queryKey: ['console-users'] });
       setShowInviteModal(false);
       setInviteEmail('');
       setInviteRole('analyst');
@@ -124,7 +124,7 @@ export default function SuperAdminUsers() {
       return response.json();
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['superadmin-users'] });
+      queryClient.invalidateQueries({ queryKey: ['console-users'] });
       setShowEditModal(false);
       setSelectedUser(null);
     },
@@ -141,7 +141,7 @@ export default function SuperAdminUsers() {
       return response.json();
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['superadmin-users'] });
+      queryClient.invalidateQueries({ queryKey: ['console-users'] });
     },
   });
 
@@ -228,7 +228,7 @@ export default function SuperAdminUsers() {
           className="px-4 py-2 bg-neutral-800 border border-neutral-700 rounded-lg text-white focus:outline-none focus:border-purple-500"
         >
           <option value="">All Roles</option>
-          <option value="superadmin">Super Admin</option>
+          <option value="owner">Owner</option>
           <option value="admin">Admin</option>
           <option value="manager">Manager</option>
           <option value="analyst">Analyst</option>
@@ -250,7 +250,7 @@ export default function SuperAdminUsers() {
         </div>
         <div className="bg-neutral-900 border border-neutral-800 rounded-xl p-4">
           <div className="text-2xl font-bold text-purple-400">
-            {users.filter((u) => u.role === 'superadmin' || u.role === 'admin').length}
+            {users.filter((u) => u.role === 'owner' || u.role === 'admin').length}
           </div>
           <div className="text-sm text-neutral-400">Admins</div>
         </div>
@@ -321,7 +321,7 @@ export default function SuperAdminUsers() {
                         roleColors[user.role] || 'bg-neutral-600'
                       )}
                     >
-                      {user.role === 'superadmin' && (
+                      {user.role === 'owner' && (
                         <ShieldCheckIcon className="w-3 h-3 inline mr-1" />
                       )}
                       {roleLabels[user.role] || user.role}
@@ -418,7 +418,7 @@ export default function SuperAdminUsers() {
                   <option value="analyst">Analyst</option>
                   <option value="manager">Manager</option>
                   <option value="admin">Admin</option>
-                  <option value="superadmin">Super Admin</option>
+                  <option value="owner">Owner</option>
                 </select>
               </div>
             </div>
@@ -463,7 +463,7 @@ export default function SuperAdminUsers() {
                   <option value="analyst">Analyst</option>
                   <option value="manager">Manager</option>
                   <option value="admin">Admin</option>
-                  <option value="superadmin">Super Admin</option>
+                  <option value="owner">Owner</option>
                 </select>
               </div>
               <div className="flex items-center gap-3">

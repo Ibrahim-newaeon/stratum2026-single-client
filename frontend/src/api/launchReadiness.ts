@@ -1,7 +1,7 @@
 /**
  * Stratum AI - Launch Readiness API
  *
- * Superadmin-only. Drives the sequential go-live wizard: phase N+1 is
+ * Owner-only. Drives the sequential go-live wizard: phase N+1 is
  * locked until phase N is 100% complete. Each check/uncheck appends to
  * an immutable audit trail.
  */
@@ -73,7 +73,7 @@ export interface ToggleItemRequest {
 export const launchReadinessApi = {
   getState: async (): Promise<LaunchReadinessState> => {
     const response = await apiClient.get<ApiResponse<LaunchReadinessState>>(
-      '/superadmin/launch-readiness'
+      '/console/launch-readiness'
     )
     return response.data.data
   },
@@ -84,7 +84,7 @@ export const launchReadinessApi = {
     note,
   }: ToggleItemRequest): Promise<LaunchReadinessState> => {
     const response = await apiClient.patch<ApiResponse<LaunchReadinessState>>(
-      `/superadmin/launch-readiness/items/${encodeURIComponent(itemKey)}`,
+      `/console/launch-readiness/items/${encodeURIComponent(itemKey)}`,
       { checked, note: note ?? null }
     )
     return response.data.data
@@ -94,7 +94,7 @@ export const launchReadinessApi = {
     LaunchReadinessEvent[]
   > => {
     const response = await apiClient.get<ApiResponse<LaunchReadinessEvent[]>>(
-      '/superadmin/launch-readiness/events',
+      '/console/launch-readiness/events',
       {
         params: {
           phase_number: params.phaseNumber,

@@ -27,7 +27,7 @@ export interface FeatureFlags {
   autopilot_level: number // 0=suggest, 1=guarded auto, 2=approval required
 
   // Platform
-  superadmin_profitability: boolean
+  owner_profitability: boolean
   show_price_metrics: boolean
 
   // Limits
@@ -77,7 +77,7 @@ export const defaultFeatures: FeatureFlags = {
   creative_fatigue: false,
   campaign_builder: false,
   autopilot_level: 0,
-  superadmin_profitability: false,
+  owner_profitability: false,
   max_campaigns: 20,
   max_users: 5,
   data_retention_days: 90,

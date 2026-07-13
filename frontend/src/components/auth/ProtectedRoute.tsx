@@ -3,7 +3,7 @@
  * Wraps routes that require authentication.
  *
  * Role hierarchy (mirrors backend ROLE_HIERARCHY):
- *   SUPERADMIN: 100  — Platform-wide admin, cross-tenant
+ *   OWNER:      100  — Platform-wide admin, cross-tenant
  *   ADMIN:       80  — Full tenant access, user management
  *   MANAGER:     50  — Assigned-client scope, campaign management
  *   ANALYST:     30  — Assigned-client scope, campaign execution
@@ -15,11 +15,11 @@ import { useAuth } from '@/contexts/AuthContext';
 import LoadingSpinner from '@/components/common/LoadingSpinner';
 
 /** All five backend roles */
-export type AppRole = 'superadmin' | 'admin' | 'manager' | 'analyst' | 'viewer';
+export type AppRole = 'owner' | 'admin' | 'manager' | 'analyst' | 'viewer';
 
 /** Numeric hierarchy matching backend ROLE_HIERARCHY exactly */
 const ROLE_HIERARCHY: Record<AppRole, number> = {
-  superadmin: 100,
+  owner: 100,
   admin: 80,
   manager: 50,
   analyst: 30,

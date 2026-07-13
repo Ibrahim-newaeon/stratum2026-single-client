@@ -2,7 +2,7 @@
  * Stratum AI - Tenant Store Tests
  *
  * Comprehensive Vitest test suite for the Zustand tenant store
- * covering state management, role checks, superadmin controls,
+ * covering state management, role checks, owner controls,
  * persistence, and logout behavior.
  */
 
@@ -56,8 +56,8 @@ const createMockUser = (overrides: Partial<User> = {}): User => ({
   ...overrides,
 });
 
-const createSuperAdminUser = (overrides: Partial<User> = {}): User =>
-  createMockUser({ id: 99, email: 'admin@stratum.ai', full_name: 'Super Admin', role: 'superadmin', ...overrides });
+const createOwnerUser = (overrides: Partial<User> = {}): User =>
+  createMockUser({ id: 99, email: 'admin@stratum.ai', full_name: 'Owner', role: 'owner', ...overrides });
 
 const createAdminUser = (overrides: Partial<User> = {}): User =>
   createMockUser({ id: 2, email: 'admin@stratum.ai', full_name: 'Admin User', role: 'admin', ...overrides });
@@ -121,8 +121,8 @@ describe('tenantStore', () => {
       expect(state.tenantId).toBeNull();
       expect(state.tenant).toBeNull();
       expect(state.user).toBeNull();
-      expect(state.isSuperAdminMode).toBe(false);
-      expect(state.superAdminBypass).toBe(false);
+      expect(state.isOwnerMode).toBe(false);
+      expect(state.ownerBypass).toBe(false);
       expect(state.selectedPlatforms).toEqual([]);
       expect(state.dateRange).toHaveProperty('start');
       expect(state.dateRange).toHaveProperty('end');
@@ -211,29 +211,29 @@ describe('tenantStore', () => {
       expect(state.user).toEqual(user);
     });
 
-    it('should auto-enable superadmin mode when user role is superadmin', () => {
-      const superadmin = createSuperAdminUser();
-      useTenantStore.getState().setUser(superadmin);
+    it('should auto-enable owner mode when user role is owner', () => {
+      const owner = createOwnerUser();
+      useTenantStore.getState().setUser(owner);
 
       const state = useTenantStore.getState();
-      expect(state.user?.role).toBe('superadmin');
-      expect(state.isSuperAdminMode).toBe(true);
+      expect(state.user?.role).toBe('owner');
+      expect(state.isOwnerMode).toBe(true);
     });
 
-    it('should not enable superadmin mode when user role is admin', () => {
+    it('should not enable owner mode when user role is admin', () => {
       const admin = createAdminUser();
       useTenantStore.getState().setUser(admin);
 
       const state = useTenantStore.getState();
       expect(state.user?.role).toBe('admin');
-      expect(state.isSuperAdminMode).toBe(false);
+      expect(state.isOwnerMode).toBe(false);
     });
 
-    it('should not enable superadmin mode when user role is analyst', () => {
+    it('should not enable owner mode when user role is analyst', () => {
       const user = createMockUser({ role: 'analyst' });
       useTenantStore.getState().setUser(user);
 
-      expect(useTenantStore.getState().isSuperAdminMode).toBe(false);
+      expect(useTenantStore.getState().isOwnerMode).toBe(false);
     });
 
     it('should clear user when setUser is called with null', () => {
@@ -250,20 +250,20 @@ describe('tenantStore', () => {
   // ===========================================================================
 
   describe('Role Checks', () => {
-    it('isSuperAdmin should return true for superadmin role', () => {
-      useTenantStore.getState().setUser(createSuperAdminUser());
+    it('isOwner should return true for owner role', () => {
+      useTenantStore.getState().setUser(createOwnerUser());
 
-      expect(useTenantStore.getState().isSuperAdmin()).toBe(true);
+      expect(useTenantStore.getState().isOwner()).toBe(true);
     });
 
-    it('isSuperAdmin should return false for admin role', () => {
+    it('isOwner should return false for admin role', () => {
       useTenantStore.getState().setUser(createAdminUser());
 
-      expect(useTenantStore.getState().isSuperAdmin()).toBe(false);
+      expect(useTenantStore.getState().isOwner()).toBe(false);
     });
 
-    it('isSuperAdmin should return false when user is null', () => {
-      expect(useTenantStore.getState().isSuperAdmin()).toBe(false);
+    it('isOwner should return false when user is null', () => {
+      expect(useTenantStore.getState().isOwner()).toBe(false);
     });
 
     it('isAdmin should return true for admin role', () => {
@@ -272,8 +272,8 @@ describe('tenantStore', () => {
       expect(useTenantStore.getState().isAdmin()).toBe(true);
     });
 
-    it('isAdmin should return true for superadmin role', () => {
-      useTenantStore.getState().setUser(createSuperAdminUser());
+    it('isAdmin should return true for owner role', () => {
+      useTenantStore.getState().setUser(createOwnerUser());
 
       expect(useTenantStore.getState().isAdmin()).toBe(true);
     });
@@ -293,23 +293,23 @@ describe('tenantStore', () => {
     it('hasRole should return false when user role is not in the given array', () => {
       useTenantStore.getState().setUser(createMockUser({ role: 'viewer' }));
 
-      expect(useTenantStore.getState().hasRole(['admin', 'superadmin'])).toBe(false);
+      expect(useTenantStore.getState().hasRole(['admin', 'owner'])).toBe(false);
     });
 
     it('hasRole should return false when user is null', () => {
-      expect(useTenantStore.getState().hasRole(['admin', 'superadmin'])).toBe(false);
+      expect(useTenantStore.getState().hasRole(['admin', 'owner'])).toBe(false);
     });
 
     it('hasRole should work for each UserRole type', () => {
-      const roles: UserRole[] = ['superadmin', 'admin', 'manager', 'analyst', 'viewer'];
+      const roles: UserRole[] = ['owner', 'admin', 'manager', 'analyst', 'viewer'];
 
       for (const role of roles) {
         useTenantStore.getState().setUser(createMockUser({ role }));
         expect(useTenantStore.getState().hasRole([role])).toBe(true);
         expect(useTenantStore.getState().hasRole(roles.filter((r) => r !== role))).toBe(false);
 
-        // Reset superAdminMode for next iteration
-        useTenantStore.setState({ isSuperAdminMode: false });
+        // Reset ownerMode for next iteration
+        useTenantStore.setState({ isOwnerMode: false });
       }
     });
   });
@@ -351,53 +351,53 @@ describe('tenantStore', () => {
   });
 
   // ===========================================================================
-  // 6. SuperAdmin Controls
+  // 6. Owner Controls
   // ===========================================================================
 
-  describe('SuperAdmin Controls', () => {
-    it('setSuperAdminMode should enable mode for superadmin users', () => {
-      useTenantStore.getState().setUser(createSuperAdminUser());
-      // setUser auto-enables it, so disable first to test setSuperAdminMode
-      useTenantStore.getState().setSuperAdminMode(false);
-      expect(useTenantStore.getState().isSuperAdminMode).toBe(false);
+  describe('Owner Controls', () => {
+    it('setOwnerMode should enable mode for owner users', () => {
+      useTenantStore.getState().setUser(createOwnerUser());
+      // setUser auto-enables it, so disable first to test setOwnerMode
+      useTenantStore.getState().setOwnerMode(false);
+      expect(useTenantStore.getState().isOwnerMode).toBe(false);
 
-      useTenantStore.getState().setSuperAdminMode(true);
-      expect(useTenantStore.getState().isSuperAdminMode).toBe(true);
+      useTenantStore.getState().setOwnerMode(true);
+      expect(useTenantStore.getState().isOwnerMode).toBe(true);
     });
 
-    it('setSuperAdminMode should not enable mode for non-superadmin users', () => {
+    it('setOwnerMode should not enable mode for non-owner users', () => {
       useTenantStore.getState().setUser(createAdminUser());
-      expect(useTenantStore.getState().isSuperAdminMode).toBe(false);
+      expect(useTenantStore.getState().isOwnerMode).toBe(false);
 
-      useTenantStore.getState().setSuperAdminMode(true);
-      expect(useTenantStore.getState().isSuperAdminMode).toBe(false);
+      useTenantStore.getState().setOwnerMode(true);
+      expect(useTenantStore.getState().isOwnerMode).toBe(false);
     });
 
-    it('setSuperAdminMode should not work when user is null', () => {
-      useTenantStore.getState().setSuperAdminMode(true);
-      expect(useTenantStore.getState().isSuperAdminMode).toBe(false);
+    it('setOwnerMode should not work when user is null', () => {
+      useTenantStore.getState().setOwnerMode(true);
+      expect(useTenantStore.getState().isOwnerMode).toBe(false);
     });
 
-    it('setSuperAdminBypass should enable bypass for superadmin users', () => {
-      useTenantStore.getState().setUser(createSuperAdminUser());
+    it('setOwnerBypass should enable bypass for owner users', () => {
+      useTenantStore.getState().setUser(createOwnerUser());
 
-      useTenantStore.getState().setSuperAdminBypass(true);
-      expect(useTenantStore.getState().superAdminBypass).toBe(true);
+      useTenantStore.getState().setOwnerBypass(true);
+      expect(useTenantStore.getState().ownerBypass).toBe(true);
 
-      useTenantStore.getState().setSuperAdminBypass(false);
-      expect(useTenantStore.getState().superAdminBypass).toBe(false);
+      useTenantStore.getState().setOwnerBypass(false);
+      expect(useTenantStore.getState().ownerBypass).toBe(false);
     });
 
-    it('setSuperAdminBypass should not enable bypass for non-superadmin users', () => {
+    it('setOwnerBypass should not enable bypass for non-owner users', () => {
       useTenantStore.getState().setUser(createMockUser({ role: 'manager' }));
 
-      useTenantStore.getState().setSuperAdminBypass(true);
-      expect(useTenantStore.getState().superAdminBypass).toBe(false);
+      useTenantStore.getState().setOwnerBypass(true);
+      expect(useTenantStore.getState().ownerBypass).toBe(false);
     });
 
-    it('setSuperAdminBypass should not work when user is null', () => {
-      useTenantStore.getState().setSuperAdminBypass(true);
-      expect(useTenantStore.getState().superAdminBypass).toBe(false);
+    it('setOwnerBypass should not work when user is null', () => {
+      useTenantStore.getState().setOwnerBypass(true);
+      expect(useTenantStore.getState().ownerBypass).toBe(false);
     });
   });
 
@@ -409,14 +409,14 @@ describe('tenantStore', () => {
     it('should clear all state on logout', () => {
       // Set up a fully populated store
       useTenantStore.getState().setTenant(createMockTenant());
-      useTenantStore.getState().setUser(createSuperAdminUser());
+      useTenantStore.getState().setUser(createOwnerUser());
       useTenantStore.getState().setSelectedPlatforms(['meta', 'google']);
 
       // Verify state is populated before logout
       expect(useTenantStore.getState().tenant).not.toBeNull();
       expect(useTenantStore.getState().user).not.toBeNull();
       expect(useTenantStore.getState().tenantId).not.toBeNull();
-      expect(useTenantStore.getState().isSuperAdminMode).toBe(true);
+      expect(useTenantStore.getState().isOwnerMode).toBe(true);
       expect(useTenantStore.getState().selectedPlatforms.length).toBeGreaterThan(0);
 
       // Logout
@@ -426,8 +426,8 @@ describe('tenantStore', () => {
       expect(state.tenantId).toBeNull();
       expect(state.tenant).toBeNull();
       expect(state.user).toBeNull();
-      expect(state.isSuperAdminMode).toBe(false);
-      expect(state.superAdminBypass).toBe(false);
+      expect(state.isOwnerMode).toBe(false);
+      expect(state.ownerBypass).toBe(false);
       expect(state.selectedPlatforms).toEqual([]);
     });
 
@@ -507,13 +507,13 @@ describe('tenantStore', () => {
       expect(useTenantStore.getState().tenantId).toBe(1);
     });
 
-    it('should handle switching users from superadmin to regular user', () => {
-      // Login as superadmin
-      useTenantStore.getState().setUser(createSuperAdminUser());
-      expect(useTenantStore.getState().isSuperAdminMode).toBe(true);
+    it('should handle switching users from owner to regular user', () => {
+      // Login as owner
+      useTenantStore.getState().setUser(createOwnerUser());
+      expect(useTenantStore.getState().isOwnerMode).toBe(true);
 
-      // Switch to regular user - note: setUser does not auto-disable superAdminMode
-      // It only auto-enables for superadmin. The mode stays until explicitly changed or logout.
+      // Switch to regular user - note: setUser does not auto-disable ownerMode
+      // It only auto-enables for owner. The mode stays until explicitly changed or logout.
       useTenantStore.getState().setUser(createMockUser({ role: 'analyst' }));
       expect(useTenantStore.getState().user?.role).toBe('analyst');
     });

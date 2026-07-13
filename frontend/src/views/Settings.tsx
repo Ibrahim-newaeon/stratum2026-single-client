@@ -240,7 +240,7 @@ function ProfileSettings() {
   // Format role for display
   const formatRole = (role: string) => {
     const roleLabels: Record<string, string> = {
-      superadmin: 'Super Admin',
+      owner: 'Owner',
       admin: 'Admin',
       manager: 'Manager',
       media_buyer: 'Media Buyer',

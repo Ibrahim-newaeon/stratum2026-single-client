@@ -14,7 +14,7 @@ import {
   BudgetAtRiskChip,
   type AutopilotMode,
 } from '@/components/shared'
-import { useSuperAdminTenants } from '@/api/hooks'
+import { useConsoleTenants } from '@/api/hooks'
 import {
   MagnifyingGlassIcon,
   FunnelIcon,
@@ -53,7 +53,7 @@ export default function TenantsList() {
   const [sortDirection, setSortDirection] = useState<SortDirection>('asc')
 
   // Fetch tenants from superadmin API
-  const { data: tenantsData, isLoading: _isLoading } = useSuperAdminTenants()
+  const { data: tenantsData, isLoading: _isLoading } = useConsoleTenants()
 
   // Helper to determine EMQ status from score
   const getEmqStatus = (score: number | null): EmqStatus => {

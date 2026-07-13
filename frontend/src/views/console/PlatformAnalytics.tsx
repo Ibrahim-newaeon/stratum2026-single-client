@@ -20,7 +20,7 @@ import {
   useTenantProfitability,
   formatPlatformName,
   type TenantProfitability,
-} from '@/api/superadminAnalytics';
+} from '@/api/consoleAnalytics';
 import { Card } from '@/components/primitives/Card';
 import { KPI } from '@/components/primitives/KPI';
 import { LineChart, AreaChart } from '@/components/primitives/Chart';

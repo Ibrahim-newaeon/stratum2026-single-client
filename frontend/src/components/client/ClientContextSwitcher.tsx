@@ -5,7 +5,7 @@
  * their assigned clients. Placed in the dashboard header.
  *
  * Behavior:
- * - SUPERADMIN/ADMIN: Hidden (they have unrestricted access)
+ * - OWNER/ADMIN: Hidden (they have unrestricted access)
  * - MANAGER/ANALYST: Shows dropdown of assigned clients
  * - VIEWER: Hidden (only has access to one client via User.client_id)
  *

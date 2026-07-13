@@ -40,7 +40,7 @@ const createEnabledFeatures = (): FeatureFlags => ({
   creative_fatigue: true,
   campaign_builder: true,
   autopilot_level: 2,
-  superadmin_profitability: true,
+  owner_profitability: true,
   show_price_metrics: true,
   max_campaigns: 100,
   max_users: 50,
@@ -124,7 +124,7 @@ describe('featureFlagsStore', () => {
       expect(defaultFeatures.anomaly_alerts).toBe(false);
       expect(defaultFeatures.creative_fatigue).toBe(false);
       expect(defaultFeatures.campaign_builder).toBe(false);
-      expect(defaultFeatures.superadmin_profitability).toBe(false);
+      expect(defaultFeatures.owner_profitability).toBe(false);
     });
 
     it('has autopilot_level set to 0 (suggest only)', () => {

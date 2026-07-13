@@ -216,8 +216,8 @@ function RBACPanel() {
 
   const builtInRoles = [
     {
-      id: 'super_admin',
-      name: 'Super Admin',
+      id: 'owner',
+      name: 'Owner',
       description: 'Full platform access — all tenants, all features',
       is_custom: false,
       permissions: [{ resource_type: '*', action: '*' }],

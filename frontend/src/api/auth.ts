@@ -13,7 +13,7 @@ export interface User {
   id: number;
   email: string;
   name: string;
-  role: 'superadmin' | 'admin' | 'manager' | 'analyst' | 'viewer';
+  role: 'owner' | 'admin' | 'manager' | 'analyst' | 'viewer';
   tenant_id: number | null;
   is_active: boolean;
   is_verified: boolean;

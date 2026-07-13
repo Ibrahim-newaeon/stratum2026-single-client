@@ -115,7 +115,7 @@ export default function TenantSwitcher() {
           // Update auth context user with new role/tenant
           updateUser({
             tenant_id: data.tenant_id,
-            role: data.role as 'superadmin' | 'admin' | 'manager' | 'analyst' | 'viewer',
+            role: data.role as 'owner' | 'admin' | 'manager' | 'analyst' | 'viewer',
           });
 
           setIsOpen(false);
@@ -139,7 +139,7 @@ export default function TenantSwitcher() {
   const activeName = activeTenant?.tenant_name || 'Select Workspace';
 
   const roleColors: Record<string, string> = {
-    superadmin: 'text-purple-400 bg-purple-500/10',
+    owner: 'text-purple-400 bg-purple-500/10',
     admin: 'text-blue-400 bg-blue-500/10',
     manager: 'text-teal-400 bg-teal-500/10',
     analyst: 'text-amber-400 bg-amber-500/10',

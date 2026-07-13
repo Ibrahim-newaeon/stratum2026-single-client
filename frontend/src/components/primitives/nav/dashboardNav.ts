@@ -76,7 +76,7 @@ const SIDEBAR_VISIBILITY: Record<AppRole, ReadonlySet<string>> = {
   // Owner sees the operator dashboard the same as admin (so they can
   // QA what their customers see). Owner-only platform tooling lives at
   // /console/* — not surfaced here.
-  superadmin: new Set([
+  owner: new Set([
     'dashboard',
     'campaigns',
     'autopilot',

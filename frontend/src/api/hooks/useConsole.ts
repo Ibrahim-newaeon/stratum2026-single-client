@@ -1,7 +1,7 @@
 /**
- * Stratum AI - Super Admin Dashboard Hooks
+ * Stratum AI - Owner Console Dashboard Hooks
  *
- * React Query hooks for super admin platform-level data.
+ * React Query hooks for platform-owner console-level data.
  */
 
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
@@ -11,7 +11,7 @@ import { apiClient, ApiResponse } from '../client'
 // Types
 // =============================================================================
 
-export interface SuperAdminOverview {
+export interface ConsoleOverview {
   mrr: number
   arr: number
   nrr: number
@@ -122,31 +122,31 @@ export interface Subscription {
 // Query Keys
 // =============================================================================
 
-export const superAdminQueryKeys = {
-  all: ['superadmin'] as const,
-  overview: (date?: string) => [...superAdminQueryKeys.all, 'overview', date] as const,
+export const consoleQueryKeys = {
+  all: ['console'] as const,
+  overview: (date?: string) => [...consoleQueryKeys.all, 'overview', date] as const,
   tenants: (filters?: Record<string, unknown>) =>
-    [...superAdminQueryKeys.all, 'tenants', filters] as const,
-  tenant: (tenantId: number) => [...superAdminQueryKeys.all, 'tenant', tenantId] as const,
+    [...consoleQueryKeys.all, 'tenants', filters] as const,
+  tenant: (tenantId: number) => [...consoleQueryKeys.all, 'tenant', tenantId] as const,
   systemHealth: (date?: string) =>
-    [...superAdminQueryKeys.all, 'systemHealth', date] as const,
-  plans: () => [...superAdminQueryKeys.all, 'plans'] as const,
+    [...consoleQueryKeys.all, 'systemHealth', date] as const,
+  plans: () => [...consoleQueryKeys.all, 'plans'] as const,
   auditLogs: (filters?: Record<string, unknown>) =>
-    [...superAdminQueryKeys.all, 'auditLogs', filters] as const,
+    [...consoleQueryKeys.all, 'auditLogs', filters] as const,
   invoices: (filters?: Record<string, unknown>) =>
-    [...superAdminQueryKeys.all, 'invoices', filters] as const,
+    [...consoleQueryKeys.all, 'invoices', filters] as const,
   subscriptions: (filters?: Record<string, unknown>) =>
-    [...superAdminQueryKeys.all, 'subscriptions', filters] as const,
+    [...consoleQueryKeys.all, 'subscriptions', filters] as const,
 }
 
 // =============================================================================
 // API Functions
 // =============================================================================
 
-const fetchSuperAdminOverview = async (date?: string): Promise<SuperAdminOverview> => {
+const fetchConsoleOverview = async (date?: string): Promise<ConsoleOverview> => {
   const params = date ? `?date=${date}` : ''
-  const response = await apiClient.get<ApiResponse<SuperAdminOverview>>(
-    `/superadmin/overview${params}`
+  const response = await apiClient.get<ApiResponse<ConsoleOverview>>(
+    `/console/overview${params}`
   )
   return response.data.data
 }
@@ -166,26 +166,26 @@ const fetchTenants = async (filters?: {
   if (filters?.limit) params.append('limit', String(filters.limit))
 
   const response = await apiClient.get<ApiResponse<TenantSummary[]>>(
-    `/superadmin/tenants?${params.toString()}`
+    `/console/tenants?${params.toString()}`
   )
   return response.data.data
 }
 
 const fetchTenantDetails = async (tenantId: number): Promise<TenantSummary & Record<string, unknown>> => {
-  const response = await apiClient.get<ApiResponse<TenantSummary & Record<string, unknown>>>(`/superadmin/tenants/${tenantId}`)
+  const response = await apiClient.get<ApiResponse<TenantSummary & Record<string, unknown>>>(`/console/tenants/${tenantId}`)
   return response.data.data
 }
 
 const fetchSystemHealth = async (date?: string): Promise<SystemHealth> => {
   const params = date ? `?date=${date}` : ''
   const response = await apiClient.get<ApiResponse<SystemHealth>>(
-    `/superadmin/system-health${params}`
+    `/console/system-health${params}`
   )
   return response.data.data
 }
 
 const fetchBillingPlans = async (): Promise<BillingPlan[]> => {
-  const response = await apiClient.get<ApiResponse<BillingPlan[]>>('/superadmin/billing/plans')
+  const response = await apiClient.get<ApiResponse<BillingPlan[]>>('/console/billing/plans')
   return response.data.data
 }
 
@@ -194,7 +194,7 @@ const updateBillingPlan = async (
   data: Partial<BillingPlan>
 ): Promise<BillingPlan> => {
   const response = await apiClient.patch<ApiResponse<BillingPlan>>(
-    `/superadmin/billing/plans/${planId}`,
+    `/console/billing/plans/${planId}`,
     data
   )
   return response.data.data
@@ -219,7 +219,7 @@ const fetchAuditLogs = async (filters?: {
   if (filters?.limit) params.append('limit', String(filters.limit))
 
   const response = await apiClient.get<ApiResponse<AuditLogEntry[]>>(
-    `/superadmin/audit?${params.toString()}`
+    `/console/audit?${params.toString()}`
   )
   return response.data.data
 }
@@ -237,7 +237,7 @@ const fetchInvoices = async (filters?: {
   if (filters?.limit) params.append('limit', String(filters.limit))
 
   const response = await apiClient.get<ApiResponse<Invoice[]>>(
-    `/superadmin/billing/invoices?${params.toString()}`
+    `/console/billing/invoices?${params.toString()}`
   )
   return response.data.data
 }
@@ -255,7 +255,7 @@ const fetchSubscriptions = async (filters?: {
   if (filters?.limit) params.append('limit', String(filters.limit))
 
   const response = await apiClient.get<ApiResponse<Subscription[]>>(
-    `/superadmin/billing/subscriptions?${params.toString()}`
+    `/console/billing/subscriptions?${params.toString()}`
   )
   return response.data.data
 }
@@ -267,10 +267,10 @@ const fetchSubscriptions = async (filters?: {
 /**
  * Hook to fetch super admin overview data.
  */
-export function useSuperAdminOverview(date?: string, options?: { enabled?: boolean }) {
+export function useConsoleOverview(date?: string, options?: { enabled?: boolean }) {
   return useQuery({
-    queryKey: superAdminQueryKeys.overview(date),
-    queryFn: () => fetchSuperAdminOverview(date),
+    queryKey: consoleQueryKeys.overview(date),
+    queryFn: () => fetchConsoleOverview(date),
     enabled: options?.enabled !== false,
     staleTime: 1000 * 60 * 2, // 2 minutes
   })
@@ -279,7 +279,7 @@ export function useSuperAdminOverview(date?: string, options?: { enabled?: boole
 /**
  * Hook to fetch tenants list.
  */
-export function useSuperAdminTenants(
+export function useConsoleTenants(
   filters?: {
     sort?: string
     status?: string
@@ -290,7 +290,7 @@ export function useSuperAdminTenants(
   options?: { enabled?: boolean }
 ) {
   return useQuery({
-    queryKey: superAdminQueryKeys.tenants(filters),
+    queryKey: consoleQueryKeys.tenants(filters),
     queryFn: () => fetchTenants(filters),
     enabled: options?.enabled !== false,
     staleTime: 1000 * 60, // 1 minute
@@ -300,12 +300,12 @@ export function useSuperAdminTenants(
 /**
  * Hook to fetch single tenant details.
  */
-export function useSuperAdminTenantDetails(
+export function useConsoleTenantDetails(
   tenantId: number,
   options?: { enabled?: boolean }
 ) {
   return useQuery({
-    queryKey: superAdminQueryKeys.tenant(tenantId),
+    queryKey: consoleQueryKeys.tenant(tenantId),
     queryFn: () => fetchTenantDetails(tenantId),
     enabled: options?.enabled !== false && !!tenantId,
     staleTime: 1000 * 60 * 5, // 5 minutes
@@ -315,9 +315,9 @@ export function useSuperAdminTenantDetails(
 /**
  * Hook to fetch system health data.
  */
-export function useSuperAdminSystemHealth(date?: string, options?: { enabled?: boolean }) {
+export function useConsoleSystemHealth(date?: string, options?: { enabled?: boolean }) {
   return useQuery({
-    queryKey: superAdminQueryKeys.systemHealth(date),
+    queryKey: consoleQueryKeys.systemHealth(date),
     queryFn: () => fetchSystemHealth(date),
     enabled: options?.enabled !== false,
     refetchInterval: 1000 * 30, // 30 seconds
@@ -328,9 +328,9 @@ export function useSuperAdminSystemHealth(date?: string, options?: { enabled?: b
 /**
  * Hook to fetch billing plans.
  */
-export function useSuperAdminBillingPlans(options?: { enabled?: boolean }) {
+export function useConsoleBillingPlans(options?: { enabled?: boolean }) {
   return useQuery({
-    queryKey: superAdminQueryKeys.plans(),
+    queryKey: consoleQueryKeys.plans(),
     queryFn: () => fetchBillingPlans(),
     enabled: options?.enabled !== false,
     staleTime: 1000 * 60 * 10, // 10 minutes
@@ -347,7 +347,7 @@ export function useUpdateBillingPlan() {
     mutationFn: ({ planId, data }: { planId: number; data: Partial<BillingPlan> }) =>
       updateBillingPlan(planId, data),
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: superAdminQueryKeys.plans() })
+      queryClient.invalidateQueries({ queryKey: consoleQueryKeys.plans() })
     },
   })
 }
@@ -368,7 +368,7 @@ export function useAuditLogs(
   options?: { enabled?: boolean }
 ) {
   return useQuery({
-    queryKey: superAdminQueryKeys.auditLogs(filters),
+    queryKey: consoleQueryKeys.auditLogs(filters),
     queryFn: () => fetchAuditLogs(filters),
     enabled: options?.enabled !== false,
     staleTime: 1000 * 30, // 30 seconds
@@ -378,7 +378,7 @@ export function useAuditLogs(
 /**
  * Hook to fetch invoices.
  */
-export function useSuperAdminInvoices(
+export function useConsoleInvoices(
   filters?: {
     tenant_id?: number
     status?: string
@@ -388,7 +388,7 @@ export function useSuperAdminInvoices(
   options?: { enabled?: boolean }
 ) {
   return useQuery({
-    queryKey: superAdminQueryKeys.invoices(filters),
+    queryKey: consoleQueryKeys.invoices(filters),
     queryFn: () => fetchInvoices(filters),
     enabled: options?.enabled !== false,
     staleTime: 1000 * 60, // 1 minute
@@ -398,7 +398,7 @@ export function useSuperAdminInvoices(
 /**
  * Hook to fetch subscriptions.
  */
-export function useSuperAdminSubscriptions(
+export function useConsoleSubscriptions(
   filters?: {
     status?: string
     plan_id?: number
@@ -408,7 +408,7 @@ export function useSuperAdminSubscriptions(
   options?: { enabled?: boolean }
 ) {
   return useQuery({
-    queryKey: superAdminQueryKeys.subscriptions(filters),
+    queryKey: consoleQueryKeys.subscriptions(filters),
     queryFn: () => fetchSubscriptions(filters),
     enabled: options?.enabled !== false,
     staleTime: 1000 * 60, // 1 minute

@@ -143,7 +143,7 @@ export interface User {
   email: string;
   name: string;
   company: string;
-  role: 'superadmin' | 'admin' | 'manager' | 'analyst' | 'viewer';
+  role: 'owner' | 'admin' | 'manager' | 'analyst' | 'viewer';
   tenant_id: string;
   avatar_url?: string;
 }

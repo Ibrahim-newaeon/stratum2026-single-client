@@ -2,7 +2,7 @@
  * Stratum AI - API Hooks
  *
  * Centralized barrel file that re-exports all API hooks
- * and adds new hooks for superadmin endpoints.
+ * and adds new hooks for platform owner console endpoints.
  */
 
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
@@ -45,13 +45,13 @@ export {
   useTenantUsers,
 } from './admin'
 
-// Superadmin Analytics hooks
+// Console (Owner) Analytics hooks
 export {
   usePlatformOverview,
   useTenantProfitability,
   useSignalHealthTrends,
   useActionsAnalytics,
-} from './superadminAnalytics'
+} from './consoleAnalytics'
 
 // Competitors hooks
 export {
@@ -158,9 +158,9 @@ export {
 export {
   useFeatureFlags,
   useUpdateFeatureFlags,
-  useSuperadminFeatureFlags,
-  useSuperadminUpdateFeatureFlags,
-  useSuperadminResetFeatureFlags,
+  useConsoleFeatureFlags,
+  useConsoleUpdateFeatureFlags,
+  useConsoleResetFeatureFlags,
 } from './featureFlags'
 
 // GDPR hooks (exclude useAuditLogs since we have our own)
@@ -354,7 +354,7 @@ export function useTenantRecommendations(tenantId: number, options?: { limit?: n
 }
 
 // =============================================================================
-// Superadmin Dashboard Types
+// Console (Owner) Dashboard Types
 // =============================================================================
 
 export interface RevenueMetrics {
@@ -479,7 +479,7 @@ export interface BillingSubscription {
   failedPayments: number
 }
 
-export interface SuperadminDashboard {
+export interface ConsoleDashboardSummary {
   totalRevenue: number
   mrrGrowth: number
   activeTenants: number
@@ -489,14 +489,14 @@ export interface SuperadminDashboard {
 }
 
 // =============================================================================
-// Superadmin API Functions
+// Console (Owner) API Functions
 // =============================================================================
 
-export const superadminApi = {
+export const consoleApi = {
   // Dashboard
-  getDashboard: async (): Promise<SuperadminDashboard> => {
-    const response = await apiClient.get<ApiResponse<SuperadminDashboard>>(
-      '/superadmin/dashboard'
+  getDashboard: async (): Promise<ConsoleDashboardSummary> => {
+    const response = await apiClient.get<ApiResponse<ConsoleDashboardSummary>>(
+      '/console/dashboard'
     )
     return response.data.data
   },
@@ -504,14 +504,14 @@ export const superadminApi = {
   // Revenue
   getRevenue: async (): Promise<RevenueMetrics> => {
     const response = await apiClient.get<ApiResponse<RevenueMetrics>>(
-      '/superadmin/revenue'
+      '/console/revenue'
     )
     return response.data.data
   },
 
   getRevenueBreakdown: async (): Promise<RevenueBreakdown[]> => {
     const response = await apiClient.get<ApiResponse<RevenueBreakdown[]>>(
-      '/superadmin/revenue/breakdown'
+      '/console/revenue/breakdown'
     )
     return response.data.data
   },
@@ -526,7 +526,7 @@ export const superadminApi = {
     limit?: number
   }): Promise<PaginatedResponse<TenantPortfolioItem>> => {
     const response = await apiClient.get<ApiResponse<PaginatedResponse<TenantPortfolioItem>>>(
-      '/superadmin/tenants/portfolio',
+      '/console/tenants/portfolio',
       { params }
     )
     return response.data.data
@@ -535,7 +535,7 @@ export const superadminApi = {
   // System Health
   getSystemHealth: async (): Promise<SystemHealthMetrics> => {
     const response = await apiClient.get<ApiResponse<SystemHealthMetrics>>(
-      '/superadmin/system/health'
+      '/console/system/health'
     )
     return response.data.data
   },
@@ -546,7 +546,7 @@ export const superadminApi = {
     limit?: number
   }): Promise<ChurnRisk[]> => {
     const response = await apiClient.get<ApiResponse<ChurnRisk[]>>(
-      '/superadmin/churn/risks',
+      '/console/churn/risks',
       { params }
     )
     return response.data.data
@@ -564,7 +564,7 @@ export const superadminApi = {
     limit?: number
   }): Promise<PaginatedResponse<AuditLogEntry>> => {
     const response = await apiClient.get<ApiResponse<PaginatedResponse<AuditLogEntry>>>(
-      '/superadmin/audit',
+      '/console/audit',
       { params }
     )
     return response.data.data
@@ -573,7 +573,7 @@ export const superadminApi = {
   // Billing - Plans
   getBillingPlans: async (): Promise<BillingPlan[]> => {
     const response = await apiClient.get<ApiResponse<BillingPlan[]>>(
-      '/superadmin/billing/plans'
+      '/console/billing/plans'
     )
     return response.data.data
   },
@@ -586,7 +586,7 @@ export const superadminApi = {
     limit?: number
   }): Promise<PaginatedResponse<BillingInvoice>> => {
     const response = await apiClient.get<ApiResponse<PaginatedResponse<BillingInvoice>>>(
-      '/superadmin/billing/invoices',
+      '/console/billing/invoices',
       { params }
     )
     return response.data.data
@@ -600,7 +600,7 @@ export const superadminApi = {
     limit?: number
   }): Promise<PaginatedResponse<BillingSubscription>> => {
     const response = await apiClient.get<ApiResponse<PaginatedResponse<BillingSubscription>>>(
-      '/superadmin/billing/subscriptions',
+      '/console/billing/subscriptions',
       { params }
     )
     return response.data.data
@@ -609,32 +609,32 @@ export const superadminApi = {
   // Retry failed payment
   retryPayment: async (subscriptionId: string): Promise<{ success: boolean }> => {
     const response = await apiClient.post<ApiResponse<{ success: boolean }>>(
-      `/superadmin/billing/subscriptions/${subscriptionId}/retry-payment`
+      `/console/billing/subscriptions/${subscriptionId}/retry-payment`
     )
     return response.data.data
   },
 }
 
 // =============================================================================
-// Superadmin React Query Hooks
+// Console (Owner) React Query Hooks
 // =============================================================================
 
 /**
- * Get superadmin dashboard overview
+ * Get console dashboard overview
  */
-export function useSuperAdminOverview() {
+export function useConsoleOverview() {
   return useQuery({
-    queryKey: ['superadmin', 'dashboard'],
-    queryFn: superadminApi.getDashboard,
+    queryKey: ['console', 'dashboard'],
+    queryFn: consoleApi.getDashboard,
     staleTime: 60 * 1000, // 1 minute
     refetchInterval: 5 * 60 * 1000, // Refetch every 5 minutes
   })
 }
 
 /**
- * Get superadmin tenant portfolio
+ * Get console tenant portfolio
  */
-export function useSuperAdminTenants(params?: {
+export function useConsoleTenants(params?: {
   status?: string
   plan?: string
   sortBy?: string
@@ -643,8 +643,8 @@ export function useSuperAdminTenants(params?: {
   limit?: number
 }) {
   return useQuery({
-    queryKey: ['superadmin', 'tenants', params],
-    queryFn: () => superadminApi.getTenantsPortfolio(params),
+    queryKey: ['console', 'tenants', params],
+    queryFn: () => consoleApi.getTenantsPortfolio(params),
     staleTime: 30 * 1000,
   })
 }
@@ -654,8 +654,8 @@ export function useSuperAdminTenants(params?: {
  */
 export function useRevenue() {
   return useQuery({
-    queryKey: ['superadmin', 'revenue'],
-    queryFn: superadminApi.getRevenue,
+    queryKey: ['console', 'revenue'],
+    queryFn: consoleApi.getRevenue,
     staleTime: 60 * 1000,
   })
 }
@@ -665,8 +665,8 @@ export function useRevenue() {
  */
 export function useRevenueBreakdown() {
   return useQuery({
-    queryKey: ['superadmin', 'revenue', 'breakdown'],
-    queryFn: superadminApi.getRevenueBreakdown,
+    queryKey: ['console', 'revenue', 'breakdown'],
+    queryFn: consoleApi.getRevenueBreakdown,
     staleTime: 60 * 1000,
   })
 }
@@ -676,8 +676,8 @@ export function useRevenueBreakdown() {
  */
 export function useSystemHealth() {
   return useQuery({
-    queryKey: ['superadmin', 'system', 'health'],
-    queryFn: superadminApi.getSystemHealth,
+    queryKey: ['console', 'system', 'health'],
+    queryFn: consoleApi.getSystemHealth,
     staleTime: 30 * 1000,
     refetchInterval: 30 * 1000, // Refresh every 30 seconds
   })
@@ -688,8 +688,8 @@ export function useSystemHealth() {
  */
 export function useChurnRisks(params?: { minRisk?: number; limit?: number }) {
   return useQuery({
-    queryKey: ['superadmin', 'churn', 'risks', params],
-    queryFn: () => superadminApi.getChurnRisks(params),
+    queryKey: ['console', 'churn', 'risks', params],
+    queryFn: () => consoleApi.getChurnRisks(params),
     staleTime: 5 * 60 * 1000,
   })
 }
@@ -708,8 +708,8 @@ export function useAuditLogs(params?: {
   limit?: number
 }) {
   return useQuery({
-    queryKey: ['superadmin', 'audit', params],
-    queryFn: () => superadminApi.getAuditLogs(params),
+    queryKey: ['console', 'audit', params],
+    queryFn: () => consoleApi.getAuditLogs(params),
     staleTime: 30 * 1000,
   })
 }
@@ -719,8 +719,8 @@ export function useAuditLogs(params?: {
  */
 export function useBillingPlans() {
   return useQuery({
-    queryKey: ['superadmin', 'billing', 'plans'],
-    queryFn: superadminApi.getBillingPlans,
+    queryKey: ['console', 'billing', 'plans'],
+    queryFn: consoleApi.getBillingPlans,
     staleTime: 5 * 60 * 1000,
   })
 }
@@ -735,8 +735,8 @@ export function useBillingInvoices(params?: {
   limit?: number
 }) {
   return useQuery({
-    queryKey: ['superadmin', 'billing', 'invoices', params],
-    queryFn: () => superadminApi.getBillingInvoices(params),
+    queryKey: ['console', 'billing', 'invoices', params],
+    queryFn: () => consoleApi.getBillingInvoices(params),
     staleTime: 60 * 1000,
   })
 }
@@ -751,8 +751,8 @@ export function useBillingSubscriptions(params?: {
   limit?: number
 }) {
   return useQuery({
-    queryKey: ['superadmin', 'billing', 'subscriptions', params],
-    queryFn: () => superadminApi.getBillingSubscriptions(params),
+    queryKey: ['console', 'billing', 'subscriptions', params],
+    queryFn: () => consoleApi.getBillingSubscriptions(params),
     staleTime: 60 * 1000,
   })
 }
@@ -764,10 +764,10 @@ export function useRetryPayment() {
   const queryClient = useQueryClient()
 
   return useMutation({
-    mutationFn: superadminApi.retryPayment,
+    mutationFn: consoleApi.retryPayment,
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['superadmin', 'billing', 'subscriptions'] })
-      queryClient.invalidateQueries({ queryKey: ['superadmin', 'billing', 'invoices'] })
+      queryClient.invalidateQueries({ queryKey: ['console', 'billing', 'subscriptions'] })
+      queryClient.invalidateQueries({ queryKey: ['console', 'billing', 'invoices'] })
     },
   })
 }

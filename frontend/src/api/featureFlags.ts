@@ -27,7 +27,7 @@ export interface FeatureFlagsUpdate {
   creative_fatigue?: boolean
   campaign_builder?: boolean
   autopilot_level?: number
-  superadmin_profitability?: boolean
+  owner_profitability?: boolean
   max_campaigns?: number
   max_users?: number
   data_retention_days?: number
@@ -94,14 +94,14 @@ export function useUpdateFeatureFlags(tenantId: number) {
 }
 
 /**
- * Superadmin: Get feature flags for any tenant.
+ * Owner console: Get feature flags for any tenant.
  */
-export function useSuperadminFeatureFlags(tenantId: number) {
+export function useConsoleFeatureFlags(tenantId: number) {
   return useQuery({
-    queryKey: ['superadmin-feature-flags', tenantId],
+    queryKey: ['console-feature-flags', tenantId],
     queryFn: async () => {
       const response = await apiClient.get<{ data: FeatureFlagsResponse }>(
-        `/superadmin/tenants/${tenantId}/features`
+        `/console/tenants/${tenantId}/features`
       )
       return response.data.data
     },
@@ -110,40 +110,40 @@ export function useSuperadminFeatureFlags(tenantId: number) {
 }
 
 /**
- * Superadmin: Update feature flags for any tenant.
+ * Owner console: Update feature flags for any tenant.
  */
-export function useSuperadminUpdateFeatureFlags(tenantId: number) {
+export function useConsoleUpdateFeatureFlags(tenantId: number) {
   const queryClient = useQueryClient()
 
   return useMutation({
     mutationFn: async (updates: FeatureFlagsUpdate) => {
       const response = await apiClient.put<{ data: { features: FeatureFlags } }>(
-        `/superadmin/tenants/${tenantId}/features`,
+        `/console/tenants/${tenantId}/features`,
         updates
       )
       return response.data.data
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['superadmin-feature-flags', tenantId] })
+      queryClient.invalidateQueries({ queryKey: ['console-feature-flags', tenantId] })
     },
   })
 }
 
 /**
- * Superadmin: Reset tenant features to defaults.
+ * Owner console: Reset tenant features to defaults.
  */
-export function useSuperadminResetFeatureFlags(tenantId: number) {
+export function useConsoleResetFeatureFlags(tenantId: number) {
   const queryClient = useQueryClient()
 
   return useMutation({
     mutationFn: async () => {
       const response = await apiClient.post<{ data: { features: FeatureFlags } }>(
-        `/superadmin/tenants/${tenantId}/features/reset`
+        `/console/tenants/${tenantId}/features/reset`
       )
       return response.data.data
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['superadmin-feature-flags', tenantId] })
+      queryClient.invalidateQueries({ queryKey: ['console-feature-flags', tenantId] })
     },
   })
 }

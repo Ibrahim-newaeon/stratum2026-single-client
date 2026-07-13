@@ -6,9 +6,9 @@
  * etc.). Composed thinly over existing react-query hooks:
  *
  *   useTenants                       — tenant picker source
- *   useSuperadminFeatureFlags(id)    — load
- *   useSuperadminUpdateFeatureFlags  — save
- *   useSuperadminResetFeatureFlags   — reset to defaults
+ *   useConsoleFeatureFlags(id)       — load
+ *   useConsoleUpdateFeatureFlags     — save
+ *   useConsoleResetFeatureFlags      — reset to defaults
  *
  * Backend exposes the data already grouped by category — we render
  * those groups as collapsible cards. Boolean flags become toggles,
@@ -17,9 +17,9 @@
 
 import { useEffect, useMemo, useState } from 'react';
 import {
-  useSuperadminFeatureFlags,
-  useSuperadminUpdateFeatureFlags,
-  useSuperadminResetFeatureFlags,
+  useConsoleFeatureFlags,
+  useConsoleUpdateFeatureFlags,
+  useConsoleResetFeatureFlags,
   type FeatureFlagsUpdate,
 } from '@/api/featureFlags';
 import { useTenants } from '@/api/admin';
@@ -49,9 +49,9 @@ export default function FeatureFlags() {
     if (first) setTenantId(first.id);
   }, [tenantsQuery.data, tenantId]);
 
-  const flagsQuery = useSuperadminFeatureFlags(tenantId ?? 0);
-  const updateMutation = useSuperadminUpdateFeatureFlags(tenantId ?? 0);
-  const resetMutation = useSuperadminResetFeatureFlags(tenantId ?? 0);
+  const flagsQuery = useConsoleFeatureFlags(tenantId ?? 0);
+  const updateMutation = useConsoleUpdateFeatureFlags(tenantId ?? 0);
+  const resetMutation = useConsoleResetFeatureFlags(tenantId ?? 0);
 
   // Local working copy — diffed against server state on save.
   const [working, setWorking] = useState<Record<string, FlagValue>>({});

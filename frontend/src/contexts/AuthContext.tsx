@@ -31,7 +31,7 @@ let _demoCreds: Record<string, { email: string; password: string; user: User }> 
 function getDemoCredentials(): Record<string, { email: string; password: string; user: User }> {
   if (!_demoCreds) {
     _demoCreds = {
-      superadmin: { email: 'demo-superadmin@stratum.ai', password: 'demo-only-not-real', user: { id: 'demo-sa-001', email: 'demo-superadmin@stratum.ai', name: 'Demo Super Admin', role: 'superadmin', organization: 'Demo Organization', permissions: ['all'], tenant_id: 1, user_type: 'agency', cms_role: 'super_admin' } },
+      owner: { email: 'demo-owner@stratum.ai', password: 'demo-only-not-real', user: { id: 'demo-sa-001', email: 'demo-owner@stratum.ai', name: 'Demo Owner', role: 'owner', organization: 'Demo Organization', permissions: ['all'], tenant_id: 1, user_type: 'agency', cms_role: 'super_admin' } },
       admin: { email: 'demo-admin@stratum.ai', password: 'demo-only-not-real', user: { id: 'demo-admin-001', email: 'demo-admin@stratum.ai', name: 'Demo Admin', role: 'admin', organization: 'Demo Commerce', permissions: ['all'], tenant_id: 1, user_type: 'agency', cms_role: 'admin' } },
       manager: { email: 'demo-manager@stratum.ai', password: 'demo-only-not-real', user: { id: 'demo-mgr-001', email: 'demo-manager@stratum.ai', name: 'Demo Manager', role: 'manager', organization: 'Demo Commerce', permissions: ['read'], tenant_id: 1, user_type: 'agency' } },
       analyst: { email: 'demo-analyst@stratum.ai', password: 'demo-only-not-real', user: { id: 'demo-analyst-001', email: 'demo-analyst@stratum.ai', name: 'Demo Analyst', role: 'analyst', organization: 'Demo Commerce', permissions: ['read'], tenant_id: 1, user_type: 'agency' } },
@@ -55,7 +55,7 @@ export interface User {
   id: string;
   email: string;
   name: string;
-  role: 'superadmin' | 'admin' | 'manager' | 'analyst' | 'viewer';
+  role: 'owner' | 'admin' | 'manager' | 'analyst' | 'viewer';
   avatar?: string;
   organization?: string;
   permissions: string[];
@@ -77,7 +77,7 @@ interface AuthContextType {
   isDemoSession: boolean;
   login: (email: string, password: string) => Promise<{ success: boolean; error?: string; lockoutSeconds?: number; mfaRequired?: boolean; mfaToken?: string }>;
   loginMfa: (email: string, mfaToken: string, code: string) => Promise<{ success: boolean; error?: string }>;
-  demoLogin: (role: 'superadmin' | 'admin' | 'manager' | 'analyst' | 'viewer') => Promise<{ success: boolean; error?: string; lockoutSeconds?: number }>;
+  demoLogin: (role: 'owner' | 'admin' | 'manager' | 'analyst' | 'viewer') => Promise<{ success: boolean; error?: string; lockoutSeconds?: number }>;
   logout: () => void;
   updateUser: (userData: Partial<User>) => void;
 }
@@ -148,7 +148,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       const userData = await userResponse.json();
       const tenantId = userData.data.tenant_id ?? jwtTenantId ?? null;
       const backendRole = userData.data.role || 'analyst';
-      const validRoles = ['superadmin', 'admin', 'manager', 'analyst', 'viewer'];
+      const validRoles = ['owner', 'admin', 'manager', 'analyst', 'viewer'];
       const mappedRole = validRoles.includes(backendRole) ? backendRole : 'analyst';
       userInfo = {
         id: String(userData.data.id),
@@ -336,7 +336,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   /** Client-side demo login — creates a mock session without hitting the backend */
   const demoLogin = useCallback(
-    async (role: 'superadmin' | 'admin' | 'manager' | 'analyst' | 'viewer'): Promise<{ success: boolean; error?: string }> => {
+    async (role: 'owner' | 'admin' | 'manager' | 'analyst' | 'viewer'): Promise<{ success: boolean; error?: string }> => {
       if (!isDemoModeEnabled()) return { success: false, error: 'Demo mode is disabled' };
 
       const demo = getDemoCredentials()[role];
@@ -415,7 +415,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   // Role-based idle timeout — stricter for privileged roles
   const ROLE_TIMEOUT_MS: Record<string, number> = {
-    superadmin: 15 * 60 * 1000, // 15 min
+    owner: 15 * 60 * 1000, // 15 min
     admin: 15 * 60 * 1000,      // 15 min
     manager: 30 * 60 * 1000,    // 30 min
     analyst: 30 * 60 * 1000,    // 30 min

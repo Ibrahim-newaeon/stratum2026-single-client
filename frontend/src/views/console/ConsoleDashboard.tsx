@@ -1,5 +1,5 @@
 /**
- * Superadmin Dashboard
+ * Owner Console Dashboard
  * Comprehensive dashboard for system-wide management and monitoring
  * Blends MRR/ARR metrics, churn prediction, system health, and tenant management
  */
@@ -248,7 +248,7 @@ function deriveAlerts(health: SystemHealth | null, tenantCount: number, churnCou
 // =============================================================================
 // Main Component
 // =============================================================================
-export default function SuperadminDashboard() {
+export default function ConsoleDashboard() {
   const { t: _t } = useTranslation()
   const { showPriceMetrics } = usePriceMetrics()
   const { user } = useAuth()
@@ -272,7 +272,7 @@ export default function SuperadminDashboard() {
 
   const handleRetryPayment = async (subscriptionId: string) => {
     try {
-      await apiClient.post(`/superadmin/billing/subscriptions/${subscriptionId}/retry`)
+      await apiClient.post(`/console/billing/subscriptions/${subscriptionId}/retry`)
     } catch {
       // Retry failed — status will reflect on next refresh
     }
@@ -284,14 +284,14 @@ export default function SuperadminDashboard() {
 
     try {
       const [revenueRes, tenantsRes, healthRes, churnRes, plansRes, invoicesRes, subscriptionsRes, auditRes] = await Promise.allSettled([
-        apiClient.get('/superadmin/revenue'),
-        apiClient.get('/superadmin/tenants/portfolio'),
-        apiClient.get('/superadmin/system/health'),
-        apiClient.get('/superadmin/churn/risks'),
-        apiClient.get('/superadmin/billing/plans'),
-        apiClient.get('/superadmin/billing/invoices'),
-        apiClient.get('/superadmin/billing/subscriptions'),
-        apiClient.get('/superadmin/audit', { params: { limit: 100 } }),
+        apiClient.get('/console/revenue'),
+        apiClient.get('/console/tenants/portfolio'),
+        apiClient.get('/console/system/health'),
+        apiClient.get('/console/churn/risks'),
+        apiClient.get('/console/billing/plans'),
+        apiClient.get('/console/billing/invoices'),
+        apiClient.get('/console/billing/subscriptions'),
+        apiClient.get('/console/audit', { params: { limit: 100 } }),
       ])
 
       // Handle each response individually
@@ -359,7 +359,7 @@ export default function SuperadminDashboard() {
     return (
       <div className="flex items-center justify-center h-96 motion-enter">
         <Loader2 className="h-8 w-8 animate-spin text-primary" />
-        <span className="ml-3 text-muted-foreground">Loading Super Admin Dashboard...</span>
+        <span className="ml-3 text-muted-foreground">Loading Owner Console Dashboard...</span>
       </div>
     )
   }
@@ -372,7 +372,7 @@ export default function SuperadminDashboard() {
         <div>
           <h1 className="text-2xl font-bold flex items-center gap-2">
             <Crown className="w-7 h-7 text-warning" />
-            Superadmin Dashboard
+            Owner Console Dashboard
           </h1>
           <p className="text-muted-foreground mt-1">
             System-wide management and monitoring • Welcome back, {user?.name}
@@ -1342,7 +1342,7 @@ export default function SuperadminDashboard() {
                               </button>
                             )}
                             <button
-                              onClick={() => window.location.href = `/superadmin/billing/subscriptions/${sub.id}`}
+                              onClick={() => window.location.href = `/console/billing/subscriptions/${sub.id}`}
                               className="text-xs px-2 py-1 rounded bg-muted text-muted-foreground hover:bg-muted/80 transition-colors"
                             >
                               Manage
