@@ -141,7 +141,7 @@ class ClientAssignment(TimestampMixin, Base):
     Junction table: which agency users (MANAGER/ANALYST roles)
     are assigned to which clients.
 
-    SUPERADMIN and ADMIN see all clients implicitly.
+    OWNER and ADMIN see all clients implicitly.
     VIEWER users are linked via User.client_id instead.
     """
 

@@ -25,7 +25,7 @@ from pydantic import BaseModel, Field
 from sqlalchemy import select, update
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from app.auth.permissions import require_super_admin
+from app.auth.permissions import require_owner
 from app.core.config import settings
 from app.core.logging import get_logger
 from app.db.session import async_session_maker
@@ -316,7 +316,7 @@ async def sendgrid_test_webhook(request: Request) -> dict:
 
 
 # =============================================================================
-# Superadmin Test Email Endpoint
+# Owner Test Email Endpoint
 # =============================================================================
 
 
@@ -330,14 +330,14 @@ class TestEmailRequest(BaseModel):
     )
 
 
-@router.post("/superadmin/email/test-send")
+@router.post("/console/email/test-send")
 async def send_test_email(
     request: Request,
     body: TestEmailRequest,
-    _: None = Depends(require_super_admin),
+    _: None = Depends(require_owner),
 ) -> dict:
     """
-    Send a test email via SendGrid (superadmin only).
+    Send a test email via SendGrid (owner only).
     Useful for verifying SendGrid connectivity and template rendering.
     """
     email_service = get_email_service()

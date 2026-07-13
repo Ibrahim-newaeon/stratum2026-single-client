@@ -3,7 +3,7 @@
 # =============================================================================
 """Integration tests for the advanced-analytics surface under
 ``/api/v1/analytics/advanced/...``: funnel analysis, cohort analysis, and the
-superadmin-gated SQL editor.
+owner-gated SQL editor.
 
 This also guards a routing fix: the router declares
 ``prefix="/analytics/advanced"`` and was *also* mounted with the same prefix,
@@ -66,18 +66,18 @@ class TestCohorts:
 
 
 # =============================================================================
-# SQL editor (superadmin-gated)
+# SQL editor (owner-gated)
 # =============================================================================
 class TestSqlEditor:
-    """The SQL editor is superadmin-gated. Its *executing* path can't be
-    exercised here: superadmin requests trigger ``_log_super_admin_bypass``,
+    """The SQL editor is owner-gated. Its *executing* path can't be
+    exercised here: owner requests trigger ``_log_owner_bypass``,
     which opens its own session via ``get_async_session()`` directly (bypassing
     the test dependency override) and binds a connection to a different event
     loop. So this only asserts the authorization gate.
     """
 
-    async def test_non_superadmin_forbidden(self, authenticated_client: AsyncClient):
-        # authenticated_client is ADMIN, not superadmin.
+    async def test_non_owner_forbidden(self, authenticated_client: AsyncClient):
+        # authenticated_client is ADMIN, not owner.
         resp = await authenticated_client.post(
             f"{_BASE}/sql", json={"query": "SELECT platform FROM campaigns"}
         )

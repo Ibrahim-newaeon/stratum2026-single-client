@@ -608,7 +608,7 @@ class TestEmqUpdateAutopilotMode:
 
 
 # ---------------------------------------------------------------------------
-# EMQ v2: Benchmarks  GET /api/v1/emq/benchmarks  (superadmin only)
+# EMQ v2: Benchmarks  GET /api/v1/emq/benchmarks  (owner only)
 # ---------------------------------------------------------------------------
 class TestEmqBenchmarks:
     URL = "/api/v1/emq/benchmarks"
@@ -617,10 +617,10 @@ class TestEmqBenchmarks:
         resp = await api_client.get(self.URL)
         assert resp.status_code == 401
 
-    async def test_superadmin_happy_path(self, api_client, superadmin_headers, mock_db):
+    async def test_owner_happy_path(self, api_client, owner_headers, mock_db):
         with patch("app.api.v1.endpoints.emq_v2.EmqAdminService") as MockSvc:
             MockSvc.return_value.get_benchmarks = AsyncMock(return_value=[])
-            resp = await api_client.get(self.URL, headers=superadmin_headers)
+            resp = await api_client.get(self.URL, headers=owner_headers)
             assert resp.status_code == 200
             body = resp.json()
             assert body["success"] is True
@@ -628,7 +628,7 @@ class TestEmqBenchmarks:
 
 
 # ---------------------------------------------------------------------------
-# EMQ v2: Portfolio  GET /api/v1/emq/portfolio  (superadmin only)
+# EMQ v2: Portfolio  GET /api/v1/emq/portfolio  (owner only)
 # ---------------------------------------------------------------------------
 class TestEmqPortfolio:
     URL = "/api/v1/emq/portfolio"
@@ -637,7 +637,7 @@ class TestEmqPortfolio:
         resp = await api_client.get(self.URL)
         assert resp.status_code == 401
 
-    async def test_superadmin_happy_path(self, api_client, superadmin_headers, mock_db):
+    async def test_owner_happy_path(self, api_client, owner_headers, mock_db):
         with patch("app.api.v1.endpoints.emq_v2.EmqAdminService") as MockSvc:
             MockSvc.return_value.get_portfolio = AsyncMock(
                 return_value={
@@ -652,7 +652,7 @@ class TestEmqPortfolio:
                     "topIssues": [],
                 }
             )
-            resp = await api_client.get(self.URL, headers=superadmin_headers)
+            resp = await api_client.get(self.URL, headers=owner_headers)
             assert resp.status_code == 200
             body = resp.json()
             assert body["success"] is True

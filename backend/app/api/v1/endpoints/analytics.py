@@ -596,15 +596,15 @@ async def get_tenant_overview(
     db: AsyncSession = Depends(get_async_session),
 ):
     """
-    Get analytics overview for all tenants (superadmin view).
+    Get analytics overview for all tenants (owner view).
     Returns ROAS, EMQ, status, and key metrics per tenant.
     """
     from app.models import Tenant, UserRole
 
     user_role = getattr(request.state, "role", None)
 
-    # Only admin or superadmin can see all tenants
-    if user_role not in (UserRole.ADMIN.value, "superadmin"):
+    # Only admin or owner can see all tenants
+    if user_role not in (UserRole.ADMIN.value, "owner"):
         from fastapi import HTTPException, status
 
         raise HTTPException(
@@ -685,15 +685,15 @@ async def get_executive_summary(
     db: AsyncSession = Depends(get_async_session),
 ):
     """
-    Get executive summary for superadmin dashboard.
+    Get executive summary for owner dashboard.
     Aggregated metrics across all tenants.
     """
     from app.models import Tenant, UserRole
 
     user_role = getattr(request.state, "role", None)
 
-    # Only admin or superadmin can see executive summary
-    if user_role not in (UserRole.ADMIN.value, "superadmin"):
+    # Only admin or owner can see executive summary
+    if user_role not in (UserRole.ADMIN.value, "owner"):
         from fastapi import HTTPException, status
 
         raise HTTPException(

@@ -569,16 +569,16 @@ class TestTenantsCRUD:
 
     # ── Get specific tenant: admin can access other tenants ────────────
     @pytest.mark.asyncio
-    async def test_get_tenant_superadmin_cross_tenant(
-        self, api_client, mock_db, superadmin_headers
+    async def test_get_tenant_owner_cross_tenant(
+        self, api_client, mock_db, owner_headers
     ):
-        """Cross-tenant read (GET /tenants/2) is allowed for a superadmin; a
+        """Cross-tenant read (GET /tenants/2) is allowed for an owner; a
         regular admin is restricted to their own tenant."""
         tenant = _mock_tenant(id=2, slug="other-co")
         tenant_result = make_scalar_result(tenant)
         mock_db.execute = AsyncMock(return_value=tenant_result)
 
-        resp = await api_client.get("/api/v1/tenants/2", headers=superadmin_headers)
+        resp = await api_client.get("/api/v1/tenants/2", headers=owner_headers)
         assert resp.status_code == 200
         body = resp.json()
         assert body["data"]["id"] == 2
@@ -598,10 +598,10 @@ class TestTenantsCRUD:
         )
         assert resp.status_code == 403
 
-    # ── Create tenant: superadmin happy path ───────────────────────────
+    # ── Create tenant: owner happy path ───────────────────────────────
     @pytest.mark.asyncio
-    async def test_create_tenant_happy(self, api_client, mock_db, superadmin_headers):
-        """POST /tenants creates a new tenant (superadmin-only)."""
+    async def test_create_tenant_happy(self, api_client, mock_db, owner_headers):
+        """POST /tenants creates a new tenant (owner-only)."""
         # Duplicate check: no existing tenant with slug
         dup_result = MagicMock()
         dup_result.scalar_one_or_none.return_value = None
@@ -634,7 +634,7 @@ class TestTenantsCRUD:
             "plan": "free",
         }
         resp = await api_client.post(
-            "/api/v1/tenants", json=payload, headers=superadmin_headers
+            "/api/v1/tenants", json=payload, headers=owner_headers
         )
         assert resp.status_code == 201
         body = resp.json()
@@ -643,9 +643,9 @@ class TestTenantsCRUD:
     # ── Create tenant: duplicate slug → 409 ────────────────────────────
     @pytest.mark.asyncio
     async def test_create_tenant_duplicate_slug(
-        self, api_client, mock_db, superadmin_headers
+        self, api_client, mock_db, owner_headers
     ):
-        """POST /tenants with existing slug → 409 (superadmin-only)."""
+        """POST /tenants with existing slug → 409 (owner-only)."""
         existing = _mock_tenant(slug="acme-inc")
         dup_result = MagicMock()
         dup_result.scalar_one_or_none.return_value = existing
@@ -656,7 +656,7 @@ class TestTenantsCRUD:
             "slug": "acme-inc",
         }
         resp = await api_client.post(
-            "/api/v1/tenants", json=payload, headers=superadmin_headers
+            "/api/v1/tenants", json=payload, headers=owner_headers
         )
         assert resp.status_code == 409
 
@@ -822,15 +822,23 @@ class TestTenantDashboard:
         assert resp.status_code == 403
 
     @pytest.mark.asyncio
-    async def test_update_settings_viewer_blocked(
+    async def test_update_settings_viewer_reaches_handler(
         self, api_client, mock_db, viewer_headers
     ):
-        """PUT /tenant/1/settings as viewer → 403 (needs TENANT_SETTINGS perm)."""
+        """PUT /tenant/1/settings as viewer.
+
+        The TENANT_SETTINGS permission gate was removed from this endpoint
+        (Permission enum drop, STRAT-SC-001 rename ledger) — tenant_dashboard.py
+        is deleted whole in Phase C, so the dependency was dropped rather than
+        reworked. A viewer with matching tenant_id now reaches the handler
+        (require_tenant still gates cross-tenant access) and gets 404 because
+        the mocked DB has no Tenant row, not a 403 permission rejection.
+        """
         payload = {"currency": "EUR"}
         resp = await api_client.put(
             "/api/v1/tenant/1/settings", json=payload, headers=viewer_headers
         )
-        assert resp.status_code == 403
+        assert resp.status_code == 404
 
     @pytest.mark.asyncio
     async def test_update_settings_admin_happy(

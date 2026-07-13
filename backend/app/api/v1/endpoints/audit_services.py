@@ -152,7 +152,7 @@ async def require_admin(
     """Require admin role for endpoint access."""
     if not hasattr(current_user, "role") or current_user.role not in (
         "admin",
-        "superadmin",
+        "owner",
     ):
         logger.warning(
             "Unauthorized admin access attempt",
@@ -169,7 +169,7 @@ async def require_manager_or_admin(
     current_user: User = Depends(get_current_user),
 ) -> User:
     """Require manager or admin role for endpoint access."""
-    allowed_roles = ("manager", "admin", "superadmin")
+    allowed_roles = ("manager", "admin", "owner")
     if not hasattr(current_user, "role") or current_user.role not in allowed_roles:
         logger.warning(
             "Unauthorized manager access attempt",

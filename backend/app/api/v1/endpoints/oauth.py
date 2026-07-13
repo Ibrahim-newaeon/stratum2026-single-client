@@ -57,8 +57,8 @@ def _column_str(raw: object) -> str:
 
 # Auth gate for tenant-scoped OAuth endpoints. Agency admins manage
 # their own platform connections — Connect Platform / Refresh Token /
-# Disconnect — so the gate must permit `admin` and `superadmin`.
-# Originally was `require_super_admin` which 403'd agency admins from
+# Disconnect — so the gate must permit `admin` and `owner`.
+# Originally was `require_owner` which 403'd agency admins from
 # the IntegrationsHub, breaking the "Connect" buttons for them.
 _admin_deps = [Depends(require_admin())]
 

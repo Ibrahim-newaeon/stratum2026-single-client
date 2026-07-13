@@ -12,8 +12,8 @@ Comprehensive tests for the two untested Authentication sub-systems:
    - RBAC matrix & get_permission_level
    - Resource scope per role
    - Sidebar visibility per role
-   - FastAPI dependencies: require_permissions, require_role, require_super_admin
-   - require_resource_level (PermLevel-based), is_superadmin_role predicate
+   - FastAPI dependencies: require_permissions, require_role, require_owner
+   - require_resource_level (PermLevel-based), is_owner_role predicate
    - Client-scope helpers: enforce_client_access, get_accessible_client_ids
 
 2. MFA / TOTP (app/services/mfa_service.py)
@@ -52,11 +52,11 @@ from app.auth.permissions import (
     has_all_permissions,
     has_any_permission,
     has_permission,
-    is_superadmin_role,
+    is_owner_role,
     require_permissions,
     require_resource_level,
+    require_owner,
     require_role,
-    require_super_admin,
 )
 from app.base_models import UserRole
 from app.services.mfa_service import (
@@ -86,7 +86,7 @@ from app.services.mfa_service import (
 # =============================================================================
 
 ALL_ROLES = [
-    "superadmin",
+    "owner",
     "admin",
     "manager",
     "media_buyer",
@@ -95,7 +95,7 @@ ALL_ROLES = [
     "viewer",
 ]
 ALL_USER_ROLES = [
-    UserRole.SUPERADMIN,
+    UserRole.OWNER,
     UserRole.ADMIN,
     UserRole.MANAGER,
     UserRole.ANALYST,
@@ -174,8 +174,8 @@ class TestPermissionEnum:
     """Verify the Permission enum is correctly structured."""
 
     def test_permission_count(self) -> None:
-        """All 42 granular permissions exist."""
-        assert len(Permission) == 42
+        """All 35 granular permissions exist (TENANT_*/BILLING_* dropped, STRAT-SC-001)."""
+        assert len(Permission) == 35
 
     def test_permission_values_are_colon_separated(self) -> None:
         """Every permission value follows resource:action naming."""
@@ -184,18 +184,16 @@ class TestPermissionEnum:
 
     def test_permission_is_string_enum(self) -> None:
         """Permissions are str enums usable as strings."""
-        assert isinstance(Permission.TENANT_READ, str)
-        assert Permission.TENANT_READ == "tenant:read"
+        assert isinstance(Permission.USER_READ, str)
+        assert Permission.USER_READ == "user:read"
 
     def test_all_resource_categories_present(self) -> None:
         """Expected resource categories exist."""
         prefixes = {p.value.split(":")[0] for p in Permission}
         expected = {
-            "tenant",
             "user",
             "campaign",
             "analytics",
-            "billing",
             "system",
             "connector",
             "audit",
@@ -238,9 +236,9 @@ class TestRolePermissions:
     def test_all_seven_roles_present(self) -> None:
         assert set(ROLE_PERMISSIONS.keys()) == set(ALL_ROLES)
 
-    def test_superadmin_has_all_permissions(self) -> None:
-        """Superadmin must have every single permission."""
-        assert ROLE_PERMISSIONS["superadmin"] == set(Permission)
+    def test_owner_has_all_permissions(self) -> None:
+        """Owner must have every single permission."""
+        assert ROLE_PERMISSIONS["owner"] == set(Permission)
 
     def test_admin_lacks_system_permissions(self) -> None:
         """Admin should not have system:admin, system:write, system:read."""
@@ -248,9 +246,6 @@ class TestRolePermissions:
         assert Permission.SYSTEM_ADMIN not in admin_perms
         assert Permission.SYSTEM_WRITE not in admin_perms
         assert Permission.SYSTEM_READ not in admin_perms
-
-    def test_admin_lacks_tenant_delete(self) -> None:
-        assert Permission.TENANT_DELETE not in ROLE_PERMISSIONS["admin"]
 
     def test_viewer_is_read_only(self) -> None:
         """Viewer should have no write/delete/manage permissions."""
@@ -271,8 +266,8 @@ class TestRolePermissions:
         assert Permission.USER_DELETE not in mb
         assert Permission.USER_ROLE_ASSIGN not in mb
 
-    def test_account_manager_has_billing_read(self) -> None:
-        assert Permission.BILLING_READ in ROLE_PERMISSIONS["account_manager"]
+    def test_account_manager_has_analytics_read(self) -> None:
+        assert Permission.ANALYTICS_READ in ROLE_PERMISSIONS["account_manager"]
 
     def test_account_manager_lacks_campaign_write(self) -> None:
         assert Permission.CAMPAIGN_WRITE not in ROLE_PERMISSIONS["account_manager"]
@@ -280,11 +275,11 @@ class TestRolePermissions:
     def test_manager_has_rule_execute(self) -> None:
         assert Permission.RULE_EXECUTE in ROLE_PERMISSIONS["manager"]
 
-    def test_each_role_is_subset_of_superadmin(self) -> None:
-        """Every role's permissions are a subset of superadmin's."""
-        sa = ROLE_PERMISSIONS["superadmin"]
+    def test_each_role_is_subset_of_owner(self) -> None:
+        """Every role's permissions are a subset of owner's."""
+        sa = ROLE_PERMISSIONS["owner"]
         for role, perms in ROLE_PERMISSIONS.items():
-            assert perms <= sa, f"{role} has permissions not in superadmin"
+            assert perms <= sa, f"{role} has permissions not in owner"
 
 
 # =============================================================================
@@ -298,7 +293,7 @@ class TestGetUserPermissions:
     def test_returns_permissions_for_known_role(self) -> None:
         perms = get_user_permissions("admin")
         assert isinstance(perms, set)
-        assert Permission.TENANT_READ in perms
+        assert Permission.USER_READ in perms
 
     def test_case_insensitive(self) -> None:
         assert get_user_permissions("ADMIN") == get_user_permissions("admin")
@@ -313,9 +308,9 @@ class TestGetUserPermissions:
 @pytest.mark.unit
 class TestHasPermission:
 
-    def test_superadmin_has_every_permission(self) -> None:
+    def test_owner_has_every_permission(self) -> None:
         for perm in Permission:
-            assert has_permission("superadmin", perm), f"superadmin missing {perm}"
+            assert has_permission("owner", perm), f"owner missing {perm}"
 
     def test_viewer_lacks_write(self) -> None:
         assert has_permission("viewer", Permission.CAMPAIGN_WRITE) is False
@@ -347,7 +342,7 @@ class TestHasAnyPermission:
         )
 
     def test_empty_list_returns_false(self) -> None:
-        assert has_any_permission("superadmin", []) is False
+        assert has_any_permission("owner", []) is False
 
 
 @pytest.mark.unit
@@ -356,7 +351,7 @@ class TestHasAllPermissions:
     def test_returns_true_when_all_match(self) -> None:
         assert (
             has_all_permissions(
-                "superadmin", [Permission.SYSTEM_ADMIN, Permission.BILLING_MANAGE]
+                "owner", [Permission.SYSTEM_ADMIN, Permission.CLIENT_DELETE]
             )
             is True
         )
@@ -382,31 +377,31 @@ class TestHasAllPermissions:
 class TestRoleHierarchy:
 
     def test_hierarchy_values(self) -> None:
-        assert ROLE_HIERARCHY[UserRole.SUPERADMIN] == 100
+        assert ROLE_HIERARCHY[UserRole.OWNER] == 100
         assert ROLE_HIERARCHY[UserRole.ADMIN] == 80
         assert ROLE_HIERARCHY[UserRole.MANAGER] == 60
         assert ROLE_HIERARCHY[UserRole.ANALYST] == 40
         assert ROLE_HIERARCHY[UserRole.VIEWER] == 10
 
-    def test_superadmin_is_highest(self) -> None:
+    def test_owner_is_highest(self) -> None:
         for role, val in ROLE_HIERARCHY.items():
-            assert ROLE_HIERARCHY[UserRole.SUPERADMIN] >= val
+            assert ROLE_HIERARCHY[UserRole.OWNER] >= val
 
 
 @pytest.mark.unit
 class TestCanManageRole:
 
-    def test_superadmin_can_manage_anyone(self) -> None:
+    def test_owner_can_manage_anyone(self) -> None:
         for target in ALL_USER_ROLES:
-            assert can_manage_role(UserRole.SUPERADMIN, target) is True
+            assert can_manage_role(UserRole.OWNER, target) is True
 
     def test_admin_can_manage_lower_roles(self) -> None:
         assert can_manage_role(UserRole.ADMIN, UserRole.MANAGER) is True
         assert can_manage_role(UserRole.ADMIN, UserRole.ANALYST) is True
         assert can_manage_role(UserRole.ADMIN, UserRole.VIEWER) is True
 
-    def test_admin_cannot_manage_superadmin(self) -> None:
-        assert can_manage_role(UserRole.ADMIN, UserRole.SUPERADMIN) is False
+    def test_admin_cannot_manage_owner(self) -> None:
+        assert can_manage_role(UserRole.ADMIN, UserRole.OWNER) is False
 
     def test_admin_cannot_manage_self_level(self) -> None:
         assert can_manage_role(UserRole.ADMIN, UserRole.ADMIN) is False
@@ -443,9 +438,9 @@ class TestRBACMatrix:
         }
         assert set(RBAC_MATRIX.keys()) == expected
 
-    def test_superadmin_is_full_everywhere(self) -> None:
+    def test_owner_is_full_everywhere(self) -> None:
         for resource, role_map in RBAC_MATRIX.items():
-            assert role_map.get(UserRole.SUPERADMIN) == PermLevel.FULL, f"{resource}"
+            assert role_map.get(UserRole.OWNER) == PermLevel.FULL, f"{resource}"
 
     def test_viewer_cannot_delete_campaigns(self) -> None:
         assert (
@@ -454,7 +449,7 @@ class TestRBACMatrix:
 
     def test_unknown_resource_returns_none(self) -> None:
         assert (
-            get_permission_level(UserRole.SUPERADMIN, "nonexistent") == PermLevel.NONE
+            get_permission_level(UserRole.OWNER, "nonexistent") == PermLevel.NONE
         )
 
     def test_unknown_role_returns_none(self) -> None:
@@ -470,7 +465,7 @@ class TestRBACMatrix:
     def test_audit_restricted_to_admins(self) -> None:
         assert get_permission_level(UserRole.MANAGER, "audit") == PermLevel.NONE
         assert get_permission_level(UserRole.ADMIN, "audit") == PermLevel.VIEW
-        assert get_permission_level(UserRole.SUPERADMIN, "audit") == PermLevel.FULL
+        assert get_permission_level(UserRole.OWNER, "audit") == PermLevel.FULL
 
 
 # =============================================================================
@@ -481,8 +476,8 @@ class TestRBACMatrix:
 @pytest.mark.unit
 class TestResourceScope:
 
-    def test_superadmin_global(self) -> None:
-        assert get_resource_scope(UserRole.SUPERADMIN) == "global"
+    def test_owner_global(self) -> None:
+        assert get_resource_scope(UserRole.OWNER) == "global"
 
     def test_admin_tenant(self) -> None:
         assert get_resource_scope(UserRole.ADMIN) == "tenant"
@@ -512,8 +507,8 @@ class TestSidebarVisibility:
         for role in ALL_USER_ROLES:
             assert role in SIDEBAR_VISIBILITY
 
-    def test_superadmin_sees_everything(self) -> None:
-        sa = SIDEBAR_VISIBILITY[UserRole.SUPERADMIN]
+    def test_owner_sees_everything(self) -> None:
+        sa = SIDEBAR_VISIBILITY[UserRole.OWNER]
         assert "tenants" in sa
         assert "audit" in sa
         assert "billing" in sa
@@ -601,7 +596,7 @@ class TestRequireRole:
 
     @pytest.mark.asyncio
     async def test_allowed_role_passes(self) -> None:
-        checker = require_role(["admin", "superadmin"])
+        checker = require_role(["admin", "owner"])
         req = _make_request(role="admin", user_id=1)
         await checker(req)
 
@@ -609,7 +604,7 @@ class TestRequireRole:
     async def test_disallowed_role_raises_403(self) -> None:
         from fastapi import HTTPException
 
-        checker = require_role(["admin", "superadmin"])
+        checker = require_role(["admin", "owner"])
         req = _make_request(role="viewer", user_id=1)
         with pytest.raises(HTTPException) as exc:
             await checker(req)
@@ -633,12 +628,12 @@ class TestRequireRole:
 
 
 @pytest.mark.unit
-class TestRequireSuperAdmin:
+class TestRequireOwner:
 
     @pytest.mark.asyncio
-    async def test_superadmin_passes(self) -> None:
-        req = _make_request(role="superadmin", user_id=1)
-        await require_super_admin(req)
+    async def test_owner_passes(self) -> None:
+        req = _make_request(role="owner", user_id=1)
+        await require_owner(req)
 
     @pytest.mark.asyncio
     async def test_admin_raises_403(self) -> None:
@@ -646,7 +641,7 @@ class TestRequireSuperAdmin:
 
         req = _make_request(role="admin", user_id=1)
         with pytest.raises(HTTPException) as exc:
-            await require_super_admin(req)
+            await require_owner(req)
         assert exc.value.status_code == 403
 
     @pytest.mark.asyncio
@@ -655,29 +650,29 @@ class TestRequireSuperAdmin:
 
         req = _make_request()
         with pytest.raises(HTTPException) as exc:
-            await require_super_admin(req)
+            await require_owner(req)
         assert exc.value.status_code == 401
 
 
 # =============================================================================
-# is_superadmin_role predicate
+# is_owner_role predicate
 # =============================================================================
 
 
 @pytest.mark.unit
-class TestIsSuperadminRole:
+class TestIsOwnerRole:
 
-    def test_superadmin_true_case_insensitive(self) -> None:
-        assert is_superadmin_role("superadmin") is True
-        assert is_superadmin_role("SuperAdmin") is True
+    def test_owner_true_case_insensitive(self) -> None:
+        assert is_owner_role("owner") is True
+        assert is_owner_role("Owner") is True
 
     def test_other_roles_false(self) -> None:
-        assert is_superadmin_role("admin") is False
-        assert is_superadmin_role("viewer") is False
+        assert is_owner_role("admin") is False
+        assert is_owner_role("viewer") is False
 
     def test_empty_or_none_false(self) -> None:
-        assert is_superadmin_role(None) is False
-        assert is_superadmin_role("") is False
+        assert is_owner_role(None) is False
+        assert is_owner_role("") is False
 
 
 # =============================================================================
@@ -698,7 +693,7 @@ class TestRequireResourceLevel:
     async def test_disallowed_role_raises_403(self) -> None:
         from fastapi import HTTPException
 
-        # PermLevel.FULL requires superadmin or admin per _PERM_LEVEL_ROLES
+        # PermLevel.FULL requires owner or admin per _PERM_LEVEL_ROLES
         checker = require_resource_level("clients", PermLevel.FULL)
         req = _make_request(role="viewer", user_id=1)
         with pytest.raises(HTTPException) as exc:
@@ -726,7 +721,7 @@ class TestPermLevelRoles:
 
     def test_view_includes_all_six_roles(self) -> None:
         assert _PERM_LEVEL_ROLES[PermLevel.VIEW] == {
-            "superadmin",
+            "owner",
             "admin",
             "manager",
             "analyst",
@@ -735,10 +730,10 @@ class TestPermLevelRoles:
         }
 
     def test_edit_limited(self) -> None:
-        assert _PERM_LEVEL_ROLES[PermLevel.EDIT] == {"superadmin", "admin", "manager"}
+        assert _PERM_LEVEL_ROLES[PermLevel.EDIT] == {"owner", "admin", "manager"}
 
     def test_full_admin_only(self) -> None:
-        assert _PERM_LEVEL_ROLES[PermLevel.FULL] == {"superadmin", "admin"}
+        assert _PERM_LEVEL_ROLES[PermLevel.FULL] == {"owner", "admin"}
 
 
 # =============================================================================
@@ -750,13 +745,13 @@ class TestPermLevelRoles:
 class TestEnforceClientAccess:
 
     @pytest.mark.asyncio
-    async def test_superadmin_always_allowed(self) -> None:
+    async def test_owner_always_allowed(self) -> None:
         from app.auth.permissions import enforce_client_access
 
         db = _make_db()
         await enforce_client_access(
             user_id=1,
-            user_role="superadmin",
+            user_role="owner",
             client_id=99,
             tenant_id=1,
             db=db,
@@ -816,13 +811,13 @@ class TestEnforceClientAccess:
 class TestGetAccessibleClientIds:
 
     @pytest.mark.asyncio
-    async def test_superadmin_returns_none(self) -> None:
+    async def test_owner_returns_none(self) -> None:
         from app.auth.permissions import get_accessible_client_ids
 
         db = _make_db()
         result = await get_accessible_client_ids(
             user_id=1,
-            user_role="superadmin",
+            user_role="owner",
             tenant_id=1,
             db=db,
         )

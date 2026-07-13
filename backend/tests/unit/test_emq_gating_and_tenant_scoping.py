@@ -189,13 +189,13 @@ class TestTenantScoping:
         with pytest.raises(TenantAccessDeniedError):
             verify_tenant_access(user_tenant_id, requested_tenant_id)
 
-    def test_superadmin_cross_tenant_access(self):
-        """Superadmin can access any tenant."""
-        # Superadmin accessing tenant 2
+    def test_owner_cross_tenant_access(self):
+        """Owner can access any tenant."""
+        # Owner accessing tenant 2
         result = verify_tenant_access(
-            user_tenant_id=None,  # Superadmin has no tenant
+            user_tenant_id=None,  # Owner has no tenant
             requested_tenant_id=2,
-            user_role="superadmin",
+            user_role="owner",
         )
 
         assert result["allowed"] == True
@@ -455,8 +455,8 @@ def verify_tenant_access(
     assigned_tenants: list = None,
 ) -> Dict[str, Any]:
     """Verify user can access requested tenant."""
-    # Superadmin can access all
-    if user_role == "superadmin":
+    # Owner can access all
+    if user_role == "owner":
         return {"allowed": True, "audit_logged": True}
 
     # Account manager can access assigned tenants

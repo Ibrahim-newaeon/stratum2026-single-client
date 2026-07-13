@@ -12,8 +12,8 @@ Provides endpoints for:
 - ROAS impact estimation
 - Signal volatility tracking
 - Autopilot state management
-- Platform benchmarks (super admin)
-- Portfolio overview (super admin)
+- Platform benchmarks (owner)
+- Portfolio overview (owner)
 """
 
 from datetime import date, datetime, timedelta
@@ -22,7 +22,7 @@ from typing import List, Optional
 from fastapi import APIRouter, Depends, HTTPException, Query, Request, status
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from app.auth.deps import get_current_user, require_superadmin
+from app.auth.deps import get_current_user, require_owner
 from app.db.session import get_async_session
 from app.schemas.emq_v2 import (
     AutopilotModeUpdate,
@@ -58,9 +58,10 @@ router = APIRouter(
 # =============================================================================
 def validate_tenant_access(request: Request, tenant_id: int) -> None:
     """Validate that the request has access to the specified tenant."""
-    # Superadmins operate across all tenants (TenantMiddleware flags them).
-    # They may still carry their own tenant_id, so check the role explicitly
-    # rather than relying on an absent tenant context.
+    # Owners operate across all tenants (TenantMiddleware flags them via the
+    # request.state.is_superadmin attribute — name kept until Phase C rewrites
+    # the tenant middleware). They may still carry their own tenant_id, so
+    # check the role explicitly rather than relying on an absent tenant context.
     if getattr(request.state, "is_superadmin", False):
         return
     request_tenant_id = getattr(request.state, "tenant_id", None)
@@ -622,26 +623,26 @@ async def update_autopilot_mode(
 
 
 # =============================================================================
-# Super Admin Endpoints
+# Owner Endpoints
 # =============================================================================
 @router.get(
     "/emq/benchmarks",
     response_model=APIResponse[List[EmqBenchmarkResponse]],
     summary="Get EMQ Benchmarks",
-    description="Get platform-wide EMQ benchmarks (super admin only).",
+    description="Get platform-wide EMQ benchmarks (owner only).",
 )
 async def get_benchmarks(
     request: Request,
     date: Optional[str] = Query(default=None, description="Target date"),
     platform: Optional[str] = Query(default=None, description="Filter by platform"),
     db: AsyncSession = Depends(get_async_session),
-    _superadmin=Depends(require_superadmin()),
+    _owner=Depends(require_owner()),
 ):
     """
     Get EMQ benchmarks across all tenants.
 
     Returns percentile distributions (p25, p50, p75) for EMQ scores,
-    optionally filtered by platform. Super admin only.
+    optionally filtered by platform. Owner only.
     """
     target_date = parse_date(date)
     service = EmqAdminService(db)
@@ -656,16 +657,16 @@ async def get_benchmarks(
     "/emq/portfolio",
     response_model=APIResponse[EmqPortfolioResponse],
     summary="Get Portfolio Overview",
-    description="Get portfolio-wide EMQ overview (super admin only).",
+    description="Get portfolio-wide EMQ overview (owner only).",
 )
 async def get_portfolio(
     request: Request,
     date: Optional[str] = Query(default=None, description="Target date"),
     db: AsyncSession = Depends(get_async_session),
-    _superadmin=Depends(require_superadmin()),
+    _owner=Depends(require_owner()),
 ):
     """
-    Get portfolio overview for super admin.
+    Get portfolio overview for owner.
 
     Returns aggregate EMQ metrics across all tenants including:
     - Distribution by confidence band

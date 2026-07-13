@@ -662,12 +662,14 @@ async def update_tenant_settings(
     update_data: TenantSettingsUpdate,
     db: AsyncSession = Depends(get_async_session),
     ctx: TenantContext = Depends(require_tenant("tenant_id")),
-    _: None = Depends(require_permissions([Permission.TENANT_SETTINGS])),
+    # NOTE(B1): Permission.TENANT_SETTINGS was dropped from the RBAC enum in
+    # the superadmin->owner rename (STRAT-SC-001) since TENANT_* permissions
+    # are billing/tenancy-shaped and out of the single-client ledger. This
+    # file is deleted whole in Phase C (see plan Task C2), so the dependency
+    # is removed here rather than reworked; require_tenant still gates access.
 ):
     """
     Update tenant settings.
-
-    Requires TENANT_SETTINGS permission.
     """
     # Get tenant
     result = await db.execute(

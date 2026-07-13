@@ -218,7 +218,7 @@ def require_role(*roles: UserRole) -> Any:
     Dependency factory that requires the user to have one of the specified roles.
 
     Usage:
-        @router.get("/admin", dependencies=[Depends(require_role(UserRole.ADMIN, UserRole.SUPERADMIN))])
+        @router.get("/admin", dependencies=[Depends(require_role(UserRole.ADMIN, UserRole.OWNER))])
         async def admin_endpoint(): ...
     """
 
@@ -236,13 +236,13 @@ def require_role(*roles: UserRole) -> Any:
 
 
 def require_admin():
-    """Dependency that requires admin or superadmin role."""
-    return require_role(UserRole.ADMIN, UserRole.SUPERADMIN)
+    """Dependency that requires admin or owner role."""
+    return require_role(UserRole.ADMIN, UserRole.OWNER)
 
 
-def require_superadmin():
-    """Dependency that requires superadmin role."""
-    return require_role(UserRole.SUPERADMIN)
+def require_owner():
+    """Dependency that requires owner role."""
+    return require_role(UserRole.OWNER)
 
 
 def require_tenant_id(user: CurrentUser) -> int:
@@ -390,7 +390,7 @@ async def get_accessible_client_ids(
     Inject accessible client IDs based on user role.
 
     Returns:
-        None  — user can see ALL clients (SUPERADMIN, ADMIN)
+        None  — user can see ALL clients (OWNER, ADMIN)
         list  — filtered client IDs (MANAGER/ANALYST via assignments, VIEWER via user.client_id)
     """
     from app.auth.permissions import get_accessible_client_ids as _get_ids

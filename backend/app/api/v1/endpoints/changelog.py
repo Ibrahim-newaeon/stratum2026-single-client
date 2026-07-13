@@ -33,14 +33,14 @@ logger = get_logger(__name__)
 
 
 def _require_admin(request: Request) -> int:
-    """Verify user has admin or superadmin role. Returns user_id."""
+    """Verify user has admin or owner role. Returns user_id."""
     user_id = getattr(request.state, "user_id", None)
     if not user_id:
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED, detail="Not authenticated"
         )
     user_role = getattr(request.state, "role", None)
-    if user_role not in (UserRole.ADMIN.value, UserRole.SUPERADMIN.value):
+    if user_role not in (UserRole.ADMIN.value, UserRole.OWNER.value):
         raise HTTPException(
             status_code=status.HTTP_403_FORBIDDEN, detail="Admin access required"
         )
@@ -131,8 +131,8 @@ async def list_changelog_entries(
     conditions = []
 
     # Tenant scoping: show global entries (tenant_id IS NULL) + entries for current tenant
-    if user_role == UserRole.SUPERADMIN.value:
-        # Superadmins can optionally filter by tenant; by default see all
+    if user_role == UserRole.OWNER.value:
+        # Owners can optionally filter by tenant; by default see all
         pass
     elif tenant_id:
         conditions.append(
@@ -147,7 +147,7 @@ async def list_changelog_entries(
 
     # Only admins may view unpublished entries
     if include_unpublished:
-        if user_role not in (UserRole.ADMIN.value, UserRole.SUPERADMIN.value):
+        if user_role not in (UserRole.ADMIN.value, UserRole.OWNER.value):
             include_unpublished = False
 
     if not include_unpublished:
@@ -219,7 +219,7 @@ async def get_changelog_summary(
 
     # Build tenant-scoped conditions
     summary_conditions = [ChangelogEntry.is_published == True]
-    if user_role != UserRole.SUPERADMIN.value:
+    if user_role != UserRole.OWNER.value:
         if tenant_id:
             summary_conditions.append(
                 or_(
@@ -296,8 +296,8 @@ async def get_changelog_entry(
             detail="Changelog entry not found",
         )
 
-    # Enforce tenant scoping for non-superadmins
-    if user_role != UserRole.SUPERADMIN.value and entry.tenant_id is not None:
+    # Enforce tenant scoping for non-owners
+    if user_role != UserRole.OWNER.value and entry.tenant_id is not None:
         if tenant_id != entry.tenant_id:
             raise HTTPException(
                 status_code=status.HTTP_403_FORBIDDEN,
@@ -366,7 +366,7 @@ async def mark_changelog_read(
             status_code=status.HTTP_404_NOT_FOUND,
             detail="Changelog entry not found",
         )
-    if user_role != UserRole.SUPERADMIN.value and entry.tenant_id is not None:
+    if user_role != UserRole.OWNER.value and entry.tenant_id is not None:
         if tenant_id != entry.tenant_id:
             raise HTTPException(
                 status_code=status.HTTP_403_FORBIDDEN,
@@ -417,7 +417,7 @@ async def mark_all_changelog_read(
 
     # Build tenant-scoped conditions
     mark_conditions = [ChangelogEntry.is_published == True]
-    if user_role != UserRole.SUPERADMIN.value:
+    if user_role != UserRole.OWNER.value:
         if tenant_id:
             mark_conditions.append(
                 or_(
@@ -552,8 +552,8 @@ async def update_changelog_entry(
             detail="Changelog entry not found",
         )
 
-    # Enforce tenant scoping for non-superadmins
-    if user_role != UserRole.SUPERADMIN.value and entry.tenant_id is not None:
+    # Enforce tenant scoping for non-owners
+    if user_role != UserRole.OWNER.value and entry.tenant_id is not None:
         if tenant_id != entry.tenant_id:
             raise HTTPException(
                 status_code=status.HTTP_403_FORBIDDEN,
@@ -631,8 +631,8 @@ async def delete_changelog_entry(
             detail="Changelog entry not found",
         )
 
-    # Enforce tenant scoping for non-superadmins
-    if user_role != UserRole.SUPERADMIN.value and entry.tenant_id is not None:
+    # Enforce tenant scoping for non-owners
+    if user_role != UserRole.OWNER.value and entry.tenant_id is not None:
         if tenant_id != entry.tenant_id:
             raise HTTPException(
                 status_code=status.HTTP_403_FORBIDDEN,

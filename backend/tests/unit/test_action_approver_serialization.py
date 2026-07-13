@@ -102,7 +102,7 @@ class TestApproverInfo:
         assert _approver_info(action) is None
 
     def test_cross_tenant_approver_pii_is_not_exposed(self):
-        # A superadmin from another tenant can approve via the X-Tenant-ID
+        # An owner from another tenant can approve via the X-Tenant-ID
         # override; their name/department must never be served to this
         # tenant. (Tenancy audit finding on PR #519.)
         approver = make_approver(tenant_id=999)

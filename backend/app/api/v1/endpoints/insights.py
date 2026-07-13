@@ -183,7 +183,7 @@ async def detect_campaign_anomalies(
     """
     Detect anomalies for a tenant's campaigns. Pure function — no auth /
     feature-gate / response wrapping. Reused by the tenant `/anomalies`
-    endpoint and the `/superadmin/anomalies-rollup` aggregator so the
+    endpoint and the `/console/anomalies-rollup` aggregator so the
     detection logic stays in one place.
     """
     from app.models import Campaign

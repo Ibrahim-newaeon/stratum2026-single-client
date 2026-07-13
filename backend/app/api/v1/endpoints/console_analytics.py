@@ -1,8 +1,8 @@
 # =============================================================================
-# Stratum AI - Superadmin Analytics API
+# Stratum AI - Owner Console Analytics API
 # =============================================================================
 """
-API endpoints for Superadmin analytics and profitability views.
+API endpoints for Owner console analytics and profitability views.
 Provides cross-tenant insights and platform health monitoring.
 """
 
@@ -17,7 +17,7 @@ from app.db.session import get_async_session
 from app.models.trust_layer import FactActionsQueue, FactSignalHealthDaily
 from app.schemas.response import APIResponse
 
-router = APIRouter(prefix="/superadmin", tags=["superadmin-analytics"])
+router = APIRouter(prefix="/console", tags=["owner-analytics"])
 
 
 # =============================================================================
@@ -41,9 +41,9 @@ async def get_platform_overview(
     - success_rate: Action success rate
     - signal_health_summary: Aggregated signal health
     """
-    # Verify superadmin role
+    # Verify owner role
     if not getattr(request.state, "is_superadmin", False):
-        raise HTTPException(status_code=403, detail="Superadmin access required")
+        raise HTTPException(status_code=403, detail="Owner access required")
 
     start_date = date.today() - timedelta(days=days)
 
@@ -144,7 +144,7 @@ async def get_tenant_profitability(
     - Signal health score
     """
     if not getattr(request.state, "is_superadmin", False):
-        raise HTTPException(status_code=403, detail="Superadmin access required")
+        raise HTTPException(status_code=403, detail="Owner access required")
 
     start_date = date.today() - timedelta(days=days)
 
@@ -250,7 +250,7 @@ async def get_signal_health_trends(
     Returns daily aggregates of signal health metrics.
     """
     if not getattr(request.state, "is_superadmin", False):
-        raise HTTPException(status_code=403, detail="Superadmin access required")
+        raise HTTPException(status_code=403, detail="Owner access required")
 
     start_date = date.today() - timedelta(days=days)
 
@@ -342,7 +342,7 @@ async def get_actions_analytics(
     Returns action type breakdown, status distribution, and daily trends.
     """
     if not getattr(request.state, "is_superadmin", False):
-        raise HTTPException(status_code=403, detail="Superadmin access required")
+        raise HTTPException(status_code=403, detail="Owner access required")
 
     start_date = date.today() - timedelta(days=days)
 

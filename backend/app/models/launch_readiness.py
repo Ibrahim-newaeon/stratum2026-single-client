@@ -2,7 +2,7 @@
 # Stratum AI - Launch Readiness Models
 # =============================================================================
 """
-Persistence for the Launch Readiness go-live wizard (superadmin-only).
+Persistence for the Launch Readiness go-live wizard (owner-only).
 
 Phase / item metadata lives in ``app.core.launch_readiness_phases`` as a
 static catalog. This module only stores user-driven state:

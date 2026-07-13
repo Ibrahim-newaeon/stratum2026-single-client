@@ -111,11 +111,17 @@ class TenantMiddleware(BaseHTTPMiddleware):
         cms_role = jwt_payload.get("cms_role") if jwt_payload else None
 
         if tenant_id is None:
-            # Superadmins operate across all tenants and may not carry a
+            # Owners operate across all tenants and may not carry a
             # tenant_id in their JWT.  Let them through so platform-wide
-            # endpoints (e.g. /superadmin/*, /emq/benchmarks) can be reached.
-            if role == "superadmin":
-                logger.debug("superadmin_bypass_tenant_check", user_id=user_id)
+            # endpoints (e.g. /console/*, /emq/benchmarks) can be reached.
+            # NOTE(B1/STRAT-SC-001): this file is otherwise on the Phase-C
+            # skip list (deleted/rewritten wholesale in C2) — only the role
+            # string literal is updated here, not renamed, because the
+            # global-scope bypass must behave identically after the
+            # superadmin->owner rename (brief requirement), and the rest of
+            # the unit suite depends on it functioning for owner-role tokens.
+            if role == "owner":
+                logger.debug("owner_bypass_tenant_check", user_id=user_id)
             else:
                 return JSONResponse(
                     status_code=status.HTTP_401_UNAUTHORIZED,
@@ -130,7 +136,7 @@ class TenantMiddleware(BaseHTTPMiddleware):
         request.state.tenant_id = tenant_id
         request.state.user_id = user_id
         request.state.role = role or "analyst"  # Default role if not in token
-        request.state.is_superadmin = role == "superadmin"
+        request.state.is_superadmin = role == "owner"
         request.state.cms_role = cms_role  # CMS role (None if not a CMS user)
 
         # Bind to structured logging context
@@ -249,10 +255,10 @@ class TenantMiddleware(BaseHTTPMiddleware):
                 header_tenant_id = int(tenant_header)
                 jwt_tenant_id = jwt_payload.get("tenant_id")
                 # Allow if the header tenant matches the JWT tenant claim,
-                # or if the user is a superadmin (cross-tenant access).
+                # or if the user is an owner (cross-tenant access).
                 if jwt_tenant_id and header_tenant_id == jwt_tenant_id:
                     return header_tenant_id
-                if jwt_payload.get("role") == "superadmin":
+                if jwt_payload.get("role") == "owner":
                     return header_tenant_id
             except ValueError:
                 pass

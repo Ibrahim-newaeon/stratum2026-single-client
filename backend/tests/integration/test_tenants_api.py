@@ -38,7 +38,7 @@ class TestCurrentAndDetail:
     async def test_detail_other_tenant_forbidden(
         self, authenticated_client: AsyncClient, test_tenant: dict
     ):
-        # A non-superadmin cannot read a different tenant.
+        # A non-owner cannot read a different tenant.
         other = test_tenant["id"] + 99999
         resp = await authenticated_client.get(f"/api/v1/tenants/{other}")
         assert resp.status_code == 403

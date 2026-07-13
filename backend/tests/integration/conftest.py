@@ -439,20 +439,20 @@ def auth_headers(test_user, test_tenant):
 
 
 @pytest_asyncio.fixture(scope="function")
-async def superadmin_user(db_session) -> dict:
-    """Create the superadmin user backing ``superadmin_headers``.
+async def owner_user(db_session) -> dict:
+    """Create the owner user backing ``owner_headers``.
 
-    Superadmin endpoints resolve the caller via ``get_current_user``
+    Owner endpoints resolve the caller via ``get_current_user``
     (``SELECT User WHERE id = <jwt subject>``) and audit tables FK
     ``user_id -> users.id``. The token must therefore be signed for a real
-    superadmin row, otherwise requests 401 and event inserts violate the FK.
+    owner row, otherwise requests 401 and event inserts violate the FK.
     """
     from app.base_models import Tenant, User, UserRole
     from app.core.security import get_password_hash
 
     tenant = Tenant(
-        name="Superadmin Tenant",
-        slug="superadmin-tenant",
+        name="Owner Tenant",
+        slug="owner-tenant",
         plan="enterprise",
         max_users=100,
         max_campaigns=1000,
@@ -465,8 +465,8 @@ async def superadmin_user(db_session) -> dict:
         email="admin@stratum.ai",
         email_hash="admin@stratum.ai",
         password_hash=get_password_hash("adminpassword123"),
-        full_name="Super Admin",
-        role=UserRole.SUPERADMIN,
+        full_name="Owner",
+        role=UserRole.OWNER,
         is_active=True,
         is_verified=True,
     )
@@ -482,15 +482,15 @@ async def superadmin_user(db_session) -> dict:
 
 
 @pytest_asyncio.fixture(scope="function")
-async def superadmin_headers(superadmin_user) -> dict:
-    """Generate superadmin authentication headers for a real superadmin row."""
+async def owner_headers(owner_user) -> dict:
+    """Generate owner authentication headers for a real owner row."""
     from app.core.security import create_access_token
 
     token = create_access_token(
-        subject=superadmin_user["id"],
+        subject=owner_user["id"],
         additional_claims={
-            "email": superadmin_user["email"],
-            "role": superadmin_user["role"],
+            "email": owner_user["email"],
+            "role": owner_user["role"],
         },
     )
 

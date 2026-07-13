@@ -183,7 +183,7 @@ def _approver_info(action) -> Optional[ApproverInfo]:
     if approver is None:  # user row deleted (FK is SET NULL on hard delete)
         return None
 
-    # Cross-tenant approver (only reachable via the superadmin X-Tenant-ID
+    # Cross-tenant approver (only reachable via the owner X-Tenant-ID
     # override): never serialize another tenant's user PII to this tenant.
     # Label it as platform staff instead of exposing name/department.
     if approver.tenant_id != action.tenant_id:

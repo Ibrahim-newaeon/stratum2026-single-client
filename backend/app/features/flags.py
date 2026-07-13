@@ -12,7 +12,7 @@ Feature Flags:
 - creative_fatigue: Intelligence layer creative fatigue detection
 - campaign_builder: Execution layer campaign builder
 - autopilot_level: Execution layer automation level (0-2)
-- superadmin_profitability: Platform owner profitability views
+- owner_profitability: Platform owner profitability views
 """
 
 from enum import Enum
@@ -52,7 +52,7 @@ DEFAULT_FEATURES_BY_PLAN: Dict[str, Dict[str, Any]] = {
         "creative_fatigue": False,
         "campaign_builder": False,
         "autopilot_level": AutopilotLevel.SUGGEST_ONLY,
-        "superadmin_profitability": False,
+        "owner_profitability": False,
         "max_campaigns": 5,
         "max_users": 2,
         "data_retention_days": 30,
@@ -65,7 +65,7 @@ DEFAULT_FEATURES_BY_PLAN: Dict[str, Dict[str, Any]] = {
         "creative_fatigue": False,
         "campaign_builder": False,
         "autopilot_level": AutopilotLevel.SUGGEST_ONLY,
-        "superadmin_profitability": False,
+        "owner_profitability": False,
         "max_campaigns": 20,
         "max_users": 5,
         "data_retention_days": 90,
@@ -78,7 +78,7 @@ DEFAULT_FEATURES_BY_PLAN: Dict[str, Dict[str, Any]] = {
         "creative_fatigue": True,
         "campaign_builder": True,
         "autopilot_level": AutopilotLevel.GUARDED_AUTO,
-        "superadmin_profitability": False,
+        "owner_profitability": False,
         "max_campaigns": 100,
         "max_users": 20,
         "data_retention_days": 365,
@@ -91,7 +91,7 @@ DEFAULT_FEATURES_BY_PLAN: Dict[str, Dict[str, Any]] = {
         "creative_fatigue": True,
         "campaign_builder": True,
         "autopilot_level": AutopilotLevel.APPROVAL_REQUIRED,
-        "superadmin_profitability": True,
+        "owner_profitability": True,
         "max_campaigns": -1,  # Unlimited
         "max_users": -1,  # Unlimited
         "data_retention_days": -1,  # Unlimited
@@ -105,7 +105,7 @@ DEFAULT_FEATURES_BY_PLAN: Dict[str, Dict[str, Any]] = {
         "creative_fatigue": True,
         "campaign_builder": True,
         "autopilot_level": AutopilotLevel.APPROVAL_REQUIRED,
-        "superadmin_profitability": True,
+        "owner_profitability": True,
         "max_campaigns": -1,
         "max_users": -1,
         "data_retention_days": -1,
@@ -145,8 +145,8 @@ class FeatureFlags(BaseModel):
     )
 
     # Platform
-    superadmin_profitability: bool = Field(
-        default=False, description="Superadmin profitability views"
+    owner_profitability: bool = Field(
+        default=False, description="Owner profitability views"
     )
 
     # Limits
@@ -165,7 +165,7 @@ class FeatureFlagsUpdate(BaseModel):
     creative_fatigue: Optional[bool] = None
     campaign_builder: Optional[bool] = None
     autopilot_level: Optional[int] = Field(default=None, ge=0, le=2)
-    superadmin_profitability: Optional[bool] = None
+    owner_profitability: Optional[bool] = None
     max_campaigns: Optional[int] = None
     max_users: Optional[int] = None
     data_retention_days: Optional[int] = None
@@ -350,7 +350,7 @@ FEATURE_CATEGORIES = {
     "platform": {
         "name": "Platform Features",
         "description": "Platform-level features",
-        "features": ["superadmin_profitability"],
+        "features": ["owner_profitability"],
     },
     "limits": {
         "name": "Usage Limits",
@@ -368,7 +368,7 @@ FEATURE_DESCRIPTIONS = {
     "creative_fatigue": "Detect when creatives are losing effectiveness",
     "campaign_builder": "Create and publish campaigns directly from Stratum AI",
     "autopilot_level": "Automation level: 0=Suggest, 1=Auto with caps, 2=Approval required",
-    "superadmin_profitability": "Access platform-wide profitability and usage analytics",
+    "owner_profitability": "Access platform-wide profitability and usage analytics",
     "max_campaigns": "Maximum number of active campaigns",
     "max_users": "Maximum number of team members",
     "data_retention_days": "How long historical data is kept",

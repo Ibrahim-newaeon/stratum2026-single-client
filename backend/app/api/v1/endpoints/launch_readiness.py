@@ -2,7 +2,7 @@
 # Stratum AI - Launch Readiness Endpoints
 # =============================================================================
 """
-Superadmin-only endpoints for the Launch Readiness wizard.
+Owner-only endpoints for the Launch Readiness wizard.
 
 Rules:
 - Phase N+1 is locked until phase N is 100 percent complete.
@@ -48,8 +48,8 @@ router = APIRouter()
 # =============================================================================
 # Dependencies
 # =============================================================================
-def require_superadmin(request: Request) -> int:
-    """Verify user has superadmin role. Returns the acting user id."""
+def require_owner(request: Request) -> int:
+    """Verify user has owner role. Returns the acting user id."""
     user_role = getattr(request.state, "role", None)
     user_id = getattr(request.state, "user_id", None)
 
@@ -59,10 +59,10 @@ def require_superadmin(request: Request) -> int:
             detail="Not authenticated",
         )
 
-    if user_role != UserRole.SUPERADMIN.value:
+    if user_role != UserRole.OWNER.value:
         raise HTTPException(
             status_code=status.HTTP_403_FORBIDDEN,
-            detail="Superadmin access required",
+            detail="Owner access required",
         )
 
     return user_id
@@ -197,7 +197,7 @@ async def get_launch_readiness(
     db: AsyncSession = Depends(get_async_session),
 ):
     """Return the full Launch Readiness state (phases, items, progress)."""
-    require_superadmin(request)
+    require_owner(request)
     state = await _build_state(db)
     return APIResponse(success=True, data=state)
 
@@ -216,7 +216,7 @@ async def toggle_item(
     Check or uncheck a single item. Enforces that checking only happens in
     the current phase; unchecking is always allowed.
     """
-    acting_user_id = require_superadmin(request)
+    acting_user_id = require_owner(request)
 
     located = find_item(item_key)
     if located is None:
@@ -330,7 +330,7 @@ async def list_events(
     db: AsyncSession = Depends(get_async_session),
 ):
     """Return the audit trail, most recent first."""
-    require_superadmin(request)
+    require_owner(request)
 
     stmt = select(LaunchReadinessEvent).order_by(desc(LaunchReadinessEvent.created_at))
     if phase_number is not None:

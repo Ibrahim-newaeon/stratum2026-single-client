@@ -316,15 +316,15 @@ class TestAutopilotStateEndpoint:
         assert "Testing manual override" in data["data"]["reason"]
 
 
-class TestSuperAdminEndpoints:
+class TestOwnerEndpoints:
     """Tests for super admin EMQ endpoints."""
 
     @pytest.mark.asyncio
-    async def test_get_benchmarks(self, client: AsyncClient, superadmin_headers: dict):
+    async def test_get_benchmarks(self, client: AsyncClient, owner_headers: dict):
         """Test EMQ benchmarks retrieval."""
         response = await client.get(
             "/api/v1/emq/benchmarks",
-            headers=superadmin_headers,
+            headers=owner_headers,
         )
 
         assert response.status_code == 200
@@ -341,11 +341,11 @@ class TestSuperAdminEndpoints:
             assert "p75" in benchmark
 
     @pytest.mark.asyncio
-    async def test_get_portfolio(self, client: AsyncClient, superadmin_headers: dict):
+    async def test_get_portfolio(self, client: AsyncClient, owner_headers: dict):
         """Test portfolio overview retrieval."""
         response = await client.get(
             "/api/v1/emq/portfolio",
-            headers=superadmin_headers,
+            headers=owner_headers,
         )
 
         assert response.status_code == 200

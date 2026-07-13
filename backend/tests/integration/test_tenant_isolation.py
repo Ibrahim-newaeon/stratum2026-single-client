@@ -7,7 +7,7 @@ Integration tests for tenant isolation and data scoping.
 Ensures that:
 - Users can only access their own tenant's data
 - Cross-tenant access is blocked
-- Superadmin can access multiple tenants
+- Owner can access multiple tenants
 - All queries are properly scoped
 """
 
@@ -170,50 +170,50 @@ class TestTenantDataIsolation:
         # It should be based on test_tenant's signal health or default
 
 
-class TestSuperAdminAccess:
+class TestOwnerAccess:
     """Tests for super admin cross-tenant access."""
 
     @pytest.mark.asyncio
-    async def test_superadmin_can_access_any_tenant(
+    async def test_owner_can_access_any_tenant(
         self,
         client: AsyncClient,
-        superadmin_headers: dict,
+        owner_headers: dict,
         test_tenant: dict,
     ):
-        """Test that superadmin can access any tenant's data."""
+        """Test that owner can access any tenant's data."""
         response = await client.get(
             f"/api/v1/tenants/{test_tenant['id']}/emq/score",
-            headers=superadmin_headers,
+            headers=owner_headers,
         )
 
         # Should be allowed (200) or might need tenant context
         assert response.status_code in [200, 400]
 
     @pytest.mark.asyncio
-    async def test_superadmin_can_list_all_tenants(
+    async def test_owner_can_list_all_tenants(
         self,
         client: AsyncClient,
-        superadmin_headers: dict,
+        owner_headers: dict,
     ):
-        """Test that superadmin can list all tenants."""
+        """Test that owner can list all tenants."""
         response = await client.get(
             "/api/v1/admin/tenants",
-            headers=superadmin_headers,
+            headers=owner_headers,
         )
 
         # Should be allowed
         assert response.status_code in [200, 404]  # 404 if endpoint doesn't exist
 
     @pytest.mark.asyncio
-    async def test_superadmin_portfolio_view(
+    async def test_owner_portfolio_view(
         self,
         client: AsyncClient,
-        superadmin_headers: dict,
+        owner_headers: dict,
     ):
-        """Test superadmin portfolio view aggregates all tenants."""
+        """Test owner portfolio view aggregates all tenants."""
         response = await client.get(
             "/api/v1/emq/portfolio",
-            headers=superadmin_headers,
+            headers=owner_headers,
         )
 
         assert response.status_code == 200

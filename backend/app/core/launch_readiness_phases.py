@@ -3,7 +3,7 @@
 # =============================================================================
 """
 Fixed catalog of go-live phases and their checklist items for the Launch
-Readiness wizard (superadmin-only).
+Readiness wizard (owner-only).
 
 Phases run sequentially: phase N+1 is locked until phase N is 100 percent
 complete. The catalog is static in v1; only per-item state (checked / by

@@ -1,6 +1,6 @@
 #!/bin/sh
 # Release-phase database bootstrap [INF-011]: migrations, varchar→enum casts,
-# superadmin role backfill, and optional seeds. Extracted from start.sh so the
+# owner role backfill, and optional seeds. Extracted from start.sh so the
 # whole block runs under a single Postgres advisory lock
 # (scripts/with_pg_lock.py). That serializes concurrent API replicas — before
 # this, every replica ran `alembic upgrade head` at once on boot, racing the
@@ -17,14 +17,14 @@ python fix_alembic_version.py || echo "Alembic fix skipped"
 echo "Running migrations..."
 timeout 120 python -m alembic upgrade head
 
-# Seed superadmin if SEED_SUPERADMIN=true
+# Seed owner if SEED_SUPERADMIN=true
 if [ "$SEED_SUPERADMIN" = "true" ]; then
-    echo "Seeding superadmin user..."
+    echo "Seeding owner user..."
     if [ -z "$SUPERADMIN_PASSWORD" ]; then
         echo "ERROR: SUPERADMIN_PASSWORD is required when SEED_SUPERADMIN=true"
         exit 1
     fi
-    python scripts/seed_superadmin.py
+    python scripts/seed_owner.py
 fi
 
 # Create implicit casts from varchar to PostgreSQL ENUM types
@@ -60,17 +60,17 @@ with engine.connect() as conn:
     print(f'Found {len(enum_types)} enum types, created {created} new casts')
 " || { echo "Enum cast creation failed"; exit 1; }
 
-# Ensure all superadmin users have cms_role set
-echo "Ensuring superadmin CMS roles..."
+# Ensure all owner users have cms_role set
+echo "Ensuring owner CMS roles..."
 python -c "
 import sqlalchemy, os
 engine = sqlalchemy.create_engine(os.environ['DATABASE_URL_SYNC'])
 with engine.connect() as conn:
     result = conn.execute(sqlalchemy.text(
-        \"UPDATE users SET cms_role = 'super_admin' WHERE role = 'superadmin' AND (cms_role IS NULL OR cms_role = '') AND is_deleted = false\"
+        \"UPDATE users SET cms_role = 'super_admin' WHERE role = 'owner' AND (cms_role IS NULL OR cms_role = '') AND is_deleted = false\"
     ))
     conn.commit()
-    print(f'Updated {result.rowcount} superadmin(s) with cms_role')
+    print(f'Updated {result.rowcount} owner(s) with cms_role')
 " || { echo "CMS role fix failed"; exit 1; }
 
 # Seed CMS content pages (docs articles + marketing pages) when SEED_CMS_PAGES=true.

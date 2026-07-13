@@ -462,8 +462,8 @@ def require_permission(permission: str) -> Any:
         user_permissions = getattr(request.state, "permissions", [])
         user_role = getattr(request.state, "role", None)
 
-        # Superadmins have all permissions
-        if user_role == "superadmin":
+        # Owners have all permissions
+        if user_role == "owner":
             return True
 
         # Check if user has the required permission

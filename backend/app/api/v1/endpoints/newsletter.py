@@ -22,7 +22,7 @@ from pydantic import BaseModel, Field
 from sqlalchemy import and_, func, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from app.auth.deps import CurrentUserDep, get_current_user, require_superadmin
+from app.auth.deps import CurrentUserDep, get_current_user, require_owner
 from app.base_models import LandingPageSubscriber, SubscriberStatus
 from app.db.session import get_async_session
 from app.models.newsletter import (
@@ -731,7 +731,7 @@ async def campaign_analytics(
     "/subscribers",
     response_model=list[SubscriberResponse],
     tags=["Newsletter"],
-    dependencies=[Depends(require_superadmin())],
+    dependencies=[Depends(require_owner())],
 )
 async def list_subscribers(
     current_user: CurrentUserDep,
@@ -768,7 +768,7 @@ async def list_subscribers(
     "/subscribers/stats",
     response_model=SubscriberStatsResponse,
     tags=["Newsletter"],
-    dependencies=[Depends(require_superadmin())],
+    dependencies=[Depends(require_owner())],
 )
 async def subscriber_stats(
     current_user: CurrentUserDep,
@@ -793,7 +793,7 @@ async def subscriber_stats(
 @router.put(
     "/subscribers/{subscriber_id}/unsubscribe",
     tags=["Newsletter"],
-    dependencies=[Depends(require_superadmin())],
+    dependencies=[Depends(require_owner())],
 )
 async def manual_unsubscribe(
     subscriber_id: int,
@@ -817,7 +817,7 @@ async def manual_unsubscribe(
 @router.put(
     "/subscribers/{subscriber_id}/resubscribe",
     tags=["Newsletter"],
-    dependencies=[Depends(require_superadmin())],
+    dependencies=[Depends(require_owner())],
 )
 async def resubscribe(
     subscriber_id: int,

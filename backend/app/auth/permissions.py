@@ -5,7 +5,7 @@
 Role-Based Access Control (RBAC) implementation.
 
 Roles:
-- super_admin: Full platform access, cross-tenant operations
+- owner: Full platform access, cross-tenant operations
 - tenant_admin: Full tenant access, user management
 - media_buyer: Campaign management, budget control
 - analyst: Read-only analytics, reports
@@ -35,15 +35,15 @@ class PermLevel(int, Enum):
 # Minimum roles for each PermLevel
 _PERM_LEVEL_ROLES: dict[PermLevel, set[str]] = {
     PermLevel.VIEW: {
-        "superadmin",
+        "owner",
         "admin",
         "manager",
         "analyst",
         "account_manager",
         "viewer",
     },
-    PermLevel.EDIT: {"superadmin", "admin", "manager"},
-    PermLevel.FULL: {"superadmin", "admin"},
+    PermLevel.EDIT: {"owner", "admin", "manager"},
+    PermLevel.FULL: {"owner", "admin"},
 }
 
 
@@ -52,12 +52,6 @@ class Permission(str, Enum):
     Granular permissions for RBAC.
     Naming convention: RESOURCE_ACTION
     """
-
-    # Tenant permissions
-    TENANT_READ = "tenant:read"
-    TENANT_WRITE = "tenant:write"
-    TENANT_DELETE = "tenant:delete"
-    TENANT_SETTINGS = "tenant:settings"
 
     # User management
     USER_READ = "user:read"
@@ -77,12 +71,7 @@ class Permission(str, Enum):
     ANALYTICS_EXPORT = "analytics:export"
     ANALYTICS_ADVANCED = "analytics:advanced"
 
-    # Billing permissions
-    BILLING_READ = "billing:read"
-    BILLING_WRITE = "billing:write"
-    BILLING_MANAGE = "billing:manage"
-
-    # System permissions (super admin only)
+    # System permissions (owner only)
     SYSTEM_READ = "system:read"
     SYSTEM_WRITE = "system:write"
     SYSTEM_ADMIN = "system:admin"
@@ -125,13 +114,8 @@ class Permission(str, Enum):
 # =============================================================================
 
 ROLE_PERMISSIONS: dict[str, Set[Permission]] = {
-    # Super Admin: Full platform access
-    "superadmin": {
-        # All tenant permissions
-        Permission.TENANT_READ,
-        Permission.TENANT_WRITE,
-        Permission.TENANT_DELETE,
-        Permission.TENANT_SETTINGS,
+    # Owner: Full platform access
+    "owner": {
         # All user permissions
         Permission.USER_READ,
         Permission.USER_WRITE,
@@ -147,10 +131,6 @@ ROLE_PERMISSIONS: dict[str, Set[Permission]] = {
         Permission.ANALYTICS_READ,
         Permission.ANALYTICS_EXPORT,
         Permission.ANALYTICS_ADVANCED,
-        # All billing permissions
-        Permission.BILLING_READ,
-        Permission.BILLING_WRITE,
-        Permission.BILLING_MANAGE,
         # System permissions
         Permission.SYSTEM_READ,
         Permission.SYSTEM_WRITE,
@@ -184,9 +164,6 @@ ROLE_PERMISSIONS: dict[str, Set[Permission]] = {
     },
     # Tenant Admin: Full tenant access
     "admin": {
-        Permission.TENANT_READ,
-        Permission.TENANT_WRITE,
-        Permission.TENANT_SETTINGS,
         Permission.USER_READ,
         Permission.USER_WRITE,
         Permission.USER_DELETE,
@@ -199,8 +176,6 @@ ROLE_PERMISSIONS: dict[str, Set[Permission]] = {
         Permission.ANALYTICS_READ,
         Permission.ANALYTICS_EXPORT,
         Permission.ANALYTICS_ADVANCED,
-        Permission.BILLING_READ,
-        Permission.BILLING_WRITE,
         Permission.CONNECTOR_READ,
         Permission.CONNECTOR_WRITE,
         Permission.CONNECTOR_DELETE,
@@ -224,7 +199,6 @@ ROLE_PERMISSIONS: dict[str, Set[Permission]] = {
     },
     # Manager: Campaign and team management
     "manager": {
-        Permission.TENANT_READ,
         Permission.USER_READ,
         Permission.USER_WRITE,
         Permission.CAMPAIGN_READ,
@@ -233,7 +207,6 @@ ROLE_PERMISSIONS: dict[str, Set[Permission]] = {
         Permission.CAMPAIGN_RULES,
         Permission.ANALYTICS_READ,
         Permission.ANALYTICS_EXPORT,
-        Permission.BILLING_READ,
         Permission.CONNECTOR_READ,
         Permission.CONNECTOR_WRITE,
         Permission.ALERT_READ,
@@ -250,7 +223,6 @@ ROLE_PERMISSIONS: dict[str, Set[Permission]] = {
     },
     # Media Buyer: Campaign execution focus
     "media_buyer": {
-        Permission.TENANT_READ,
         Permission.CAMPAIGN_READ,
         Permission.CAMPAIGN_WRITE,
         Permission.CAMPAIGN_BUDGET,
@@ -268,7 +240,6 @@ ROLE_PERMISSIONS: dict[str, Set[Permission]] = {
     },
     # Analyst: Read-only analytics focus
     "analyst": {
-        Permission.TENANT_READ,
         Permission.CAMPAIGN_READ,
         Permission.ANALYTICS_READ,
         Permission.ANALYTICS_EXPORT,
@@ -281,12 +252,10 @@ ROLE_PERMISSIONS: dict[str, Set[Permission]] = {
     },
     # Account Manager: Client relationship focus
     "account_manager": {
-        Permission.TENANT_READ,
         Permission.USER_READ,
         Permission.CAMPAIGN_READ,
         Permission.ANALYTICS_READ,
         Permission.ANALYTICS_EXPORT,
-        Permission.BILLING_READ,
         Permission.CONNECTOR_READ,
         Permission.ALERT_READ,
         Permission.ALERT_ACKNOWLEDGE,
@@ -295,7 +264,6 @@ ROLE_PERMISSIONS: dict[str, Set[Permission]] = {
     },
     # Viewer: Minimal read access
     "viewer": {
-        Permission.TENANT_READ,
         Permission.CAMPAIGN_READ,
         Permission.ANALYTICS_READ,
         Permission.ALERT_READ,
@@ -314,84 +282,84 @@ from app.base_models import UserRole
 
 RBAC_MATRIX: dict[str, dict[UserRole, PermLevel]] = {
     "campaigns": {
-        UserRole.SUPERADMIN: PermLevel.FULL,
+        UserRole.OWNER: PermLevel.FULL,
         UserRole.ADMIN: PermLevel.FULL,
         UserRole.MANAGER: PermLevel.EDIT,
         UserRole.ANALYST: PermLevel.EDIT,
         UserRole.VIEWER: PermLevel.VIEW,
     },
     "campaigns.delete": {
-        UserRole.SUPERADMIN: PermLevel.FULL,
+        UserRole.OWNER: PermLevel.FULL,
         UserRole.ADMIN: PermLevel.FULL,
         UserRole.MANAGER: PermLevel.NONE,
         UserRole.ANALYST: PermLevel.NONE,
         UserRole.VIEWER: PermLevel.NONE,
     },
     "clients": {
-        UserRole.SUPERADMIN: PermLevel.FULL,
+        UserRole.OWNER: PermLevel.FULL,
         UserRole.ADMIN: PermLevel.FULL,
         UserRole.MANAGER: PermLevel.EDIT,
         UserRole.ANALYST: PermLevel.VIEW,
         UserRole.VIEWER: PermLevel.VIEW,
     },
     "clients.portal_users": {
-        UserRole.SUPERADMIN: PermLevel.FULL,
+        UserRole.OWNER: PermLevel.FULL,
         UserRole.ADMIN: PermLevel.FULL,
         UserRole.MANAGER: PermLevel.EDIT,
         UserRole.ANALYST: PermLevel.NONE,
         UserRole.VIEWER: PermLevel.NONE,
     },
     "analytics": {
-        UserRole.SUPERADMIN: PermLevel.FULL,
+        UserRole.OWNER: PermLevel.FULL,
         UserRole.ADMIN: PermLevel.FULL,
         UserRole.MANAGER: PermLevel.EDIT,
         UserRole.ANALYST: PermLevel.EDIT,
         UserRole.VIEWER: PermLevel.VIEW,
     },
     "reports": {
-        UserRole.SUPERADMIN: PermLevel.FULL,
+        UserRole.OWNER: PermLevel.FULL,
         UserRole.ADMIN: PermLevel.FULL,
         UserRole.MANAGER: PermLevel.FULL,
         UserRole.ANALYST: PermLevel.EDIT,
         UserRole.VIEWER: PermLevel.VIEW,
     },
     "reports.download": {
-        UserRole.SUPERADMIN: PermLevel.FULL,
+        UserRole.OWNER: PermLevel.FULL,
         UserRole.ADMIN: PermLevel.FULL,
         UserRole.MANAGER: PermLevel.FULL,
         UserRole.ANALYST: PermLevel.FULL,
         UserRole.VIEWER: PermLevel.FULL,
     },
     "tenants.settings": {
-        UserRole.SUPERADMIN: PermLevel.FULL,
+        UserRole.OWNER: PermLevel.FULL,
         UserRole.ADMIN: PermLevel.FULL,
         UserRole.MANAGER: PermLevel.NONE,
         UserRole.ANALYST: PermLevel.NONE,
         UserRole.VIEWER: PermLevel.NONE,
     },
     "users.manage": {
-        UserRole.SUPERADMIN: PermLevel.FULL,
+        UserRole.OWNER: PermLevel.FULL,
         UserRole.ADMIN: PermLevel.FULL,
         UserRole.MANAGER: PermLevel.NONE,
         UserRole.ANALYST: PermLevel.NONE,
         UserRole.VIEWER: PermLevel.NONE,
     },
     "connectors": {
-        UserRole.SUPERADMIN: PermLevel.FULL,
+        UserRole.OWNER: PermLevel.FULL,
         UserRole.ADMIN: PermLevel.FULL,
         UserRole.MANAGER: PermLevel.EDIT,
         UserRole.ANALYST: PermLevel.VIEW,
         UserRole.VIEWER: PermLevel.NONE,
     },
     "billing": {
-        UserRole.SUPERADMIN: PermLevel.FULL,
+        UserRole.OWNER: PermLevel.FULL,
         UserRole.ADMIN: PermLevel.FULL,
         UserRole.MANAGER: PermLevel.VIEW,
         UserRole.ANALYST: PermLevel.NONE,
         UserRole.VIEWER: PermLevel.NONE,
     },
     "audit": {
-        UserRole.SUPERADMIN: PermLevel.FULL,
+        UserRole.OWNER: PermLevel.FULL,
         UserRole.ADMIN: PermLevel.VIEW,
         UserRole.MANAGER: PermLevel.NONE,
         UserRole.ANALYST: PermLevel.NONE,
@@ -417,7 +385,7 @@ def get_permission_level(role: UserRole, resource: str) -> PermLevel:
 # =============================================================================
 
 ROLE_HIERARCHY: dict[UserRole, int] = {
-    UserRole.SUPERADMIN: 100,
+    UserRole.OWNER: 100,
     UserRole.ADMIN: 80,
     UserRole.MANAGER: 60,
     UserRole.ANALYST: 40,
@@ -429,14 +397,14 @@ def can_manage_role(actor_role: UserRole, target_role: UserRole) -> bool:
     """
     Check whether *actor_role* can assign / manage *target_role*.
 
-    Only SUPERADMIN and ADMIN may manage roles, and they may only
+    Only OWNER and ADMIN may manage roles, and they may only
     assign roles **strictly below** their own hierarchy level
     (prevents privilege escalation).
     """
-    if actor_role not in {UserRole.SUPERADMIN, UserRole.ADMIN}:
+    if actor_role not in {UserRole.OWNER, UserRole.ADMIN}:
         return False
-    if actor_role == UserRole.SUPERADMIN:
-        return True  # superadmin can assign anything
+    if actor_role == UserRole.OWNER:
+        return True  # owner can assign anything
     return ROLE_HIERARCHY[target_role] < ROLE_HIERARCHY[actor_role]
 
 
@@ -445,7 +413,7 @@ def can_manage_role(actor_role: UserRole, target_role: UserRole) -> bool:
 # =============================================================================
 
 _ROLE_SCOPE: dict[UserRole, str] = {
-    UserRole.SUPERADMIN: "global",
+    UserRole.OWNER: "global",
     UserRole.ADMIN: "tenant",
     UserRole.MANAGER: "assigned",
     UserRole.ANALYST: "assigned",
@@ -463,7 +431,7 @@ def get_resource_scope(role: UserRole) -> str:
 # =============================================================================
 
 SIDEBAR_VISIBILITY: dict[UserRole, set[str]] = {
-    UserRole.SUPERADMIN: {
+    UserRole.OWNER: {
         "dashboard",
         "campaigns",
         "analytics",
@@ -582,15 +550,16 @@ def has_all_permissions(role: str, permissions: List[Permission]) -> bool:
     return all(p in user_permissions for p in permissions)
 
 
-def is_superadmin_role(role: Optional[str]) -> bool:
-    """Canonical check for whether a role string denotes the platform superadmin.
+def is_owner_role(role: Optional[str]) -> bool:
+    """Canonical check for whether a role string denotes the platform owner.
 
-    Single source of truth for the ``role == "superadmin"`` comparison that the
+    Single source of truth for the ``role == "owner"`` comparison that the
     request-state dependencies below (and callers) would otherwise inline
     (AUTH-004). Distinct from the middleware-set ``request.state.is_superadmin``
-    flag — this classifies a role string.
+    flag (still named for the pre-rename tenant middleware until Phase C) —
+    this classifies a role string.
     """
-    return role is not None and role.lower() == "superadmin"
+    return role is not None and role.lower() == "owner"
 
 
 # =============================================================================
@@ -673,7 +642,7 @@ def require_role(roles: List[str]) -> Callable:
         @router.post("/users")
         async def create_user(
             request: Request,
-            _: None = Depends(require_role(["admin", "superadmin"]))
+            _: None = Depends(require_role(["admin", "owner"]))
         ):
             ...
     """
@@ -690,27 +659,27 @@ def require_role(roles: List[str]) -> Callable:
     return role_checker
 
 
-async def require_super_admin(request: Request) -> None:
+async def require_owner(request: Request) -> None:
     """
-    FastAPI dependency that requires super admin role.
+    FastAPI dependency that requires the owner role.
 
     This is a convenience dependency for routes that should only
-    be accessible to super admins (platform-level operations).
+    be accessible to the platform owner (platform-level operations).
 
     Usage:
         @router.get("/system/health")
         async def system_health(
             request: Request,
-            _: None = Depends(require_super_admin)
+            _: None = Depends(require_owner)
         ):
             ...
     """
     role = _authenticated_role(request)
 
-    if not is_superadmin_role(role):
+    if not is_owner_role(role):
         raise HTTPException(
             status_code=status.HTTP_403_FORBIDDEN,
-            detail="Super admin access required",
+            detail="Owner access required",
         )
 
 
@@ -765,12 +734,12 @@ async def enforce_client_access(
     """
     Raise 403 unless the user is allowed to access the given client.
 
-    Admins and superadmins have unrestricted access.
+    Admins and owners have unrestricted access.
     Other roles must be explicitly assigned to the client, or have a
     matching ``client_id`` on their user record.
     """
     role = user_role if isinstance(user_role, str) else user_role.value
-    if role.lower() in {"superadmin", "admin"}:
+    if role.lower() in {"owner", "admin"}:
         return
 
     # If the user's own profile is scoped to this client, allow
@@ -808,7 +777,7 @@ async def get_accessible_client_ids(
 ) -> Optional[List[int]]:
     """
     Return the list of client IDs the user may see, or *None* if
-    the user has unrestricted access (admin/superadmin).
+    the user has unrestricted access (admin/owner).
 
     Returns:
         ``None``  – unrestricted (don't filter)
@@ -817,7 +786,7 @@ async def get_accessible_client_ids(
     from sqlalchemy import select
 
     role = user_role if isinstance(user_role, str) else user_role.value
-    if role.lower() in {"superadmin", "admin"}:
+    if role.lower() in {"owner", "admin"}:
         return None  # unrestricted
 
     # Viewer: scoped to their own client_id

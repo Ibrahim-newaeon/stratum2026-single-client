@@ -1,16 +1,16 @@
 # =============================================================================
 # Stratum AI - Feature Flags API Integration Tests
 # =============================================================================
-"""Integration tests for the tenant + superadmin feature-flags API.
+"""Integration tests for the tenant + owner feature-flags API.
 
 Exercises the real ASGI app against Postgres + Redis: tenant feature
-retrieval/update with tenant-context enforcement, and the superadmin
-cross-tenant routes (which gate on the ``superadmin`` role).
+retrieval/update with tenant-context enforcement, and the owner
+cross-tenant routes (which gate on the ``owner`` role).
 
-The superadmin route tests also guard the role-attribute fix: these
+The owner route tests also guard the role-attribute fix: these
 handlers previously read ``request.state.user_role`` (never set by the
 tenant middleware, which populates ``request.state.role``), so every
-superadmin feature-flag route returned 403 regardless of caller.
+owner feature-flag route returned 403 regardless of caller.
 """
 
 import pytest
@@ -79,26 +79,26 @@ class TestTenantFeatures:
 
 
 # =============================================================================
-# Superadmin routes (role-gated)
+# Owner routes (role-gated)
 # =============================================================================
-class TestSuperadminFeatures:
+class TestOwnerFeatures:
     @pytest.mark.asyncio
-    async def test_non_superadmin_forbidden(
+    async def test_non_owner_forbidden(
         self, authenticated_client: AsyncClient, test_tenant: dict
     ):
-        # authenticated_client is an ADMIN, not a superadmin → 403.
+        # authenticated_client is an ADMIN, not a owner → 403.
         resp = await authenticated_client.get(
-            f"/api/v1/superadmin/tenants/{test_tenant['id']}/features"
+            f"/api/v1/console/tenants/{test_tenant['id']}/features"
         )
         assert resp.status_code == 403
 
     @pytest.mark.asyncio
-    async def test_superadmin_get_features(
-        self, client: AsyncClient, superadmin_headers: dict, test_tenant: dict
+    async def test_owner_get_features(
+        self, client: AsyncClient, owner_headers: dict, test_tenant: dict
     ):
         resp = await client.get(
-            f"/api/v1/superadmin/tenants/{test_tenant['id']}/features",
-            headers=superadmin_headers,
+            f"/api/v1/console/tenants/{test_tenant['id']}/features",
+            headers=owner_headers,
         )
         assert resp.status_code == 200
         data = resp.json()["data"]
@@ -106,34 +106,34 @@ class TestSuperadminFeatures:
         assert "features" in data
 
     @pytest.mark.asyncio
-    async def test_superadmin_update_features(
-        self, client: AsyncClient, superadmin_headers: dict, test_tenant: dict
+    async def test_owner_update_features(
+        self, client: AsyncClient, owner_headers: dict, test_tenant: dict
     ):
         resp = await client.put(
-            f"/api/v1/superadmin/tenants/{test_tenant['id']}/features",
-            headers=superadmin_headers,
+            f"/api/v1/console/tenants/{test_tenant['id']}/features",
+            headers=owner_headers,
             json={"signal_health": True},
         )
         assert resp.status_code == 200
         assert resp.json()["data"]["features"]["signal_health"] is True
 
     @pytest.mark.asyncio
-    async def test_superadmin_reset_features(
-        self, client: AsyncClient, superadmin_headers: dict, test_tenant: dict
+    async def test_owner_reset_features(
+        self, client: AsyncClient, owner_headers: dict, test_tenant: dict
     ):
         resp = await client.post(
-            f"/api/v1/superadmin/tenants/{test_tenant['id']}/features/reset",
-            headers=superadmin_headers,
+            f"/api/v1/console/tenants/{test_tenant['id']}/features/reset",
+            headers=owner_headers,
         )
         assert resp.status_code == 200
         assert "features" in resp.json()["data"]
 
     @pytest.mark.asyncio
     async def test_feature_metadata(
-        self, client: AsyncClient, superadmin_headers: dict
+        self, client: AsyncClient, owner_headers: dict
     ):
         resp = await client.get(
-            "/api/v1/superadmin/feature-metadata", headers=superadmin_headers
+            "/api/v1/console/feature-metadata", headers=owner_headers
         )
         assert resp.status_code == 200
         data = resp.json()["data"]

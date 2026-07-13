@@ -229,14 +229,14 @@ async def lifespan(app: FastAPI) -> AsyncGenerator:
     except (ImportError, RuntimeError, ValueError) as e:
         logger.warning("platform_adapter_registration_failed", error=str(e))
 
-    # Auto-seed superadmin if not exists or update password
+    # Auto-seed owner if not exists or update password
     try:
-        from scripts.seed_superadmin import create_superadmin
+        from scripts.seed_owner import create_owner
 
-        await create_superadmin()
-        logger.info("superadmin_seed_completed")
+        await create_owner()
+        logger.info("owner_seed_completed")
     except Exception as e:
-        logger.warning("superadmin_seed_failed", error=str(e))
+        logger.warning("owner_seed_failed", error=str(e))
 
     # Load per-tenant PII encryption keys into the in-memory cache, provisioning
     # any tenant that lacks one (AUTH-05). Non-fatal: on failure, encrypt/decrypt
@@ -272,12 +272,12 @@ def _resolve_ws_tenant(payload: dict, requested_tenant: Optional[int]) -> Option
     Resolve the tenant for a WebSocket connection from the VERIFIED token (TEN-001).
 
     The client-supplied ``?tenant_id=`` query param is not trusted: a
-    non-superadmin is always pinned to their token's ``tenant_id``, so it is
+    non-owner is always pinned to their token's ``tenant_id``, so it is
     impossible to subscribe to another tenant's real-time stream by spoofing
-    the param. Only a superadmin may explicitly target a different tenant.
+    the param. Only an owner may explicitly target a different tenant.
     """
     token_tenant = payload.get("tenant_id")
-    if payload.get("role") == "superadmin" and requested_tenant is not None:
+    if payload.get("role") == "owner" and requested_tenant is not None:
         return requested_tenant
     return token_tenant
 

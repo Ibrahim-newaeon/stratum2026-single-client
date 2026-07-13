@@ -1,15 +1,15 @@
 #!/usr/bin/env python3
 """
-Stratum AI - Super Admin Seed Script
+Stratum AI - Owner Seed Script
 
-Creates a super admin user with cross-tenant platform access.
+Creates an owner user with cross-tenant platform access.
 Uses raw SQL to bypass Row-Level Security policies.
 
 Usage:
-    docker compose exec api python scripts/seed_superadmin.py
+    docker compose exec api python scripts/seed_owner.py
 
 Or from the backend folder:
-    python scripts/seed_superadmin.py
+    python scripts/seed_owner.py
 """
 
 import asyncio
@@ -28,14 +28,14 @@ from app.core.config import settings
 from app.core.security import encrypt_pii, get_password_hash, hash_pii_for_lookup
 
 # =============================================================================
-# Super Admin Configuration (read from env vars with fallbacks for dev only)
+# Owner Configuration (read from env vars with fallbacks for dev only)
 # =============================================================================
 
 # SECURITY: These MUST be provided via environment variables.
 # The script will fail fast if they are not set.
 SUPERADMIN_EMAIL = os.environ.get("SUPERADMIN_EMAIL")
 SUPERADMIN_PASSWORD = os.environ.get("SUPERADMIN_PASSWORD")
-SUPERADMIN_NAME = os.environ.get("SUPERADMIN_NAME", "Platform Super Admin")
+SUPERADMIN_NAME = os.environ.get("SUPERADMIN_NAME", "Platform Owner")
 SUPERADMIN_TENANT_NAME = os.environ.get("SUPERADMIN_TENANT_NAME", "Stratum Platform")
 SUPERADMIN_TENANT_SLUG = os.environ.get("SUPERADMIN_TENANT_SLUG", "stratum-platform")
 
@@ -44,7 +44,7 @@ if not SUPERADMIN_EMAIL or not SUPERADMIN_PASSWORD:
         "ERROR: SUPERADMIN_EMAIL and SUPERADMIN_PASSWORD environment variables are required."
     )
     print(
-        "Example: SUPERADMIN_EMAIL=admin@example.com SUPERADMIN_PASSWORD=$(openssl rand -base64 32) python scripts/seed_superadmin.py"
+        "Example: SUPERADMIN_EMAIL=admin@example.com SUPERADMIN_PASSWORD=$(openssl rand -base64 32) python scripts/seed_owner.py"
     )
     sys.exit(1)
 
@@ -54,8 +54,8 @@ if len(SUPERADMIN_PASSWORD) < 16:
     sys.exit(1)
 
 
-async def create_superadmin():
-    """Create super admin user and platform tenant using raw SQL."""
+async def create_owner():
+    """Create owner user and platform tenant using raw SQL."""
 
     # Create async engine
     engine = create_async_engine(
@@ -63,26 +63,26 @@ async def create_superadmin():
         echo=False,
     )
 
-    # Step 1: Add 'superadmin' to userrole enum if missing (requires AUTOCOMMIT)
+    # Step 1: Add 'owner' to userrole enum if missing (requires AUTOCOMMIT)
     # ALTER TYPE ADD VALUE cannot run inside a transaction block
     async with engine.connect() as conn:
         await conn.execution_options(isolation_level="AUTOCOMMIT")
         try:
             result = await conn.execute(
                 text(
-                    "SELECT 1 FROM pg_enum WHERE enumtypid = 'userrole'::regtype AND enumlabel = 'superadmin'"
+                    "SELECT 1 FROM pg_enum WHERE enumtypid = 'userrole'::regtype AND enumlabel = 'owner'"
                 )
             )
             if not result.fetchone():
-                await conn.execute(text("ALTER TYPE userrole ADD VALUE 'superadmin'"))
-                print("Added 'superadmin' to userrole enum")
+                await conn.execute(text("ALTER TYPE userrole ADD VALUE 'owner'"))
+                print("Added 'owner' to userrole enum")
         except Exception as e:
             print(f"Note: enum check skipped ({e})")
 
     # Step 2: Create tenant and user in a transaction
     async with engine.begin() as conn:
         try:
-            # Set superadmin context to bypass RLS policies (may not exist yet)
+            # Set owner context to bypass RLS policies (may not exist yet)
             try:
                 await conn.execute(text("SELECT set_tenant_context(1, true)"))
             except Exception:
@@ -95,7 +95,7 @@ async def create_superadmin():
             password_hash = get_password_hash(SUPERADMIN_PASSWORD)
             now = datetime.now(UTC)
 
-            # Check if super admin already exists
+            # Check if owner already exists
             result = await conn.execute(
                 text(
                     "SELECT id, role, is_active, is_verified FROM users WHERE email_hash = :email_hash"
@@ -105,7 +105,7 @@ async def create_superadmin():
             existing = result.fetchone()
 
             if existing:
-                print(f"Super admin already exists: {SUPERADMIN_EMAIL}")
+                print(f"Owner already exists: {SUPERADMIN_EMAIL}")
                 print(f"  User ID: {existing[0]}")
                 print(f"  Updating password and ensuring active/verified...")
                 await conn.execute(
@@ -144,8 +144,8 @@ async def create_superadmin():
                 tenant_id = tenant[0]
                 print(f"Using existing tenant: {tenant[1]} (ID: {tenant_id})")
 
-            # Create super admin user using raw SQL
-            print(f"\nCreating super admin user: {SUPERADMIN_EMAIL}")
+            # Create owner user using raw SQL
+            print(f"\nCreating owner user: {SUPERADMIN_EMAIL}")
 
             result = await conn.execute(
                 text("""
@@ -157,7 +157,7 @@ async def create_superadmin():
                         created_at, updated_at, is_deleted
                     ) VALUES (
                         :tenant_id, :email, :email_hash, :password_hash, :full_name,
-                        'superadmin', '{}', true, true,
+                        'owner', '{}', true, true,
                         'en', 'UTC', '{}',
                         false, true,
                         :now, :now, false
@@ -176,18 +176,18 @@ async def create_superadmin():
             user_id = result.fetchone()[0]
 
             print("\n" + "=" * 50)
-            print("SUPER ADMIN CREATED SUCCESSFULLY")
+            print("OWNER CREATED SUCCESSFULLY")
             print("=" * 50)
             print(f"  Email:    {SUPERADMIN_EMAIL}")
             print("  Password:  [set via SUPERADMIN_PASSWORD env var]")
-            print("  Role:     superadmin")
+            print("  Role:     owner")
             print(f"  Tenant:   {SUPERADMIN_TENANT_NAME}")
             print(f"  User ID:  {user_id}")
             print("=" * 50)
             print("\nYou can now log in at /login with these credentials.")
 
         except Exception as e:
-            print(f"\nError creating super admin: {e}")
+            print(f"\nError creating owner: {e}")
             raise
         finally:
             await engine.dispose()
@@ -195,7 +195,7 @@ async def create_superadmin():
 
 if __name__ == "__main__":
     print("\n" + "=" * 50)
-    print("Stratum AI - Super Admin Seed Script")
+    print("Stratum AI - Owner Seed Script")
     print("=" * 50 + "\n")
 
-    asyncio.run(create_superadmin())
+    asyncio.run(create_owner())

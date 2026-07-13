@@ -11,7 +11,7 @@ Complements ``test_security.py`` (crypto / hashing / JWT signing). Covers:
   / ``clear_login_attempts``)
 - ``get_redis_pool`` caching and creation
 - ``decode_token`` failure branches (expired, garbage)
-- ``require_permission`` (superadmin bypass / missing / granted)
+- ``require_permission`` (owner bypass / missing / granted)
 - ``anonymize_pii``
 
 The autouse ``_fake_security_redis`` fixture in ``tests/unit/conftest.py``
@@ -376,10 +376,10 @@ def _perm_request(role: Any = None, permissions: Any = None) -> SimpleNamespace:
 
 
 class TestRequirePermission:
-    async def test_superadmin_bypasses_permission_check(self) -> None:
-        """Superadmins are allowed regardless of explicit permissions."""
+    async def test_owner_bypasses_permission_check(self) -> None:
+        """Owners are allowed regardless of explicit permissions."""
         checker = require_permission("CAMPAIGN_APPROVE").dependency
-        assert await checker(_perm_request(role="superadmin")) is True
+        assert await checker(_perm_request(role="owner")) is True
 
     async def test_missing_permission_raises_403(self) -> None:
         """A user without the permission gets a 403 naming it."""

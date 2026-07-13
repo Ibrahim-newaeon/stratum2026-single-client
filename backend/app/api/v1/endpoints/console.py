@@ -1,8 +1,8 @@
 # =============================================================================
-# Stratum AI - Super Admin Dashboard Endpoints
+# Stratum AI - Owner Console Dashboard Endpoints
 # =============================================================================
 """
-Super Admin endpoints for platform-level management.
+Owner console endpoints for platform-level management.
 Implements Multi_Tenant_and_Super_Admin_Spec.md requirements.
 
 Features:
@@ -98,8 +98,8 @@ class ChurnRiskItem(BaseModel):
 # =============================================================================
 # Dependencies
 # =============================================================================
-def require_superadmin(request: Request) -> int:
-    """Verify user has superadmin role."""
+def require_owner(request: Request) -> int:
+    """Verify user has owner role."""
     user_role = getattr(request.state, "role", None)
     user_id = getattr(request.state, "user_id", None)
 
@@ -109,10 +109,10 @@ def require_superadmin(request: Request) -> int:
             detail="Not authenticated",
         )
 
-    if user_role != UserRole.SUPERADMIN.value:
+    if user_role != UserRole.OWNER.value:
         raise HTTPException(
             status_code=status.HTTP_403_FORBIDDEN,
-            detail="Superadmin access required",
+            detail="Owner access required",
         )
 
     return user_id
@@ -128,9 +128,9 @@ async def get_revenue_metrics(
 ):
     """
     Get platform revenue metrics (MRR, ARR, NRR, churn).
-    SuperAdmin only.
+    Owner only.
     """
-    require_superadmin(request)
+    require_owner(request)
 
     # Get all active tenants
     result = await db.execute(select(Tenant).where(Tenant.is_deleted == False))
@@ -192,7 +192,7 @@ async def get_revenue_breakdown(
     """
     Get revenue breakdown by plan tier.
     """
-    require_superadmin(request)
+    require_owner(request)
 
     result = await db.execute(select(Tenant).where(Tenant.is_deleted == False))
     tenants = result.scalars().all()
@@ -231,9 +231,9 @@ async def get_tenant_portfolio(
 ):
     """
     Get tenant portfolio table with health indicators.
-    SuperAdmin only.
+    Owner only.
     """
-    require_superadmin(request)
+    require_owner(request)
 
     # Build query
     query = select(Tenant).where(Tenant.is_deleted == False)
@@ -334,9 +334,9 @@ async def get_system_health(
 ):
     """
     Get system health metrics.
-    SuperAdmin only.
+    Owner only.
     """
-    require_superadmin(request)
+    require_owner(request)
 
     # Collect real system health where possible
     import redis.asyncio as aioredis
@@ -426,9 +426,9 @@ async def get_churn_risks(
 ):
     """
     Get tenants at churn risk with AI-predicted risk factors.
-    SuperAdmin only.
+    Owner only.
     """
-    require_superadmin(request)
+    require_owner(request)
 
     # Get tenants with churn risk score
     result = await db.execute(select(Tenant).where(Tenant.is_deleted == False))
@@ -581,9 +581,9 @@ async def get_audit_logs(
 ):
     """
     Get audit logs with filtering.
-    SuperAdmin only.
+    Owner only.
     """
-    require_superadmin(request)
+    require_owner(request)
 
     try:
         from sqlalchemy import MetaData, Table
@@ -736,9 +736,9 @@ async def get_subscription_plans(
 ):
     """
     Get all subscription plans with limits.
-    SuperAdmin only.
+    Owner only.
     """
-    require_superadmin(request)
+    require_owner(request)
 
     try:
         from sqlalchemy import text
@@ -853,9 +853,9 @@ async def update_subscription_plan(
 ):
     """
     Update a subscription plan.
-    SuperAdmin only.
+    Owner only.
     """
-    user_id = require_superadmin(request)
+    user_id = require_owner(request)
 
     try:
         import json
@@ -919,9 +919,9 @@ async def get_invoices(
 ):
     """
     Get all invoices across tenants.
-    SuperAdmin only.
+    Owner only.
     """
-    require_superadmin(request)
+    require_owner(request)
 
     try:
         from sqlalchemy import text
@@ -1011,9 +1011,9 @@ async def get_subscriptions(
 ):
     """
     Get all active subscriptions.
-    SuperAdmin only.
+    Owner only.
     """
-    require_superadmin(request)
+    require_owner(request)
 
     try:
         from sqlalchemy import text
@@ -1089,9 +1089,9 @@ async def perform_subscription_action(
 ):
     """
     Perform action on subscription (upgrade, downgrade, cancel, etc).
-    SuperAdmin only.
+    Owner only.
     """
-    user_id = require_superadmin(request)
+    user_id = require_owner(request)
 
     try:
         from sqlalchemy import text
@@ -1168,9 +1168,9 @@ async def get_tenant_usage(
 ):
     """
     Get tenant usage vs limits (for overage warnings).
-    SuperAdmin only.
+    Owner only.
     """
-    require_superadmin(request)
+    require_owner(request)
 
     # Get tenant
     result = await db.execute(select(Tenant).where(Tenant.id == tenant_id))
@@ -1303,15 +1303,15 @@ async def get_tenant_usage(
 # Dashboard Summary
 # =============================================================================
 @router.get("/dashboard", response_model=APIResponse)
-async def get_superadmin_dashboard(
+async def get_owner_dashboard(
     request: Request,
     db: AsyncSession = Depends(get_async_session),
 ):
     """
-    Get Super Admin dashboard summary.
+    Get Owner dashboard summary.
     Combines revenue, health, and alerts.
     """
-    require_superadmin(request)
+    require_owner(request)
 
     # Get tenant counts
     result = await db.execute(select(Tenant).where(Tenant.is_deleted == False))
@@ -1461,12 +1461,12 @@ async def seed_platforms(
 ):
     """
     Bootstrap TenantPlatformConnection and TenantAdAccount records from
-    environment-variable tokens.  SuperAdmin only.
+    environment-variable tokens.  Owner only.
 
     This replaces the normal OAuth callback flow for initial setup when
     tokens are already provisioned as Railway env vars.
     """
-    user_id = require_superadmin(request)
+    user_id = require_owner(request)
 
     from app.base_models import AdPlatform
     from app.core.config import settings
@@ -1717,9 +1717,9 @@ async def seed_demo_data(
     """
     Seed realistic demo campaign data for a tenant.
     Creates 14 campaigns across 5 platforms with 90 days of daily metrics.
-    SuperAdmin only.
+    Owner only.
     """
-    user_id = require_superadmin(request)
+    user_id = require_owner(request)
 
     from sqlalchemy import text
 
@@ -1864,7 +1864,7 @@ WHERE campaigns.id = sub.campaign_id AND campaigns.tenant_id = :tid"""),
 @router.get("/credentials/health", response_model=APIResponse)
 async def credentials_health(request: Request):
     """Presence-only health check across every external-credential setting."""
-    require_superadmin(request)
+    require_owner(request)
 
     def present(value: object) -> bool:
         if value is None:
@@ -1959,7 +1959,7 @@ async def get_anomalies_rollup(
     Each anomaly is enriched with tenant_id and tenant_name so the
     dashboard can group/click without a second lookup.
     """
-    require_superadmin(request)
+    require_owner(request)
 
     from app.api.v1.endpoints.insights import detect_campaign_anomalies
 

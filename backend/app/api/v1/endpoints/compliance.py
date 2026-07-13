@@ -385,8 +385,8 @@ async def list_rbac_roles(
     # Return built-in + custom roles
     built_in = [
         RBACRole(
-            id="super_admin",
-            name="Super Admin",
+            id="owner",
+            name="Owner",
             description="Full platform access",
             is_custom=False,
             permissions=[

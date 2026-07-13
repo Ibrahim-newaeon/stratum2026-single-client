@@ -197,7 +197,7 @@ async def list_users(
     requester_role = getattr(request.state, "role", None)
 
     # Enforce role-based access control
-    if requester_role not in ["admin", "manager", "superadmin"]:
+    if requester_role not in ["admin", "manager", "owner"]:
         raise HTTPException(
             status_code=status.HTTP_403_FORBIDDEN,
             detail="Only admins and managers can list users",
@@ -252,7 +252,7 @@ async def invite_user(
     requester_id = getattr(request.state, "user_id", None)
 
     # Only admins can invite users
-    if requester_role not in ["admin", "superadmin"]:
+    if requester_role not in ["admin", "owner"]:
         raise HTTPException(
             status_code=status.HTTP_403_FORBIDDEN,
             detail="Only admins can invite users",
@@ -428,7 +428,7 @@ async def update_user(
     requester_role = getattr(request.state, "role", None)
 
     # Only admins can update other users
-    if requester_role not in ["admin", "superadmin"]:
+    if requester_role not in ["admin", "owner"]:
         raise HTTPException(
             status_code=status.HTTP_403_FORBIDDEN,
             detail="Only admins can update users",
@@ -513,7 +513,7 @@ async def delete_user(
     requester_role = getattr(request.state, "role", None)
 
     # Only admins can delete users
-    if requester_role not in ["admin", "superadmin"]:
+    if requester_role not in ["admin", "owner"]:
         raise HTTPException(
             status_code=status.HTTP_403_FORBIDDEN,
             detail="Only admins can remove users",

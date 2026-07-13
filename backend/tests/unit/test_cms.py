@@ -438,9 +438,9 @@ class TestCountWords:
 class TestCheckCMSPermission:
 
     @pytest.mark.asyncio
-    async def test_superadmin_fallback(self) -> None:
+    async def test_owner_fallback(self) -> None:
         request = MagicMock()
-        request.state = SimpleNamespace(cms_role=None, role="superadmin")
+        request.state = SimpleNamespace(cms_role=None, role="owner")
         assert await check_cms_permission(request, "publish_post") is True
 
     @pytest.mark.asyncio

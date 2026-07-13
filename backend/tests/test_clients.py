@@ -61,12 +61,12 @@ class TestRBACMatrix:
             for role in UserRole:
                 assert role in role_map, f"Missing {role} in {resource}"
 
-    def test_superadmin_has_full_on_all_resources(self):
-        """SUPERADMIN should have FULL on every resource."""
+    def test_owner_has_full_on_all_resources(self):
+        """OWNER should have FULL on every resource."""
         for resource, role_map in RBAC_MATRIX.items():
             assert (
-                role_map[UserRole.SUPERADMIN] == PermLevel.FULL
-            ), f"SUPERADMIN should have FULL on {resource}"
+                role_map[UserRole.OWNER] == PermLevel.FULL
+            ), f"OWNER should have FULL on {resource}"
 
     def test_viewer_has_no_write_on_tenants(self):
         """VIEWER should have NONE on tenant settings."""
@@ -138,9 +138,9 @@ class TestRBACMatrix:
 class TestRoleHierarchy:
     """Test role hierarchy configuration."""
 
-    def test_superadmin_highest(self):
-        """SUPERADMIN should have the highest hierarchy value."""
-        assert ROLE_HIERARCHY[UserRole.SUPERADMIN] == 100
+    def test_owner_highest(self):
+        """OWNER should have the highest hierarchy value."""
+        assert ROLE_HIERARCHY[UserRole.OWNER] == 100
 
     def test_viewer_lowest(self):
         """VIEWER should have the lowest hierarchy value."""
@@ -149,7 +149,7 @@ class TestRoleHierarchy:
     def test_hierarchy_ordering(self):
         """Roles should be ordered correctly."""
         assert (
-            ROLE_HIERARCHY[UserRole.SUPERADMIN]
+            ROLE_HIERARCHY[UserRole.OWNER]
             > ROLE_HIERARCHY[UserRole.ADMIN]
             > ROLE_HIERARCHY[UserRole.MANAGER]
             > ROLE_HIERARCHY[UserRole.ANALYST]
@@ -170,9 +170,9 @@ class TestRoleHierarchy:
 class TestResourceScope:
     """Test scope label assignment per role."""
 
-    def test_superadmin_global_scope(self):
-        """SUPERADMIN should have global scope."""
-        assert get_resource_scope(UserRole.SUPERADMIN) == "global"
+    def test_owner_global_scope(self):
+        """OWNER should have global scope."""
+        assert get_resource_scope(UserRole.OWNER) == "global"
 
     def test_admin_tenant_scope(self):
         """ADMIN should have tenant scope."""
@@ -199,10 +199,10 @@ class TestResourceScope:
 class TestCanManageRole:
     """Test privilege escalation prevention."""
 
-    def test_superadmin_can_assign_any_role(self):
-        """SUPERADMIN should be able to assign any role."""
+    def test_owner_can_assign_any_role(self):
+        """OWNER should be able to assign any role."""
         for role in UserRole:
-            assert can_manage_role(UserRole.SUPERADMIN, role) is True
+            assert can_manage_role(UserRole.OWNER, role) is True
 
     def test_admin_can_assign_manager(self):
         """ADMIN should be able to assign MANAGER."""
@@ -220,9 +220,9 @@ class TestCanManageRole:
         """ADMIN should NOT be able to assign ADMIN (privilege escalation)."""
         assert can_manage_role(UserRole.ADMIN, UserRole.ADMIN) is False
 
-    def test_admin_cannot_assign_superadmin(self):
-        """ADMIN should NOT be able to assign SUPERADMIN (privilege escalation)."""
-        assert can_manage_role(UserRole.ADMIN, UserRole.SUPERADMIN) is False
+    def test_admin_cannot_assign_owner(self):
+        """ADMIN should NOT be able to assign OWNER (privilege escalation)."""
+        assert can_manage_role(UserRole.ADMIN, UserRole.OWNER) is False
 
     def test_manager_cannot_assign_any_role(self):
         """MANAGER should NOT be able to assign any role."""
@@ -264,9 +264,9 @@ class TestSidebarVisibility:
         assert "settings" not in items
         assert "tenants" not in items
 
-    def test_superadmin_sees_all_items(self):
-        """SUPERADMIN should see the most items."""
-        items = SIDEBAR_VISIBILITY[UserRole.SUPERADMIN]
+    def test_owner_sees_all_items(self):
+        """OWNER should see the most items."""
+        items = SIDEBAR_VISIBILITY[UserRole.OWNER]
         assert "tenants" in items
         assert "users" in items
         assert "settings" in items
@@ -291,9 +291,9 @@ class TestSidebarVisibility:
 class TestLegacyPermissions:
     """Test backwards-compatible Permission enum system."""
 
-    def test_superadmin_has_all_permissions(self):
-        """SUPERADMIN should have all Permission enum values."""
-        perms = get_user_permissions("superadmin")
+    def test_owner_has_all_permissions(self):
+        """OWNER should have all Permission enum values."""
+        perms = get_user_permissions("owner")
         assert len(perms) == len(Permission)
 
     def test_viewer_has_client_read(self):
@@ -503,12 +503,12 @@ class TestPermLevelComparisons:
 @pytest.mark.parametrize(
     "role,resource,expected_min",
     [
-        (UserRole.SUPERADMIN, "campaigns", PermLevel.FULL),
+        (UserRole.OWNER, "campaigns", PermLevel.FULL),
         (UserRole.ADMIN, "campaigns", PermLevel.FULL),
         (UserRole.MANAGER, "campaigns", PermLevel.EDIT),
         (UserRole.ANALYST, "campaigns", PermLevel.EDIT),
         (UserRole.VIEWER, "campaigns", PermLevel.VIEW),
-        (UserRole.SUPERADMIN, "clients", PermLevel.FULL),
+        (UserRole.OWNER, "clients", PermLevel.FULL),
         (UserRole.ADMIN, "clients", PermLevel.FULL),
         (UserRole.MANAGER, "clients", PermLevel.EDIT),
         (UserRole.ANALYST, "clients", PermLevel.VIEW),
@@ -537,11 +537,11 @@ class TestGetAccessibleClientIds:
     """Test get_accessible_client_ids with mocked DB sessions."""
 
     @pytest.mark.asyncio
-    async def test_superadmin_returns_none(self):
-        """SUPERADMIN should get None (unrestricted access)."""
+    async def test_owner_returns_none(self):
+        """OWNER should get None (unrestricted access)."""
         db = AsyncMock()
         result = await get_accessible_client_ids(
-            user_id=1, user_role=UserRole.SUPERADMIN, tenant_id=1, db=db
+            user_id=1, user_role=UserRole.OWNER, tenant_id=1, db=db
         )
         assert result is None
 

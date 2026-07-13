@@ -391,7 +391,7 @@ class TestAnalyticsAIRecommendations:
 
 
 class TestOAuthAuthorize:
-    """POST /api/v1/oauth/{platform}/authorize - superadmin only"""
+    """POST /api/v1/oauth/{platform}/authorize - owner only"""
 
     async def test_no_auth_returns_401(self, api_client: AsyncClient):
         resp = await api_client.post(
@@ -412,11 +412,11 @@ class TestOAuthAuthorize:
         "verified JWT (no DB lookup), so the 'missing user row -> 401' path is "
         "not exercised here; it is covered by the integration suite."
     )
-    async def test_superadmin_missing_user_row_returns_401(
-        self, api_client: AsyncClient, superadmin_headers, mock_db
+    async def test_owner_missing_user_row_returns_401(
+        self, api_client: AsyncClient, owner_headers, mock_db
     ):
         """
-        Even with superadmin headers, the OAuth authorize endpoint uses
+        Even with owner headers, the OAuth authorize endpoint uses
         VerifiedUserDep which queries the DB for a real user.  Without a mock
         user row the dependency raises 401.  Additionally, get_current_user
         calls is_token_blacklisted which may try to reach Redis.  We patch
@@ -424,7 +424,7 @@ class TestOAuthAuthorize:
         """
         with patch("app.auth.deps.is_token_blacklisted", return_value=False):
             resp = await api_client.post(
-                "/api/v1/oauth/meta/authorize", json={}, headers=superadmin_headers
+                "/api/v1/oauth/meta/authorize", json={}, headers=owner_headers
             )
         # get_current_user fails because the user query returns None
         assert resp.status_code == 401
@@ -486,7 +486,7 @@ class TestOAuthCallback:
 
 
 class TestOAuthStatus:
-    """GET /api/v1/oauth/{platform}/status - superadmin only"""
+    """GET /api/v1/oauth/{platform}/status - owner only"""
 
     async def test_no_auth_returns_401(self, api_client: AsyncClient):
         resp = await api_client.get("/api/v1/oauth/meta/status")
@@ -498,7 +498,7 @@ class TestOAuthStatus:
         assert resp.status_code == 403
 
     async def test_invalid_platform_returns_422(
-        self, api_client: AsyncClient, superadmin_headers
+        self, api_client: AsyncClient, owner_headers
     ):
         """Invalid platform enum value should fail validation.
         The CurrentUserDep dependency also runs and hits Redis; patch it out.
@@ -506,7 +506,7 @@ class TestOAuthStatus:
         the actual error depends on execution order; accept 401 or 422."""
         with patch("app.auth.deps.is_token_blacklisted", return_value=False):
             resp = await api_client.get(
-                "/api/v1/oauth/invalid_platform/status", headers=superadmin_headers
+                "/api/v1/oauth/invalid_platform/status", headers=owner_headers
             )
         # FastAPI validates AdPlatform enum → 422, or CurrentUserDep fails → 401
         assert resp.status_code in (401, 422)
@@ -524,24 +524,24 @@ class TestIntegrationsHubSpotStatus:
         resp = await api_client.get("/api/v1/integrations/hubspot/status?tenant_id=1")
         assert resp.status_code in (401, 403)
 
-    async def test_non_superadmin_returns_403(
+    async def test_non_owner_returns_403(
         self, api_client: AsyncClient, admin_headers
     ):
-        """require_super_admin dependency should block regular admins."""
+        """require_owner dependency should block regular admins."""
         resp = await api_client.get(
             "/api/v1/integrations/hubspot/status?tenant_id=1", headers=admin_headers
         )
         assert resp.status_code == 403
 
     async def test_wrong_tenant_returns_401_or_403(
-        self, api_client: AsyncClient, superadmin_headers, mock_db
+        self, api_client: AsyncClient, owner_headers, mock_db
     ):
-        """superadmin has tenant_id=0 in JWT.  Because 0 is falsy, the
+        """owner has tenant_id=0 in JWT.  Because 0 is falsy, the
         middleware stores tenant_id=None.  _verify_tenant_access then sees
         auth_tenant_id is None and raises 401 ('Not authenticated')."""
         resp = await api_client.get(
             "/api/v1/integrations/hubspot/status?tenant_id=1",
-            headers=superadmin_headers,
+            headers=owner_headers,
         )
         # _verify_tenant_access: auth_tenant_id is None -> 401
         assert resp.status_code in (401, 403)
@@ -557,7 +557,7 @@ class TestIntegrationsHubSpotConnect:
         )
         assert resp.status_code in (401, 403)
 
-    async def test_non_superadmin_returns_403(
+    async def test_non_owner_returns_403(
         self, api_client: AsyncClient, admin_headers
     ):
         resp = await api_client.post(
@@ -585,7 +585,7 @@ class TestIntegrationsPipelineSummary:
         resp = await api_client.get("/api/v1/integrations/pipeline/summary?tenant_id=1")
         assert resp.status_code in (401, 403)
 
-    async def test_non_superadmin_returns_403(
+    async def test_non_owner_returns_403(
         self, api_client: AsyncClient, admin_headers
     ):
         resp = await api_client.get(
@@ -824,18 +824,18 @@ class TestCMSAdminListPosts:
         resp = await api_client.get("/api/v1/cms/admin/posts", headers=headers)
         assert resp.status_code == 200
 
-    async def test_no_cms_role_no_superadmin_returns_403(
+    async def test_no_cms_role_no_owner_returns_403(
         self, api_client: AsyncClient, mock_db
     ):
-        """User with no cms_role and non-superadmin role -> 403."""
+        """User with no cms_role and non-owner role -> 403."""
         headers = make_auth_headers(subject=5, tenant_id=1, role="admin", cms_role="")
         resp = await api_client.get("/api/v1/cms/admin/posts", headers=headers)
         assert resp.status_code == 403
 
-    async def test_superadmin_has_access(self, api_client: AsyncClient, mock_db):
-        """Superadmin should pass check_cms_permission."""
+    async def test_owner_has_access(self, api_client: AsyncClient, mock_db):
+        """Owner should pass check_cms_permission."""
         headers = make_auth_headers(
-            subject=99, tenant_id=0, role="superadmin", cms_role=""
+            subject=99, tenant_id=0, role="owner", cms_role=""
         )
         count_result = MagicMock()
         count_result.scalar.return_value = 0

@@ -19,7 +19,7 @@ from pydantic import BaseModel, Field
 from sqlalchemy import and_, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from app.auth.permissions import require_super_admin
+from app.auth.permissions import require_owner
 from app.core.logging import get_logger
 from app.db.session import get_async_session
 from app.models import APIKey
@@ -28,7 +28,7 @@ from app.schemas.response import APIResponse
 router = APIRouter(
     prefix="/api-keys",
     tags=["API Keys"],
-    dependencies=[Depends(require_super_admin)],
+    dependencies=[Depends(require_owner)],
 )
 logger = get_logger(__name__)
 

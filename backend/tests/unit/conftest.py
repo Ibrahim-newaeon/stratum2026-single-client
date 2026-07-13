@@ -243,10 +243,10 @@ def viewer_headers() -> dict:
 
 
 @pytest.fixture
-def superadmin_headers() -> dict:
-    """Auth headers for a superadmin (no tenant binding)."""
+def owner_headers() -> dict:
+    """Auth headers for an owner (no tenant binding)."""
     token = _make_token(
-        subject=99, role="superadmin", email="admin@stratum.ai", tenant_id=0
+        subject=99, role="owner", email="admin@stratum.ai", tenant_id=0
     )
     return {"Authorization": f"Bearer {token}"}
 

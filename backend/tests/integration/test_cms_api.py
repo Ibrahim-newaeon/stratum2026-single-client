@@ -198,8 +198,8 @@ class TestCmsPermissionGate:
     async def test_platform_superadmin_without_cms_role_allowed(
         self, client: AsyncClient, test_user, test_tenant
     ):
-        # Fallback path: platform superadmin passes even without a cms_role.
-        sa = _claims_client(client, test_user, test_tenant, role="superadmin")
+        # Fallback path: platform owner passes even without a cms_role.
+        sa = _claims_client(client, test_user, test_tenant, role="owner")
         resp = await sa.get("/api/v1/cms/admin/posts")
         assert resp.status_code == 200
 

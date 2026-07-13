@@ -28,6 +28,8 @@ from app.api.v1.endpoints import (  # Previously unregistered endpoints; Gap end
     cms,
     competitors,
     compliance,
+    console,
+    console_analytics,
     copilot,
     dashboard,
     data_driven_attribution,
@@ -63,8 +65,6 @@ from app.api.v1.endpoints import (  # Previously unregistered endpoints; Gap end
     sendgrid_webhook,
     simulator,
     slack,
-    superadmin,
-    superadmin_analytics,
     tenant_dashboard,
     tenants,
     trust_layer,
@@ -72,7 +72,7 @@ from app.api.v1.endpoints import (  # Previously unregistered endpoints; Gap end
     webhooks,
     whatsapp,
 )
-from app.auth.permissions import require_super_admin
+from app.auth.permissions import require_owner
 from app.core.feature_gate import Feature, FeatureGate
 
 api_router = APIRouter()
@@ -159,14 +159,14 @@ api_router.include_router(
 # ML Training & Data Upload
 # Model management operates on the GLOBAL, app-wide model registry (upload,
 # train, delete .pkl artifacts) — a platform operation, not tenant-scoped.
-# Gated to super admins (ML-003): previously every endpoint here was
+# Gated to owners (ML-003): previously every endpoint here was
 # unauthenticated, letting anyone upload a pickle (arbitrary-code-execution
 # risk on load) or delete production models.
 api_router.include_router(
     ml_training.router,
     prefix="/ml",
     tags=["ML Training"],
-    dependencies=[Depends(require_super_admin)],
+    dependencies=[Depends(require_owner)],
 )
 
 # Live Predictions & ROAS Optimization
@@ -208,17 +208,17 @@ api_router.include_router(
     tags=["AI Analytics"],
 )
 
-# Super Admin Dashboard (Platform-level management)
+# Owner Console (Platform-level management)
 api_router.include_router(
-    superadmin.router,
-    prefix="/superadmin",
-    tags=["Super Admin"],
+    console.router,
+    prefix="/console",
+    tags=["Owner Console"],
 )
 
 # Launch Readiness (Go-Live wizard)
 api_router.include_router(
     launch_readiness.router,
-    prefix="/superadmin/launch-readiness",
+    prefix="/console/launch-readiness",
     tags=["Launch Readiness"],
 )
 
@@ -236,11 +236,11 @@ api_router.include_router(
     tags=["Tenant Dashboard"],
 )
 
-# Superadmin Analytics (Platform-wide analytics)
+# Owner Analytics (Platform-wide analytics)
 api_router.include_router(
-    superadmin_analytics.router,
-    prefix="/superadmin/analytics",
-    tags=["Superadmin Analytics"],
+    console_analytics.router,
+    prefix="/console/analytics",
+    tags=["Owner Analytics"],
 )
 
 # Autopilot (Automated campaign optimization)
@@ -268,7 +268,7 @@ api_router.include_router(
 )
 
 # Feature Flags (Feature toggles and rollouts)
-# Note: feature_flags.router already has /tenant/{tenant_id} and /superadmin prefixes
+# Note: feature_flags.router already has /tenant/{tenant_id} and /console prefixes
 api_router.include_router(
     feature_flags.router,
     tags=["Feature Flags"],

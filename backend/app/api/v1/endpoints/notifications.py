@@ -314,7 +314,7 @@ async def create_notification(
         )
 
     user_role = getattr(request.state, "role", None)
-    if user_role not in (UserRole.ADMIN.value, UserRole.SUPERADMIN.value):
+    if user_role not in (UserRole.ADMIN.value, UserRole.OWNER.value):
         raise HTTPException(
             status_code=status.HTTP_403_FORBIDDEN,
             detail="Admin access required to create notifications",

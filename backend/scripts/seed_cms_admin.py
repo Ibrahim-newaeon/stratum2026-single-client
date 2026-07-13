@@ -76,7 +76,7 @@ async def seed_cms_admin(email: str, password: str, name: str):
                     f"\n[!] User with email {email} already exists (ID: {existing_user.id})"
                 )
                 print("    Making this user the protected root admin...")
-                existing_user.role = UserRole.SUPERADMIN
+                existing_user.role = UserRole.OWNER
                 existing_user.is_protected = True
                 existing_user.is_active = True
                 existing_user.is_verified = True
@@ -102,7 +102,7 @@ async def seed_cms_admin(email: str, password: str, name: str):
                     slug=DEFAULT_TENANT_SLUG,
                     plan="enterprise",
                     settings={"timezone": "UTC", "currency": "USD"},
-                    feature_flags={"cms_access": True, "superadmin": True},
+                    feature_flags={"cms_access": True, "owner": True},
                     max_users=999,
                     max_campaigns=9999,
                 )
@@ -118,7 +118,7 @@ async def seed_cms_admin(email: str, password: str, name: str):
                 email_hash=email_hash,
                 password_hash=get_password_hash(password),
                 full_name=encrypt_pii(name),
-                role=UserRole.SUPERADMIN,
+                role=UserRole.OWNER,
                 tenant_id=tenant.id,
                 is_verified=True,
                 is_active=True,

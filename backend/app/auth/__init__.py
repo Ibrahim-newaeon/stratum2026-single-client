@@ -13,9 +13,9 @@ from app.auth.permissions import (
     Permission,
     get_user_permissions,
     has_permission,
+    require_owner,
     require_permissions,
     require_role,
-    require_super_admin,
 )
 
 __all__ = [
@@ -23,7 +23,7 @@ __all__ = [
     "Permission",
     "get_user_permissions",
     "has_permission",
+    "require_owner",
     "require_permissions",
     "require_role",
-    "require_super_admin",
 ]

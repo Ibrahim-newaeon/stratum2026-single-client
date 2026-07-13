@@ -4,7 +4,7 @@
 """
 Deep endpoint tests for:
   Feature 13 -- Automated Reporting (templates, schedules, executions)
-  Feature 14 -- SuperAdmin dashboard & SuperAdmin Analytics
+  Feature 14 -- Owner console dashboard & Owner console Analytics
 
 Each test exercises the FULL request/response cycle via httpx.AsyncClient,
 passing through TenantMiddleware (real JWT decode + tenant extraction) while
@@ -934,28 +934,28 @@ class TestReportingReportTypes:
 
 
 # ============================================================================
-# FEATURE 14 -- SUPER ADMIN DASHBOARD
+# FEATURE 14 -- OWNER CONSOLE DASHBOARD
 # ============================================================================
 
 
-class TestSuperAdminRevenue:
-    """GET /api/v1/superadmin/revenue and /revenue/breakdown."""
+class TestOwnerConsoleRevenue:
+    """GET /api/v1/console/revenue and /revenue/breakdown."""
 
     async def test_revenue_no_auth(self, api_client):
-        r = await api_client.get("/api/v1/superadmin/revenue")
+        r = await api_client.get("/api/v1/console/revenue")
         assert r.status_code == 401
 
-    async def test_revenue_non_superadmin(self, api_client, admin_headers):
-        r = await api_client.get("/api/v1/superadmin/revenue", headers=admin_headers)
+    async def test_revenue_non_owner(self, api_client, admin_headers):
+        r = await api_client.get("/api/v1/console/revenue", headers=admin_headers)
         assert r.status_code == 403
 
-    async def test_revenue_happy(self, api_client, mock_db, superadmin_headers):
+    async def test_revenue_happy(self, api_client, mock_db, owner_headers):
         tenant = _fake_tenant()
         mock_db.execute = AsyncMock(return_value=make_scalars_result([tenant]))
 
         r = await api_client.get(
-            "/api/v1/superadmin/revenue",
-            headers=superadmin_headers,
+            "/api/v1/console/revenue",
+            headers=owner_headers,
         )
         assert r.status_code == 200
         data = r.json()["data"]
@@ -964,7 +964,7 @@ class TestSuperAdminRevenue:
         assert data["total_tenants"] == 1
 
     async def test_revenue_multiple_tenants(
-        self, api_client, mock_db, superadmin_headers
+        self, api_client, mock_db, owner_headers
     ):
         t1 = _fake_tenant(tid=1, plan="professional")
         t2 = _fake_tenant(tid=2, plan="starter", name="Beta Co")
@@ -972,8 +972,8 @@ class TestSuperAdminRevenue:
         mock_db.execute = AsyncMock(return_value=make_scalars_result([t1, t2]))
 
         r = await api_client.get(
-            "/api/v1/superadmin/revenue",
-            headers=superadmin_headers,
+            "/api/v1/console/revenue",
+            headers=owner_headers,
         )
         assert r.status_code == 200
         data = r.json()["data"]
@@ -981,26 +981,26 @@ class TestSuperAdminRevenue:
         assert data["mrr"] == (9900 + 4900) / 100
 
     async def test_revenue_breakdown_no_auth(self, api_client):
-        r = await api_client.get("/api/v1/superadmin/revenue/breakdown")
+        r = await api_client.get("/api/v1/console/revenue/breakdown")
         assert r.status_code == 401
 
-    async def test_revenue_breakdown_non_superadmin(self, api_client, admin_headers):
+    async def test_revenue_breakdown_non_owner(self, api_client, admin_headers):
         r = await api_client.get(
-            "/api/v1/superadmin/revenue/breakdown",
+            "/api/v1/console/revenue/breakdown",
             headers=admin_headers,
         )
         assert r.status_code == 403
 
     async def test_revenue_breakdown_happy(
-        self, api_client, mock_db, superadmin_headers
+        self, api_client, mock_db, owner_headers
     ):
         t1 = _fake_tenant(tid=1, plan="professional")
         t2 = _fake_tenant(tid=2, plan="starter", name="Beta Co")
         mock_db.execute = AsyncMock(return_value=make_scalars_result([t1, t2]))
 
         r = await api_client.get(
-            "/api/v1/superadmin/revenue/breakdown",
-            headers=superadmin_headers,
+            "/api/v1/console/revenue/breakdown",
+            headers=owner_headers,
         )
         assert r.status_code == 200
         data = r.json()["data"]
@@ -1008,21 +1008,21 @@ class TestSuperAdminRevenue:
         assert "total_mrr" in data
 
 
-class TestSuperAdminTenantPortfolio:
-    """GET /api/v1/superadmin/tenants/portfolio."""
+class TestOwnerConsoleTenantPortfolio:
+    """GET /api/v1/console/tenants/portfolio."""
 
     async def test_portfolio_no_auth(self, api_client):
-        r = await api_client.get("/api/v1/superadmin/tenants/portfolio")
+        r = await api_client.get("/api/v1/console/tenants/portfolio")
         assert r.status_code == 401
 
-    async def test_portfolio_non_superadmin(self, api_client, admin_headers):
+    async def test_portfolio_non_owner(self, api_client, admin_headers):
         r = await api_client.get(
-            "/api/v1/superadmin/tenants/portfolio",
+            "/api/v1/console/tenants/portfolio",
             headers=admin_headers,
         )
         assert r.status_code == 403
 
-    async def test_portfolio_happy(self, api_client, mock_db, superadmin_headers):
+    async def test_portfolio_happy(self, api_client, mock_db, owner_headers):
         tenant = _fake_tenant()
         # The endpoint batches counts in grouped queries and reads .all() ->
         # rows of (tenant_id, count), not a single scalar.
@@ -1039,8 +1039,8 @@ class TestSuperAdminTenantPortfolio:
         )
 
         r = await api_client.get(
-            "/api/v1/superadmin/tenants/portfolio",
-            headers=superadmin_headers,
+            "/api/v1/console/tenants/portfolio",
+            headers=owner_headers,
         )
         assert r.status_code == 200
         data = r.json()["data"]
@@ -1049,11 +1049,11 @@ class TestSuperAdminTenantPortfolio:
         assert data["tenants"][0]["name"] == "Acme Inc"
         assert data["tenants"][0]["users_count"] == 3
 
-    async def test_portfolio_empty(self, api_client, mock_db, superadmin_headers):
+    async def test_portfolio_empty(self, api_client, mock_db, owner_headers):
         mock_db.execute = AsyncMock(return_value=make_scalars_result([]))
         r = await api_client.get(
-            "/api/v1/superadmin/tenants/portfolio",
-            headers=superadmin_headers,
+            "/api/v1/console/tenants/portfolio",
+            headers=owner_headers,
         )
         assert r.status_code == 200
         data = r.json()["data"]
@@ -1061,41 +1061,41 @@ class TestSuperAdminTenantPortfolio:
         assert data["total"] == 0
 
     async def test_portfolio_pagination_params(
-        self, api_client, mock_db, superadmin_headers
+        self, api_client, mock_db, owner_headers
     ):
         mock_db.execute = AsyncMock(return_value=make_scalars_result([]))
         r = await api_client.get(
-            "/api/v1/superadmin/tenants/portfolio?skip=0&limit=10",
-            headers=superadmin_headers,
+            "/api/v1/console/tenants/portfolio?skip=0&limit=10",
+            headers=owner_headers,
         )
         assert r.status_code == 200
 
     async def test_portfolio_sort_by_name(
-        self, api_client, mock_db, superadmin_headers
+        self, api_client, mock_db, owner_headers
     ):
         mock_db.execute = AsyncMock(return_value=make_scalars_result([]))
         r = await api_client.get(
-            "/api/v1/superadmin/tenants/portfolio?sort_by=name&sort_order=asc",
-            headers=superadmin_headers,
+            "/api/v1/console/tenants/portfolio?sort_by=name&sort_order=asc",
+            headers=owner_headers,
         )
         assert r.status_code == 200
 
 
-class TestSuperAdminSystemHealth:
-    """GET /api/v1/superadmin/system/health."""
+class TestOwnerConsoleSystemHealth:
+    """GET /api/v1/console/system/health."""
 
     async def test_health_no_auth(self, api_client):
-        r = await api_client.get("/api/v1/superadmin/system/health")
+        r = await api_client.get("/api/v1/console/system/health")
         assert r.status_code == 401
 
-    async def test_health_non_superadmin(self, api_client, admin_headers):
+    async def test_health_non_owner(self, api_client, admin_headers):
         r = await api_client.get(
-            "/api/v1/superadmin/system/health",
+            "/api/v1/console/system/health",
             headers=admin_headers,
         )
         assert r.status_code == 403
 
-    async def test_health_happy(self, api_client, mock_db, superadmin_headers):
+    async def test_health_happy(self, api_client, mock_db, owner_headers):
         mock_redis = AsyncMock()
         mock_redis.llen = AsyncMock(return_value=5)
         mock_redis.ping = AsyncMock(return_value=True)
@@ -1103,8 +1103,8 @@ class TestSuperAdminSystemHealth:
 
         with patch("redis.asyncio.from_url", return_value=mock_redis):
             r = await api_client.get(
-                "/api/v1/superadmin/system/health",
-                headers=superadmin_headers,
+                "/api/v1/console/system/health",
+                headers=owner_headers,
             )
         assert r.status_code == 200
         data = r.json()["data"]
@@ -1121,22 +1121,22 @@ class TestSuperAdminSystemHealth:
         assert data["instrumented"]["service_health"] is True
 
 
-class TestSuperAdminChurnRisks:
-    """GET /api/v1/superadmin/churn/risks."""
+class TestOwnerConsoleChurnRisks:
+    """GET /api/v1/console/churn/risks."""
 
     async def test_churn_no_auth(self, api_client):
-        r = await api_client.get("/api/v1/superadmin/churn/risks")
+        r = await api_client.get("/api/v1/console/churn/risks")
         assert r.status_code == 401
 
-    async def test_churn_non_superadmin(self, api_client, admin_headers):
+    async def test_churn_non_owner(self, api_client, admin_headers):
         r = await api_client.get(
-            "/api/v1/superadmin/churn/risks",
+            "/api/v1/console/churn/risks",
             headers=admin_headers,
         )
         assert r.status_code == 403
 
     async def test_churn_happy_with_risky_tenant(
-        self, api_client, mock_db, superadmin_headers
+        self, api_client, mock_db, owner_headers
     ):
         tenant = _fake_tenant()
         tenant.last_activity_at = None
@@ -1144,8 +1144,8 @@ class TestSuperAdminChurnRisks:
         mock_db.execute = AsyncMock(return_value=make_scalars_result([tenant]))
 
         r = await api_client.get(
-            "/api/v1/superadmin/churn/risks?min_risk=0.1",
-            headers=superadmin_headers,
+            "/api/v1/console/churn/risks?min_risk=0.1",
+            headers=owner_headers,
         )
         assert r.status_code == 200
         data = r.json()["data"]
@@ -1154,7 +1154,7 @@ class TestSuperAdminChurnRisks:
         assert data["total_count"] >= 1
 
     async def test_churn_empty_with_high_threshold(
-        self, api_client, mock_db, superadmin_headers
+        self, api_client, mock_db, owner_headers
     ):
         tenant = _fake_tenant()
         tenant.last_activity_at = _NOW
@@ -1163,8 +1163,8 @@ class TestSuperAdminChurnRisks:
         mock_db.execute = AsyncMock(return_value=make_scalars_result([tenant]))
 
         r = await api_client.get(
-            "/api/v1/superadmin/churn/risks?min_risk=0.99",
-            headers=superadmin_headers,
+            "/api/v1/console/churn/risks?min_risk=0.99",
+            headers=owner_headers,
         )
         assert r.status_code == 200
         data = r.json()["data"]
@@ -1172,41 +1172,42 @@ class TestSuperAdminChurnRisks:
 
 
 # ============================================================================
-# FEATURE 14 -- SUPER ADMIN ANALYTICS
+# FEATURE 14 -- OWNER CONSOLE ANALYTICS
 # ============================================================================
 #
-# superadmin_analytics.py router has prefix="/superadmin" and is mounted
-# at /api/v1/superadmin/analytics, giving:
-#   /api/v1/superadmin/analytics/superadmin/<endpoint>
+# console_analytics.py router has prefix="/console" and is mounted
+# at /api/v1/console/analytics, giving:
+#   /api/v1/console/analytics/console/<endpoint>
 #
-# Auth check: getattr(request.state, "is_superadmin", False)
+# Auth check: getattr(request.state, "is_superadmin", False) -- attribute
+# name kept until Phase C rewrites the tenant middleware (STRAT-SC-001).
 # TenantMiddleware sets request.state.role but NOT is_superadmin.
-# Non-superadmin users get 403. Even superadmin users get 403 because
+# Non-owner users get 403. Even owner users get 403 because
 # is_superadmin is never set. We test auth-rejection behavior and also
 # test with a patched is_superadmin flag.
 
 
-class TestSuperAdminAnalyticsPlatformOverview:
-    """GET /api/v1/superadmin/analytics/superadmin/platform-overview."""
+class TestOwnerConsoleAnalyticsPlatformOverview:
+    """GET /api/v1/console/analytics/console/platform-overview."""
 
-    _URL = "/api/v1/superadmin/analytics/superadmin/platform-overview"
+    _URL = "/api/v1/console/analytics/console/platform-overview"
 
     async def test_no_auth(self, api_client):
         r = await api_client.get(self._URL)
         assert r.status_code == 401
 
-    async def test_non_superadmin_forbidden(self, api_client, admin_headers):
+    async def test_non_owner_forbidden(self, api_client, admin_headers):
         r = await api_client.get(self._URL, headers=admin_headers)
         assert r.status_code == 403
 
-    async def test_superadmin_access_allowed(
+    async def test_owner_access_allowed(
         self,
         api_client,
-        superadmin_headers,
+        owner_headers,
         mock_db,
     ):
         """
-        Middleware now sets is_superadmin=True for role=superadmin,
+        Middleware now sets is_superadmin=True for role=owner,
         so the endpoint is reachable and returns 200.
         """
         from unittest.mock import MagicMock
@@ -1220,103 +1221,103 @@ class TestSuperAdminAnalyticsPlatformOverview:
         empty_iter.__iter__ = lambda s: iter([])
         mock_db.execute.side_effect = [scalar_r, first_r, empty_iter, empty_iter]
 
-        r = await api_client.get(self._URL, headers=superadmin_headers)
+        r = await api_client.get(self._URL, headers=owner_headers)
         assert r.status_code == 200
         assert r.json()["success"] is True
 
 
-class TestSuperAdminAnalyticsTenantProfitability:
-    """GET /api/v1/superadmin/analytics/superadmin/tenant-profitability."""
+class TestOwnerConsoleAnalyticsTenantProfitability:
+    """GET /api/v1/console/analytics/console/tenant-profitability."""
 
-    _URL = "/api/v1/superadmin/analytics/superadmin/tenant-profitability"
+    _URL = "/api/v1/console/analytics/console/tenant-profitability"
 
     async def test_no_auth(self, api_client):
         r = await api_client.get(self._URL)
         assert r.status_code == 401
 
-    async def test_non_superadmin_forbidden(self, api_client, admin_headers):
+    async def test_non_owner_forbidden(self, api_client, admin_headers):
         r = await api_client.get(self._URL, headers=admin_headers)
         assert r.status_code == 403
 
-    async def test_superadmin_access_allowed(
+    async def test_owner_access_allowed(
         self,
         api_client,
-        superadmin_headers,
+        owner_headers,
         mock_db,
     ):
-        """Superadmin can access tenant profitability."""
+        """Owner can access tenant profitability."""
         from unittest.mock import MagicMock
 
         empty_iter = MagicMock()
         empty_iter.__iter__ = lambda s: iter([])
         mock_db.execute.side_effect = [empty_iter, empty_iter]
 
-        r = await api_client.get(self._URL, headers=superadmin_headers)
+        r = await api_client.get(self._URL, headers=owner_headers)
         assert r.status_code == 200
         data = r.json()["data"]
         assert data["total_tenants"] == 0
         assert data["tenants"] == []
 
 
-class TestSuperAdminAnalyticsSignalHealthTrends:
-    """GET /api/v1/superadmin/analytics/superadmin/signal-health-trends."""
+class TestOwnerConsoleAnalyticsSignalHealthTrends:
+    """GET /api/v1/console/analytics/console/signal-health-trends."""
 
-    _URL = "/api/v1/superadmin/analytics/superadmin/signal-health-trends"
+    _URL = "/api/v1/console/analytics/console/signal-health-trends"
 
     async def test_no_auth(self, api_client):
         r = await api_client.get(self._URL)
         assert r.status_code == 401
 
-    async def test_non_superadmin_forbidden(self, api_client, admin_headers):
+    async def test_non_owner_forbidden(self, api_client, admin_headers):
         r = await api_client.get(self._URL, headers=admin_headers)
         assert r.status_code == 403
 
-    async def test_superadmin_access_allowed(
+    async def test_owner_access_allowed(
         self,
         api_client,
-        superadmin_headers,
+        owner_headers,
         mock_db,
     ):
-        """Superadmin can access signal health trends."""
+        """Owner can access signal health trends."""
         from unittest.mock import MagicMock
 
         empty_iter = MagicMock()
         empty_iter.__iter__ = lambda s: iter([])
         mock_db.execute.return_value = empty_iter
 
-        r = await api_client.get(self._URL, headers=superadmin_headers)
+        r = await api_client.get(self._URL, headers=owner_headers)
         assert r.status_code == 200
         data = r.json()["data"]
         assert data["trend_direction"] == "insufficient_data"
 
 
-class TestSuperAdminAnalyticsActionsAnalytics:
-    """GET /api/v1/superadmin/analytics/superadmin/actions-analytics."""
+class TestOwnerConsoleAnalyticsActionsAnalytics:
+    """GET /api/v1/console/analytics/console/actions-analytics."""
 
-    _URL = "/api/v1/superadmin/analytics/superadmin/actions-analytics"
+    _URL = "/api/v1/console/analytics/console/actions-analytics"
 
     async def test_no_auth(self, api_client):
         r = await api_client.get(self._URL)
         assert r.status_code == 401
 
-    async def test_non_superadmin_forbidden(self, api_client, admin_headers):
+    async def test_non_owner_forbidden(self, api_client, admin_headers):
         r = await api_client.get(self._URL, headers=admin_headers)
         assert r.status_code == 403
 
-    async def test_superadmin_access_allowed(
+    async def test_owner_access_allowed(
         self,
         api_client,
-        superadmin_headers,
+        owner_headers,
         mock_db,
     ):
-        """Superadmin can access actions analytics."""
+        """Owner can access actions analytics."""
         from unittest.mock import MagicMock
 
         empty_iter = MagicMock()
         empty_iter.__iter__ = lambda s: iter([])
         mock_db.execute.return_value = empty_iter
 
-        r = await api_client.get(self._URL, headers=superadmin_headers)
+        r = await api_client.get(self._URL, headers=owner_headers)
         assert r.status_code == 200
         data = r.json()["data"]
         assert data["total_actions"] == 0
@@ -1328,34 +1329,34 @@ class TestSuperAdminAnalyticsActionsAnalytics:
 
 
 class TestCalculateHealthScore:
-    """Unit tests for superadmin_analytics.calculate_health_score."""
+    """Unit tests for console_analytics.calculate_health_score."""
 
     def test_both_none(self):
-        from app.api.v1.endpoints.superadmin_analytics import calculate_health_score
+        from app.api.v1.endpoints.console_analytics import calculate_health_score
 
         assert calculate_health_score(None, None) == 0
 
     def test_only_emq(self):
-        from app.api.v1.endpoints.superadmin_analytics import calculate_health_score
+        from app.api.v1.endpoints.console_analytics import calculate_health_score
 
         score = calculate_health_score(80.0, None)
         assert score == round(80.0 * 0.7, 1)
 
     def test_only_event_loss(self):
-        from app.api.v1.endpoints.superadmin_analytics import calculate_health_score
+        from app.api.v1.endpoints.console_analytics import calculate_health_score
 
         score = calculate_health_score(None, 10.0)
         assert score == round((100 - 10.0) * 0.3, 1)
 
     def test_both_present(self):
-        from app.api.v1.endpoints.superadmin_analytics import calculate_health_score
+        from app.api.v1.endpoints.console_analytics import calculate_health_score
 
         score = calculate_health_score(90.0, 5.0)
         expected = round(90.0 * 0.7 + (100 - 5.0) * 0.3, 1)
         assert score == expected
 
     def test_zero_values(self):
-        from app.api.v1.endpoints.superadmin_analytics import calculate_health_score
+        from app.api.v1.endpoints.console_analytics import calculate_health_score
 
         score = calculate_health_score(0.0, 0.0)
         expected = round(0.0 * 0.7 + (100 - 0.0) * 0.3, 1)
@@ -1363,10 +1364,10 @@ class TestCalculateHealthScore:
 
 
 class TestCalculateChurnRisk:
-    """Unit tests for superadmin.calculate_churn_risk."""
+    """Unit tests for console.calculate_churn_risk."""
 
     def test_healthy_tenant(self):
-        from app.api.v1.endpoints.superadmin import calculate_churn_risk
+        from app.api.v1.endpoints.console import calculate_churn_risk
 
         t = _fake_tenant()
         t.last_activity_at = _NOW
@@ -1377,7 +1378,7 @@ class TestCalculateChurnRisk:
         assert isinstance(factors, list)
 
     def test_inactive_tenant(self):
-        from app.api.v1.endpoints.superadmin import calculate_churn_risk
+        from app.api.v1.endpoints.console import calculate_churn_risk
 
         t = _fake_tenant()
         t.last_activity_at = None
@@ -1388,7 +1389,7 @@ class TestCalculateChurnRisk:
         assert len(factors) >= 2
 
     def test_past_due_tenant(self):
-        from app.api.v1.endpoints.superadmin import calculate_churn_risk
+        from app.api.v1.endpoints.console import calculate_churn_risk
 
         t = _fake_tenant()
         t.status = "past_due"
@@ -1400,7 +1401,7 @@ class TestCalculateChurnRisk:
         assert any("past due" in f.lower() for f in factors)
 
     def test_cancelled_tenant(self):
-        from app.api.v1.endpoints.superadmin import calculate_churn_risk
+        from app.api.v1.endpoints.console import calculate_churn_risk
 
         t = _fake_tenant()
         t.status = "cancelled"
@@ -1412,7 +1413,7 @@ class TestCalculateChurnRisk:
         assert any("cancelled" in f.lower() for f in factors)
 
     def test_risk_clamped_to_1(self):
-        from app.api.v1.endpoints.superadmin import calculate_churn_risk
+        from app.api.v1.endpoints.console import calculate_churn_risk
 
         t = _fake_tenant()
         t.status = "cancelled"
@@ -1424,10 +1425,10 @@ class TestCalculateChurnRisk:
 
 
 class TestGetChurnActions:
-    """Unit tests for superadmin.get_churn_actions."""
+    """Unit tests for console.get_churn_actions."""
 
     def test_activity_factor(self):
-        from app.api.v1.endpoints.superadmin import get_churn_actions
+        from app.api.v1.endpoints.console import get_churn_actions
 
         actions = get_churn_actions(["Low activity (20 days since last login)"])
         assert any(
@@ -1435,31 +1436,31 @@ class TestGetChurnActions:
         )
 
     def test_data_quality_factor(self):
-        from app.api.v1.endpoints.superadmin import get_churn_actions
+        from app.api.v1.endpoints.console import get_churn_actions
 
         actions = get_churn_actions(["Data quality issues (health score: 55)"])
         assert any("pipeline" in a.lower() or "support" in a.lower() for a in actions)
 
     def test_onboarding_factor(self):
-        from app.api.v1.endpoints.superadmin import get_churn_actions
+        from app.api.v1.endpoints.console import get_churn_actions
 
         actions = get_churn_actions(["Onboarding not completed"])
         assert any("onboarding" in a.lower() for a in actions)
 
     def test_trial_factor(self):
-        from app.api.v1.endpoints.superadmin import get_churn_actions
+        from app.api.v1.endpoints.console import get_churn_actions
 
         actions = get_churn_actions(["Trial ending in 3 days"])
         assert any("trial" in a.lower() for a in actions)
 
     def test_payment_factor(self):
-        from app.api.v1.endpoints.superadmin import get_churn_actions
+        from app.api.v1.endpoints.console import get_churn_actions
 
         actions = get_churn_actions(["Payment past due"])
         assert any("dunning" in a.lower() or "payment" in a.lower() for a in actions)
 
     def test_no_matching_factors(self):
-        from app.api.v1.endpoints.superadmin import get_churn_actions
+        from app.api.v1.endpoints.console import get_churn_actions
 
         actions = get_churn_actions(["Some unknown factor"])
         assert actions == ["Monitor and gather more data"]

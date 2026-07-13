@@ -12,7 +12,7 @@ Public endpoints (no auth):
 - GET /cms/pages/{slug} - Get published page by slug
 - POST /cms/contact - Submit contact form
 
-Admin endpoints (superadmin only):
+Admin endpoints (owner only):
 - CRUD for posts, pages, categories, tags, authors
 - Contact submission management
 """
@@ -116,9 +116,9 @@ async def check_cms_permission(request: Request, permission: str) -> bool:
     """Check if the current user has a specific CMS permission."""
     cms_role_str = getattr(request.state, "cms_role", None)
     if not cms_role_str:
-        # Fallback: also allow platform superadmins (they get auto-assigned cms_role in migration)
+        # Fallback: also allow platform owners (they get auto-assigned cms_role in migration)
         user_role = getattr(request.state, "role", None)
-        if user_role == "superadmin":
+        if user_role == "owner":
             return True
         return False
     try:

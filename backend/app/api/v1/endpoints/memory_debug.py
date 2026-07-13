@@ -5,7 +5,7 @@
 Debug endpoints for on-demand memory analysis, snapshots, and HTML reports.
 
 All endpoints are gated behind development/staging mode.
-In production, requires superadmin authentication.
+In production, requires owner authentication.
 
 Endpoints:
     GET  /debug/memory              - Current memory overview
@@ -31,10 +31,10 @@ from typing import Any
 from fastapi import APIRouter, Depends, HTTPException, Query, status
 from fastapi.responses import HTMLResponse
 
-from app.auth.deps import require_superadmin
+from app.auth.deps import require_owner
 from app.core.config import settings
 
-# Memory debug endpoints are superadmin-only and disabled in production
+# Memory debug endpoints are owner-only and disabled in production
 # unless explicitly enabled via ENABLE_MEMORY_DEBUG environment variable.
 _enable_in_prod = os.environ.get("ENABLE_MEMORY_DEBUG", "").lower() in (
     "true",
@@ -71,7 +71,7 @@ else:
     router = APIRouter(
         prefix="/debug/memory",
         tags=["Memory Debug"],
-        dependencies=[Depends(require_superadmin())],
+        dependencies=[Depends(require_owner())],
     )
 
 # These will be set during app startup
