@@ -12,10 +12,6 @@ from celery.utils.log import get_task_logger
 from sqlalchemy import select
 
 from app.db.session import SyncSessionLocal
-# NOTE(STRAT-SC-001/C3): dead `Tenant` import removed so `app.main` can
-# import (endpoints import worker task functions at module load). Task
-# bodies below still reference the old per-org fan-out and are rewritten
-# in Task C4 — they were already runtime-broken since the model deletion.
 from app.models import Campaign, MLPrediction
 from app.workers.locks import with_distributed_lock
 from app.workers.tasks.helpers import calculate_task_confidence, publish_event
@@ -29,22 +25,21 @@ logger = get_task_logger(__name__)
     retry_backoff=True,
     max_retries=2,
 )
-def run_live_predictions(self, tenant_id: int):
+def run_live_predictions(self):
     """
-    Run live ML predictions for a tenant's campaigns.
+    Run live ML predictions for all active campaigns.
 
     Generates predictions for:
     - ROAS trajectory
     - Conversion probability
     - Budget optimization recommendations
     """
-    logger.info(f"Running live predictions for tenant {tenant_id}")
+    logger.info("Running live predictions")
 
     with SyncSessionLocal() as db:
         campaigns = (
             db.execute(
                 select(Campaign).where(
-                    Campaign.tenant_id == tenant_id,
                     Campaign.is_deleted == False,
                     Campaign.status == "active",
                 )
@@ -73,12 +68,11 @@ def run_live_predictions(self, tenant_id: int):
                 # Use ROAS optimizer for predictions
                 from app.ml.roas_optimizer import ROASOptimizer
 
-                optimizer = ROASOptimizer(tenant_id)
+                optimizer = ROASOptimizer()
                 prediction = optimizer.predict_campaign(campaign.id)
 
                 # Store prediction
                 ml_pred = MLPrediction(
-                    tenant_id=tenant_id,
                     campaign_id=campaign.id,
                     prediction_type="roas_trajectory",
                     predicted_value=prediction.get("predicted_roas"),
@@ -96,7 +90,6 @@ def run_live_predictions(self, tenant_id: int):
 
         # Publish update event
         publish_event(
-            tenant_id,
             "predictions_updated",
             {
                 "count": len(predictions),
@@ -104,37 +97,29 @@ def run_live_predictions(self, tenant_id: int):
             },
         )
 
-    logger.info(f"Generated {len(predictions)} predictions for tenant {tenant_id}")
+    logger.info(f"Generated {len(predictions)} predictions")
     return {"predictions": len(predictions), "confidence": confidence}
 
 
 # Explicit name: this module was split out of the old app/workers/tasks.py;
 # without it the auto-generated name gains the submodule segment and the
 # beat schedule's task reference silently dispatches to nothing.
-@shared_task(name="app.workers.tasks.run_all_tenant_predictions")
+@shared_task(name="app.workers.tasks.run_all_predictions")
 @with_distributed_lock(timeout=1800)
-def run_all_tenant_predictions():
+def run_all_predictions():
     """
-    Run predictions for all active tenants.
+    Run predictions for the org.
     Scheduled every 6 hours by Celery beat.
     """
-    logger.info("Starting predictions for all tenants")
+    logger.info("Starting predictions")
 
-    with SyncSessionLocal() as db:
-        tenants = (
-            db.execute(select(Tenant).where(Tenant.is_deleted == False)).scalars().all()
-        )
+    run_live_predictions.delay()
+    # Fan out anomaly/ROAS alerting on the same cadence so the safety-signal
+    # alerts actually run (previously never dispatched).
+    generate_roas_alerts.delay()
 
-        task_count = 0
-        for tenant in tenants:
-            run_live_predictions.delay(tenant.id)
-            # Fan out anomaly/ROAS alerting on the same cadence so the
-            # safety-signal alerts actually run (previously never dispatched).
-            generate_roas_alerts.delay(tenant.id)
-            task_count += 1
-
-    logger.info(f"Queued predictions + ROAS alerts for {task_count} tenants")
-    return {"tasks_queued": task_count}
+    logger.info("Queued predictions + ROAS alerts")
+    return {"tasks_queued": 2}
 
 
 @shared_task(
@@ -143,9 +128,9 @@ def run_all_tenant_predictions():
     retry_backoff=True,
     max_retries=2,
 )
-def generate_roas_alerts(self, tenant_id: int):
+def generate_roas_alerts(self):
     """
-    Generate ROAS/CPA/spend anomaly alerts for a tenant's active campaigns.
+    Generate ROAS/CPA/spend anomaly alerts for all active campaigns.
 
     Builds a per-campaign daily time series from ``campaign_metrics`` and runs
     the z-score anomaly detector, emitting HIGH/CRITICAL anomalies as real-time
@@ -155,7 +140,7 @@ def generate_roas_alerts(self, tenant_id: int):
     from app.analytics.logic.types import AnomalyParams
     from app.base_models import CampaignMetric
 
-    logger.info(f"Generating ROAS alerts for tenant {tenant_id}")
+    logger.info("Generating ROAS alerts")
 
     params = AnomalyParams(metrics_to_check=["roas", "cpa", "spend"])
     # Baseline window plus today's value.
@@ -176,7 +161,6 @@ def generate_roas_alerts(self, tenant_id: int):
         campaigns = (
             db.execute(
                 select(Campaign).where(
-                    Campaign.tenant_id == tenant_id,
                     Campaign.is_deleted == False,
                     Campaign.status == "active",
                 )
@@ -192,10 +176,7 @@ def generate_roas_alerts(self, tenant_id: int):
                 rows = (
                     db.execute(
                         select(CampaignMetric)
-                        .where(
-                            CampaignMetric.campaign_id == campaign.id,
-                            CampaignMetric.tenant_id == tenant_id,
-                        )
+                        .where(CampaignMetric.campaign_id == campaign.id)
                         .order_by(CampaignMetric.date.desc())
                         .limit(lookback)
                     )
@@ -240,7 +221,6 @@ def generate_roas_alerts(self, tenant_id: int):
 
                     # Publish real-time alert
                     publish_event(
-                        tenant_id,
                         "roas_alert",
                         alert,
                     )
@@ -251,5 +231,5 @@ def generate_roas_alerts(self, tenant_id: int):
             except (ValueError, KeyError, ZeroDivisionError) as e:
                 logger.error(f"Alert generation failed for campaign {campaign.id}: {e}")
 
-    logger.info(f"Generated {len(alerts)} ROAS alerts for tenant {tenant_id}")
+    logger.info(f"Generated {len(alerts)} ROAS alerts")
     return {"alerts": len(alerts)}

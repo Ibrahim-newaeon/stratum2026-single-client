@@ -3,9 +3,9 @@
 # =============================================================================
 """
 Tests for metrics_access_allowed, the gate protecting the /metrics
-exposition. /metrics is exempt from tenant auth (PUBLIC_ENDPOINTS) and the
-global registry carries tenant_id-labeled series, so when METRICS_API_KEY
-is configured the route must reject anything but the exact bearer token.
+exposition. /metrics is exempt from auth (PUBLIC_ENDPOINTS) and the global
+registry carries business-metric series, so when METRICS_API_KEY is
+configured the route must reject anything but the exact bearer token.
 """
 
 from app.main import metrics_access_allowed

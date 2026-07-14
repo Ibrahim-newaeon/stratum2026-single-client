@@ -391,9 +391,6 @@ async def trigger_prediction_refresh(
     Trigger a refresh of live predictions.
     Queues a background task.
     """
-    # TODO(C4): app/workers/tasks/ml.py run_live_predictions still declares a
-    # required tenant-scoping positional param — dropped here assuming that
-    # task gets de-tenanted separately; verify before relying on this queue.
     task = run_live_predictions.delay()
 
     return APIResponse(

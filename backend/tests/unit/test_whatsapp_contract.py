@@ -19,8 +19,9 @@ from app.workers.tasks import send_whatsapp_broadcast, send_whatsapp_message
 from app.workers.tasks.whatsapp import _extract_wamid
 
 # The exact kwargs the endpoints dispatch with (endpoints/whatsapp.py).
+# Single-org conversion (STRAT-SC-001): tenant_id dropped from both the
+# endpoint dispatch and the task signature.
 ENDPOINT_SEND_KWARGS = {
-    "tenant_id",
     "message_id",
     "contact_phone",
     "message_type",
@@ -30,7 +31,6 @@ ENDPOINT_SEND_KWARGS = {
     "media_url",
 }
 ENDPOINT_BROADCAST_KWARGS = {
-    "tenant_id",
     "template_name",
     "template_variables",
     "contact_ids",

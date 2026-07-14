@@ -559,14 +559,14 @@ If you believe this is an error, please contact support.
         self,
         to_email: str,
         inviter_name: str,
-        tenant_name: str,
+        org_name: str,
         invite_token: str,
         role: str = "member",
     ) -> bool:
         """Send invitation email to new team member."""
         invite_url = f"{self.frontend_url}/accept-invite?token={invite_token}"
 
-        subject = f"You've been invited to join {tenant_name} on Stratum AI"
+        subject = f"You've been invited to join {org_name} on Stratum AI"
 
         html_content = f"""
 <!DOCTYPE html>
@@ -583,7 +583,7 @@ If you believe this is an error, please contact support.
     <div style="background: #f8fafc; border-radius: 8px; padding: 30px; margin-bottom: 20px;">
         <h2 style="margin-top: 0;">You're invited!</h2>
 
-        <p><strong>{inviter_name}</strong> has invited you to join <strong>{tenant_name}</strong> on Stratum AI as a <strong>{role}</strong>.</p>
+        <p><strong>{inviter_name}</strong> has invited you to join <strong>{org_name}</strong> on Stratum AI as a <strong>{role}</strong>.</p>
 
         <p>Stratum AI is a Revenue Operating System that helps teams automate and optimize their ad campaigns with trust-gated automation.</p>
 
@@ -615,7 +615,7 @@ If you believe this is an error, please contact support.
         text_content = f"""
 You're invited!
 
-{inviter_name} has invited you to join {tenant_name} on Stratum AI as a {role}.
+{inviter_name} has invited you to join {org_name} on Stratum AI as a {role}.
 
 Stratum AI is a Revenue Operating System that helps teams automate and optimize their ad campaigns.
 

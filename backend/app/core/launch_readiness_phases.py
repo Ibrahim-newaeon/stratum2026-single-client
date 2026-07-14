@@ -294,37 +294,37 @@ LAUNCH_READINESS_PHASES: List[LaunchReadinessPhaseDef] = [
     },
     {
         "number": 5,
-        "slug": "multi-tenancy",
-        "title": "Multi-Tenancy Hardening",
-        "description": "Tenant isolation verified across every query, every task, every endpoint.",
+        "slug": "access-control-hardening",
+        "title": "Access Control Hardening",
+        "description": "Authentication and authorization verified across every query, every task, every endpoint (single-org deployment).",
         "items": [
             {
-                "key": "tenant_filter_audit",
-                "title": "Every query audited for tenant_id filter",
+                "key": "auth_dependency_audit",
+                "title": "Every route audited for a get_current_user (or stricter) dependency",
             },
             {
-                "key": "rls_policies_enabled",
-                "title": "PostgreSQL Row-Level Security policies enabled where defined",
+                "key": "role_policies_enabled",
+                "title": "Role-based access checks (owner/admin/member) enforced where defined",
             },
             {
-                "key": "cross_tenant_tests",
-                "title": "Integration tests assert 403/404 on cross-tenant access",
+                "key": "unauthenticated_access_tests",
+                "title": "Integration tests assert 401/403 on missing/invalid auth",
             },
             {
-                "key": "jwt_tenant_validation",
-                "title": "JWT tenant_id validated on every request",
+                "key": "jwt_claims_validation",
+                "title": "JWT claims (sub, role, exp) validated on every request",
             },
             {
-                "key": "per_tenant_rate_limits",
-                "title": "Rate limits scoped per-tenant, not global",
+                "key": "rate_limits_enforced",
+                "title": "Rate limits enforced on auth and public endpoints",
             },
             {
-                "key": "celery_tenant_context",
-                "title": "Celery tasks carry + re-validate tenant context",
+                "key": "celery_task_auth_context",
+                "title": "Celery tasks operate on the single org without stale identifiers",
             },
             {
-                "key": "tenant_audit_log",
-                "title": "Audit log entries scoped per-tenant for autopilot + trust gate",
+                "key": "org_audit_log",
+                "title": "Audit log entries recorded for autopilot + trust gate actions",
             },
             {
                 "key": "gdpr_erasure_cascade",
@@ -339,12 +339,12 @@ LAUNCH_READINESS_PHASES: List[LaunchReadinessPhaseDef] = [
         "description": "Guardrails for automation that moves ad spend.",
         "items": [
             {
-                "key": "per_tenant_thresholds",
-                "title": "Trust gate thresholds configurable per tenant (never hardcoded)",
+                "key": "configurable_thresholds",
+                "title": "Trust gate thresholds configurable via org settings (never hardcoded)",
             },
             {
                 "key": "advisory_default",
-                "title": "New tenants default to Advisory enforcement mode",
+                "title": "Org defaults to Advisory enforcement mode",
             },
             {
                 "key": "autopilot_kill_switch",
@@ -583,7 +583,7 @@ LAUNCH_READINESS_PHASES: List[LaunchReadinessPhaseDef] = [
             },
             {
                 "key": "enforcement_upgrade_plan",
-                "title": "Per-tenant enforcement upgrade plan documented",
+                "title": "Enforcement upgrade plan documented",
             },
             {
                 "key": "postmortem_process",

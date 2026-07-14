@@ -31,21 +31,19 @@ logger = get_task_logger(__name__)
 
 
 @shared_task(bind=True)
-def evaluate_rules(self, tenant_id: int, rule_id: int):
+def evaluate_rules(self, rule_id: int):
     """
     Evaluate a specific rule against matching campaigns.
 
     Args:
-        tenant_id: Tenant ID for isolation
         rule_id: Rule ID to evaluate
     """
-    logger.info(f"Evaluating rule {rule_id} for tenant {tenant_id}")
+    logger.info(f"Evaluating rule {rule_id}")
 
     with SyncSessionLocal() as db:
         rule = db.execute(
             select(Rule).where(
                 Rule.id == rule_id,
-                Rule.tenant_id == tenant_id,
                 Rule.status == RuleStatus.ACTIVE,
             )
         ).scalar_one_or_none()
@@ -56,12 +54,7 @@ def evaluate_rules(self, tenant_id: int, rule_id: int):
 
         # Get campaigns matching rule scope
         campaigns = (
-            db.execute(
-                select(Campaign).where(
-                    Campaign.tenant_id == tenant_id,
-                    Campaign.is_deleted == False,
-                )
-            )
+            db.execute(select(Campaign).where(Campaign.is_deleted == False))
             .scalars()
             .all()
         )
@@ -83,7 +76,6 @@ def evaluate_rules(self, tenant_id: int, rule_id: int):
                 # triggered/condition_result/action_result, not the old
                 # triggered_at/condition_values/action_taken kwargs).
                 execution = RuleExecution(
-                    tenant_id=tenant_id,
                     rule_id=rule.id,
                     campaign_id=campaign.id,
                     triggered=True,
@@ -98,7 +90,6 @@ def evaluate_rules(self, tenant_id: int, rule_id: int):
         # Publish event if any actions taken
         if executions > 0:
             publish_event(
-                tenant_id,
                 "rule_triggered",
                 {
                     "rule_id": rule_id,
@@ -119,7 +110,7 @@ def evaluate_rules(self, tenant_id: int, rule_id: int):
 @with_distributed_lock(timeout=900)  # 15 minute lock timeout
 def evaluate_all_rules():
     """
-    Evaluate all active rules across all tenants.
+    Evaluate all active rules for the org.
     Scheduled by Celery beat (typically every 15 minutes).
 
     Uses distributed lock to prevent duplicate execution across workers.
@@ -141,7 +132,7 @@ def evaluate_all_rules():
 
         task_count = 0
         for rule in rules:
-            evaluate_rules.delay(rule.tenant_id, rule.id)
+            evaluate_rules.delay(rule.id)
             task_count += 1
 
     logger.info(f"Queued {task_count} rule evaluation tasks")
@@ -285,8 +276,12 @@ def _execute_action(rule: Rule, campaign: Campaign, db: Session) -> dict[str, An
             from app.workers.tasks.whatsapp import send_whatsapp_message
 
             if action_config.get("whatsapp"):
+                # NOTE: pre-existing kwarg mismatch (unrelated to tenant
+                # scoping) — send_whatsapp_message expects a persisted
+                # `message_id` plus `contact_phone`/`template_variables`,
+                # not `to_number`/`variables`, and no message row is created
+                # here. Left as documented technical debt.
                 send_whatsapp_message.delay(
-                    tenant_id=campaign.tenant_id,
                     template_name="rule_alert",
                     to_number=action_config.get("phone"),
                     variables={

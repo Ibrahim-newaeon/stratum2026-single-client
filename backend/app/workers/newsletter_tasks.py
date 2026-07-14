@@ -106,9 +106,7 @@ def _add_unsubscribe_footer(
     retry_backoff_max=600,
     max_retries=3,
 )
-def send_newsletter_campaign(
-    self, campaign_id: int, tenant_id: int | None = None
-) -> dict:
+def send_newsletter_campaign(self, campaign_id: int) -> dict:
     """
     Send a newsletter campaign to all matching subscribers.
 
@@ -119,10 +117,6 @@ def send_newsletter_campaign(
     4. Updates campaign stats on completion
 
     Idempotent via status checks — safe to retry.
-
-    When ``tenant_id`` is provided, the campaign load is scoped to that
-    tenant (defense-in-depth against a forced/guessed campaign_id reaching
-    another tenant's campaign).
     """
     from app.base_models import LandingPageSubscriber
     from app.core.config import settings
@@ -140,11 +134,7 @@ def send_newsletter_campaign(
     api_base_url = settings.frontend_url.rstrip("/")
 
     try:
-        # Load campaign (tenant-scoped when tenant_id supplied)
-        campaign_query = db.query(NewsletterCampaign).filter_by(id=campaign_id)
-        if tenant_id is not None:
-            campaign_query = campaign_query.filter_by(tenant_id=tenant_id)
-        campaign = campaign_query.first()
+        campaign = db.query(NewsletterCampaign).filter_by(id=campaign_id).first()
         if not campaign:
             logger.error(f"Campaign {campaign_id} not found")
             return {"error": "Campaign not found"}

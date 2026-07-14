@@ -371,7 +371,7 @@ async def hubspot_webhook(
         portal_id = event.get("portalId")
         event_type = event.get("subscriptionType", "")
 
-        # Find tenant by portal ID
+        # Find the connection by portal ID
         result = await db.execute(
             select(CRMConnection).where(
                 and_(

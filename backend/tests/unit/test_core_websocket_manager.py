@@ -9,10 +9,13 @@ Redis, or background tasks are involved. The Redis-connected paths
 (``start``/``stop``/``_redis_listener``/``_heartbeat_loop``/
 ``_publish_to_redis``/``_handle_redis_message``) are integration-tested
 elsewhere.
+
+Single-org conversion (STRAT-SC-001): connections are no longer indexed by
+tenant (``_tenant_connections`` deleted); ``broadcast_to_tenant`` is now
+``broadcast_to_org`` and fans out to every connected client.
 """
 
 import json
-from typing import Optional
 from unittest.mock import AsyncMock
 
 import pytest
@@ -36,12 +39,11 @@ def _socket() -> AsyncMock:
 
 async def _connect(
     manager: WebSocketManager,
-    tenant_id: Optional[int] = 1,
-    user_id: Optional[int] = None,
+    user_id: int | None = None,
 ) -> tuple[str, AsyncMock]:
     """Connect a mock socket and return (client_id, socket)."""
     sock = _socket()
-    client_id = await manager.connect(sock, tenant_id=tenant_id, user_id=user_id)
+    client_id = await manager.connect(sock, user_id=user_id)
     return client_id, sock
 
 
@@ -56,38 +58,33 @@ def _sent_types(sock: AsyncMock) -> list[str]:
 
 
 class TestConnectDisconnect:
-    async def test_connect_accepts_and_tracks_tenant(
+    async def test_connect_accepts_and_tracks_client(
         self, manager: WebSocketManager
     ) -> None:
-        """Connecting accepts the socket and indexes the client by tenant."""
-        client_id, sock = await _connect(manager, tenant_id=7, user_id=3)
+        """Connecting accepts the socket and tracks it by client id."""
+        client_id, sock = await _connect(manager, user_id=3)
 
         sock.accept.assert_awaited_once()
         assert client_id in manager._connections
-        assert client_id in manager._tenant_connections[7]
         assert manager._connections[client_id].user_id == 3
 
-    async def test_connect_without_tenant_skips_tenant_index(
-        self, manager: WebSocketManager
-    ) -> None:
-        """Anonymous connections are not tenant-indexed."""
-        client_id, _ = await _connect(manager, tenant_id=None)
+    async def test_connect_without_user_id(self, manager: WebSocketManager) -> None:
+        """Anonymous connections are still tracked."""
+        client_id, _ = await _connect(manager, user_id=None)
 
         assert client_id in manager._connections
-        assert manager._tenant_connections == {}
 
-    async def test_disconnect_cleans_tenant_and_channel_state(
+    async def test_disconnect_cleans_channel_state(
         self, manager: WebSocketManager
     ) -> None:
         """Disconnect closes the socket and removes every index entry."""
-        client_id, sock = await _connect(manager, tenant_id=7)
+        client_id, sock = await _connect(manager)
         await manager.subscribe(client_id, "emq")
 
         await manager.disconnect(client_id)
 
         sock.close.assert_awaited_once()
         assert client_id not in manager._connections
-        assert 7 not in manager._tenant_connections  # empty set removed
         assert client_id not in manager._channel_subscriptions.get("emq", set())
 
     async def test_disconnect_swallows_close_errors(
@@ -105,26 +102,6 @@ class TestConnectDisconnect:
     ) -> None:
         """Disconnecting a never-connected id must not raise."""
         await manager.disconnect("no-such-client")
-
-    async def test_disconnect_anonymous_client(self, manager: WebSocketManager) -> None:
-        """Clients without a tenant disconnect cleanly."""
-        client_id, sock = await _connect(manager, tenant_id=None)
-
-        await manager.disconnect(client_id)
-
-        sock.close.assert_awaited_once()
-        assert client_id not in manager._connections
-
-    async def test_disconnect_keeps_tenant_entry_for_remaining_clients(
-        self, manager: WebSocketManager
-    ) -> None:
-        """The tenant index survives while other clients remain connected."""
-        id_a, _ = await _connect(manager, tenant_id=7)
-        id_b, _ = await _connect(manager, tenant_id=7)
-
-        await manager.disconnect(id_a)
-
-        assert manager._tenant_connections[7] == {id_b}
 
     async def test_disconnect_tolerates_stale_channel_reference(
         self, manager: WebSocketManager
@@ -222,13 +199,12 @@ class TestSendToClient:
         self, manager: WebSocketManager
     ) -> None:
         """A dead socket is disconnected instead of raising."""
-        client_id, sock = await _connect(manager, tenant_id=9)
+        client_id, sock = await _connect(manager, user_id=9)
         sock.send_text.side_effect = RuntimeError("broken pipe")
 
         await manager.send_to_client(client_id, WebSocketMessage(type="x", payload={}))
 
         assert client_id not in manager._connections
-        assert 9 not in manager._tenant_connections
 
 
 # =============================================================================
@@ -237,19 +213,17 @@ class TestSendToClient:
 
 
 class TestBroadcasts:
-    async def test_broadcast_to_tenant_is_isolated(
+    async def test_broadcast_to_org_reaches_every_client(
         self, manager: WebSocketManager
     ) -> None:
-        """Only the target tenant's clients receive the broadcast."""
-        _, sock_a = await _connect(manager, tenant_id=1)
-        _, sock_b = await _connect(manager, tenant_id=1)
-        _, sock_other = await _connect(manager, tenant_id=2)
+        """Every connected client receives the org-wide broadcast."""
+        _, sock_a = await _connect(manager)
+        _, sock_b = await _connect(manager)
 
-        await manager.broadcast_to_tenant(1, "emq_update", {"score": 90})
+        await manager.broadcast_to_org("emq_update", {"score": 90})
 
         sock_a.send_text.assert_awaited_once()
         sock_b.send_text.assert_awaited_once()
-        sock_other.send_text.assert_not_awaited()
         assert json.loads(sock_a.send_text.await_args.args[0])["payload"] == {
             "score": 90
         }
@@ -270,9 +244,9 @@ class TestBroadcasts:
     async def test_broadcast_all_reaches_every_client(
         self, manager: WebSocketManager
     ) -> None:
-        """broadcast_all fans out to every connection, tenants regardless."""
-        _, sock_a = await _connect(manager, tenant_id=1)
-        _, sock_b = await _connect(manager, tenant_id=2)
+        """broadcast_all fans out to every connection."""
+        _, sock_a = await _connect(manager)
+        _, sock_b = await _connect(manager)
 
         await manager.broadcast_all("heartbeat", {"status": "alive"})
 
@@ -365,18 +339,16 @@ class TestStatsAndIds:
     async def test_get_stats_counts_connections(
         self, manager: WebSocketManager
     ) -> None:
-        """Stats reflect connections, tenants, and active channels."""
-        id_a, _ = await _connect(manager, tenant_id=1)
-        await _connect(manager, tenant_id=1)
-        await _connect(manager, tenant_id=2)
+        """Stats reflect connections and active channels."""
+        id_a, _ = await _connect(manager)
+        await _connect(manager)
+        await _connect(manager)
         await manager.subscribe(id_a, "emq")
 
         stats = manager.get_stats()
 
         assert stats["total_connections"] == 3
-        assert stats["tenants_connected"] == 2
         assert stats["channels_active"] == 1
-        assert stats["connections_by_tenant"] == {1: 2, 2: 1}
 
     def test_generate_client_id_is_unique_string(
         self, manager: WebSocketManager
@@ -394,9 +366,9 @@ class TestStatsAndIds:
 
 @pytest.fixture
 def broadcast_mock(monkeypatch: pytest.MonkeyPatch) -> AsyncMock:
-    """Intercept the global manager's tenant broadcast."""
+    """Intercept the global manager's org broadcast."""
     mock = AsyncMock()
-    monkeypatch.setattr(ws_module.ws_manager, "broadcast_to_tenant", mock)
+    monkeypatch.setattr(ws_module.ws_manager, "broadcast_to_org", mock)
     return mock
 
 
@@ -404,9 +376,8 @@ class TestPublishHelpers:
     async def test_publish_action_status_update(
         self, broadcast_mock: AsyncMock
     ) -> None:
-        """Action updates map onto ACTION_STATUS_UPDATE with camelCase payload."""
+        """Action updates map onto ACTION_STATUS_UPDATE."""
         await ws_module.publish_action_status_update(
-            tenant_id=4,
             action_id="act-1",
             status="executed",
             before_value=100,
@@ -414,10 +385,8 @@ class TestPublishHelpers:
         )
 
         kwargs = broadcast_mock.await_args.kwargs
-        assert kwargs["tenant_id"] == 4
         assert kwargs["message_type"] == MessageType.ACTION_STATUS_UPDATE.value
         assert kwargs["payload"] == {
-            "tenantId": 4,
             "actionId": "act-1",
             "status": "executed",
             "beforeValue": 100,
@@ -427,13 +396,12 @@ class TestPublishHelpers:
     async def test_publish_emq_update(self, broadcast_mock: AsyncMock) -> None:
         """EMQ updates map onto EMQ_UPDATE with score fields."""
         await ws_module.publish_emq_update(
-            tenant_id=4, score=71.0, previous_score=68.0, confidence_band="reliable"
+            score=71.0, previous_score=68.0, confidence_band="reliable"
         )
 
         kwargs = broadcast_mock.await_args.kwargs
         assert kwargs["message_type"] == MessageType.EMQ_UPDATE.value
         assert kwargs["payload"] == {
-            "tenantId": 4,
             "score": 71.0,
             "previousScore": 68.0,
             "confidenceBand": "reliable",
@@ -453,7 +421,6 @@ class TestPublishHelpers:
     ) -> None:
         """Opened/degradation map to INCIDENT_OPENED; everything else closes."""
         await ws_module.publish_incident(
-            tenant_id=4,
             incident_type=incident_type,
             incident_id="inc-1",
             title="EMQ drop",
@@ -471,13 +438,12 @@ class TestPublishHelpers:
     ) -> None:
         """Mode changes map onto AUTOPILOT_MODE_CHANGE with mode + reason."""
         await ws_module.publish_autopilot_mode_change(
-            tenant_id=4, mode="frozen", reason="signal health < 40"
+            mode="frozen", reason="signal health < 40"
         )
 
         kwargs = broadcast_mock.await_args.kwargs
         assert kwargs["message_type"] == MessageType.AUTOPILOT_MODE_CHANGE.value
         assert kwargs["payload"] == {
-            "tenantId": 4,
             "mode": "frozen",
             "reason": "signal health < 40",
         }

@@ -32,7 +32,6 @@ logger = get_task_logger(__name__)
 )
 def send_whatsapp_message(
     self,
-    tenant_id: int,
     message_id: int,
     contact_phone: Optional[str] = None,
     message_type: Optional[str] = None,
@@ -50,21 +49,18 @@ def send_whatsapp_message(
     new message (that would double-write and diverged the kwargs/columns).
 
     Args:
-        tenant_id: Tenant ID for isolation.
         message_id: Existing WhatsAppMessage row to send.
         contact_phone: Recipient E.164 number (falls back to the contact row).
         message_type: "template" or "text" (falls back to the row's value).
         template_name / template_variables / content / media_url: send payload,
             each falling back to the persisted row when not supplied.
     """
-    logger.info(f"Sending WhatsApp message {message_id} for tenant {tenant_id}")
+    logger.info(f"Sending WhatsApp message {message_id}")
 
     with SyncSessionLocal() as db:
         message = db.get(WhatsAppMessage, message_id)
-        if message is None or message.tenant_id != tenant_id:
-            logger.error(
-                f"WhatsApp message {message_id} not found for tenant {tenant_id}"
-            )
+        if message is None:
+            logger.error(f"WhatsApp message {message_id} not found")
             return {"status": "message_not_found"}
 
         # Resolve recipient phone (prefer the passed value, else the contact row).
@@ -91,7 +87,6 @@ def send_whatsapp_message(
         try:
             wamid = _send_via_client(
                 db=db,
-                tenant_id=tenant_id,
                 phone=phone,
                 message_type=m_type,
                 template_name=tmpl_name,
@@ -146,7 +141,6 @@ def process_scheduled_whatsapp_messages():
         task_count = 0
         for message in messages:
             send_whatsapp_message.delay(
-                tenant_id=message.tenant_id,
                 message_id=message.id,
                 contact_phone=message.contact.phone_number if message.contact else None,
                 message_type=message.message_type,
@@ -173,7 +167,6 @@ def process_scheduled_whatsapp_messages():
 )
 def send_whatsapp_broadcast(
     self,
-    tenant_id: int,
     template_name: str,
     template_variables: Optional[dict] = None,
     contact_ids: Optional[list] = None,
@@ -195,7 +188,6 @@ def send_whatsapp_broadcast(
                 db.execute(
                     select(WhatsAppMessage)
                     .where(
-                        WhatsAppMessage.tenant_id == tenant_id,
                         WhatsAppMessage.contact_id == contact_id,
                         WhatsAppMessage.template_name == template_name,
                         WhatsAppMessage.status == WhatsAppMessageStatus.PENDING,
@@ -213,7 +205,6 @@ def send_whatsapp_broadcast(
 
             contact = db.get(WhatsAppContact, contact_id)
             send_whatsapp_message.delay(
-                tenant_id=tenant_id,
                 message_id=message.id,
                 contact_phone=contact.phone_number if contact else None,
                 message_type="template",
@@ -265,7 +256,6 @@ def _extract_wamid(result: Any) -> Optional[str]:
 def _send_via_client(
     *,
     db,
-    tenant_id: int,
     phone: str,
     message_type: Optional[str],
     template_name: Optional[str],
@@ -285,10 +275,7 @@ def _send_via_client(
 
     if template_name:
         template = db.execute(
-            select(WhatsAppTemplate).where(
-                WhatsAppTemplate.tenant_id == tenant_id,
-                WhatsAppTemplate.name == template_name,
-            )
+            select(WhatsAppTemplate).where(WhatsAppTemplate.name == template_name)
         ).scalar_one_or_none()
         language = template.language if template else "en"
         components = (

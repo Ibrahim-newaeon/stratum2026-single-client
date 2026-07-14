@@ -60,7 +60,7 @@ from app.workers.tasks import (  # noqa: F401 – re-exports
     publish_event,
     publish_scheduled_cms_posts,
     refresh_all_competitors,
-    run_all_tenant_predictions,
+    run_all_predictions,
     run_live_predictions,
     send_whatsapp_broadcast,
     send_whatsapp_message,
@@ -102,7 +102,7 @@ __all__ = [
     # CMS
     "publish_scheduled_cms_posts",
     "refresh_all_competitors",
-    "run_all_tenant_predictions",
+    "run_all_predictions",
     # ML
     "run_live_predictions",
     # WhatsApp

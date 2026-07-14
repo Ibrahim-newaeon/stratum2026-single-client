@@ -3,7 +3,8 @@
 # =============================================================================
 """
 Celery task for daily attribution variance rollup.
-Compares platform-reported metrics with GA4 data to identify discrepancies.
+Compares platform-reported metrics with GA4 data to identify discrepancies,
+for the org.
 """
 
 import logging
@@ -131,17 +132,13 @@ def calculate_confidence(
     max_retries=3,
     default_retry_delay=300,
 )
-def attribution_variance_rollup(
-    self, tenant_id: Optional[int] = None, target_date: Optional[str] = None
-):
+def attribution_variance_rollup(self, target_date: Optional[str] = None):
     """
     Daily attribution variance rollup task.
 
-    Compares platform-reported revenue/conversions with GA4 data.
-    Can run for a specific tenant or all tenants.
+    Compares platform-reported revenue/conversions with GA4 data for the org.
 
     Args:
-        tenant_id: Optional tenant ID to process (None = all tenants)
         target_date: Date to process in ISO format (default: yesterday)
     """
     import asyncio
@@ -156,105 +153,91 @@ def attribution_variance_rollup(
                 )
 
                 logger.info(
-                    f"Starting attribution variance rollup for date={rollup_date}, tenant_id={tenant_id}"
+                    f"Starting attribution variance rollup for date={rollup_date}"
                 )
-
-                # Get list of tenants to process
-                if tenant_id:
-                    tenant_ids = [tenant_id]
-                else:
-                    from app.models.tenant import Tenant
-
-                    result = await db.execute(
-                        select(Tenant.id).where(Tenant.is_active == True)
-                    )
-                    tenant_ids = [row[0] for row in result.all()]
 
                 records_created = 0
 
-                for tid in tenant_ids:
-                    for platform in PLATFORMS:
-                        # Fetch GA4 and platform metrics
-                        metrics = await fetch_attribution_metrics(
-                            db, tid, platform, rollup_date
-                        )
+                for platform in PLATFORMS:
+                    # Fetch GA4 and platform metrics
+                    metrics = await fetch_attribution_metrics(
+                        db, platform, rollup_date
+                    )
 
-                        if not metrics:
-                            continue
+                    if not metrics:
+                        continue
 
-                        # Calculate deltas
-                        ga4_revenue = metrics["ga4_revenue"]
-                        platform_revenue = metrics["platform_revenue"]
-                        ga4_conversions = metrics["ga4_conversions"]
-                        platform_conversions = metrics["platform_conversions"]
+                    # Calculate deltas
+                    ga4_revenue = metrics["ga4_revenue"]
+                    platform_revenue = metrics["platform_revenue"]
+                    ga4_conversions = metrics["ga4_conversions"]
+                    platform_conversions = metrics["platform_conversions"]
 
-                        revenue_delta_abs = platform_revenue - ga4_revenue
-                        revenue_delta_pct = (
-                            (revenue_delta_abs / ga4_revenue * 100)
-                            if ga4_revenue > 0
-                            else 0
-                        )
+                    revenue_delta_abs = platform_revenue - ga4_revenue
+                    revenue_delta_pct = (
+                        (revenue_delta_abs / ga4_revenue * 100)
+                        if ga4_revenue > 0
+                        else 0
+                    )
 
-                        conversion_delta_abs = platform_conversions - ga4_conversions
-                        conversion_delta_pct = (
-                            (conversion_delta_abs / ga4_conversions * 100)
-                            if ga4_conversions > 0
-                            else 0
-                        )
+                    conversion_delta_abs = platform_conversions - ga4_conversions
+                    conversion_delta_pct = (
+                        (conversion_delta_abs / ga4_conversions * 100)
+                        if ga4_conversions > 0
+                        else 0
+                    )
 
-                        # Determine status and confidence
-                        status = determine_variance_status(revenue_delta_pct)
-                        confidence = calculate_confidence(
-                            ga4_revenue,
-                            platform_revenue,
-                            ga4_conversions,
-                            platform_conversions,
-                        )
+                    # Determine status and confidence
+                    status = determine_variance_status(revenue_delta_pct)
+                    confidence = calculate_confidence(
+                        ga4_revenue,
+                        platform_revenue,
+                        ga4_conversions,
+                        platform_conversions,
+                    )
 
-                        # Check if record already exists
-                        existing = await db.execute(
-                            select(FactAttributionVarianceDaily).where(
-                                and_(
-                                    FactAttributionVarianceDaily.tenant_id == tid,
-                                    FactAttributionVarianceDaily.date == rollup_date,
-                                    FactAttributionVarianceDaily.platform == platform,
-                                )
+                    # Check if record already exists
+                    existing = await db.execute(
+                        select(FactAttributionVarianceDaily).where(
+                            and_(
+                                FactAttributionVarianceDaily.date == rollup_date,
+                                FactAttributionVarianceDaily.platform == platform,
                             )
                         )
-                        existing_record = existing.scalar_one_or_none()
+                    )
+                    existing_record = existing.scalar_one_or_none()
 
-                        if existing_record:
-                            # Update existing record
-                            existing_record.ga4_revenue = ga4_revenue
-                            existing_record.platform_revenue = platform_revenue
-                            existing_record.revenue_delta_abs = revenue_delta_abs
-                            existing_record.revenue_delta_pct = revenue_delta_pct
-                            existing_record.ga4_conversions = ga4_conversions
-                            existing_record.platform_conversions = platform_conversions
-                            existing_record.conversion_delta_abs = conversion_delta_abs
-                            existing_record.conversion_delta_pct = conversion_delta_pct
-                            existing_record.confidence = confidence
-                            existing_record.status = status
-                            existing_record.updated_at = datetime.now(timezone.utc)
-                        else:
-                            # Create new record
-                            record = FactAttributionVarianceDaily(
-                                tenant_id=tid,
-                                date=rollup_date,
-                                platform=platform,
-                                ga4_revenue=ga4_revenue,
-                                platform_revenue=platform_revenue,
-                                revenue_delta_abs=revenue_delta_abs,
-                                revenue_delta_pct=revenue_delta_pct,
-                                ga4_conversions=ga4_conversions,
-                                platform_conversions=platform_conversions,
-                                conversion_delta_abs=conversion_delta_abs,
-                                conversion_delta_pct=conversion_delta_pct,
-                                confidence=confidence,
-                                status=status,
-                            )
-                            db.add(record)
-                            records_created += 1
+                    if existing_record:
+                        # Update existing record
+                        existing_record.ga4_revenue = ga4_revenue
+                        existing_record.platform_revenue = platform_revenue
+                        existing_record.revenue_delta_abs = revenue_delta_abs
+                        existing_record.revenue_delta_pct = revenue_delta_pct
+                        existing_record.ga4_conversions = ga4_conversions
+                        existing_record.platform_conversions = platform_conversions
+                        existing_record.conversion_delta_abs = conversion_delta_abs
+                        existing_record.conversion_delta_pct = conversion_delta_pct
+                        existing_record.confidence = confidence
+                        existing_record.status = status
+                        existing_record.updated_at = datetime.now(timezone.utc)
+                    else:
+                        # Create new record
+                        record = FactAttributionVarianceDaily(
+                            date=rollup_date,
+                            platform=platform,
+                            ga4_revenue=ga4_revenue,
+                            platform_revenue=platform_revenue,
+                            revenue_delta_abs=revenue_delta_abs,
+                            revenue_delta_pct=revenue_delta_pct,
+                            ga4_conversions=ga4_conversions,
+                            platform_conversions=platform_conversions,
+                            conversion_delta_abs=conversion_delta_abs,
+                            conversion_delta_pct=conversion_delta_pct,
+                            confidence=confidence,
+                            status=status,
+                        )
+                        db.add(record)
+                        records_created += 1
 
                 await db.commit()
 
@@ -278,7 +261,6 @@ def attribution_variance_rollup(
 
 async def fetch_attribution_metrics(
     db: AsyncSession,
-    tenant_id: int,
     platform: str,
     target_date: date,
 ) -> Optional[Dict[str, Any]]:
@@ -292,15 +274,15 @@ async def fetch_attribution_metrics(
 
     For now, returns placeholder data if connections exist.
     """
-    # Check if tenant has this platform connected
-    from app.models.campaign_builder import TenantPlatformConnection
+    # Check if this platform is connected (single-org: one connection per
+    # platform).
+    from app.models.campaign_builder import ConnectionStatus, TenantPlatformConnection
 
     result = await db.execute(
         select(TenantPlatformConnection).where(
             and_(
-                TenantPlatformConnection.tenant_id == tenant_id,
                 TenantPlatformConnection.platform == platform,
-                TenantPlatformConnection.is_connected == True,
+                TenantPlatformConnection.status == ConnectionStatus.CONNECTED,
             )
         )
     )
@@ -315,7 +297,6 @@ async def fetch_attribution_metrics(
     result = await db.execute(
         select(Campaign).where(
             and_(
-                Campaign.tenant_id == tenant_id,
                 Campaign.platform == platform,
                 Campaign.is_deleted == False,
             )

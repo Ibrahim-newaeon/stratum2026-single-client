@@ -39,27 +39,27 @@ def _rec(days_ago: int, status: SignalHealthStatus):
 
 async def test_no_recent_data_fails_closed():
     # The core fix: no signal data -> block, do NOT proceed.
-    assert await check_signal_health(_db_returning([]), tenant_id=1) is False
+    assert await check_signal_health(_db_returning([])) is False
 
 
 async def test_recent_healthy_allows_execution():
     rec = _rec(1, SignalHealthStatus.HEALTHY)
-    assert await check_signal_health(_db_returning([rec]), tenant_id=1) is True
+    assert await check_signal_health(_db_returning([rec])) is True
 
 
 async def test_recent_risk_allows_execution():
     rec = _rec(1, SignalHealthStatus.RISK)
-    assert await check_signal_health(_db_returning([rec]), tenant_id=1) is True
+    assert await check_signal_health(_db_returning([rec])) is True
 
 
 async def test_recent_degraded_blocks():
     rec = _rec(1, SignalHealthStatus.DEGRADED)
-    assert await check_signal_health(_db_returning([rec]), tenant_id=1) is False
+    assert await check_signal_health(_db_returning([rec])) is False
 
 
 async def test_recent_critical_blocks():
     rec = _rec(0, SignalHealthStatus.CRITICAL)
-    assert await check_signal_health(_db_returning([rec]), tenant_id=1) is False
+    assert await check_signal_health(_db_returning([rec])) is False
 
 
 async def test_evaluates_latest_date_only():
@@ -68,4 +68,4 @@ async def test_evaluates_latest_date_only():
         _rec(2, SignalHealthStatus.DEGRADED),  # older
         _rec(1, SignalHealthStatus.HEALTHY),  # latest
     ]
-    assert await check_signal_health(_db_returning(records), tenant_id=1) is True
+    assert await check_signal_health(_db_returning(records)) is True

@@ -64,23 +64,21 @@ def _get_redis_client() -> redis.Redis:
     return _redis_pool
 
 
-def publish_event(tenant_id: int, event_type: str, payload: dict[str, Any]) -> None:
+def publish_event(event_type: str, payload: dict[str, Any]) -> None:
     """
     Publish real-time event to Redis pub/sub for WebSocket distribution.
 
     Args:
-        tenant_id: Tenant ID for channel routing
         event_type: Type of event (sync_complete, rule_triggered, etc.)
         payload: Event data to send
     """
     try:
         redis_client = _get_redis_client()
-        channel = f"events:tenant:{tenant_id}"
+        channel = "events:org"
 
         message = json.dumps(
             {
                 "type": event_type,
-                "tenant_id": tenant_id,
                 "payload": payload,
             }
         )

@@ -54,7 +54,6 @@ def process_audit_log_queue():
         with SyncSessionLocal() as db:
             for entry in entries:
                 log = AuditLog(
-                    tenant_id=entry.get("tenant_id"),
                     user_id=entry.get("user_id"),
                     action=AuditAction(entry.get("action", "update")),
                     resource_type=entry.get("resource_type"),

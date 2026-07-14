@@ -327,18 +327,18 @@ class TestTokenCreation:
 # =============================================================================
 
 
-class TestTenantScopedPii:
-    def test_per_tenant_salts_differ(self) -> None:
-        """Each tenant derives a distinct salt (and from the global one)."""
-        assert _get_pii_salt(1) != _get_pii_salt(2)
-        assert _get_pii_salt(1) != _get_pii_salt()
+class TestSingleKeyPii:
+    """Single-key PII encryption (STRAT-SC-001): one Fernet key for the
+    whole deployment, derived via ``_get_pii_salt()`` (no per-tenant salts)."""
 
-    def test_tenant_scoped_round_trip(self) -> None:
-        """Data encrypted for a tenant decrypts only with that tenant's key."""
-        ciphertext = encrypt_pii("user@example.com", tenant_id=1)
-        assert decrypt_pii(ciphertext, tenant_id=1) == "user@example.com"
-        with pytest.raises(ValueError, match="PII decryption failed"):
-            decrypt_pii(ciphertext, tenant_id=2)
+    def test_salt_is_deterministic_and_global(self) -> None:
+        """The salt has no per-tenant parameter and is stable across calls."""
+        assert _get_pii_salt() == _get_pii_salt()
+
+    def test_round_trip(self) -> None:
+        """Data encrypted with the single key decrypts back to plaintext."""
+        ciphertext = encrypt_pii("user@example.com")
+        assert decrypt_pii(ciphertext) == "user@example.com"
 
     def test_empty_values_short_circuit(self) -> None:
         """Empty input encrypts/decrypts to the empty string."""

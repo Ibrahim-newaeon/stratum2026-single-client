@@ -3,7 +3,7 @@
 # =============================================================================
 """
 Celery task for daily signal health rollup.
-Aggregates platform metrics and calculates health status for each tenant.
+Aggregates platform metrics and calculates health status for the org.
 """
 
 import logging
@@ -179,17 +179,14 @@ def generate_actions(
     max_retries=3,
     default_retry_delay=300,
 )
-def signal_health_rollup(
-    self, tenant_id: Optional[int] = None, target_date: Optional[str] = None
-):
+def signal_health_rollup(self, target_date: Optional[str] = None):
     """
     Daily signal health rollup task.
 
-    Collects metrics from platform connections and calculates health status.
-    Can run for a specific tenant or all tenants.
+    Collects metrics from platform connections and calculates health status
+    for the org.
 
     Args:
-        tenant_id: Optional tenant ID to process (None = all tenants)
         target_date: Date to process in ISO format (default: yesterday)
     """
     import asyncio
@@ -208,114 +205,84 @@ def signal_health_rollup(
                     else date.today() - timedelta(days=1)
                 )
 
-                logger.info(
-                    f"Starting signal health rollup for date={rollup_date}, tenant_id={tenant_id}"
-                )
-
-                # Get list of tenants to process
-                if tenant_id:
-                    tenant_ids = [tenant_id]
-                else:
-                    # All live tenants. (This previously imported the
-                    # nonexistent app.models.tenant module and filtered on
-                    # a nonexistent Tenant.is_active column — the
-                    # all-tenants path could never have run.)
-                    from app.models import Tenant
-
-                    result = await db.execute(
-                        select(Tenant.id).where(
-                            Tenant.is_deleted == False  # noqa: E712
-                        )
-                    )
-                    tenant_ids = [row[0] for row in result.all()]
+                logger.info(f"Starting signal health rollup for date={rollup_date}")
 
                 records_created = 0
 
-                for tid in tenant_ids:
-                    for platform in PLATFORMS:
-                        # Fetch metrics for this tenant/platform
-                        # In production, this would query actual platform APIs or aggregated metrics
-                        metrics = await fetch_platform_metrics(
-                            db, tid, platform, rollup_date
-                        )
+                for platform in PLATFORMS:
+                    # Fetch metrics for this platform
+                    # In production, this would query actual platform APIs or aggregated metrics
+                    metrics = await fetch_platform_metrics(db, platform, rollup_date)
 
-                        if not metrics:
-                            continue
+                    if not metrics:
+                        continue
 
-                        # Calculate status
-                        status = determine_status(
-                            metrics.get("emq_score"),
-                            metrics.get("event_loss_pct"),
-                            metrics.get("freshness_minutes"),
-                            metrics.get("api_error_rate"),
-                        )
+                    # Calculate status
+                    status = determine_status(
+                        metrics.get("emq_score"),
+                        metrics.get("event_loss_pct"),
+                        metrics.get("freshness_minutes"),
+                        metrics.get("api_error_rate"),
+                    )
 
-                        # Generate issues and actions
-                        issues = generate_issues(
-                            metrics.get("emq_score"),
-                            metrics.get("event_loss_pct"),
-                            metrics.get("freshness_minutes"),
-                            metrics.get("api_error_rate"),
-                        )
+                    # Generate issues and actions
+                    issues = generate_issues(
+                        metrics.get("emq_score"),
+                        metrics.get("event_loss_pct"),
+                        metrics.get("freshness_minutes"),
+                        metrics.get("api_error_rate"),
+                    )
 
-                        actions = generate_actions(
-                            metrics.get("emq_score"),
-                            metrics.get("event_loss_pct"),
-                            metrics.get("freshness_minutes"),
-                            metrics.get("api_error_rate"),
-                            platform,
-                        )
+                    actions = generate_actions(
+                        metrics.get("emq_score"),
+                        metrics.get("event_loss_pct"),
+                        metrics.get("freshness_minutes"),
+                        metrics.get("api_error_rate"),
+                        platform,
+                    )
 
-                        # Check if record already exists
-                        existing = await db.execute(
-                            select(FactSignalHealthDaily).where(
-                                and_(
-                                    FactSignalHealthDaily.tenant_id == tid,
-                                    FactSignalHealthDaily.date == rollup_date,
-                                    FactSignalHealthDaily.platform == platform,
-                                )
+                    # Check if record already exists
+                    existing = await db.execute(
+                        select(FactSignalHealthDaily).where(
+                            and_(
+                                FactSignalHealthDaily.date == rollup_date,
+                                FactSignalHealthDaily.platform == platform,
                             )
                         )
-                        existing_record = existing.scalar_one_or_none()
+                    )
+                    existing_record = existing.scalar_one_or_none()
 
-                        import json
+                    import json
 
-                        if existing_record:
-                            # Update existing record
-                            existing_record.emq_score = metrics.get("emq_score")
-                            existing_record.event_loss_pct = metrics.get(
-                                "event_loss_pct"
-                            )
-                            existing_record.freshness_minutes = metrics.get(
-                                "freshness_minutes"
-                            )
-                            existing_record.api_error_rate = metrics.get(
-                                "api_error_rate"
-                            )
-                            existing_record.status = status
-                            existing_record.issues = (
-                                json.dumps(issues) if issues else None
-                            )
-                            existing_record.actions = (
-                                json.dumps(actions) if actions else None
-                            )
-                            existing_record.updated_at = datetime.now(timezone.utc)
-                        else:
-                            # Create new record
-                            record = FactSignalHealthDaily(
-                                tenant_id=tid,
-                                date=rollup_date,
-                                platform=platform,
-                                emq_score=metrics.get("emq_score"),
-                                event_loss_pct=metrics.get("event_loss_pct"),
-                                freshness_minutes=metrics.get("freshness_minutes"),
-                                api_error_rate=metrics.get("api_error_rate"),
-                                status=status,
-                                issues=json.dumps(issues) if issues else None,
-                                actions=json.dumps(actions) if actions else None,
-                            )
-                            db.add(record)
-                            records_created += 1
+                    if existing_record:
+                        # Update existing record
+                        existing_record.emq_score = metrics.get("emq_score")
+                        existing_record.event_loss_pct = metrics.get("event_loss_pct")
+                        existing_record.freshness_minutes = metrics.get(
+                            "freshness_minutes"
+                        )
+                        existing_record.api_error_rate = metrics.get("api_error_rate")
+                        existing_record.status = status
+                        existing_record.issues = json.dumps(issues) if issues else None
+                        existing_record.actions = (
+                            json.dumps(actions) if actions else None
+                        )
+                        existing_record.updated_at = datetime.now(timezone.utc)
+                    else:
+                        # Create new record
+                        record = FactSignalHealthDaily(
+                            date=rollup_date,
+                            platform=platform,
+                            emq_score=metrics.get("emq_score"),
+                            event_loss_pct=metrics.get("event_loss_pct"),
+                            freshness_minutes=metrics.get("freshness_minutes"),
+                            api_error_rate=metrics.get("api_error_rate"),
+                            status=status,
+                            issues=json.dumps(issues) if issues else None,
+                            actions=json.dumps(actions) if actions else None,
+                        )
+                        db.add(record)
+                        records_created += 1
 
                 await db.commit()
 
@@ -339,7 +306,6 @@ def signal_health_rollup(
 
 async def fetch_platform_metrics(
     db: AsyncSession,
-    tenant_id: int,
     platform: str,
     target_date: date,
 ) -> Optional[Dict[str, Any]]:
@@ -354,16 +320,15 @@ async def fetch_platform_metrics(
 
     For now, returns placeholder data if platform connection exists.
     """
-    # Check if tenant has this platform connected. (This previously
-    # filtered on TenantPlatformConnection.is_connected and read
-    # last_sync_at / is_healthy — none of which exist on the model, so
+    # Check if this platform is connected (single-org: one connection per
+    # platform). (This previously filtered on TenantPlatformConnection.is_connected
+    # and read last_sync_at / is_healthy — none of which exist on the model, so
     # every rollup attempt died with AttributeError.)
     from app.models.campaign_builder import ConnectionStatus, TenantPlatformConnection
 
     result = await db.execute(
         select(TenantPlatformConnection).where(
             and_(
-                TenantPlatformConnection.tenant_id == tenant_id,
                 TenantPlatformConnection.platform == platform,
                 TenantPlatformConnection.status == ConnectionStatus.CONNECTED,
             )

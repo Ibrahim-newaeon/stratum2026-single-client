@@ -87,7 +87,6 @@ def publish_cms_post(self, post_id: str, published_by_id: Optional[int] = None):
             # Create version snapshot before publishing
             version = CMSPostVersion(
                 post_id=post.id,
-                tenant_id=post.tenant_id,
                 title=post.title,
                 content=post.content,
                 metadata=post.metadata,
@@ -107,7 +106,6 @@ def publish_cms_post(self, post_id: str, published_by_id: Optional[int] = None):
 
             # Publish event for real-time updates
             publish_event(
-                post.tenant_id,
                 "cms_post_published",
                 {
                     "post_id": post_id,
@@ -164,7 +162,6 @@ def create_cms_post_version(
         # Create version snapshot
         version = CMSPostVersion(
             post_id=post.id,
-            tenant_id=post.tenant_id,
             title=post.title,
             content=post.content,
             metadata=post.metadata,

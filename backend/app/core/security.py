@@ -15,7 +15,7 @@ from typing import Any, Optional, Union
 
 import jwt
 import redis.asyncio as aioredis
-from cryptography.fernet import Fernet, InvalidToken
+from cryptography.fernet import Fernet
 from cryptography.hazmat.primitives import hashes
 from cryptography.hazmat.primitives.kdf.pbkdf2 import PBKDF2HMAC
 from jwt.exceptions import PyJWTError as JWTError
@@ -168,27 +168,17 @@ def decode_token(token: str) -> Optional[dict[str, Any]]:
 # =============================================================================
 
 
-def _get_pii_salt(tenant_id: int | None = None) -> bytes:
-    """Return the salt used for PII key derivation.
-
-    Uses a per-tenant salt when tenant_id is provided, derived from
-    the master encryption key and tenant identifier to prevent
-    cross-tenant rainbow table attacks.
-    """
-    base_salt = b"stratum_ai_pii_salt_v2"
-    if tenant_id is not None:
-        return hashlib.sha256(base_salt + str(tenant_id).encode()).digest()
-    return base_salt
+def _get_pii_salt() -> bytes:
+    """Return the salt used for PII key derivation (single global key)."""
+    return b"stratum_ai_pii_salt_v2"
 
 
-def _get_fernet_key(tenant_id: int | None = None) -> bytes:
+def _get_fernet_key() -> bytes:
     """
     Derive a Fernet-compatible key from the encryption key setting.
     Uses PBKDF2 for key derivation.
     """
-    # Use a fixed salt for deterministic key derivation
-    # In production, consider using a per-tenant salt stored securely
-    salt = _get_pii_salt(tenant_id)
+    salt = _get_pii_salt()
 
     kdf = PBKDF2HMAC(
         algorithm=hashes.SHA256(),
@@ -201,13 +191,12 @@ def _get_fernet_key(tenant_id: int | None = None) -> bytes:
     return key
 
 
-def encrypt_pii(plaintext: str, tenant_id: int | None = None) -> str:
+def encrypt_pii(plaintext: str) -> str:
     """
     Encrypt PII data using Fernet symmetric encryption.
 
     Args:
         plaintext: The sensitive data to encrypt
-        tenant_id: Optional tenant ID for per-tenant key derivation
 
     Returns:
         Base64-encoded encrypted string
@@ -215,18 +204,12 @@ def encrypt_pii(plaintext: str, tenant_id: int | None = None) -> str:
     if not plaintext:
         return ""
 
-    # Prefer the tenant's own data-encryption key (AUTH-05); fall back to the
-    # legacy global-derived key when the tenant has no provisioned DEK cached
-    # (e.g. tenant_id is None, or key store not yet initialized).
-    from app.core.pii_keys import get_cached_dek
-
-    dek = get_cached_dek(tenant_id)
-    fernet = Fernet(dek) if dek is not None else Fernet(_get_fernet_key(tenant_id))
+    fernet = Fernet(_get_fernet_key())
     encrypted = fernet.encrypt(plaintext.encode("utf-8"))
     return base64.urlsafe_b64encode(encrypted).decode("utf-8")
 
 
-def decrypt_pii(ciphertext: str, tenant_id: int | None = None) -> str:
+def decrypt_pii(ciphertext: str) -> str:
     """
     Decrypt PII data.
 
@@ -237,7 +220,6 @@ def decrypt_pii(ciphertext: str, tenant_id: int | None = None) -> str:
 
     Args:
         ciphertext: The encrypted data to decrypt
-        tenant_id: Optional tenant ID for per-tenant key derivation
 
     Returns:
         Decrypted plaintext string
@@ -248,27 +230,9 @@ def decrypt_pii(ciphertext: str, tenant_id: int | None = None) -> str:
     if not ciphertext:
         return ""
 
-    from app.core.pii_keys import get_cached_dek
-
     try:
         raw = base64.urlsafe_b64decode(ciphertext.encode("utf-8"))
-
-        # Dual-read (AUTH-05): try the tenant's own DEK first, then fall back to
-        # the legacy global-derived key so data written before the tenant was
-        # provisioned still decrypts. No mass re-encryption required.
-        dek = get_cached_dek(tenant_id)
-        keys = []
-        if dek is not None:
-            keys.append(dek)
-        keys.append(_get_fernet_key(tenant_id))
-
-        last_exc: Exception | None = None
-        for key in keys:
-            try:
-                return Fernet(key).decrypt(raw).decode("utf-8")
-            except InvalidToken as exc:
-                last_exc = exc
-        raise last_exc if last_exc is not None else InvalidToken()
+        return Fernet(_get_fernet_key()).decrypt(raw).decode("utf-8")
     except Exception as exc:
         # Never silently return ciphertext as plaintext — that leaks encrypted
         # data into contexts that expect decrypted values (logs, API responses).

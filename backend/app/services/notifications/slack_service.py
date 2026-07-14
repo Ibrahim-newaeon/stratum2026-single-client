@@ -120,7 +120,7 @@ class SlackNotificationService:
 
     async def send_trust_gate_alert(
         self,
-        tenant_name: str,
+        org_name: str,
         automation_name: str,
         status: TrustGateStatus,
         signal_health: float,
@@ -132,7 +132,7 @@ class SlackNotificationService:
         Send a Trust Gate decision alert.
 
         Args:
-            tenant_name: Name of the tenant
+            org_name: Name of the organization
             automation_name: Name of the automation rule
             status: Trust gate decision (PASS/HOLD/BLOCK)
             signal_health: Current signal health score
@@ -163,7 +163,7 @@ class SlackNotificationService:
             {
                 "type": "section",
                 "fields": [
-                    {"type": "mrkdwn", "text": f"*Tenant:*\n{tenant_name}"},
+                    {"type": "mrkdwn", "text": f"*Organization:*\n{org_name}"},
                     {"type": "mrkdwn", "text": f"*Automation:*\n{automation_name}"},
                     {
                         "type": "mrkdwn",
@@ -208,7 +208,7 @@ class SlackNotificationService:
 
     async def send_signal_health_alert(
         self,
-        tenant_name: str,
+        org_name: str,
         signal_name: str,
         current_health: float,
         previous_health: float,
@@ -243,7 +243,7 @@ class SlackNotificationService:
             {
                 "type": "section",
                 "fields": [
-                    {"type": "mrkdwn", "text": f"*Tenant:*\n{tenant_name}"},
+                    {"type": "mrkdwn", "text": f"*Organization:*\n{org_name}"},
                     {"type": "mrkdwn", "text": f"*Signal:*\n{signal_name}"},
                     {
                         "type": "mrkdwn",
@@ -277,7 +277,7 @@ class SlackNotificationService:
 
     async def send_anomaly_alert(
         self,
-        tenant_name: str,
+        org_name: str,
         metric_name: str,
         current_value: float,
         expected_value: float,
@@ -309,7 +309,7 @@ class SlackNotificationService:
             {
                 "type": "section",
                 "fields": [
-                    {"type": "mrkdwn", "text": f"*Tenant:*\n{tenant_name}"},
+                    {"type": "mrkdwn", "text": f"*Organization:*\n{org_name}"},
                     {"type": "mrkdwn", "text": f"*Metric:*\n{metric_name}"},
                     {
                         "type": "mrkdwn",
@@ -341,7 +341,7 @@ class SlackNotificationService:
 
     async def send_daily_summary(
         self,
-        tenant_name: str,
+        org_name: str,
         stats: dict[str, Any],
         webhook_url: Optional[str] = None,
     ) -> bool:
@@ -349,7 +349,7 @@ class SlackNotificationService:
         Send a daily summary report.
 
         Args:
-            tenant_name: Tenant name
+            org_name: Organization name
             stats: Dictionary with summary statistics
             webhook_url: Override webhook URL
         """
@@ -370,7 +370,7 @@ class SlackNotificationService:
                 "type": "header",
                 "text": {
                     "type": "plain_text",
-                    "text": f"📊 Daily Trust Report - {tenant_name}",
+                    "text": f"📊 Daily Trust Report - {org_name}",
                     "emoji": True,
                 },
             },

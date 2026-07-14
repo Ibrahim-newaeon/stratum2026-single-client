@@ -487,9 +487,6 @@ async def trigger_campaign_sync(
         )
 
     # Queue sync task
-    # TODO(C4): app/workers/tasks/sync.py sync_campaign_data still declares a
-    # required tenant-scoping positional param — dropped here assuming that
-    # task gets de-tenanted separately; verify before relying on this queue.
     from app.workers.tasks import sync_campaign_data
 
     task = sync_campaign_data.delay(campaign_id)

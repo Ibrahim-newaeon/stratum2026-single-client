@@ -15,10 +15,6 @@ from sqlalchemy import select
 
 from app.core.config import settings
 from app.db.session import SyncSessionLocal
-# NOTE(STRAT-SC-001/C3): dead `Tenant` import removed so `app.main` can
-# import (endpoints import worker task functions at module load). Task
-# bodies below still reference the old per-org fan-out and are rewritten
-# in Task C4 — they were already runtime-broken since the model deletion.
 from app.models import CompetitorBenchmark
 from app.services.competitor_scraper import scan_competitor
 from app.workers.tasks.helpers import publish_event
@@ -32,22 +28,18 @@ logger = get_task_logger(__name__)
     retry_backoff=True,
     max_retries=3,
 )
-def fetch_competitor_data(self, tenant_id: int, competitor_id: int):
+def fetch_competitor_data(self, competitor_id: int):
     """
     Fetch latest data for a competitor benchmark.
 
     Args:
-        tenant_id: Tenant ID for isolation
         competitor_id: CompetitorBenchmark ID
     """
-    logger.info(f"Fetching competitor {competitor_id} for tenant {tenant_id}")
+    logger.info(f"Fetching competitor {competitor_id}")
 
     with SyncSessionLocal() as db:
         competitor = db.execute(
-            select(CompetitorBenchmark).where(
-                CompetitorBenchmark.id == competitor_id,
-                CompetitorBenchmark.tenant_id == tenant_id,
-            )
+            select(CompetitorBenchmark).where(CompetitorBenchmark.id == competitor_id)
         ).scalar_one_or_none()
 
         if not competitor:
@@ -79,7 +71,6 @@ def fetch_competitor_data(self, tenant_id: int, competitor_id: int):
         db.commit()
 
         publish_event(
-            tenant_id,
             "competitor_updated",
             {
                 "competitor_id": competitor_id,
@@ -105,27 +96,20 @@ def refresh_all_competitors():
     logger.info("Starting refresh for all competitors")
 
     with SyncSessionLocal() as db:
-        # Get all active tenants
-        tenants = (
-            db.execute(select(Tenant).where(Tenant.is_deleted == False)).scalars().all()
+        competitors = (
+            db.execute(
+                select(CompetitorBenchmark).where(
+                    CompetitorBenchmark.is_active == True
+                )
+            )
+            .scalars()
+            .all()
         )
 
         task_count = 0
-        for tenant in tenants:
-            competitors = (
-                db.execute(
-                    select(CompetitorBenchmark).where(
-                        CompetitorBenchmark.tenant_id == tenant.id,
-                        CompetitorBenchmark.is_active == True,
-                    )
-                )
-                .scalars()
-                .all()
-            )
-
-            for competitor in competitors:
-                fetch_competitor_data.delay(tenant.id, competitor.id)
-                task_count += 1
+        for competitor in competitors:
+            fetch_competitor_data.delay(competitor.id)
+            task_count += 1
 
     logger.info(f"Queued {task_count} competitor refresh tasks")
     return {"tasks_queued": task_count}

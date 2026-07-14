@@ -17,10 +17,6 @@ from sqlalchemy import select
 
 from app.core.config import settings
 from app.db.session import SyncSessionLocal
-# NOTE(STRAT-SC-001/C3): dead `Tenant` import removed so `app.main` can
-# import (endpoints import worker task functions at module load). Task
-# bodies below still reference the old per-org fan-out and are rewritten
-# in Task C4 — they were already runtime-broken since the model deletion.
 from app.models import Campaign, CampaignMetric
 from app.workers.locks import with_distributed_lock
 from app.workers.tasks.helpers import publish_event
@@ -46,20 +42,17 @@ def _run_async(coro, timeout_seconds: int = 300):
     retry_backoff_max=600,
     max_retries=3,
 )
-def sync_campaign_data(self, tenant_id: int, campaign_id: int):
+def sync_campaign_data(self, campaign_id: int):
     """
     Sync data for a specific campaign from its ad platform.
 
     Idempotent: Safe to retry without side effects.
     """
-    logger.info(f"Syncing campaign {campaign_id} for tenant {tenant_id}")
+    logger.info(f"Syncing campaign {campaign_id}")
 
     with SyncSessionLocal() as db:
         campaign = db.execute(
-            select(Campaign).where(
-                Campaign.id == campaign_id,
-                Campaign.tenant_id == tenant_id,
-            )
+            select(Campaign).where(Campaign.id == campaign_id)
         ).scalar_one_or_none()
 
         if not campaign:
@@ -72,7 +65,7 @@ def sync_campaign_data(self, tenant_id: int, campaign_id: int):
                 from app.services.mock_client import MockAdNetwork, MockAdNetworkManager
 
                 manager = MockAdNetworkManager()
-                network = MockAdNetwork(seed=tenant_id)
+                network = MockAdNetwork(seed=campaign_id)
 
                 end_date = datetime.now(UTC).date()
                 start_date = campaign.start_date or (end_date - timedelta(days=30))
@@ -99,7 +92,6 @@ def sync_campaign_data(self, tenant_id: int, campaign_id: int):
                                 setattr(existing, key, value)
                     else:
                         metric = CampaignMetric(
-                            tenant_id=tenant_id,
                             campaign_id=campaign_id,
                             date=day_data["date"],
                             impressions=day_data["impressions"],
@@ -121,7 +113,6 @@ def sync_campaign_data(self, tenant_id: int, campaign_id: int):
 
             # Publish real-time event
             publish_event(
-                tenant_id,
                 "sync_complete",
                 {
                     "campaign_id": campaign_id,
@@ -145,9 +136,9 @@ def sync_campaign_data(self, tenant_id: int, campaign_id: int):
     retry_backoff_max=600,
     max_retries=2,
 )
-def sync_platform_campaigns(self, tenant_id: int, platform: str):
+def sync_platform_campaigns(self, platform: str):
     """
-    Sync all campaigns for a tenant+platform using the real orchestrator.
+    Sync all campaigns for a platform using the real orchestrator.
 
     This calls the async PlatformSyncOrchestrator which handles token
     management, API calls, and campaign/metric upserts.
@@ -156,7 +147,7 @@ def sync_platform_campaigns(self, tenant_id: int, platform: str):
     from app.db.session import async_session_context
     from app.services.sync.orchestrator import PlatformSyncOrchestrator
 
-    logger.info(f"Syncing {platform} campaigns for tenant {tenant_id}")
+    logger.info(f"Syncing {platform} campaigns")
 
     async def _do_sync():
         async with async_session_context() as db:
@@ -169,13 +160,13 @@ def sync_platform_campaigns(self, tenant_id: int, platform: str):
 
     if result.errors:
         logger.warning(
-            f"Sync {platform} tenant {tenant_id}: "
+            f"Sync {platform}: "
             f"{result.campaigns_synced} campaigns, {result.metrics_upserted} metrics, "
             f"{len(result.errors)} errors: {result.errors}"
         )
     else:
         logger.info(
-            f"Sync {platform} tenant {tenant_id}: "
+            f"Sync {platform}: "
             f"{result.campaigns_synced} campaigns, {result.metrics_upserted} metrics "
             f"in {result.duration_seconds}s"
         )
@@ -183,7 +174,6 @@ def sync_platform_campaigns(self, tenant_id: int, platform: str):
     return {
         "status": "success" if not result.errors else "partial",
         "platform": platform,
-        "tenant_id": tenant_id,
         "campaigns_synced": result.campaigns_synced,
         "metrics_upserted": result.metrics_upserted,
         "errors": result.errors,
@@ -197,56 +187,45 @@ def sync_platform_campaigns(self, tenant_id: int, platform: str):
 @with_distributed_lock(timeout=3600)  # 1 hour lock timeout
 def sync_all_campaigns():
     """
-    Sync all active campaigns across all tenants.
+    Sync all active campaigns for the org.
     Scheduled hourly by Celery beat.
 
     Uses distributed lock to prevent duplicate execution across workers.
 
     When use_mock_ad_data is True, dispatches per-campaign mock sync tasks.
-    When False, dispatches per-tenant+platform orchestrator sync tasks
-    that call real ad platform APIs.
+    When False, dispatches per-platform orchestrator sync tasks that call
+    real ad platform APIs.
     """
     logger.info("Starting sync for all campaigns")
 
     with SyncSessionLocal() as db:
-        tenant_ids = (
-            db.execute(select(Tenant.id).where(Tenant.is_deleted == False))
-            .scalars()
-            .all()
-        )
-
         task_count = 0
 
         if settings.use_mock_ad_data:
             # Mock mode: sync individual campaigns with generated data
-            for tid in tenant_ids:
-                campaign_ids = (
-                    db.execute(
-                        select(Campaign.id).where(
-                            Campaign.tenant_id == tid,
-                            Campaign.is_deleted == False,
-                        )
-                    )
-                    .scalars()
-                    .all()
+            campaign_ids = (
+                db.execute(
+                    select(Campaign.id).where(Campaign.is_deleted == False)
                 )
+                .scalars()
+                .all()
+            )
 
-                for cid in campaign_ids:
-                    sync_campaign_data.delay(tid, cid)
-                    task_count += 1
+            for cid in campaign_ids:
+                sync_campaign_data.delay(cid)
+                task_count += 1
 
-                db.expire_all()
+            db.expire_all()
 
             logger.info(f"Queued {task_count} mock campaign sync tasks")
         else:
-            # Real mode: use orchestrator per tenant+platform
+            # Real mode: use orchestrator per platform
             from app.base_models import AdPlatform
 
             platforms = [AdPlatform.META, AdPlatform.TIKTOK, AdPlatform.SNAPCHAT]
-            for tid in tenant_ids:
-                for platform in platforms:
-                    sync_platform_campaigns.delay(tid, platform.value)
-                    task_count += 1
+            for platform in platforms:
+                sync_platform_campaigns.delay(platform.value)
+                task_count += 1
 
             logger.info(f"Queued {task_count} platform sync tasks")
 

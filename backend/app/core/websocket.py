@@ -5,8 +5,8 @@
 WebSocket connection manager for real-time updates.
 
 Handles:
-- Client connections with tenant isolation
-- Message broadcasting to specific tenants/channels
+- Client connections (single-org deployment; no tenant partitioning)
+- Message broadcasting to all clients, or to specific channels
 - Action status updates
 - EMQ score changes
 - Incident notifications
@@ -96,7 +96,6 @@ class ConnectedClient:
     """Represents a connected WebSocket client."""
 
     websocket: WebSocket
-    tenant_id: Optional[int] = None
     user_id: Optional[int] = None
     subscribed_channels: Set[str] = field(default_factory=set)
     connected_at: datetime = field(default_factory=lambda: datetime.now(timezone.utc))
@@ -107,7 +106,7 @@ class WebSocketManager:
     Manages WebSocket connections and message broadcasting.
 
     Features:
-    - Tenant-isolated connections
+    - Single-org connections (no tenant partitioning)
     - Channel-based subscriptions
     - Redis Pub/Sub for multi-instance support
     - Automatic heartbeat
@@ -116,7 +115,6 @@ class WebSocketManager:
 
     def __init__(self):
         self._connections: Dict[str, ConnectedClient] = {}
-        self._tenant_connections: Dict[int, Set[str]] = {}
         self._channel_subscriptions: Dict[str, Set[str]] = {}
         self._redis: Optional[redis.Redis] = None
         self._pubsub_task: Optional[asyncio.Task] = None
@@ -187,7 +185,6 @@ class WebSocketManager:
     async def connect(
         self,
         websocket: WebSocket,
-        tenant_id: Optional[int] = None,
         user_id: Optional[int] = None,
     ) -> str:
         """
@@ -200,22 +197,14 @@ class WebSocketManager:
         client_id = self._generate_client_id()
         client = ConnectedClient(
             websocket=websocket,
-            tenant_id=tenant_id,
             user_id=user_id,
         )
 
         self._connections[client_id] = client
 
-        # Track by tenant
-        if tenant_id:
-            if tenant_id not in self._tenant_connections:
-                self._tenant_connections[tenant_id] = set()
-            self._tenant_connections[tenant_id].add(client_id)
-
         logger.info(
             "websocket_client_connected",
             client_id=client_id,
-            tenant_id=tenant_id,
             user_id=user_id,
         )
 
@@ -226,12 +215,6 @@ class WebSocketManager:
         client = self._connections.pop(client_id, None)
         if not client:
             return
-
-        # Remove from tenant tracking
-        if client.tenant_id and client.tenant_id in self._tenant_connections:
-            self._tenant_connections[client.tenant_id].discard(client_id)
-            if not self._tenant_connections[client.tenant_id]:
-                del self._tenant_connections[client.tenant_id]
 
         # Remove from channel subscriptions
         for channel in client.subscribed_channels:
@@ -248,7 +231,7 @@ class WebSocketManager:
         logger.info(
             "websocket_client_disconnected",
             client_id=client_id,
-            tenant_id=client.tenant_id,
+            user_id=client.user_id,
         )
 
     async def subscribe(self, client_id: str, channel: str) -> None:
@@ -296,21 +279,19 @@ class WebSocketManager:
             )
             await self.disconnect(client_id)
 
-    async def broadcast_to_tenant(
+    async def broadcast_to_org(
         self,
-        tenant_id: int,
         message_type: str,
         payload: Any,
     ) -> None:
-        """Broadcast a message to all clients of a specific tenant."""
+        """Broadcast a message to every connected client (single-org deployment)."""
         message = WebSocketMessage(type=message_type, payload=payload)
 
-        client_ids = self._tenant_connections.get(tenant_id, set()).copy()
-        for client_id in client_ids:
+        for client_id in list(self._connections.keys()):
             await self.send_to_client(client_id, message)
 
         # Also publish to Redis for multi-instance support
-        await self._publish_to_redis(f"tenant:{tenant_id}", message)
+        await self._publish_to_redis("org", message)
 
     async def broadcast_to_channel(
         self,
@@ -390,9 +371,8 @@ class WebSocketManager:
             ws_message = WebSocketMessage.from_json(envelope.get("message", raw_data))
 
             # Determine target clients
-            if channel.startswith("ws:tenant:"):
-                tenant_id = int(channel.split(":")[-1])
-                client_ids = self._tenant_connections.get(tenant_id, set()).copy()
+            if channel == "ws:org":
+                client_ids = set(self._connections.keys())
             elif channel.startswith("ws:channel:"):
                 channel_name = channel.replace("ws:channel:", "")
                 client_ids = self._channel_subscriptions.get(channel_name, set()).copy()
@@ -454,11 +434,7 @@ class WebSocketManager:
         """Get WebSocket connection statistics."""
         return {
             "total_connections": len(self._connections),
-            "tenants_connected": len(self._tenant_connections),
             "channels_active": len(self._channel_subscriptions),
-            "connections_by_tenant": {
-                tid: len(clients) for tid, clients in self._tenant_connections.items()
-            },
         }
 
 
@@ -472,18 +448,15 @@ ws_manager = WebSocketManager()
 
 
 async def publish_action_status_update(
-    tenant_id: int,
     action_id: str,
     status: str,
     before_value: Optional[Any] = None,
     after_value: Optional[Any] = None,
 ) -> None:
-    """Publish an action status update to relevant clients."""
-    await ws_manager.broadcast_to_tenant(
-        tenant_id=tenant_id,
+    """Publish an action status update to all connected clients."""
+    await ws_manager.broadcast_to_org(
         message_type=MessageType.ACTION_STATUS_UPDATE.value,
         payload={
-            "tenantId": tenant_id,
             "actionId": action_id,
             "status": status,
             "beforeValue": before_value,
@@ -493,17 +466,14 @@ async def publish_action_status_update(
 
 
 async def publish_emq_update(
-    tenant_id: int,
     score: float,
     previous_score: Optional[float] = None,
     confidence_band: Optional[str] = None,
 ) -> None:
-    """Publish an EMQ score update to relevant clients."""
-    await ws_manager.broadcast_to_tenant(
-        tenant_id=tenant_id,
+    """Publish an EMQ score update to all connected clients."""
+    await ws_manager.broadcast_to_org(
         message_type=MessageType.EMQ_UPDATE.value,
         payload={
-            "tenantId": tenant_id,
             "score": score,
             "previousScore": previous_score,
             "confidenceBand": confidence_band,
@@ -512,25 +482,22 @@ async def publish_emq_update(
 
 
 async def publish_incident(
-    tenant_id: int,
     incident_type: str,
     incident_id: str,
     title: str,
     severity: str,
     platform: Optional[str] = None,
 ) -> None:
-    """Publish an incident notification to relevant clients."""
+    """Publish an incident notification to all connected clients."""
     message_type = (
         MessageType.INCIDENT_OPENED.value
         if incident_type in ("incident_opened", "degradation")
         else MessageType.INCIDENT_CLOSED.value
     )
 
-    await ws_manager.broadcast_to_tenant(
-        tenant_id=tenant_id,
+    await ws_manager.broadcast_to_org(
         message_type=message_type,
         payload={
-            "tenantId": tenant_id,
             "incidentId": incident_id,
             "title": title,
             "severity": severity,
@@ -540,16 +507,13 @@ async def publish_incident(
 
 
 async def publish_autopilot_mode_change(
-    tenant_id: int,
     mode: str,
     reason: str,
 ) -> None:
-    """Publish an autopilot mode change notification."""
-    await ws_manager.broadcast_to_tenant(
-        tenant_id=tenant_id,
+    """Publish an autopilot mode change notification to all connected clients."""
+    await ws_manager.broadcast_to_org(
         message_type=MessageType.AUTOPILOT_MODE_CHANGE.value,
         payload={
-            "tenantId": tenant_id,
             "mode": mode,
             "reason": reason,
         },

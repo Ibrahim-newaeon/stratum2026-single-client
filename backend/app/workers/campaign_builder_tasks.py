@@ -13,7 +13,6 @@ Background tasks for the Campaign Builder feature:
 import asyncio
 import logging
 from datetime import datetime, timedelta, timezone
-from typing import Optional
 from uuid import UUID
 
 from celery import shared_task
@@ -42,28 +41,23 @@ logger = logging.getLogger(__name__)
 
 
 @shared_task(bind=True, max_retries=3, default_retry_delay=60)
-def sync_ad_accounts(self, tenant_id: int, platform: str):
+def sync_ad_accounts(self, platform: str):
     """
     Sync ad accounts from platform after OAuth authorization.
     Called after successful OAuth callback or manually triggered.
     """
-    logger.info(f"Syncing ad accounts for tenant {tenant_id}, platform {platform}")
+    logger.info(f"Syncing ad accounts for platform {platform}")
 
     with SessionLocal() as db:
-        # Get connection
+        # Get connection (single-org: one connection per platform)
         connection = db.execute(
             select(TenantPlatformConnection).where(
-                and_(
-                    TenantPlatformConnection.tenant_id == tenant_id,
-                    TenantPlatformConnection.platform == AdPlatform(platform),
-                )
+                TenantPlatformConnection.platform == AdPlatform(platform)
             )
         ).scalar_one_or_none()
 
         if not connection or connection.status != ConnectionStatus.CONNECTED:
-            logger.warning(
-                f"No active connection for tenant {tenant_id}, platform {platform}"
-            )
+            logger.warning(f"No active connection for platform {platform}")
             return {"status": "skipped", "reason": "no active connection"}
 
         try:
@@ -73,14 +67,14 @@ def sync_ad_accounts(self, tenant_id: int, platform: str):
             # Mock data for development
             mock_accounts = [
                 {
-                    "id": f"act_{tenant_id}_{platform}_001",
+                    "id": f"act_{platform}_001",
                     "name": "Main Business Account",
                     "currency": "SAR",
                     "timezone": "Asia/Riyadh",
                     "status": "active",
                 },
                 {
-                    "id": f"act_{tenant_id}_{platform}_002",
+                    "id": f"act_{platform}_002",
                     "name": "E-commerce Store",
                     "currency": "SAR",
                     "timezone": "Asia/Riyadh",
@@ -94,7 +88,6 @@ def sync_ad_accounts(self, tenant_id: int, platform: str):
                 existing = db.execute(
                     select(TenantAdAccount).where(
                         and_(
-                            TenantAdAccount.tenant_id == tenant_id,
                             TenantAdAccount.platform == AdPlatform(platform),
                             TenantAdAccount.platform_account_id == account_data["id"],
                         )
@@ -112,7 +105,6 @@ def sync_ad_accounts(self, tenant_id: int, platform: str):
                 else:
                     # Create new
                     new_account = TenantAdAccount(
-                        tenant_id=tenant_id,
                         connection_id=connection.id,
                         platform=AdPlatform(platform),
                         platform_account_id=account_data["id"],
@@ -128,9 +120,7 @@ def sync_ad_accounts(self, tenant_id: int, platform: str):
                 synced_count += 1
 
             db.commit()
-            logger.info(
-                f"Synced {synced_count} ad accounts for tenant {tenant_id}, platform {platform}"
-            )
+            logger.info(f"Synced {synced_count} ad accounts for platform {platform}")
 
             return {"status": "success", "synced_count": synced_count}
 
@@ -147,7 +137,7 @@ def sync_all_ad_accounts(self):
     """
     Daily task to sync all ad accounts for all connected platforms.
     """
-    logger.info("Starting daily ad accounts sync for all tenants")
+    logger.info("Starting daily ad accounts sync")
 
     with SessionLocal() as db:
         # Get all active connections
@@ -162,7 +152,7 @@ def sync_all_ad_accounts(self):
         )
 
         for conn in connections:
-            sync_ad_accounts.delay(conn.tenant_id, conn.platform.value)
+            sync_ad_accounts.delay(conn.platform.value)
 
     return {"status": "triggered", "connections_count": len(connections)}
 
@@ -173,35 +163,30 @@ def sync_all_ad_accounts(self):
 
 
 @shared_task(bind=True, max_retries=3, default_retry_delay=300)
-def refresh_tokens(self, tenant_id: int, platform: str):
+def refresh_tokens(self, platform: str):
     """
     Refresh OAuth tokens for a platform connection.
     Called before token expiry to maintain connectivity.
     """
-    logger.info(f"Refreshing tokens for tenant {tenant_id}, platform {platform}")
+    logger.info(f"Refreshing tokens for platform {platform}")
 
     with SessionLocal() as db:
         connection = db.execute(
             select(TenantPlatformConnection).where(
-                and_(
-                    TenantPlatformConnection.tenant_id == tenant_id,
-                    TenantPlatformConnection.platform == AdPlatform(platform),
-                )
+                TenantPlatformConnection.platform == AdPlatform(platform)
             )
         ).scalar_one_or_none()
 
         if not connection:
             return {"status": "skipped", "reason": "connection not found"}
 
-        # A refresh token is required to refresh; without one the tenant must
+        # A refresh token is required to refresh; without one the org must
         # re-authorize. Mark expired and stop (not a retryable error).
         if not connection.refresh_token_encrypted:
             connection.status = ConnectionStatus.EXPIRED
             connection.last_error = "No refresh token stored; re-authorization required"
             db.commit()
-            logger.warning(
-                f"No refresh token for tenant {tenant_id}, platform {platform}"
-            )
+            logger.warning(f"No refresh token for platform {platform}")
             return {"status": "error", "reason": "no refresh token"}
 
         try:
@@ -232,7 +217,7 @@ def refresh_tokens(self, tenant_id: int, platform: str):
             connection.error_count = 0
 
             db.commit()
-            logger.info(f"Token refreshed for tenant {tenant_id}, platform {platform}")
+            logger.info(f"Token refreshed for platform {platform}")
 
             return {"status": "success"}
 
@@ -269,7 +254,7 @@ def refresh_expiring_tokens(self):
         )
 
         for conn in connections:
-            refresh_tokens.delay(conn.tenant_id, conn.platform.value)
+            refresh_tokens.delay(conn.platform.value)
 
     return {"status": "triggered", "connections_count": len(connections)}
 
@@ -319,10 +304,7 @@ def publish_campaign(self, draft_id: str, publish_log_id: str):
             # Get connection for access token
             connection = db.execute(
                 select(TenantPlatformConnection).where(
-                    and_(
-                        TenantPlatformConnection.tenant_id == draft.tenant_id,
-                        TenantPlatformConnection.platform == draft.platform,
-                    )
+                    TenantPlatformConnection.platform == draft.platform
                 )
             ).scalar_one_or_none()
 
@@ -408,20 +390,17 @@ def publish_retry(self, log_id: str):
 
 
 @shared_task(bind=True)
-def connector_health_check(self, tenant_id: Optional[int] = None):
+def connector_health_check(self):
     """
-    Check platform API connectivity for tenant connections.
+    Check platform API connectivity for all connections.
     Creates alerts for degraded connections.
     """
-    logger.info(f"Running connector health check for tenant {tenant_id or 'all'}")
+    logger.info("Running connector health check")
 
     with SessionLocal() as db:
         query = select(TenantPlatformConnection).where(
             TenantPlatformConnection.status == ConnectionStatus.CONNECTED
         )
-
-        if tenant_id:
-            query = query.where(TenantPlatformConnection.tenant_id == tenant_id)
 
         connections = db.execute(query).scalars().all()
 
@@ -439,7 +418,6 @@ def connector_health_check(self, tenant_id: Optional[int] = None):
                     conn.error_count = 0
                     results.append(
                         {
-                            "tenant_id": conn.tenant_id,
                             "platform": conn.platform.value,
                             "healthy": True,
                         }
@@ -450,7 +428,6 @@ def connector_health_check(self, tenant_id: Optional[int] = None):
                         conn.status = ConnectionStatus.ERROR
                     results.append(
                         {
-                            "tenant_id": conn.tenant_id,
                             "platform": conn.platform.value,
                             "healthy": False,
                         }
@@ -462,7 +439,6 @@ def connector_health_check(self, tenant_id: Optional[int] = None):
                 conn.error_count += 1
                 results.append(
                     {
-                        "tenant_id": conn.tenant_id,
                         "platform": conn.platform.value,
                         "healthy": False,
                         "error": str(e),

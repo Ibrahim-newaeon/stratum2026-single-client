@@ -17,7 +17,7 @@ from datetime import datetime, timedelta, timezone
 from typing import Any, Dict, List, Optional
 
 from celery import shared_task
-from sqlalchemy import and_, select, update
+from sqlalchemy import select, update
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.autopilot.service import SAFE_ACTIONS, ActionStatus, ActionType
@@ -1160,7 +1160,7 @@ async def claim_action_for_execution(db: AsyncSession, action_id) -> bool:
     return result.rowcount == 1
 
 
-async def check_signal_health(db: AsyncSession, tenant_id: int) -> bool:
+async def check_signal_health(db: AsyncSession) -> bool:
     """
     Check whether signal health allows autopilot execution.
 
@@ -1175,12 +1175,7 @@ async def check_signal_health(db: AsyncSession, tenant_id: int) -> bool:
         days=SIGNAL_HEALTH_FRESHNESS_DAYS
     )
     result = await db.execute(
-        select(FactSignalHealthDaily).where(
-            and_(
-                FactSignalHealthDaily.tenant_id == tenant_id,
-                FactSignalHealthDaily.date >= cutoff,
-            )
-        )
+        select(FactSignalHealthDaily).where(FactSignalHealthDaily.date >= cutoff)
     )
     records = result.scalars().all()
 
@@ -1188,10 +1183,7 @@ async def check_signal_health(db: AsyncSession, tenant_id: int) -> bool:
         # Fail closed — no recent signal data means we do NOT execute.
         logger.warning(
             "signal_health_no_recent_data_blocking",
-            extra={
-                "tenant_id": tenant_id,
-                "freshness_days": SIGNAL_HEALTH_FRESHNESS_DAYS,
-            },
+            extra={"freshness_days": SIGNAL_HEALTH_FRESHNESS_DAYS},
         )
         return False
 
@@ -1206,29 +1198,26 @@ async def check_signal_health(db: AsyncSession, tenant_id: int) -> bool:
     return True
 
 
-async def get_tenant_autopilot_level(db: AsyncSession, tenant_id: int) -> int:
-    """Get the autopilot level for a tenant."""
-    from app.features.service import get_tenant_features
+async def get_autopilot_level(db: AsyncSession) -> int:
+    """Get the org's autopilot level."""
+    from app.features.service import get_org_features
 
-    features = await get_tenant_features(db, tenant_id)
+    features = await get_org_features(db)
     return features.get("autopilot_level", 0)
 
 
-async def is_tenant_frozen(db: AsyncSession, tenant_id: int) -> bool:
-    """Return True when an operator has frozen autopilot for this tenant.
+async def is_autopilot_frozen(db: AsyncSession) -> bool:
+    """Return True when an operator has frozen autopilot (emergency stop).
 
-    The emergency-stop gate. Read straight off the settings row so a fresh
-    worker session always sees the current state (no in-process cache).
-    When True, execution paths defer the action rather than applying it.
+    Read straight off the settings row so a fresh worker session always sees
+    the current state (no in-process cache). Single-org deployment: there is
+    exactly one settings row. When True, execution paths defer the action
+    rather than applying it.
     """
     from app.models.autopilot import TenantEnforcementSettings
 
-    result = await db.execute(
-        select(TenantEnforcementSettings.autopilot_frozen).where(
-            TenantEnforcementSettings.tenant_id == tenant_id
-        )
-    )
-    return bool(result.scalar_one_or_none())
+    result = await db.execute(select(TenantEnforcementSettings.autopilot_frozen))
+    return bool(result.scalars().first())
 
 
 def validate_action_caps(
@@ -1344,7 +1333,7 @@ def _confirmed_soft_block_override(action, enforcement) -> bool:
     max_retries=3,
     default_retry_delay=60,
 )
-def apply_actions_queue(self, tenant_id: Optional[int] = None):
+def apply_actions_queue(self):
     """
     Process and apply approved actions from the queue.
 
@@ -1353,9 +1342,6 @@ def apply_actions_queue(self, tenant_id: Optional[int] = None):
     2. Validates signal health before execution
     3. Applies actions to platforms
     4. Records results and audit logs
-
-    Args:
-        tenant_id: Optional tenant ID to process (None = all tenants)
     """
     import asyncio
 
@@ -1363,17 +1349,12 @@ def apply_actions_queue(self, tenant_id: Optional[int] = None):
         await _reset_async_engine()
         async with async_session_factory() as db:
             try:
-                logger.info(
-                    f"Starting action queue processing for tenant_id={tenant_id}"
-                )
+                logger.info("Starting action queue processing")
 
                 # Build query for approved actions
                 query = select(FactActionsQueue).where(
                     FactActionsQueue.status == ActionStatus.APPROVED.value
                 )
-
-                if tenant_id:
-                    query = query.where(FactActionsQueue.tenant_id == tenant_id)
 
                 # Order by creation time
                 query = query.order_by(FactActionsQueue.created_at)
@@ -1393,16 +1374,15 @@ def apply_actions_queue(self, tenant_id: Optional[int] = None):
                         # Emergency stop — an operator freeze halts execution
                         # before any other check. The action stays APPROVED
                         # and resumes automatically once unfrozen.
-                        if await is_tenant_frozen(db, action.tenant_id):
+                        if await is_autopilot_frozen(db):
                             logger.warning(
-                                f"Skipping action {action.id}: autopilot frozen "
-                                f"for tenant {action.tenant_id}"
+                                f"Skipping action {action.id}: autopilot frozen"
                             )
                             action.error = "Autopilot frozen - action deferred"
                             continue
 
-                        # Check signal health for this tenant
-                        health_ok = await check_signal_health(db, action.tenant_id)
+                        # Check signal health
+                        health_ok = await check_signal_health(db)
                         if not health_ok:
                             logger.warning(
                                 f"Skipping action {action.id}: Signal health degraded"
@@ -1465,7 +1445,6 @@ def apply_actions_queue(self, tenant_id: Optional[int] = None):
                                 f"(mode={mode})"
                             )
                             await publish_action_status_update(
-                                tenant_id=action.tenant_id,
                                 action_id=str(action.id),
                                 status=action.status,
                             )
@@ -1516,7 +1495,6 @@ def apply_actions_queue(self, tenant_id: Optional[int] = None):
 
                             # Publish WebSocket notification
                             await publish_action_status_update(
-                                tenant_id=action.tenant_id,
                                 action_id=str(action.id),
                                 status="applied",
                                 before_value=exec_result.get("before_value"),
@@ -1536,7 +1514,6 @@ def apply_actions_queue(self, tenant_id: Optional[int] = None):
 
                             # Publish WebSocket notification for failure
                             await publish_action_status_update(
-                                tenant_id=action.tenant_id,
                                 action_id=str(action.id),
                                 status="failed",
                             )
@@ -1587,7 +1564,6 @@ async def log_action_audit(
     """
     audit_entry = {
         "timestamp": datetime.now(timezone.utc).isoformat(),
-        "tenant_id": action.tenant_id,
         "action_id": str(action.id),
         "action_type": action.action_type,
         "entity_type": action.entity_type,
@@ -1664,11 +1640,11 @@ def apply_single_action(self, action_id: str, user_id: Optional[int] = None):
 
                 # Emergency stop — refuse execution while autopilot is frozen.
                 # The action remains APPROVED and will resume once unfrozen.
-                if await is_tenant_frozen(db, action.tenant_id):
+                if await is_autopilot_frozen(db):
                     return {"status": "error", "error": "Autopilot frozen"}
 
                 # Check signal health
-                health_ok = await check_signal_health(db, action.tenant_id)
+                health_ok = await check_signal_health(db)
                 if not health_ok:
                     return {"status": "error", "error": "Signal health degraded"}
 
@@ -1715,7 +1691,6 @@ def apply_single_action(self, action_id: str, user_id: Optional[int] = None):
                         action.confirmation_token = enforcement.confirmation_token
                     await db.commit()
                     await publish_action_status_update(
-                        tenant_id=action.tenant_id,
                         action_id=action_id,
                         status=action.status,
                     )
@@ -1768,7 +1743,6 @@ def apply_single_action(self, action_id: str, user_id: Optional[int] = None):
 
                     # Publish WebSocket notification
                     await publish_action_status_update(
-                        tenant_id=action.tenant_id,
                         action_id=action_id,
                         status="applied",
                         before_value=exec_result.get("before_value"),
@@ -1786,7 +1760,6 @@ def apply_single_action(self, action_id: str, user_id: Optional[int] = None):
 
                     # Publish WebSocket notification for failure
                     await publish_action_status_update(
-                        tenant_id=action.tenant_id,
                         action_id=action_id,
                         status="failed",
                     )
@@ -1899,7 +1872,6 @@ def rollback_action(self, action_id: str, user_id: Optional[int] = None):
                 await db.commit()
 
                 await publish_action_status_update(
-                    tenant_id=action.tenant_id,
                     action_id=action_id,
                     status="rolled_back",
                 )

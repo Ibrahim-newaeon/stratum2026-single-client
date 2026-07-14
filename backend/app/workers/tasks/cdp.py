@@ -31,25 +31,21 @@ CHUNK_SIZE = 500
     retry_backoff=True,
     max_retries=3,
 )
-def compute_cdp_segment(self, tenant_id: int, segment_id: str):
+def compute_cdp_segment(self, segment_id: str):
     """
     Compute membership for a CDP segment.
 
     Args:
-        tenant_id: Tenant ID for isolation
         segment_id: Segment ID to compute
     """
-    logger.info(f"Computing segment {segment_id} for tenant {tenant_id}")
+    logger.info(f"Computing segment {segment_id}")
 
     # Import CDP models here to avoid circular imports
     from app.models.cdp import CDPProfile, CDPSegment
 
     with SyncSessionLocal() as db:
         segment = db.execute(
-            select(CDPSegment).where(
-                CDPSegment.tenant_id == tenant_id,
-                CDPSegment.id == segment_id,
-            )
+            select(CDPSegment).where(CDPSegment.id == segment_id)
         ).scalar_one_or_none()
 
         if not segment:
@@ -59,10 +55,7 @@ def compute_cdp_segment(self, tenant_id: int, segment_id: str):
         # Process profiles in chunks to limit memory usage
         base_query = (
             select(CDPProfile)
-            .where(
-                CDPProfile.tenant_id == tenant_id,
-                CDPProfile.is_deleted == False,
-            )
+            .where(CDPProfile.is_deleted == False)
             .order_by(CDPProfile.id)
         )
 
@@ -103,7 +96,6 @@ def compute_cdp_segment(self, tenant_id: int, segment_id: str):
         db.commit()
 
         publish_event(
-            tenant_id,
             "segment_computed",
             {
                 "segment_id": segment_id,
@@ -178,51 +170,28 @@ def _evaluate_condition_single(profile, condition: dict[str, Any]) -> bool:
 
 @shared_task
 @with_distributed_lock(timeout=3600)  # 1 hour lock timeout
-def compute_all_cdp_segments(tenant_id: Optional[int] = None):
+def compute_all_cdp_segments():
     """
-    Compute all CDP segments for a tenant or all tenants.
+    Compute all active CDP segments for the org.
     Scheduled hourly by Celery beat.
 
     Uses distributed lock to prevent duplicate execution across workers.
     """
     logger.info("Computing all CDP segments")
 
-    from app.models import Tenant
     from app.models.cdp import CDPSegment
 
     with SyncSessionLocal() as db:
-        if tenant_id:
-            tenants = [
-                db.execute(
-                    select(Tenant).where(Tenant.id == tenant_id)
-                ).scalar_one_or_none()
-            ]
-        else:
-            tenants = (
-                db.execute(select(Tenant).where(Tenant.is_deleted == False))
-                .scalars()
-                .all()
-            )
+        segments = (
+            db.execute(select(CDPSegment).where(CDPSegment.is_active == True))
+            .scalars()
+            .all()
+        )
 
         task_count = 0
-        for tenant in tenants:
-            if not tenant:
-                continue
-
-            segments = (
-                db.execute(
-                    select(CDPSegment).where(
-                        CDPSegment.tenant_id == tenant.id,
-                        CDPSegment.is_active == True,
-                    )
-                )
-                .scalars()
-                .all()
-            )
-
-            for segment in segments:
-                compute_cdp_segment.delay(tenant.id, str(segment.id))
-                task_count += 1
+        for segment in segments:
+            compute_cdp_segment.delay(str(segment.id))
+            task_count += 1
 
     logger.info(f"Queued {task_count} segment computation tasks")
     return {"tasks_queued": task_count}
@@ -234,15 +203,14 @@ def compute_all_cdp_segments(tenant_id: Optional[int] = None):
     retry_backoff=True,
     max_retries=2,
 )
-def compute_cdp_rfm(self, tenant_id: int, config: Optional[dict] = None):
+def compute_cdp_rfm(self, config: Optional[dict] = None):
     """
     Compute RFM (Recency, Frequency, Monetary) scores for all profiles.
 
     Args:
-        tenant_id: Tenant ID for isolation
         config: Optional RFM configuration overrides
     """
-    logger.info(f"Computing RFM scores for tenant {tenant_id}")
+    logger.info("Computing RFM scores")
 
     from app.ml.rfm_segmenter import RFMSegmenter
     from app.models.cdp import CDPProfile
@@ -250,14 +218,11 @@ def compute_cdp_rfm(self, tenant_id: int, config: Optional[dict] = None):
     with SyncSessionLocal() as db:
         base_query = (
             select(CDPProfile)
-            .where(
-                CDPProfile.tenant_id == tenant_id,
-                CDPProfile.is_deleted == False,
-            )
+            .where(CDPProfile.is_deleted == False)
             .order_by(CDPProfile.id)
         )
 
-        segmenter = RFMSegmenter(tenant_id)
+        segmenter = RFMSegmenter()
         total_scored = 0
         all_results: dict[str, Any] = {}
         offset = 0
@@ -293,7 +258,6 @@ def compute_cdp_rfm(self, tenant_id: int, config: Optional[dict] = None):
             return {"status": "no_profiles"}
 
         publish_event(
-            tenant_id,
             "rfm_computed",
             {
                 "profiles_scored": total_scored,
@@ -311,23 +275,21 @@ def compute_cdp_rfm(self, tenant_id: int, config: Optional[dict] = None):
     retry_backoff=True,
     max_retries=2,
 )
-def compute_cdp_traits(self, tenant_id: int, trait_id: Optional[str] = None):
+def compute_cdp_traits(self, trait_id: Optional[str] = None):
     """
     Compute computed traits for CDP profiles.
 
     Args:
-        tenant_id: Tenant ID for isolation
         trait_id: Optional specific trait to compute (all if None)
     """
-    logger.info(f"Computing CDP traits for tenant {tenant_id}")
+    logger.info("Computing CDP traits")
 
     from app.models.cdp import CDPComputedTrait, CDPProfile
 
     with SyncSessionLocal() as db:
         # Get trait definitions
         traits_query = select(CDPComputedTrait).where(
-            CDPComputedTrait.tenant_id == tenant_id,
-            CDPComputedTrait.is_active == True,
+            CDPComputedTrait.is_active == True
         )
         if trait_id:
             traits_query = traits_query.where(CDPComputedTrait.id == trait_id)
@@ -339,10 +301,7 @@ def compute_cdp_traits(self, tenant_id: int, trait_id: Optional[str] = None):
 
         base_query = (
             select(CDPProfile)
-            .where(
-                CDPProfile.tenant_id == tenant_id,
-                CDPProfile.is_deleted == False,
-            )
+            .where(CDPProfile.is_deleted == False)
             .order_by(CDPProfile.id)
         )
 
@@ -413,24 +372,20 @@ def _compute_trait_value(db, profile, trait) -> Any:
     retry_backoff=True,
     max_retries=2,
 )
-def compute_cdp_funnel(self, tenant_id: int, funnel_id: str):
+def compute_cdp_funnel(self, funnel_id: str):
     """
     Compute conversion funnel metrics.
 
     Args:
-        tenant_id: Tenant ID for isolation
         funnel_id: Funnel definition ID
     """
-    logger.info(f"Computing funnel {funnel_id} for tenant {tenant_id}")
+    logger.info(f"Computing funnel {funnel_id}")
 
     from app.models.cdp import CDPFunnel
 
     with SyncSessionLocal() as db:
         funnel = db.execute(
-            select(CDPFunnel).where(
-                CDPFunnel.tenant_id == tenant_id,
-                CDPFunnel.id == funnel_id,
-            )
+            select(CDPFunnel).where(CDPFunnel.id == funnel_id)
         ).scalar_one_or_none()
 
         if not funnel:
@@ -454,7 +409,6 @@ def compute_cdp_funnel(self, tenant_id: int, funnel_id: str):
                 count_result = (
                     db.execute(
                         select(func.count(func.distinct(CDPEvent.profile_id))).where(
-                            CDPEvent.tenant_id == tenant_id,
                             CDPEvent.event_name == event_name,
                             CDPEvent.profile_id.isnot(None),
                         )
@@ -484,7 +438,6 @@ def compute_cdp_funnel(self, tenant_id: int, funnel_id: str):
         db.commit()
 
         publish_event(
-            tenant_id,
             "funnel_computed",
             {
                 "funnel_id": funnel_id,
@@ -497,51 +450,28 @@ def compute_cdp_funnel(self, tenant_id: int, funnel_id: str):
 
 @shared_task
 @with_distributed_lock(timeout=7200)  # 2 hour lock timeout
-def compute_all_cdp_funnels(tenant_id: Optional[int] = None):
+def compute_all_cdp_funnels():
     """
-    Compute all CDP funnels for a tenant or all tenants.
+    Compute all active CDP funnels for the org.
     Scheduled daily by Celery beat.
 
     Uses distributed lock to prevent duplicate execution across workers.
     """
     logger.info("Computing all CDP funnels")
 
-    from app.models import Tenant
     from app.models.cdp import CDPFunnel
 
     with SyncSessionLocal() as db:
-        if tenant_id:
-            tenants = [
-                db.execute(
-                    select(Tenant).where(Tenant.id == tenant_id)
-                ).scalar_one_or_none()
-            ]
-        else:
-            tenants = (
-                db.execute(select(Tenant).where(Tenant.is_deleted == False))
-                .scalars()
-                .all()
-            )
+        funnels = (
+            db.execute(select(CDPFunnel).where(CDPFunnel.is_active == True))
+            .scalars()
+            .all()
+        )
 
         task_count = 0
-        for tenant in tenants:
-            if not tenant:
-                continue
-
-            funnels = (
-                db.execute(
-                    select(CDPFunnel).where(
-                        CDPFunnel.tenant_id == tenant.id,
-                        CDPFunnel.is_active == True,
-                    )
-                )
-                .scalars()
-                .all()
-            )
-
-            for funnel in funnels:
-                compute_cdp_funnel.delay(tenant.id, str(funnel.id))
-                task_count += 1
+        for funnel in funnels:
+            compute_cdp_funnel.delay(str(funnel.id))
+            task_count += 1
 
     logger.info(f"Queued {task_count} funnel computation tasks")
     return {"tasks_queued": task_count}

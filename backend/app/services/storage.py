@@ -41,7 +41,7 @@ class ObjectStorage(ABC):
         """Persist ``data`` under ``key`` and return a URL to retrieve it.
 
         ``key`` is a relative, forward-slash path such as
-        ``"assets/<tenant>/<uuid>.png"``. Implementations must treat it as
+        ``"assets/<uuid>.png"``. Implementations must treat it as
         untrusted and refuse to escape their root.
         """
         raise NotImplementedError

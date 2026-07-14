@@ -1355,21 +1355,15 @@ class TestRetryPublish:
 # Celery Task Tests
 # =============================================================================
 
-# Production bug (STRAT-SC-001): app/workers/campaign_builder_tasks.py was NOT
-# de-tenanted. It still builds queries against TenantPlatformConnection.tenant_id
-# and TenantAdAccount.tenant_id (and constructs TenantAdAccount(tenant_id=...)),
-# but those columns were removed from the models, so the tasks raise
-# AttributeError at runtime. These tests are expected failures until the workers
-# module is fixed; the coverage is kept so they light up once it is.
-_workers_not_detenanted = pytest.mark.xfail(
-    reason=(
-        "app/workers/campaign_builder_tasks.py still references removed "
-        "tenant_id model columns (single-client conversion gap)"
-    ),
-)
+# NOTE (STRAT-SC-001, closed in C4): app/workers/campaign_builder_tasks.py
+# used to query TenantPlatformConnection.tenant_id / TenantAdAccount.tenant_id
+# (and construct TenantAdAccount(tenant_id=...)), but those columns were
+# removed from the models — the tasks raised AttributeError at runtime. C4's
+# de-fan-out rewrote the tasks to operate on the single org (one connection
+# per platform, no tenant filter), so these tests now exercise real behavior
+# again (no more xfail).
 
 
-@_workers_not_detenanted
 class TestSyncAdAccountsTask:
     """Tests for the sync_ad_accounts Celery task."""
 
@@ -1382,7 +1376,7 @@ class TestSyncAdAccountsTask:
         with patch("app.workers.campaign_builder_tasks.SessionLocal") as mock_session:
             mock_session.return_value.__enter__ = MagicMock(return_value=mock_db)
             mock_session.return_value.__exit__ = MagicMock(return_value=False)
-            result = sync_ad_accounts(tenant_id=1, platform="meta")
+            result = sync_ad_accounts(platform="meta")
 
         assert result["status"] == "skipped"
 
@@ -1400,7 +1394,7 @@ class TestSyncAdAccountsTask:
         with patch("app.workers.campaign_builder_tasks.SessionLocal") as mock_session:
             mock_session.return_value.__enter__ = MagicMock(return_value=mock_db)
             mock_session.return_value.__exit__ = MagicMock(return_value=False)
-            result = sync_ad_accounts(tenant_id=1, platform="meta")
+            result = sync_ad_accounts(platform="meta")
 
         assert result["status"] == "success"
         assert result["synced_count"] == 2  # Mock returns 2 accounts
@@ -1425,14 +1419,13 @@ class TestSyncAdAccountsTask:
         with patch("app.workers.campaign_builder_tasks.SessionLocal") as mock_session:
             mock_session.return_value.__enter__ = MagicMock(return_value=mock_db)
             mock_session.return_value.__exit__ = MagicMock(return_value=False)
-            result = sync_ad_accounts(tenant_id=1, platform="meta")
+            result = sync_ad_accounts(platform="meta")
 
         assert result["status"] == "success"
         # Existing accounts should be updated
         assert existing_account.name is not None
 
 
-@_workers_not_detenanted
 class TestRefreshTokensTask:
     """Tests for the refresh_tokens Celery task."""
 
@@ -1445,7 +1438,7 @@ class TestRefreshTokensTask:
         with patch("app.workers.campaign_builder_tasks.SessionLocal") as mock_session:
             mock_session.return_value.__enter__ = MagicMock(return_value=mock_db)
             mock_session.return_value.__exit__ = MagicMock(return_value=False)
-            result = refresh_tokens(tenant_id=1, platform="meta")
+            result = refresh_tokens(platform="meta")
 
         assert result["status"] == "skipped"
 
@@ -1481,7 +1474,7 @@ class TestRefreshTokensTask:
         ):
             mock_session.return_value.__enter__ = MagicMock(return_value=mock_db)
             mock_session.return_value.__exit__ = MagicMock(return_value=False)
-            result = refresh_tokens(tenant_id=1, platform="meta")
+            result = refresh_tokens(platform="meta")
 
         assert result["status"] == "success"
         assert conn.status == ConnectionStatus.CONNECTED
@@ -1507,7 +1500,7 @@ class TestRefreshTokensTask:
         with patch("app.workers.campaign_builder_tasks.SessionLocal") as mock_session:
             mock_session.return_value.__enter__ = MagicMock(return_value=mock_db)
             mock_session.return_value.__exit__ = MagicMock(return_value=False)
-            result = refresh_tokens(tenant_id=1, platform="meta")
+            result = refresh_tokens(platform="meta")
 
         assert result["status"] == "error"
         assert conn.status == ConnectionStatus.EXPIRED
@@ -1553,7 +1546,6 @@ class TestPublishCampaignTask:
 
         assert result["status"] == "skipped"
 
-    @_workers_not_detenanted
     def test_publish_success(self):
         from app.workers.campaign_builder_tasks import publish_campaign
 
@@ -1561,7 +1553,6 @@ class TestPublishCampaignTask:
         draft = MagicMock()
         draft.id = draft_id
         draft.status = DraftStatus.PUBLISHING
-        draft.tenant_id = 1
         draft.platform = AdPlatform.META
         draft.ad_account_id = uuid4()
         draft.draft_json = {"campaign": {}}
@@ -1633,7 +1624,6 @@ class TestConnectorHealthCheckTask:
 
         conn = MagicMock()
         conn.id = uuid4()
-        conn.tenant_id = 1
         conn.platform = AdPlatform.META
         conn.error_count = 0
 

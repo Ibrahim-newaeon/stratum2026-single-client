@@ -139,7 +139,7 @@ celery_app.conf.beat_schedule = {
     },
     # Live predictions every 30 minutes
     "run-all-predictions": {
-        "task": "app.workers.tasks.run_all_tenant_predictions",
+        "task": "app.workers.tasks.run_all_predictions",
         "schedule": crontab(minute="*/30"),
         "options": {"queue": "ml"},
     },

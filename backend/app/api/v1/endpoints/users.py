@@ -368,7 +368,7 @@ async def invite_user(
             email_service.send_user_invite_email(
                 to_email=invite_data.email,
                 inviter_name=inviter_name,
-                tenant_name=org_name,
+                org_name=org_name,
                 invite_token=invite_token,
                 role=invite_data.role,
             )

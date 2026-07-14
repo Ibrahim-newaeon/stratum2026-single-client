@@ -14,13 +14,11 @@ Integration:
 - Custom collectors for business-specific metrics
 """
 
-from collections.abc import Callable
 from typing import Optional
 
 from fastapi import FastAPI
 from prometheus_client import Counter, Gauge, Histogram
 from prometheus_fastapi_instrumentator import Instrumentator, metrics
-from prometheus_fastapi_instrumentator.metrics import Info as MetricInfo
 
 # =============================================================================
 # Custom Business Metrics
@@ -29,20 +27,19 @@ from prometheus_fastapi_instrumentator.metrics import Info as MetricInfo
 # EMQ (Event Measurement Quality) Metrics
 emq_score_gauge = Gauge(
     name="stratum_emq_score",
-    documentation="Current EMQ score by tenant and platform",
-    labelnames=["tenant_id", "platform"],
+    documentation="Current EMQ score by platform",
+    labelnames=["platform"],
 )
 
 emq_driver_gauge = Gauge(
     name="stratum_emq_driver_score",
     documentation="EMQ driver component scores",
-    labelnames=["tenant_id", "platform", "driver"],
+    labelnames=["platform", "driver"],
 )
 
 emq_confidence_band = Gauge(
     name="stratum_emq_confidence_band",
     documentation="EMQ confidence band (0=unsafe, 1=directional, 2=reliable)",
-    labelnames=["tenant_id"],
 )
 
 # Trust Gate Metrics
@@ -63,38 +60,35 @@ trust_gate_evaluation_duration = Histogram(
 autopilot_mode_gauge = Gauge(
     name="stratum_autopilot_mode",
     documentation="Current autopilot mode (0=frozen, 1=cuts_only, 2=limited, 3=normal)",
-    labelnames=["tenant_id"],
 )
 
 autopilot_actions_total = Counter(
     name="stratum_autopilot_actions_total",
     documentation="Total autopilot actions executed",
-    labelnames=["tenant_id", "action_type", "platform", "status"],
+    labelnames=["action_type", "platform", "status"],
 )
 
 autopilot_budget_at_risk = Gauge(
     name="stratum_autopilot_budget_at_risk_usd",
     documentation="Budget at risk due to signal health issues",
-    labelnames=["tenant_id"],
 )
 
 # Signal Health Metrics
 signal_health_score = Gauge(
     name="stratum_signal_health_score",
     documentation="Overall signal health score",
-    labelnames=["tenant_id", "platform"],
+    labelnames=["platform"],
 )
 
 signal_health_component = Gauge(
     name="stratum_signal_health_component",
     documentation="Signal health component scores",
-    labelnames=["tenant_id", "platform", "component"],
+    labelnames=["platform", "component"],
 )
 
 signal_volatility_index = Gauge(
     name="stratum_signal_volatility_index",
     documentation="Signal Volatility Index (SVI)",
-    labelnames=["tenant_id"],
 )
 
 # Platform Integration Metrics
@@ -114,13 +108,13 @@ platform_api_latency = Histogram(
 platform_sync_status = Gauge(
     name="stratum_platform_sync_status",
     documentation="Platform data sync status (0=failed, 1=success)",
-    labelnames=["tenant_id", "platform"],
+    labelnames=["platform"],
 )
 
 platform_sync_last_success = Gauge(
     name="stratum_platform_sync_last_success_timestamp",
     documentation="Timestamp of last successful platform sync",
-    labelnames=["tenant_id", "platform"],
+    labelnames=["platform"],
 )
 
 # Conversion API (CAPI) Metrics
@@ -133,7 +127,7 @@ capi_events_sent_total = Counter(
 capi_match_rate = Gauge(
     name="stratum_capi_match_rate",
     documentation="CAPI event match rate percentage",
-    labelnames=["tenant_id", "platform"],
+    labelnames=["platform"],
 )
 
 capi_latency = Histogram(
@@ -147,20 +141,20 @@ capi_latency = Histogram(
 attribution_variance = Gauge(
     name="stratum_attribution_variance_pct",
     documentation="Attribution variance between platform and GA4",
-    labelnames=["tenant_id", "platform"],
+    labelnames=["platform"],
 )
 
 # Incident Metrics
 incidents_total = Counter(
     name="stratum_incidents_total",
     documentation="Total incidents by severity",
-    labelnames=["tenant_id", "severity", "platform"],
+    labelnames=["severity", "platform"],
 )
 
 incidents_open = Gauge(
     name="stratum_incidents_open",
     documentation="Currently open incidents",
-    labelnames=["tenant_id", "severity"],
+    labelnames=["severity"],
 )
 
 incident_mttr_seconds = Histogram(
@@ -168,18 +162,6 @@ incident_mttr_seconds = Histogram(
     documentation="Mean time to resolution for incidents",
     labelnames=["severity"],
     buckets=(300, 900, 1800, 3600, 7200, 14400, 28800, 86400),
-)
-
-# Tenant Metrics
-active_tenants = Gauge(
-    name="stratum_active_tenants",
-    documentation="Number of active tenants",
-)
-
-tenant_api_requests_total = Counter(
-    name="stratum_tenant_api_requests_total",
-    documentation="API requests per tenant",
-    labelnames=["tenant_id", "endpoint_group"],
 )
 
 # Celery Task Metrics
@@ -203,7 +185,6 @@ celery_tasks_total = Counter(
 
 
 def record_emq_score(
-    tenant_id: int,
     platform: str,
     score: float,
     drivers: Optional[dict] = None,
@@ -212,20 +193,17 @@ def record_emq_score(
     Record EMQ score metrics.
 
     Args:
-        tenant_id: Tenant identifier
         platform: Ad platform (meta, google, tiktok, snapchat)
         score: EMQ score (0-100)
         drivers: Optional dict of driver scores
     """
     emq_score_gauge.labels(
-        tenant_id=str(tenant_id),
         platform=platform.lower(),
     ).set(score)
 
     if drivers:
         for driver_name, driver_score in drivers.items():
             emq_driver_gauge.labels(
-                tenant_id=str(tenant_id),
                 platform=platform.lower(),
                 driver=driver_name,
             ).set(driver_score)
@@ -258,7 +236,6 @@ def record_trust_gate_decision(
 
 
 def record_autopilot_action(
-    tenant_id: int,
     action_type: str,
     platform: str,
     status: str,
@@ -267,13 +244,11 @@ def record_autopilot_action(
     Record autopilot action execution.
 
     Args:
-        tenant_id: Tenant identifier
         action_type: Type of action executed
         platform: Ad platform
         status: Execution status (success, failed, blocked)
     """
     autopilot_actions_total.labels(
-        tenant_id=str(tenant_id),
         action_type=action_type,
         platform=platform.lower(),
         status=status.lower(),
@@ -281,7 +256,6 @@ def record_autopilot_action(
 
 
 def record_signal_health(
-    tenant_id: int,
     platform: str,
     overall_score: float,
     components: Optional[dict] = None,
@@ -290,20 +264,17 @@ def record_signal_health(
     Record signal health metrics.
 
     Args:
-        tenant_id: Tenant identifier
         platform: Ad platform
         overall_score: Overall health score (0-100)
         components: Optional dict of component scores (emq, freshness, variance, anomaly)
     """
     signal_health_score.labels(
-        tenant_id=str(tenant_id),
         platform=platform.lower(),
     ).set(overall_score)
 
     if components:
         for component_name, component_score in components.items():
             signal_health_component.labels(
-                tenant_id=str(tenant_id),
                 platform=platform.lower(),
                 component=component_name,
             ).set(component_score)
@@ -364,7 +335,6 @@ def record_capi_event(
 
 
 def record_incident(
-    tenant_id: int,
     severity: str,
     platform: str,
     resolved: bool = False,
@@ -374,14 +344,12 @@ def record_incident(
     Record incident metrics.
 
     Args:
-        tenant_id: Tenant identifier
         severity: Incident severity (critical, high, medium, low)
         platform: Affected platform
         resolved: Whether incident is resolved
         resolution_time: Optional time to resolution in seconds
     """
     incidents_total.labels(
-        tenant_id=str(tenant_id),
         severity=severity.lower(),
         platform=platform.lower(),
     ).inc()
@@ -390,45 +358,6 @@ def record_incident(
         incident_mttr_seconds.labels(
             severity=severity.lower(),
         ).observe(resolution_time)
-
-
-# =============================================================================
-# Custom Instrumentator Metrics
-# =============================================================================
-
-
-def request_by_tenant_instrumentation() -> Callable[[MetricInfo], None]:
-    """
-    Custom instrumentation to track requests by tenant.
-    Extracts tenant_id from request state.
-    """
-
-    def instrumentation(info: MetricInfo) -> None:
-        if info.modified_handler:
-            # Extract tenant from request state if available
-            tenant_id = getattr(info.request.state, "tenant_id", None)
-            if tenant_id:
-                # Determine endpoint group from path
-                path = info.request.url.path
-                if "/emq" in path:
-                    endpoint_group = "emq"
-                elif "/trust" in path or "/autopilot" in path:
-                    endpoint_group = "trust"
-                elif "/analytics" in path or "/insights" in path:
-                    endpoint_group = "analytics"
-                elif "/campaigns" in path or "/ads" in path:
-                    endpoint_group = "campaigns"
-                elif "/auth" in path:
-                    endpoint_group = "auth"
-                else:
-                    endpoint_group = "other"
-
-                tenant_api_requests_total.labels(
-                    tenant_id=str(tenant_id),
-                    endpoint_group=endpoint_group,
-                ).inc()
-
-    return instrumentation
 
 
 # =============================================================================
@@ -569,25 +498,23 @@ CONFIDENCE_BAND_VALUES = {
 }
 
 
-def set_autopilot_mode_metric(tenant_id: int, mode: str) -> None:
+def set_autopilot_mode_metric(mode: str) -> None:
     """
-    Set the autopilot mode gauge for a tenant.
+    Set the autopilot mode gauge.
 
     Args:
-        tenant_id: Tenant identifier
         mode: Autopilot mode (frozen, cuts_only, limited, normal)
     """
     mode_value = AUTOPILOT_MODE_VALUES.get(mode.lower(), 2)
-    autopilot_mode_gauge.labels(tenant_id=str(tenant_id)).set(mode_value)
+    autopilot_mode_gauge.set(mode_value)
 
 
-def set_confidence_band_metric(tenant_id: int, band: str) -> None:
+def set_confidence_band_metric(band: str) -> None:
     """
-    Set the EMQ confidence band gauge for a tenant.
+    Set the EMQ confidence band gauge.
 
     Args:
-        tenant_id: Tenant identifier
         band: Confidence band (unsafe, directional, reliable)
     """
     band_value = CONFIDENCE_BAND_VALUES.get(band.lower(), 1)
-    emq_confidence_band.labels(tenant_id=str(tenant_id)).set(band_value)
+    emq_confidence_band.set(band_value)

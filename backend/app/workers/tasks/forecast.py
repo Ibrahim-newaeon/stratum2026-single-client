@@ -12,10 +12,6 @@ from celery.utils.log import get_task_logger
 from sqlalchemy import select
 
 from app.db.session import SyncSessionLocal
-# NOTE(STRAT-SC-001/C3): dead `Tenant` import removed so `app.main` can
-# import (endpoints import worker task functions at module load). Task
-# bodies below still reference the old per-org fan-out and are rewritten
-# in Task C4 — they were already runtime-broken since the model deletion.
 from app.models import Campaign
 from app.workers.locks import with_distributed_lock
 
@@ -23,21 +19,22 @@ logger = get_task_logger(__name__)
 
 
 @shared_task
-def generate_forecast(tenant_id: int, campaign_ids: Optional[list[int]] = None):
+def generate_forecast(campaign_ids: Optional[list[int]] = None):
     """
     Generate forecast for specified campaigns or all campaigns.
 
     Args:
-        tenant_id: Tenant ID for isolation
         campaign_ids: Optional list of campaign IDs (all if None)
+
+    NOTE: `PacingForecaster.__init__` takes an `AsyncSession` and has no
+    `generate_campaign_forecast` method — this task's call is a pre-existing
+    signature mismatch (sync task calling an async-only service incorrectly),
+    unrelated to tenant scoping, left as documented technical debt.
     """
-    logger.info(f"Generating forecast for tenant {tenant_id}")
+    logger.info("Generating forecast")
 
     with SyncSessionLocal() as db:
-        query = select(Campaign).where(
-            Campaign.tenant_id == tenant_id,
-            Campaign.is_deleted == False,
-        )
+        query = select(Campaign).where(Campaign.is_deleted == False)
 
         if campaign_ids:
             query = query.where(Campaign.id.in_(campaign_ids))
@@ -50,7 +47,7 @@ def generate_forecast(tenant_id: int, campaign_ids: Optional[list[int]] = None):
                 # Use the pacing forecaster service
                 from app.services.pacing.forecasting import PacingForecaster
 
-                forecaster = PacingForecaster(tenant_id)
+                forecaster = PacingForecaster(db)
                 forecast = forecaster.generate_campaign_forecast(campaign.id)
                 forecasts.append(
                     {
@@ -77,15 +74,7 @@ def generate_daily_forecasts():
     """
     logger.info("Starting daily forecast generation")
 
-    with SyncSessionLocal() as db:
-        tenants = (
-            db.execute(select(Tenant).where(Tenant.is_deleted == False)).scalars().all()
-        )
+    generate_forecast.delay()
 
-        task_count = 0
-        for tenant in tenants:
-            generate_forecast.delay(tenant.id)
-            task_count += 1
-
-    logger.info(f"Queued {task_count} forecast tasks")
-    return {"tasks_queued": task_count}
+    logger.info("Queued forecast task")
+    return {"tasks_queued": 1}

@@ -63,14 +63,12 @@ def async_task(func):
 @async_task
 async def sync_hubspot_data(
     self,
-    tenant_id: int,
     full_sync: bool = False,
 ) -> dict[str, Any]:
     """
     Sync contacts and deals from HubSpot CRM.
 
     Args:
-        tenant_id: Tenant ID to sync
         full_sync: If True, sync all records. Otherwise, incremental sync.
 
     Returns:
@@ -78,7 +76,7 @@ async def sync_hubspot_data(
     """
     from app.services.crm.hubspot_sync import HubSpotSyncService
 
-    logger.info(f"Starting HubSpot sync for tenant {tenant_id}")
+    logger.info("Starting HubSpot sync")
 
     async with async_session_maker() as db:
         sync_service = HubSpotSyncService(db)
@@ -87,7 +85,7 @@ async def sync_hubspot_data(
             results = await sync_service.sync_all(full_sync=full_sync)
 
             logger.info(
-                f"HubSpot sync completed for tenant {tenant_id}: "
+                f"HubSpot sync completed: "
                 f"{results.get('contacts_synced', 0)} contacts, "
                 f"{results.get('deals_synced', 0)} deals"
             )
@@ -95,7 +93,7 @@ async def sync_hubspot_data(
             return results
 
         except Exception as e:
-            logger.error(f"HubSpot sync failed for tenant {tenant_id}: {e}")
+            logger.error(f"HubSpot sync failed: {e}")
             raise self.retry(exc=e, countdown=60 * 5)  # Retry in 5 minutes
 
 
@@ -103,7 +101,7 @@ async def sync_hubspot_data(
 @async_task
 async def writeback_hubspot_attribution(
     self,
-    tenant_id: int,
+    connection_id: str,
     sync_contacts: bool = True,
     sync_deals: bool = True,
     full_sync: bool = False,
@@ -112,7 +110,7 @@ async def writeback_hubspot_attribution(
     Write attribution data back to HubSpot CRM.
 
     Args:
-        tenant_id: Tenant ID
+        connection_id: CRMConnection ID whose writeback config to use
         sync_contacts: Whether to sync contacts
         sync_deals: Whether to sync deals
         full_sync: If True, sync all records
@@ -122,7 +120,7 @@ async def writeback_hubspot_attribution(
     """
     from app.services.crm.hubspot_writeback import HubSpotWritebackService
 
-    logger.info(f"Starting HubSpot writeback for tenant {tenant_id}")
+    logger.info(f"Starting HubSpot writeback for connection {connection_id}")
 
     async with async_session_maker() as db:
         writeback_service = HubSpotWritebackService(db)
@@ -132,7 +130,7 @@ async def writeback_hubspot_attribution(
         if not full_sync:
             result = await db.execute(
                 select(CRMWritebackConfig).where(
-                    CRMWritebackConfig.tenant_id == tenant_id
+                    CRMWritebackConfig.connection_id == connection_id
                 )
             )
             config = result.scalar_one_or_none()
@@ -146,11 +144,11 @@ async def writeback_hubspot_attribution(
                 modified_since=modified_since,
             )
 
-            logger.info(f"HubSpot writeback completed for tenant {tenant_id}")
+            logger.info(f"HubSpot writeback completed for connection {connection_id}")
             return results
 
         except Exception as e:
-            logger.error(f"HubSpot writeback failed for tenant {tenant_id}: {e}")
+            logger.error(f"HubSpot writeback failed for connection {connection_id}: {e}")
             raise self.retry(exc=e, countdown=60 * 5)
 
 
@@ -163,7 +161,6 @@ async def writeback_hubspot_attribution(
 @async_task
 async def sync_zoho_data(
     self,
-    tenant_id: int,
     full_sync: bool = False,
     region: str = "com",
 ) -> dict[str, Any]:
@@ -171,7 +168,6 @@ async def sync_zoho_data(
     Sync contacts, leads, and deals from Zoho CRM.
 
     Args:
-        tenant_id: Tenant ID to sync
         full_sync: If True, sync all records. Otherwise, incremental sync.
         region: Zoho region (com, eu, in, com.au, jp, com.cn)
 
@@ -180,7 +176,7 @@ async def sync_zoho_data(
     """
     from app.services.crm.zoho_sync import ZohoSyncService
 
-    logger.info(f"Starting Zoho CRM sync for tenant {tenant_id}")
+    logger.info("Starting Zoho CRM sync")
 
     async with async_session_maker() as db:
         sync_service = ZohoSyncService(db, region)
@@ -189,7 +185,7 @@ async def sync_zoho_data(
             results = await sync_service.sync_all(full_sync=full_sync)
 
             logger.info(
-                f"Zoho sync completed for tenant {tenant_id}: "
+                f"Zoho sync completed: "
                 f"{results.get('contacts_synced', 0)} contacts, "
                 f"{results.get('deals_synced', 0)} deals"
             )
@@ -197,7 +193,7 @@ async def sync_zoho_data(
             return results
 
         except Exception as e:
-            logger.error(f"Zoho sync failed for tenant {tenant_id}: {e}")
+            logger.error(f"Zoho sync failed: {e}")
             raise self.retry(exc=e, countdown=60 * 5)
 
 
@@ -205,7 +201,6 @@ async def sync_zoho_data(
 @async_task
 async def writeback_zoho_attribution(
     self,
-    tenant_id: int,
     sync_contacts: bool = True,
     sync_deals: bool = True,
     full_sync: bool = False,
@@ -215,7 +210,6 @@ async def writeback_zoho_attribution(
     Write attribution data back to Zoho CRM.
 
     Args:
-        tenant_id: Tenant ID
         sync_contacts: Whether to sync contacts
         sync_deals: Whether to sync deals
         full_sync: If True, sync all records
@@ -226,7 +220,7 @@ async def writeback_zoho_attribution(
     """
     from app.services.crm.zoho_writeback import ZohoWritebackService
 
-    logger.info(f"Starting Zoho writeback for tenant {tenant_id}")
+    logger.info("Starting Zoho writeback")
 
     async with async_session_maker() as db:
         writeback_service = ZohoWritebackService(db, region)
@@ -236,10 +230,7 @@ async def writeback_zoho_attribution(
         if not full_sync:
             result = await db.execute(
                 select(CRMConnection).where(
-                    and_(
-                        CRMConnection.tenant_id == tenant_id,
-                        CRMConnection.provider == CRMProvider.ZOHO,
-                    )
+                    CRMConnection.provider == CRMProvider.ZOHO
                 )
             )
             connection = result.scalar_one_or_none()
@@ -253,11 +244,11 @@ async def writeback_zoho_attribution(
                 modified_since=modified_since,
             )
 
-            logger.info(f"Zoho writeback completed for tenant {tenant_id}")
+            logger.info("Zoho writeback completed")
             return results
 
         except Exception as e:
-            logger.error(f"Zoho writeback failed for tenant {tenant_id}: {e}")
+            logger.error(f"Zoho writeback failed: {e}")
             raise self.retry(exc=e, countdown=60 * 5)
 
 
@@ -270,7 +261,7 @@ async def writeback_zoho_attribution(
 @async_task
 async def sync_all_crm_connections() -> dict[str, Any]:
     """
-    Sync all active CRM connections across all tenants.
+    Sync all active CRM connections for the org.
 
     This is the main scheduled sync task that runs periodically.
     """
@@ -295,13 +286,12 @@ async def sync_all_crm_connections() -> dict[str, Any]:
             try:
                 if connection.provider == CRMProvider.HUBSPOT:
                     # Dispatch HubSpot sync task
-                    sync_hubspot_data.delay(connection.tenant_id, full_sync=False)
+                    sync_hubspot_data.delay(full_sync=False)
                     results["hubspot"]["synced"] += 1
 
                 elif connection.provider == CRMProvider.ZOHO:
                     # Dispatch Zoho sync task
                     sync_zoho_data.delay(
-                        connection.tenant_id,
                         full_sync=False,
                         region=settings.zoho_region,
                     )
@@ -310,7 +300,7 @@ async def sync_all_crm_connections() -> dict[str, Any]:
             except (ConnectionError, TimeoutError, OSError) as e:
                 logger.error(
                     f"Failed to dispatch sync for {connection.provider.value} "
-                    f"tenant {connection.tenant_id}: {e}"
+                    f"connection {connection.id}: {e}"
                 )
                 if connection.provider == CRMProvider.HUBSPOT:
                     results["hubspot"]["failed"] += 1
@@ -371,13 +361,12 @@ async def run_scheduled_writebacks() -> dict[str, Any]:
 
                 if connection.provider == CRMProvider.HUBSPOT:
                     writeback_hubspot_attribution.delay(
-                        config.tenant_id,
+                        str(connection.id),
                         sync_contacts=config.sync_contacts,
                         sync_deals=config.sync_deals,
                     )
                 elif connection.provider == CRMProvider.ZOHO:
                     writeback_zoho_attribution.delay(
-                        config.tenant_id,
                         sync_contacts=config.sync_contacts,
                         sync_deals=config.sync_deals,
                         region=settings.zoho_region,
@@ -407,20 +396,16 @@ async def run_scheduled_writebacks() -> dict[str, Any]:
 @async_task
 async def run_identity_matching(
     self,
-    tenant_id: int,
 ) -> dict[str, Any]:
     """
-    Run identity matching for a tenant to link CRM contacts to ad touchpoints.
-
-    Args:
-        tenant_id: Tenant ID
+    Run identity matching to link CRM contacts to ad touchpoints.
 
     Returns:
         Matching results
     """
     from app.services.crm.identity_matching import IdentityMatcher
 
-    logger.info(f"Running identity matching for tenant {tenant_id}")
+    logger.info("Running identity matching")
 
     async with async_session_maker() as db:
         identity_matcher = IdentityMatcher(db)
@@ -429,7 +414,7 @@ async def run_identity_matching(
             results = await identity_matcher.match_contacts_to_touchpoints()
 
             logger.info(
-                f"Identity matching completed for tenant {tenant_id}: "
+                f"Identity matching completed: "
                 f"matched {results.get('contacts_matched', 0)} of "
                 f"{results.get('contacts_processed', 0)} contacts"
             )
@@ -437,7 +422,7 @@ async def run_identity_matching(
             return results
 
         except Exception as e:
-            logger.error(f"Identity matching failed for tenant {tenant_id}: {e}")
+            logger.error(f"Identity matching failed: {e}")
             raise self.retry(exc=e, countdown=60 * 2)
 
 

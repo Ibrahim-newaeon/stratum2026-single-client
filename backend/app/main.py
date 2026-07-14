@@ -238,18 +238,15 @@ async def lifespan(app: FastAPI) -> AsyncGenerator:
     except Exception as e:
         logger.warning("owner_seed_failed", error=str(e))
 
-    # Load per-tenant PII encryption keys into the in-memory cache, provisioning
-    # any tenant that lacks one (AUTH-05). Non-fatal: on failure, encrypt/decrypt
-    # fall back to the legacy global-derived key (dual-read).
-    try:
-        from app.core.pii_keys import initialize_pii_keys
-        from app.db.session import async_session_factory
+    # Startup assert: the single global PII Fernet key must derive and be
+    # usable before we accept traffic (single-key model; no per-tenant DEKs).
+    from app.core.security import decrypt_pii, encrypt_pii
 
-        async with async_session_factory() as db:
-            result = await initialize_pii_keys(db)
-        logger.info("pii_keys_ready", **result)
-    except Exception as e:
-        logger.warning("pii_keys_init_failed", error=str(e))
+    _pii_probe = encrypt_pii("stratum_ai_pii_startup_probe")
+    assert decrypt_pii(_pii_probe) == "stratum_ai_pii_startup_probe", (
+        "PII encryption key failed self-test at startup"
+    )
+    logger.info("pii_key_ready")
 
     yield
 
@@ -288,17 +285,13 @@ def create_application() -> FastAPI:
     # Importing app.core.metrics registers the domain metrics (EMQ, trust
     # gate, autopilot, signal health, CAPI, ...) in the global registry so
     # the always-on /metrics endpoint below serves them. instrument()
-    # attaches the HTTP latency/size/in-progress collectors plus the
-    # per-tenant request counter; it is a no-op unless ENABLE_METRICS=true
-    # (should_respect_env_var). Deliberately NOT setup_metrics(): its
-    # expose() would register a second, env-gated /metrics route alongside
-    # the unconditional one below.
-    from app.core.metrics import (
-        create_instrumentator,
-        request_by_tenant_instrumentation,
-    )
+    # attaches the HTTP latency/size/in-progress collectors; it is a no-op
+    # unless ENABLE_METRICS=true (should_respect_env_var). Deliberately NOT
+    # setup_metrics(): its expose() would register a second, env-gated
+    # /metrics route alongside the unconditional one below.
+    from app.core.metrics import create_instrumentator
 
-    create_instrumentator().add(request_by_tenant_instrumentation()).instrument(app)
+    create_instrumentator().instrument(app)
 
     # -------------------------------------------------------------------------
     # Documentation Access Control (Production)
@@ -800,9 +793,9 @@ def create_application() -> FastAPI:
             pubsub = redis_client.pubsub()
 
             # Single-org deployment: all authenticated clients share one
-            # event stream. (C4 re-routes authenticated streams to an
-            # "events:org" channel; "events:global" remains the public one.)
-            channel = "events:global"
+            # event stream. "events:global" remains reserved for a future
+            # unauthenticated broadcast channel; nothing publishes to it today.
+            channel = "events:org"
 
             await pubsub.subscribe(channel)
             logger.info("sse_client_connected", channel=channel)

@@ -21,10 +21,9 @@ import pytest
 from app.tasks.audience_auto_sync import FAILURE_BACKOFF_HOURS, audience_auto_sync
 
 
-def make_audience(tenant_id: int = 1) -> SimpleNamespace:
+def make_audience() -> SimpleNamespace:
     return SimpleNamespace(
         id=uuid4(),
-        tenant_id=tenant_id,
         next_sync_at=datetime.now(UTC) - timedelta(minutes=5),
     )
 
@@ -63,7 +62,7 @@ class TestAudienceAutoSyncSweep:
         service_cls.assert_not_called()
 
     def test_due_audiences_sync_with_schedule_trigger(self):
-        audiences = [make_audience(tenant_id=1), make_audience(tenant_id=2)]
+        audiences = [make_audience(), make_audience()]
         service = MagicMock()
         service.sync_platform_audience = AsyncMock()
         service_cls = MagicMock(return_value=service)
@@ -74,13 +73,16 @@ class TestAudienceAutoSyncSweep:
         assert service.sync_platform_audience.await_count == 2
         for call in service.sync_platform_audience.await_args_list:
             assert call.kwargs["triggered_by"] == "schedule"
-        # Service is constructed per audience with that audience's tenant
-        assert [c.args[1] for c in service_cls.call_args_list] == [1, 2]
+        # Service is constructed per audience with just the db session
+        # (single-org: no tenant argument).
+        assert service_cls.call_count == 2
+        for call in service_cls.call_args_list:
+            assert call.args == (session,)
         session.commit.assert_awaited()
 
     def test_failure_backs_off_and_does_not_abort_sweep(self):
-        failing = make_audience(tenant_id=1)
-        healthy = make_audience(tenant_id=2)
+        failing = make_audience()
+        healthy = make_audience()
         before = failing.next_sync_at
 
         service = MagicMock()

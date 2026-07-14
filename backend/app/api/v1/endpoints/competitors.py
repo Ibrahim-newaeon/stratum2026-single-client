@@ -183,9 +183,6 @@ async def add_competitor(
     await db.refresh(competitor)
 
     # Queue initial data fetch
-    # TODO(C4): fetch_competitor_data (app/workers/tasks/competitors.py) still
-    # expects the old per-org first positional arg — dropped here; the worker
-    # body is rewritten in Task C4 (workers de-fan-out).
     from app.workers.tasks import fetch_competitor_data
 
     fetch_competitor_data.delay(competitor.id)
@@ -284,8 +281,6 @@ async def refresh_competitor_data(
         )
 
     # Queue refresh task
-    # TODO(C4): see note in add_competitor — fetch_competitor_data is not yet
-    # de-tenanted.
     from app.workers.tasks import fetch_competitor_data
 
     task = fetch_competitor_data.delay(competitor_id)

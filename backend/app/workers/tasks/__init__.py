@@ -58,7 +58,7 @@ from app.workers.tasks.helpers import (
 )
 from app.workers.tasks.ml import (
     generate_roas_alerts,
-    run_all_tenant_predictions,
+    run_all_predictions,
     run_live_predictions,
 )
 from app.workers.tasks.monitoring import (
@@ -115,7 +115,7 @@ __all__ = [
     # CMS tasks
     "publish_scheduled_cms_posts",
     "refresh_all_competitors",
-    "run_all_tenant_predictions",
+    "run_all_predictions",
     # ML tasks
     "run_live_predictions",
     # WhatsApp tasks

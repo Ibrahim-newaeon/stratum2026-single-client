@@ -45,7 +45,7 @@ def audience_auto_sync(self, platform_audience_id: str | None = None):
 
     Args:
         platform_audience_id: Optional single audience to sync (str UUID);
-            None sweeps every due audience across all tenants.
+            None sweeps every due audience for the org.
     """
     import asyncio
 
@@ -81,7 +81,7 @@ def audience_auto_sync(self, platform_audience_id: str | None = None):
             synced = 0
             failed = 0
             for audience in due:
-                service = AudienceSyncService(db, audience.tenant_id)
+                service = AudienceSyncService(db)
                 try:
                     await service.sync_platform_audience(
                         audience.id,
@@ -95,9 +95,8 @@ def audience_auto_sync(self, platform_audience_id: str | None = None):
                     # don't hammer a persistently failing audience/platform.
                     failed += 1
                     logger.warning(
-                        "audience_auto_sync: audience %s (tenant %s) failed: %s",
+                        "audience_auto_sync: audience %s failed: %s",
                         audience.id,
-                        audience.tenant_id,
                         e,
                     )
                     audience.next_sync_at = now + timedelta(hours=FAILURE_BACKOFF_HOURS)
