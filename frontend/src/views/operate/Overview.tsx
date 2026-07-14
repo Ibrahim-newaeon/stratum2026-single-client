@@ -350,7 +350,7 @@ export default function TenantOverview() {
   const handleExportReport = async () => {
     try {
       toast({ title: 'Export Started', description: 'Generating PDF report...' })
-      await exportDashboardPDF(`Tenant_${tid}`)
+      await exportDashboardPDF(`Account_${tid}`)
       toast({ title: 'Export Complete', description: 'Report PDF has been downloaded.' })
     } catch (error) {
       toast({

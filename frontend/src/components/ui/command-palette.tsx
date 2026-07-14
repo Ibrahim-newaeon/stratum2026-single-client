@@ -40,11 +40,7 @@ interface CommandItem {
   shortcut?: string;
 }
 
-interface CommandPaletteProps {
-  tenantId?: string;
-}
-
-export function CommandPalette({ tenantId }: CommandPaletteProps) {
+export function CommandPalette() {
   const [open, setOpen] = React.useState(false);
   const [search, setSearch] = React.useState('');
   const [selectedIndex, setSelectedIndex] = React.useState(0);
@@ -52,8 +48,8 @@ export function CommandPalette({ tenantId }: CommandPaletteProps) {
   const inputRef = React.useRef<HTMLInputElement>(null);
   const listRef = React.useRef<HTMLDivElement>(null);
 
-  // Determine base path based on context
-  const basePath = tenantId ? `/app/${tenantId}` : '/dashboard';
+  // Single-client app — all routes live under /dashboard
+  const basePath = '/dashboard';
 
   // Command items organized by category
   const commands: CommandItem[] = React.useMemo(

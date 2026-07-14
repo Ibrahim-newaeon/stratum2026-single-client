@@ -5,7 +5,7 @@
  *
  * NOTE(STRAT-SC-001/D3): the revenue/tenant-portfolio/churn-risk/billing
  * tabs and panels that used to live here were removed. Their sole data
- * source was the deleted Tenant model + Stripe billing tables — C3
+ * source was the deleted Tenant model + the removed billing tables — C3
  * deleted the backing routes (/console/revenue, /console/tenants/portfolio,
  * /console/churn/risks, /console/billing/*) since a single-org deployment
  * has no MRR, tenant portfolio, churn, or subscription concept. See

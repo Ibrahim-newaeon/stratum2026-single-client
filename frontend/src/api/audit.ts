@@ -1,10 +1,17 @@
 /**
  * Stratum AI - Audit Log API Hooks
  *
- * React Query hooks for tenant audit log features:
+ * React Query hooks for account audit log features:
  * - Paginated audit log entries
  * - Daily volume + action type distribution
  * - CSV export
+ *
+ * NOTE(STRAT-SC-001/D3): the backend route family this file calls
+ * (`/tenants/{id}/audit*`) does not exist post-conversion — there is no
+ * `/tenants` router any more. The consuming AccountAuditLog page
+ * (views/operate/AuditLog.tsx) is non-functional pending a product
+ * decision on whether to rebuild it against a real endpoint or delete
+ * it outright. See E3 known-issues list.
  */
 
 import { useMutation, useQuery } from '@tanstack/react-query';
@@ -67,9 +74,9 @@ export interface AuditStats {
 // Hooks
 // =============================================================================
 
-export function useTenantAuditLogs(tenantId: number, params: AuditLogParams = {}) {
+export function useTenantAuditLogs(accountId: number, params: AuditLogParams = {}) {
   return useQuery({
-    queryKey: ['audit', 'logs', tenantId, params],
+    queryKey: ['audit', 'logs', accountId, params],
     queryFn: async () => {
       const searchParams = new URLSearchParams();
       if (params.page) searchParams.append('page', params.page.toString());
@@ -79,36 +86,36 @@ export function useTenantAuditLogs(tenantId: number, params: AuditLogParams = {}
       if (params.search) searchParams.append('search', params.search);
 
       const response = await apiClient.get<{ data: AuditLogResponse }>(
-        `/tenants/${tenantId}/audit?${searchParams}`
+        `/audit?${searchParams}`
       );
       return response.data.data;
     },
-    enabled: !!tenantId,
+    enabled: !!accountId,
     staleTime: 30 * 1000,
     // No placeholderData — avoid flashing fake/demo data before real data loads
   });
 }
 
-export function useTenantAuditStats(tenantId: number, period: string = '14d') {
+export function useTenantAuditStats(accountId: number, period: string = '14d') {
   return useQuery({
-    queryKey: ['audit', 'stats', tenantId, period],
+    queryKey: ['audit', 'stats', accountId, period],
     queryFn: async () => {
       const response = await apiClient.get<{ data: AuditStats }>(
-        `/tenants/${tenantId}/audit/stats?period=${period}`
+        `/audit/stats?period=${period}`
       );
       return response.data.data;
     },
-    enabled: !!tenantId,
+    enabled: !!accountId,
     staleTime: 60 * 1000,
     // No placeholderData — avoid flashing fake/demo data before real data loads
   });
 }
 
-export function useExportAuditLogs(tenantId: number) {
+export function useExportAuditLogs(accountId: number) {
   return useMutation({
     mutationFn: async (params?: { startDate?: string; endDate?: string }) => {
       const response = await apiClient.post(
-        `/tenants/${tenantId}/audit/export`,
+        '/audit/export',
         params,
         { responseType: 'blob' }
       );
@@ -116,7 +123,7 @@ export function useExportAuditLogs(tenantId: number) {
       const url = window.URL.createObjectURL(new Blob([response.data]));
       const link = document.createElement('a');
       link.href = url;
-      link.download = `audit-log-${tenantId}-${new Date().toISOString().split('T')[0]}.csv`;
+      link.download = `audit-log-${accountId}-${new Date().toISOString().split('T')[0]}.csv`;
       document.body.appendChild(link);
       link.click();
       link.remove();

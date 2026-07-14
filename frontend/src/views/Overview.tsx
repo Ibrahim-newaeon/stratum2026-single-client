@@ -245,8 +245,8 @@ export function Overview() {
   const [showKeyboardHints, setShowKeyboardHints] = useState(false)
   const [timeRange, setTimeRange] = useState<'7D' | '30D' | '90D'>('30D')
 
-  // Single-client app — no tenant scoping.
-  const tenantId = 1
+  // Single-client app — no account scoping.
+  const accountId = 1
   const { showPriceMetrics } = usePriceMetrics()
 
   const syncAllMutation = useSyncAllCampaigns()
@@ -254,7 +254,7 @@ export function Overview() {
   const [syncingCampaignId, setSyncingCampaignId] = useState<string | null>(null)
 
   const { data: campaignsData, isLoading: campaignsLoading, refetch: refetchCampaigns } = useCampaigns()
-  const { data: overviewData } = useTenantOverview(tenantId)
+  const { data: overviewData } = useTenantOverview(accountId)
 
   const simulation = useLiveSimulation(10000)
 
@@ -700,7 +700,7 @@ export function Overview() {
             </div>
           )}
         </div>
-        <ErrorBoundary><AccountBreakdown tenantId={tenantId} /></ErrorBoundary>
+        <ErrorBoundary><AccountBreakdown accountId={accountId} /></ErrorBoundary>
         <ErrorBoundary><SimulateSlider /></ErrorBoundary>
       </div>
 

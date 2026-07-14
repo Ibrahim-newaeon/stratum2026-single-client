@@ -2,7 +2,14 @@
  * Account Manager Portfolio View
  *
  * Primary goal: Reduce firefighting, explain performance, drive renewals
- * Shows all assigned tenants with EMQ status, incidents, and health indicators
+ * Shows all assigned accounts with EMQ status, incidents, and health indicators
+ *
+ * NOTE(STRAT-SC-001/D3): the backend `/admin/*` router this view's data
+ * (via useTenants -> api/admin.ts) depends on does not exist
+ * post-conversion. This feature is non-functional pending a product
+ * decision on whether to rebuild it against a real endpoint or delete
+ * it outright. See E3 known-issues list. Identifiers below were renamed
+ * tenant->account for terminology consistency only; no behavior changed.
  */
 
 import { useState, useMemo } from 'react'
@@ -31,7 +38,7 @@ import {
 type EmqStatus = 'ok' | 'risk' | 'degraded' | 'critical'
 type SortField = 'name' | 'emq' | 'budgetAtRisk' | 'renewalDate'
 
-interface TenantPortfolioItem {
+interface AccountPortfolioItem {
   id: string
   name: string
   industry: string
@@ -58,10 +65,10 @@ export default function Portfolio() {
   const [sortField, setSortField] = useState<SortField>('emq')
   const [showAtRiskOnly, setShowAtRiskOnly] = useState(false)
 
-  const { data: tenantsData } = useTenants()
+  const { data: accountsData } = useTenants()
 
   // Sample portfolio data
-  const tenants: TenantPortfolioItem[] = (tenantsData?.items as unknown as Array<Record<string, unknown> & { id: string | number; name: string; industry?: string }>)?.map((t) => ({
+  const accounts: AccountPortfolioItem[] = (accountsData?.items as unknown as Array<Record<string, unknown> & { id: string | number; name: string; industry?: string }>)?.map((t) => ({
     id: String(t.id),
     name: t.name,
     industry: (t.industry as string) || 'E-commerce',
@@ -178,24 +185,24 @@ export default function Portfolio() {
   ]
 
   // Filter and sort
-  const filteredTenants = useMemo(() => {
-    let result = [...tenants]
+  const filteredAccounts = useMemo(() => {
+    let result = [...accounts]
 
     if (searchQuery) {
       const query = searchQuery.toLowerCase()
       result = result.filter(
-        (t) =>
-          t.name.toLowerCase().includes(query) ||
-          t.industry.toLowerCase().includes(query)
+        (a) =>
+          a.name.toLowerCase().includes(query) ||
+          a.industry.toLowerCase().includes(query)
       )
     }
 
     if (statusFilter !== 'all') {
-      result = result.filter((t) => t.emqStatus === statusFilter)
+      result = result.filter((a) => a.emqStatus === statusFilter)
     }
 
     if (showAtRiskOnly) {
-      result = result.filter((t) => t.emqStatus !== 'ok' || t.budgetAtRisk > 0 || t.activeIncidents > 0)
+      result = result.filter((a) => a.emqStatus !== 'ok' || a.budgetAtRisk > 0 || a.activeIncidents > 0)
     }
 
     result.sort((a, b) => {
@@ -214,7 +221,7 @@ export default function Portfolio() {
     })
 
     return result
-  }, [tenants, searchQuery, statusFilter, sortField, showAtRiskOnly])
+  }, [accounts, searchQuery, statusFilter, sortField, showAtRiskOnly])
 
   const getStatusColor = (status: EmqStatus) => {
     switch (status) {
@@ -244,13 +251,13 @@ export default function Portfolio() {
 
   // Portfolio stats
   const stats = {
-    total: tenants.length,
-    healthy: tenants.filter((t) => t.emqStatus === 'ok').length,
-    atRisk: tenants.filter((t) => t.emqStatus !== 'ok').length,
-    critical: tenants.filter((t) => t.emqStatus === 'critical').length,
-    totalBudgetAtRisk: tenants.reduce((sum, t) => sum + t.budgetAtRisk, 0),
-    totalMRR: tenants.reduce((sum, t) => sum + (t.plan === 'Enterprise' ? 1999 : t.plan === 'Pro' ? 499 : 99), 0),
-    upcomingRenewals: tenants.filter((t) => t.renewalDate && (t.renewalDate.getTime() - Date.now()) < 30 * 24 * 60 * 60 * 1000).length,
+    total: accounts.length,
+    healthy: accounts.filter((a) => a.emqStatus === 'ok').length,
+    atRisk: accounts.filter((a) => a.emqStatus !== 'ok').length,
+    critical: accounts.filter((a) => a.emqStatus === 'critical').length,
+    totalBudgetAtRisk: accounts.reduce((sum, a) => sum + a.budgetAtRisk, 0),
+    totalMRR: accounts.reduce((sum, a) => sum + (a.plan === 'Enterprise' ? 1999 : a.plan === 'Pro' ? 499 : 99), 0),
+    upcomingRenewals: accounts.filter((a) => a.renewalDate && (a.renewalDate.getTime() - Date.now()) < 30 * 24 * 60 * 60 * 1000).length,
   }
 
   return (
@@ -259,7 +266,7 @@ export default function Portfolio() {
       <div className="flex items-center justify-between">
         <div>
           <h1 className="text-2xl font-bold text-white">My Portfolio</h1>
-          <p className="text-muted-foreground">Manage your assigned tenants</p>
+          <p className="text-muted-foreground">Manage your assigned accounts</p>
         </div>
         <div className="flex items-center gap-3">
           <button data-tour="export-pdf" className="flex items-center gap-2 px-4 py-2 rounded-lg bg-surface-secondary border border-foreground/10 text-muted-foreground hover:text-white transition-colors">
@@ -275,7 +282,7 @@ export default function Portfolio() {
         showPriceMetrics && 'lg:grid-cols-7'
       )}>
         <div className="p-4 rounded-xl bg-surface-secondary border border-foreground/10">
-          <div className="text-muted-foreground text-sm mb-1">Total Tenants</div>
+          <div className="text-muted-foreground text-sm mb-1">Total Accounts</div>
           <div className="text-2xl font-bold text-white">{stats.total}</div>
         </div>
         <div className="p-4 rounded-xl bg-surface-secondary border border-foreground/10">
@@ -316,21 +323,21 @@ export default function Portfolio() {
             <span className="font-semibold text-danger">Priority Alerts</span>
           </div>
           <div className="space-y-2">
-            {tenants
-              .filter((t) => t.emqStatus === 'critical')
-              .map((t) => (
+            {accounts
+              .filter((a) => a.emqStatus === 'critical')
+              .map((a) => (
                 <div
-                  key={t.id}
+                  key={a.id}
                   className="flex items-center justify-between p-3 rounded-lg bg-danger/10"
                 >
                   <div>
-                    <span className="font-medium text-white">{t.name}</span>
+                    <span className="font-medium text-white">{a.name}</span>
                     <span className="text-sm text-muted-foreground ml-2">
-                      EMQ {t.emqScore} | {t.activeIncidents} incidents open {t.incidentOpenTime}h
+                      EMQ {a.emqScore} | {a.activeIncidents} incidents open {a.incidentOpenTime}h
                     </span>
                   </div>
                   <Link
-                    to={`/dashboard/am/tenant/${t.id}`}
+                    to={`/dashboard/am/tenant/${a.id}`}
                     className="px-3 py-1 rounded-lg bg-danger/20 text-danger hover:bg-danger/30 text-sm transition-colors"
                   >
                     View Now
@@ -347,7 +354,7 @@ export default function Portfolio() {
           <MagnifyingGlassIcon className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-muted-foreground" />
           <input
             type="text"
-            placeholder="Search tenants..."
+            placeholder="Search accounts..."
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
             className="w-full pl-10 pr-4 py-2 rounded-lg bg-surface-secondary border border-foreground/10 text-white placeholder-text-muted focus:outline-none focus:ring-2 focus:ring-stratum-500"
@@ -394,14 +401,14 @@ export default function Portfolio() {
         </button>
       </div>
 
-      {/* Tenant Cards */}
+      {/* Account Cards */}
       <div data-tour="portfolio-list" className="grid gap-4">
-        {filteredTenants.map((tenant) => (
+        {filteredAccounts.map((account) => (
           <div
-            key={tenant.id}
+            key={account.id}
             className={cn(
               'p-4 rounded-xl border transition-colors hover:border-foreground/20',
-              tenant.emqStatus === 'critical'
+              account.emqStatus === 'critical'
                 ? 'bg-danger/5 border-danger/20'
                 : 'bg-surface-secondary border-foreground/10'
             )}
@@ -412,60 +419,60 @@ export default function Portfolio() {
                 <span
                   className={cn(
                     'text-3xl font-bold',
-                    tenant.emqScore >= 80 ? 'text-success' :
-                    tenant.emqScore >= 60 ? 'text-warning' : 'text-danger'
+                    account.emqScore >= 80 ? 'text-success' :
+                    account.emqScore >= 60 ? 'text-warning' : 'text-danger'
                   )}
                 >
-                  {tenant.emqScore}
+                  {account.emqScore}
                 </span>
-                <ConfidenceBandBadge score={tenant.emqScore} size="sm" />
+                <ConfidenceBandBadge score={account.emqScore} size="sm" />
                 <div className={cn(
                   'flex items-center gap-1 text-xs mt-1',
-                  tenant.emqTrend >= 0 ? 'text-success' : 'text-danger'
+                  account.emqTrend >= 0 ? 'text-success' : 'text-danger'
                 )}>
-                  {tenant.emqTrend >= 0 ? (
+                  {account.emqTrend >= 0 ? (
                     <ArrowTrendingUpIcon className="w-3 h-3" />
                   ) : (
                     <ArrowTrendingDownIcon className="w-3 h-3" />
                   )}
-                  {tenant.emqTrend >= 0 ? '+' : ''}{tenant.emqTrend}
+                  {account.emqTrend >= 0 ? '+' : ''}{account.emqTrend}
                 </div>
               </div>
 
               {/* Main Info */}
               <div className="flex-1">
                 <div className="flex items-center gap-3 mb-2">
-                  <h3 className="font-semibold text-white text-lg">{tenant.name}</h3>
+                  <h3 className="font-semibold text-white text-lg">{account.name}</h3>
                   <span className={cn(
                     'px-2 py-0.5 rounded-full text-xs',
-                    getStatusColor(tenant.emqStatus)
+                    getStatusColor(account.emqStatus)
                   )}>
-                    {tenant.emqStatus}
+                    {account.emqStatus}
                   </span>
                   <span className="px-2 py-0.5 rounded bg-surface-tertiary text-muted-foreground text-xs">
-                    {tenant.plan}
+                    {account.plan}
                   </span>
                 </div>
 
                 <div className="flex flex-wrap items-center gap-4 text-sm">
-                  <span className="text-muted-foreground">{tenant.industry}</span>
-                  <AutopilotModeBanner mode={tenant.autopilotMode} compact />
-                  {showPriceMetrics && tenant.budgetAtRisk > 0 && (
-                    <BudgetAtRiskChip amount={tenant.budgetAtRisk} />
+                  <span className="text-muted-foreground">{account.industry}</span>
+                  <AutopilotModeBanner mode={account.autopilotMode} compact />
+                  {showPriceMetrics && account.budgetAtRisk > 0 && (
+                    <BudgetAtRiskChip amount={account.budgetAtRisk} />
                   )}
-                  {tenant.activeIncidents > 0 && (
+                  {account.activeIncidents > 0 && (
                     <span className="flex items-center gap-1 text-warning">
                       <ExclamationTriangleIcon className="w-4 h-4" />
-                      {tenant.activeIncidents} incident{tenant.activeIncidents > 1 ? 's' : ''}
-                      {tenant.incidentOpenTime && (
-                        <span className="text-muted-foreground">({tenant.incidentOpenTime}h)</span>
+                      {account.activeIncidents} incident{account.activeIncidents > 1 ? 's' : ''}
+                      {account.incidentOpenTime && (
+                        <span className="text-muted-foreground">({account.incidentOpenTime}h)</span>
                       )}
                     </span>
                   )}
                 </div>
 
-                {tenant.notes && (
-                  <p className="mt-2 text-sm text-muted-foreground italic">{tenant.notes}</p>
+                {account.notes && (
+                  <p className="mt-2 text-sm text-muted-foreground italic">{account.notes}</p>
                 )}
               </div>
 
@@ -475,12 +482,12 @@ export default function Portfolio() {
                 <div className="text-right">
                   <div className="text-muted-foreground">ROAS</div>
                   <div className="flex items-center gap-1">
-                    <span className="text-white font-medium">{tenant.roas.toFixed(1)}x</span>
+                    <span className="text-white font-medium">{account.roas.toFixed(1)}x</span>
                     <span className={cn(
                       'text-xs',
-                      tenant.roasTrend >= 0 ? 'text-success' : 'text-danger'
+                      account.roasTrend >= 0 ? 'text-success' : 'text-danger'
                     )}>
-                      {tenant.roasTrend >= 0 ? '+' : ''}{tenant.roasTrend.toFixed(1)}
+                      {account.roasTrend >= 0 ? '+' : ''}{account.roasTrend.toFixed(1)}
                     </span>
                   </div>
                 </div>
@@ -488,29 +495,29 @@ export default function Portfolio() {
                 {showPriceMetrics && (
                 <div className="text-right">
                   <div className="text-muted-foreground">Spend</div>
-                  <div className="text-white font-medium">${(tenant.monthlySpend / 1000).toFixed(0)}k</div>
+                  <div className="text-white font-medium">${(account.monthlySpend / 1000).toFixed(0)}k</div>
                 </div>
                 )}
                 <div className="text-right">
                   <div className="text-muted-foreground">Renewal</div>
                   <div className={cn(
                     'font-medium',
-                    tenant.renewalDate && (tenant.renewalDate.getTime() - Date.now()) < 30 * 24 * 60 * 60 * 1000
+                    account.renewalDate && (account.renewalDate.getTime() - Date.now()) < 30 * 24 * 60 * 60 * 1000
                       ? 'text-warning'
                       : 'text-white'
                   )}>
-                    {formatDaysUntil(tenant.renewalDate)}
+                    {formatDaysUntil(account.renewalDate)}
                   </div>
                 </div>
                 <div className="text-right">
                   <div className="text-muted-foreground">Last Contact</div>
-                  <div className="text-white">{formatLastContact(tenant.lastContact)}</div>
+                  <div className="text-white">{formatLastContact(account.lastContact)}</div>
                 </div>
               </div>
 
               {/* Action */}
               <Link
-                to={`/dashboard/am/tenant/${tenant.id}`}
+                to={`/dashboard/am/tenant/${account.id}`}
                 className="flex items-center gap-1 px-4 py-2 rounded-lg bg-surface-tertiary text-muted-foreground hover:text-white transition-colors"
               >
                 View
@@ -520,9 +527,9 @@ export default function Portfolio() {
           </div>
         ))}
 
-        {filteredTenants.length === 0 && (
+        {filteredAccounts.length === 0 && (
           <div className="text-center py-12 text-muted-foreground">
-            No tenants found matching your filters.
+            No accounts found matching your filters.
           </div>
         )}
       </div>

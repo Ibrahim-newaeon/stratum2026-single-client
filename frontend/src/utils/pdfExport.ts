@@ -231,7 +231,7 @@ export async function generateClientReport(data: ReportData): Promise<void> {
 /**
  * Export dashboard screenshot as PDF
  */
-export async function exportDashboardPDF(tenantName: string): Promise<void> {
+export async function exportDashboardPDF(accountName: string): Promise<void> {
   const mainContent = document.querySelector('main')
   if (!mainContent) {
     // Main content not found
@@ -264,7 +264,7 @@ export async function exportDashboardPDF(tenantName: string): Promise<void> {
   pdf.text('STRATUM AI', 10, 12)
   pdf.setTextColor('#ffffff')
   pdf.setFontSize(10)
-  pdf.text(tenantName, 50, 12)
+  pdf.text(accountName, 50, 12)
   pdf.setTextColor('#9ca3af')
   pdf.setFontSize(8)
   pdf.text(new Date().toLocaleDateString(), 190, 12, { align: 'right' })
@@ -274,7 +274,7 @@ export async function exportDashboardPDF(tenantName: string): Promise<void> {
   pdf.addImage(imgData, 'PNG', 0, 25, imgWidth, imgHeight)
 
   // Save
-  const filename = `${tenantName.replace(/\s+/g, '_')}_Dashboard_${new Date().toISOString().split('T')[0]}.pdf`
+  const filename = `${accountName.replace(/\s+/g, '_')}_Dashboard_${new Date().toISOString().split('T')[0]}.pdf`
   pdf.save(filename)
 }
 

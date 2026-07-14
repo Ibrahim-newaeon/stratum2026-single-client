@@ -5,7 +5,7 @@
  */
 
 import { useState, useCallback, memo } from 'react'
-import { useParams, useNavigate } from 'react-router-dom'
+import { useNavigate } from 'react-router-dom'
 import {
   useTeamMembers,
   useInviteTeamMember,
@@ -145,7 +145,6 @@ const UserRow = memo(function UserRow({ user, onUpdateRole, onEdit, onRemove }: 
 })
 
 export default function TeamManagement() {
-  const { tenantId } = useParams<{ tenantId: string }>()
   const navigate = useNavigate()
   const { toast } = useToast()
 
@@ -290,7 +289,7 @@ export default function TeamManagement() {
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-4">
           <button
-            onClick={() => navigate(`/app/${tenantId}/settings`)}
+            onClick={() => navigate('/dashboard/settings')}
             className="p-2 rounded-lg hover:bg-accent transition-colors"
           >
             <ArrowLeftIcon className="h-5 w-5" />

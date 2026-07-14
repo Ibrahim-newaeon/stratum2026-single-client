@@ -73,15 +73,15 @@ interface IncidentRow {
 }
 
 export default function EMQDiagnostics() {
-  // Single-client app — no tenant scoping.
-  const tenantId = 1;
+  // Single-client app — no account scoping.
+  const accountId = 1;
   const [windowDays] = useState(14);
 
-  const scoreQuery = useEmqScore(tenantId);
-  const confidenceQuery = useConfidence(tenantId);
-  const playbookQuery = useEmqPlaybook(tenantId);
-  const incidentsQuery = useEmqIncidents(tenantId, isoDateNDaysAgo(windowDays), todayIso());
-  const updateItem = useUpdatePlaybookItem(tenantId);
+  const scoreQuery = useEmqScore(accountId);
+  const confidenceQuery = useConfidence(accountId);
+  const playbookQuery = useEmqPlaybook(accountId);
+  const incidentsQuery = useEmqIncidents(accountId, isoDateNDaysAgo(windowDays), todayIso());
+  const updateItem = useUpdatePlaybookItem(accountId);
 
   const score = scoreQuery.data;
   const confidence = confidenceQuery.data;
@@ -319,7 +319,7 @@ export default function EMQDiagnostics() {
         </ul>
       </Card>
 
-      <FixGuideSection tenantId={tenantId} />
+      <FixGuideSection accountId={accountId} />
 
       <Card className="p-6">
         <header className="mb-4 flex items-center justify-between">
@@ -347,9 +347,9 @@ export default function EMQDiagnostics() {
   );
 }
 
-function FixGuideSection({ tenantId }: { tenantId: number }) {
-  const playbookQuery = useQAFixesPlaybook(tenantId);
-  const historyQuery = useQAFixesHistory(tenantId, 5);
+function FixGuideSection({ accountId }: { accountId: number }) {
+  const playbookQuery = useQAFixesPlaybook(accountId);
+  const historyQuery = useQAFixesHistory(accountId, 5);
   const items: QAFixPlaybookItem[] = playbookQuery.data?.items ?? [];
   const history = historyQuery.data?.history ?? [];
 

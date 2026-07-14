@@ -59,8 +59,8 @@ export const metaCapiApi = {
     return response.data.data
   },
 
-  getQualityReport: async (tenantId: number): Promise<CAPIQualityReport> => {
-    const response = await apiClient.get<ApiResponse<CAPIQualityReport>>(`/meta-capi/quality/${tenantId}/report`)
+  getQualityReport: async (): Promise<CAPIQualityReport> => {
+    const response = await apiClient.get<ApiResponse<CAPIQualityReport>>('/meta-capi/quality/report')
     return response.data.data
   },
 
@@ -83,11 +83,10 @@ export function useMetaCapiValidateEvents() {
   })
 }
 
-export function useMetaCapiQualityReport(tenantId: number) {
+export function useMetaCapiQualityReport() {
   return useQuery({
-    queryKey: ['meta-capi', 'quality-report', tenantId],
-    queryFn: () => metaCapiApi.getQualityReport(tenantId),
-    enabled: !!tenantId,
+    queryKey: ['meta-capi', 'quality-report'],
+    queryFn: () => metaCapiApi.getQualityReport(),
     staleTime: 60 * 1000,
   })
 }

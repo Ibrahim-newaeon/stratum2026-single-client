@@ -2,7 +2,7 @@
  * Stratum AI - API Client
  *
  * Centralized axios client with authentication (single-client app —
- * no tenant context / X-Tenant-ID header).
+ * no per-account routing header).
  */
 
 import axios, { AxiosInstance, AxiosRequestConfig, AxiosError } from 'axios';

@@ -187,7 +187,7 @@ const EmbedWidgets = lazyWithRetry(() => import('./views/operate/EmbedWidgets'))
 
 // Account Manager views
 const AMPortfolio = lazyWithRetry(() => import('./views/am/Portfolio'));
-const AMTenantNarrative = lazyWithRetry(() => import('./views/am/TenantNarrative'));
+const AMAccountNarrative = lazyWithRetry(() => import('./views/am/AccountNarrative'));
 
 // Portal views (client VIEWER users)
 const PortalLayout = lazyWithRetry(() => import('./views/portal/PortalLayout'));
@@ -1448,7 +1448,7 @@ function App() {
                           path="am/tenant/:tenantId"
                           element={
                             <LazyRoute>
-                              <AMTenantNarrative />
+                              <AMAccountNarrative />
                             </LazyRoute>
                           }
                         />

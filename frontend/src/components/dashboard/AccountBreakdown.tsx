@@ -40,7 +40,7 @@ type SortField = 'spend' | 'revenue' | 'roas' | 'conversions' | 'campaign_count'
 type SortDir = 'asc' | 'desc';
 
 interface AccountBreakdownProps {
-  tenantId: number;
+  accountId: number;
   className?: string;
 }
 
@@ -57,7 +57,7 @@ const formatNumber = (value: number): string => {
 };
 
 export const AccountBreakdown: React.FC<AccountBreakdownProps> = ({
-  tenantId,
+  accountId,
   className,
 }) => {
   const [platformFilter, setPlatformFilter] = useState<string | undefined>();
@@ -66,7 +66,7 @@ export const AccountBreakdown: React.FC<AccountBreakdownProps> = ({
   const [expandedAccount, setExpandedAccount] = useState<string | null>(null);
 
   const { data: accounts, isLoading, error } = useAccountBreakdown(platformFilter);
-  const { data: signalHealth } = useAccountSignalHealth(tenantId, platformFilter);
+  const { data: signalHealth } = useAccountSignalHealth(accountId, platformFilter);
 
   // Build signal health lookup
   const healthLookup = useMemo(() => {

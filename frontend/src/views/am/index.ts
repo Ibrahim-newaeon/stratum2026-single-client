@@ -6,4 +6,4 @@
  */
 
 export { default as Portfolio } from './Portfolio'
-export { default as TenantNarrative } from './TenantNarrative'
+export { default as AccountNarrative } from './AccountNarrative'

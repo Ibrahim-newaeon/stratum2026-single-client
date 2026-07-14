@@ -1,8 +1,15 @@
 /**
- * Tenant Narrative (Account Manager Client Story View)
+ * Account Narrative (Account Manager Client Story View)
  *
- * Detailed view of a specific tenant for client communication
+ * Detailed view of a specific account for client communication
  * Shows "what changed", timeline, blocked actions, and fix playbook
+ *
+ * NOTE(STRAT-SC-001/D3): the backend `/admin/*` router this view's data
+ * (via useTenant/useTenants -> api/admin.ts) depends on does not exist
+ * post-conversion. This feature is non-functional pending a product
+ * decision on whether to rebuild it against a real endpoint or delete
+ * it outright. See E3 known-issues list. Identifiers below were renamed
+ * tenant->account for terminology consistency only; no behavior changed.
  */
 
 import { useState } from 'react'
@@ -59,10 +66,10 @@ interface RecoveryMetric {
 
 const COST_KPI_IDS = ['spend', 'revenue', 'roas', 'cpa']
 
-export default function TenantNarrative() {
-  const { tenantId } = useParams<{ tenantId: string }>()
+export default function AccountNarrative() {
+  const { tenantId: accountId } = useParams<{ tenantId: string }>()
   const { showPriceMetrics } = usePriceMetrics()
-  const tid = parseInt(tenantId || '', 10)
+  const tid = parseInt(accountId || '', 10)
 
   const [activeTab, setActiveTab] = useState<'summary' | 'timeline' | 'blocked' | 'playbook'>('summary')
 
@@ -73,7 +80,7 @@ export default function TenantNarrative() {
   }
 
   // Fetch data
-  const { data: tenantData } = useTenant(tid)
+  const { data: accountData } = useTenant(tid)
   const { data: emqData } = useEmqScore(tid)
   const { data: autopilotData } = useAutopilotState(tid)
   const { data: playbookData } = useEmqPlaybook(tid)
@@ -83,11 +90,11 @@ export default function TenantNarrative() {
   const autopilotMode: AutopilotMode = autopilotData?.mode ?? 'cuts_only'
   const budgetAtRisk = autopilotData?.budgetAtRisk ?? 12000
 
-  // Sample tenant details
-  const tenant = {
-    id: tenantId,
-    name: tenantData?.name ?? 'Fashion Forward',
-    industry: (tenantData as (typeof tenantData & { industry?: string }) | undefined)?.industry ?? 'Retail',
+  // Sample account details
+  const account = {
+    id: accountId,
+    name: accountData?.name ?? 'Fashion Forward',
+    industry: (accountData as (typeof accountData & { industry?: string }) | undefined)?.industry ?? 'Retail',
     plan: 'Pro',
     primaryContact: {
       name: 'Jennifer Smith',
@@ -272,7 +279,7 @@ export default function TenantNarrative() {
         printWindow.document.write(`
           <html>
             <head>
-              <title>Client Narrative - ${tenantId}</title>
+              <title>Client Narrative - ${accountId}</title>
               <style>
                 body { font-family: system-ui, sans-serif; padding: 2rem; color: #1a1a1a; }
                 h1, h2, h3 { color: #111; }
@@ -314,12 +321,12 @@ export default function TenantNarrative() {
           </Link>
           <div>
             <div className="flex items-center gap-3">
-              <h1 className="text-2xl font-bold text-white">{tenant.name}</h1>
+              <h1 className="text-2xl font-bold text-white">{account.name}</h1>
               <span className="px-2 py-1 rounded-full text-xs bg-stratum-500/10 text-stratum-400">
-                {tenant.plan}
+                {account.plan}
               </span>
             </div>
-            <p className="text-muted-foreground">{tenant.industry}</p>
+            <p className="text-muted-foreground">{account.industry}</p>
           </div>
         </div>
         <div className="flex items-center gap-3">
@@ -346,33 +353,33 @@ export default function TenantNarrative() {
         <div className="flex items-center gap-3">
           <div className="w-10 h-10 rounded-full bg-stratum-500/20 flex items-center justify-center">
             <span className="text-stratum-400 font-semibold">
-              {tenant.primaryContact.name.split(' ').map(n => n[0]).join('')}
+              {account.primaryContact.name.split(' ').map(n => n[0]).join('')}
             </span>
           </div>
           <div>
-            <div className="text-white font-medium">{tenant.primaryContact.name}</div>
+            <div className="text-white font-medium">{account.primaryContact.name}</div>
             <div className="text-sm text-muted-foreground">Primary Contact</div>
           </div>
         </div>
         <div className="flex items-center gap-2 text-muted-foreground">
           <EnvelopeIcon className="w-4 h-4" />
-          <span>{tenant.primaryContact.email}</span>
+          <span>{account.primaryContact.email}</span>
         </div>
         <div className="flex items-center gap-2 text-muted-foreground">
           <PhoneIcon className="w-4 h-4" />
-          <span>{tenant.primaryContact.phone}</span>
+          <span>{account.primaryContact.phone}</span>
         </div>
         <div className="ml-auto flex items-center gap-4 text-sm">
           <div>
             <span className="text-muted-foreground">Last Contact:</span>
             <span className="text-white ml-2">
-              {Math.floor((Date.now() - tenant.lastContact.getTime()) / (24 * 60 * 60 * 1000))} days ago
+              {Math.floor((Date.now() - account.lastContact.getTime()) / (24 * 60 * 60 * 1000))} days ago
             </span>
           </div>
           <div>
             <span className="text-muted-foreground">Renewal:</span>
             <span className="text-warning ml-2">
-              {Math.floor((tenant.renewalDate.getTime() - Date.now()) / (24 * 60 * 60 * 1000))} days
+              {Math.floor((account.renewalDate.getTime() - Date.now()) / (24 * 60 * 60 * 1000))} days
             </span>
           </div>
         </div>
