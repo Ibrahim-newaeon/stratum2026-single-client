@@ -780,6 +780,32 @@ class TestAuthRegister:
         assert r.status_code == 422
 
     @pytest.mark.asyncio
+    async def test_register_disabled_when_public_signup_off(self, api_client, mock_db):
+        """POST /register returns 403 before ANY side effect when
+        ENABLE_PUBLIC_SIGNUP is false (single-client: invite-only)."""
+        from app.core.config import settings
+
+        fake_redis = AsyncMock()  # would be hit by the verification lookup
+        with (
+            patch.object(settings, "enable_public_signup", False),
+            patch(
+                "app.api.v1.endpoints.auth.get_redis_client",
+                new=AsyncMock(return_value=fake_redis),
+            ),
+        ):
+            r = await api_client.post(
+                f"{AUTH_PREFIX}/register",
+                json={
+                    "email": "new@example.com",
+                    "password": "ValidPass1",
+                    "verification_token": "irrelevant",
+                },
+            )
+        assert r.status_code == 403
+        assert "signup is disabled" in r.json()["detail"].lower()
+        fake_redis.get.assert_not_called()  # gate fired before side effects
+
+    @pytest.mark.asyncio
     async def test_register_invalid_verification(self, api_client, mock_db):
         """POST /register without a valid verification token returns 400.
 
