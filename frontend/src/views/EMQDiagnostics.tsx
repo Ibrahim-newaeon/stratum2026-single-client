@@ -18,7 +18,6 @@ import {
   Minus,
 } from 'lucide-react';
 
-import { useTenantStore, selectTenantId } from '@/stores/tenantStore';
 import { useQAFixesPlaybook, useQAFixesHistory, type QAFixPlaybookItem } from '@/api/qaFixes';
 import {
   useEmqScore,
@@ -74,7 +73,8 @@ interface IncidentRow {
 }
 
 export default function EMQDiagnostics() {
-  const tenantId = useTenantStore(selectTenantId) ?? 0;
+  // Single-client app — no tenant scoping.
+  const tenantId = 1;
   const [windowDays] = useState(14);
 
   const scoreQuery = useEmqScore(tenantId);
@@ -92,16 +92,6 @@ export default function EMQDiagnostics() {
     if (!score?.score || score.previousScore == null) return undefined;
     return { value: score.score - score.previousScore, format: 'absolute' as const };
   }, [score]);
-
-  if (!tenantId) {
-    return (
-      <div className="p-6">
-        <Card className="p-8 text-center text-muted-foreground">
-          Select a tenant to view EMQ diagnostics.
-        </Card>
-      </div>
-    );
-  }
 
   const incidentColumns: DataTableColumn<IncidentRow>[] = [
     {

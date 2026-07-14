@@ -101,18 +101,6 @@ export function clearSentryUser() {
 }
 
 /**
- * Set tenant context for multi-tenant tracking
- */
-export function setSentryTenant(tenantId: number, tenantName?: string) {
-  if (!SENTRY_DSN) return;
-
-  Sentry.setTag('tenant_id', tenantId.toString());
-  if (tenantName) {
-    Sentry.setTag('tenant_name', tenantName);
-  }
-}
-
-/**
  * Capture a custom error with additional context
  */
 export function captureError(error: Error, context?: Record<string, unknown>) {

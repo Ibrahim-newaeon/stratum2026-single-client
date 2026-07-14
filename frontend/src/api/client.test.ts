@@ -1,9 +1,8 @@
 /**
  * Stratum AI - API Client Tests
  *
- * Tests for token management, tenant ID management,
- * request interceptors (auth + tenant headers), and
- * response interceptor (401 handling + token refresh mutex).
+ * Tests for token management, request interceptors (auth headers),
+ * and response interceptor (401 handling + token refresh mutex).
  */
 
 import { describe, it, expect, vi, beforeEach } from 'vitest';
@@ -37,37 +36,10 @@ const mockSessionStorage = (() => {
 
 Object.defineProperty(window, 'sessionStorage', { value: mockSessionStorage });
 
-// Mock localStorage for tenant_id (still uses localStorage)
-const mockLocalStorage = (() => {
-  let store: Record<string, string> = {};
-  return {
-    getItem: vi.fn((key: string) => store[key] ?? null),
-    setItem: vi.fn((key: string, value: string) => {
-      store[key] = value;
-    }),
-    removeItem: vi.fn((key: string) => {
-      delete store[key];
-    }),
-    clear: vi.fn(() => {
-      store = {};
-    }),
-    get length() {
-      return Object.keys(store).length;
-    },
-    key: vi.fn((index: number) => Object.keys(store)[index] ?? null),
-    _reset: () => {
-      store = {};
-    },
-    _getStore: () => store,
-  };
-})();
-
-Object.defineProperty(window, 'localStorage', { value: mockLocalStorage });
-
 // ---------------------------------------------------------------------------
-// Import AFTER localStorage mock is in place
+// Import
 // ---------------------------------------------------------------------------
-import { apiClient, setAccessToken, getAccessToken, setTenantId, getTenantId } from './client';
+import { apiClient, setAccessToken, getAccessToken } from './client';
 
 // ---------------------------------------------------------------------------
 // Helpers
@@ -76,20 +48,13 @@ import { apiClient, setAccessToken, getAccessToken, setTenantId, getTenantId } f
 /** Reset module-level state by clearing tokens + storage */
 function resetClientState() {
   setAccessToken(null);
-  setTenantId(null);
   mockSessionStorage._reset();
-  mockLocalStorage._reset();
   // Restore the original implementation (mockClear only clears calls, not mockImplementation)
   mockSessionStorage.getItem.mockImplementation(
     (key: string) => mockSessionStorage._getStore()[key] ?? null
   );
   mockSessionStorage.setItem.mockClear();
   mockSessionStorage.removeItem.mockClear();
-  mockLocalStorage.getItem.mockImplementation(
-    (key: string) => mockLocalStorage._getStore()[key] ?? null
-  );
-  mockLocalStorage.setItem.mockClear();
-  mockLocalStorage.removeItem.mockClear();
 }
 
 // =============================================================================
@@ -128,44 +93,6 @@ describe('API Client - Token Management', () => {
   });
 });
 
-describe('API Client - Tenant ID Management', () => {
-  beforeEach(resetClientState);
-
-  it('setTenantId stores the tenant ID and persists to localStorage', () => {
-    setTenantId(42);
-
-    expect(getTenantId()).toBe(42);
-    expect(mockLocalStorage.setItem).toHaveBeenCalledWith('tenant_id', '42');
-  });
-
-  it('setTenantId(null) removes from localStorage', () => {
-    setTenantId(42);
-    mockLocalStorage.removeItem.mockClear();
-
-    setTenantId(null);
-
-    expect(mockLocalStorage.removeItem).toHaveBeenCalledWith('tenant_id');
-  });
-
-  it('getTenantId returns null when nothing is stored', () => {
-    setTenantId(null);
-    mockLocalStorage._reset();
-
-    const id = getTenantId();
-    expect(id).toBeNull();
-  });
-
-  it('getTenantId reads from localStorage when in-memory value is null', () => {
-    setTenantId(null);
-    mockLocalStorage._reset();
-    // Directly write to the mock store
-    mockLocalStorage._getStore()['tenant_id'] = '99';
-
-    const id = getTenantId();
-    expect(id).toBe(99);
-  });
-});
-
 describe('API Client - Request Interceptor', () => {
   beforeEach(resetClientState);
 
@@ -180,14 +107,12 @@ describe('API Client - Request Interceptor', () => {
     expect(config.headers.Authorization).toBe('Bearer my-token');
   });
 
-  it('adds X-Tenant-ID header', async () => {
-    setTenantId(7);
-
+  it('does NOT add an X-Tenant-ID header (single-client app; no tenancy header)', async () => {
     const config = await (apiClient.interceptors.request as any).handlers[0].fulfilled({
       headers: {},
     });
 
-    expect(config.headers['X-Tenant-ID']).toBe('7');
+    expect(config.headers['X-Tenant-ID']).toBeUndefined();
   });
 
   it('does NOT add X-Superadmin-Bypass header (removed for security)', async () => {

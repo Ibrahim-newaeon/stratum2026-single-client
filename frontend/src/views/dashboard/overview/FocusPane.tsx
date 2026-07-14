@@ -30,7 +30,6 @@ import { LineChart } from '@/components/primitives/Chart';
 import { StatusPill } from '@/components/primitives/StatusPill';
 import { ConfirmDrawer } from '@/components/primitives/ConfirmDrawer';
 import { useApproveAction, useDismissAction } from '@/api/autopilot';
-import { useAuth } from '@/contexts/AuthContext';
 import { cn } from '@/lib/utils';
 import { mockTrustHolds, mockSignalDrop, mockPacingBreaches, mockRevenueSpend } from './mockData';
 import type { AutopilotDecisionRow, FocusKey, PacingBreachRow, TrustHoldRow } from './types';
@@ -86,8 +85,8 @@ const TRUST_ACTION_ICON: Record<TrustHoldRow['recommendedAction'], typeof Pause>
 };
 
 function TrustHoldsView({ rows, loading }: { rows: TrustHoldRow[]; loading?: boolean }) {
-  const { user } = useAuth();
-  const tenantId = user?.tenant_id ?? 0;
+  // Single-client app — no tenant scoping.
+  const tenantId = 1;
   const approve = useApproveAction(tenantId);
   const dismiss = useDismissAction(tenantId);
 

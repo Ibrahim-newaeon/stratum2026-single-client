@@ -30,12 +30,12 @@ export const apiReferenceArticles: DocArticle[] = [
       { type: 'heading', text: 'The delivery payload' },
       {
         type: 'paragraph',
-        text: 'Each delivery has a stable envelope: a unique event id, an event type, a timestamp, the tenant id, and a typed data object. Use the id for idempotency so a redelivery is processed at most once.',
+        text: 'Each delivery has a stable envelope: a unique event id, an event type, a timestamp, and a typed data object. Use the id for idempotency so a redelivery is processed at most once.',
       },
       {
         type: 'code',
         language: 'json',
-        code: '{\n  "id": "evt_9f3a1c2b",\n  "type": "signal_health.changed",\n  "created_at": "2026-06-07T14:22:08Z",\n  "tenant_id": "wsp_3k8d",\n  "data": {\n    "signal_id": "sig_meta_capi",\n    "previous_score": 72,\n    "current_score": 58,\n    "state": "degraded"\n  }\n}',
+        code: '{\n  "id": "evt_9f3a1c2b",\n  "type": "signal_health.changed",\n  "created_at": "2026-06-07T14:22:08Z",\n  "data": {\n    "signal_id": "sig_meta_capi",\n    "previous_score": 72,\n    "current_score": 58,\n    "state": "degraded"\n  }\n}',
       },
       { type: 'heading', text: 'Verify the signature' },
       {

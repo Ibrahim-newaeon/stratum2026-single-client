@@ -1,7 +1,8 @@
 /**
- * Stratum AI - Tenant Store
+ * Stratum AI - App Store
  *
- * Zustand store for managing tenant context and user session state.
+ * Zustand store for managing session/user state and dashboard UI
+ * preferences. Single-client app — no tenant context, no tenant ID.
  */
 
 import { create } from 'zustand';
@@ -37,26 +38,7 @@ export interface User {
   created_at: string;
 }
 
-export interface Tenant {
-  id: number;
-  name: string;
-  slug: string;
-  domain: string | null;
-  plan: string;
-  plan_expires_at: string | null;
-  max_users: number;
-  max_campaigns: number;
-  settings: Record<string, any>;
-  feature_flags: Record<string, boolean>;
-  created_at: string;
-  updated_at: string;
-}
-
-export interface TenantState {
-  // Current tenant context
-  tenantId: number | null;
-  tenant: Tenant | null;
-
+export interface AppState {
   // Current user
   user: User | null;
 
@@ -73,14 +55,17 @@ export interface TenantState {
   // Platform filter
   selectedPlatforms: string[];
 
+  // Brand filter (spec §5.4) — the active Brand/client scope for
+  // MANAGER/ANALYST views; null means "all brands".
+  selectedBrand: string | null;
+
   // Actions
-  setTenantId: (tenantId: number | null) => void;
-  setTenant: (tenant: Tenant | null) => void;
   setUser: (user: User | null) => void;
   setOwnerMode: (enabled: boolean) => void;
   setOwnerBypass: (enabled: boolean) => void;
   setDateRange: (start: string, end: string) => void;
   setSelectedPlatforms: (platforms: string[]) => void;
+  setSelectedBrand: (brand: string | null) => void;
   logout: () => void;
 
   // Computed
@@ -105,37 +90,19 @@ const initialDateRange = () => {
   };
 };
 
-export const useTenantStore = create<TenantState>()(
+export const useAppStore = create<AppState>()(
   devtools(
     persist(
       (set, get) => ({
         // Initial state
-        tenantId: null,
-        tenant: null,
         user: null,
         isOwnerMode: false,
         ownerBypass: false,
         dateRange: initialDateRange(),
         selectedPlatforms: [],
+        selectedBrand: null,
 
         // Actions
-        setTenantId: (tenantId) => {
-          set({ tenantId });
-          // Also update localStorage for API client
-          if (tenantId) {
-            localStorage.setItem('tenant_id', String(tenantId));
-          } else {
-            localStorage.removeItem('tenant_id');
-          }
-        },
-
-        setTenant: (tenant) => {
-          set({ tenant, tenantId: tenant?.id ?? null });
-          if (tenant) {
-            localStorage.setItem('tenant_id', String(tenant.id));
-          }
-        },
-
         setUser: (user) => {
           set({ user });
           // Auto-enable owner mode if user is owner
@@ -168,16 +135,18 @@ export const useTenantStore = create<TenantState>()(
           set({ selectedPlatforms: platforms });
         },
 
+        setSelectedBrand: (brand) => {
+          set({ selectedBrand: brand });
+        },
+
         logout: () => {
           set({
-            tenantId: null,
-            tenant: null,
             user: null,
             isOwnerMode: false,
             ownerBypass: false,
             selectedPlatforms: [],
+            selectedBrand: null,
           });
-          localStorage.removeItem('tenant_id');
           localStorage.removeItem('access_token');
           localStorage.removeItem('refresh_token');
         },
@@ -199,26 +168,27 @@ export const useTenantStore = create<TenantState>()(
           return roles.includes(state.user.role);
         },
 
-        hasFeature: (feature) => {
-          const state = get();
-          if (!state.tenant?.feature_flags) return false;
-          return state.tenant.feature_flags[feature] === true;
+        // Feature flags are no longer tenant-scoped (single-client app);
+        // global feature flags live in useFeatureFlagsStore. Kept as a
+        // no-op for API compatibility with existing callers.
+        hasFeature: () => {
+          return false;
         },
       }),
       {
-        name: 'stratum-tenant-store',
+        name: 'stratum-app-store',
         storage: createJSONStorage(() => localStorage),
         // Only persist non-sensitive UI preferences — never persist privilege
         // escalation flags like ownerBypass (must be re-asserted each session).
         partialize: (state) => ({
-          tenantId: state.tenantId,
           dateRange: state.dateRange,
           selectedPlatforms: state.selectedPlatforms,
+          selectedBrand: state.selectedBrand,
           isOwnerMode: state.isOwnerMode,
         }),
       }
     ),
-    { name: 'TenantStore' }
+    { name: 'AppStore' }
   )
 );
 
@@ -226,46 +196,42 @@ export const useTenantStore = create<TenantState>()(
 // Selectors (for optimized re-renders)
 // =============================================================================
 
-export const selectTenantId = (state: TenantState) => state.tenantId;
-export const selectTenant = (state: TenantState) => state.tenant;
-export const selectUser = (state: TenantState) => state.user;
-export const selectIsOwnerMode = (state: TenantState) => state.isOwnerMode;
-export const selectDateRange = (state: TenantState) => state.dateRange;
-export const selectSelectedPlatforms = (state: TenantState) => state.selectedPlatforms;
+export const selectUser = (state: AppState) => state.user;
+export const selectIsOwnerMode = (state: AppState) => state.isOwnerMode;
+export const selectDateRange = (state: AppState) => state.dateRange;
+export const selectSelectedPlatforms = (state: AppState) => state.selectedPlatforms;
+export const selectSelectedBrand = (state: AppState) => state.selectedBrand;
 
 // =============================================================================
 // Hooks for specific state slices
 // =============================================================================
 
-export const useTenantId = () => useTenantStore(selectTenantId);
-export const useTenant = () => useTenantStore(selectTenant);
-export const useUser = () => useTenantStore(selectUser);
-export const useIsOwnerMode = () => useTenantStore(selectIsOwnerMode);
-export const useDateRange = () => useTenantStore(selectDateRange);
-export const useSelectedPlatforms = () => useTenantStore(selectSelectedPlatforms);
+export const useUser = () => useAppStore(selectUser);
+export const useIsOwnerMode = () => useAppStore(selectIsOwnerMode);
+export const useDateRange = () => useAppStore(selectDateRange);
+export const useSelectedPlatforms = () => useAppStore(selectSelectedPlatforms);
+export const useSelectedBrand = () => useAppStore(selectSelectedBrand);
 
 // =============================================================================
 // Action hooks
 // =============================================================================
 
-export const useTenantActions = () => {
-  const setTenantId = useTenantStore((state) => state.setTenantId);
-  const setTenant = useTenantStore((state) => state.setTenant);
-  const setUser = useTenantStore((state) => state.setUser);
-  const setOwnerMode = useTenantStore((state) => state.setOwnerMode);
-  const setOwnerBypass = useTenantStore((state) => state.setOwnerBypass);
-  const setDateRange = useTenantStore((state) => state.setDateRange);
-  const setSelectedPlatforms = useTenantStore((state) => state.setSelectedPlatforms);
-  const logout = useTenantStore((state) => state.logout);
+export const useAppActions = () => {
+  const setUser = useAppStore((state) => state.setUser);
+  const setOwnerMode = useAppStore((state) => state.setOwnerMode);
+  const setOwnerBypass = useAppStore((state) => state.setOwnerBypass);
+  const setDateRange = useAppStore((state) => state.setDateRange);
+  const setSelectedPlatforms = useAppStore((state) => state.setSelectedPlatforms);
+  const setSelectedBrand = useAppStore((state) => state.setSelectedBrand);
+  const logout = useAppStore((state) => state.logout);
 
   return {
-    setTenantId,
-    setTenant,
     setUser,
     setOwnerMode,
     setOwnerBypass,
     setDateRange,
     setSelectedPlatforms,
+    setSelectedBrand,
     logout,
   };
 };

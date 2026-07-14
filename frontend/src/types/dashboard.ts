@@ -144,7 +144,6 @@ export interface User {
   name: string;
   company: string;
   role: 'owner' | 'admin' | 'manager' | 'analyst' | 'viewer';
-  tenant_id: string;
   avatar_url?: string;
 }
 

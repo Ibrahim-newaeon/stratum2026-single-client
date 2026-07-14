@@ -80,8 +80,12 @@ function formatTime(iso: string | undefined): string {
 
 export function useOverviewData(): OverviewData {
   const { user } = useAuth();
-  const tenantId = user?.tenant_id ?? 0;
-  const enabled = tenantId > 0;
+  // Single-client app — no tenant scoping. The "no tenant context" case
+  // really meant "not authenticated yet" (demo/unauthenticated), so key
+  // off the presence of a user instead of the removed per-user tenant
+  // identifier.
+  const enabled = !!user;
+  const tenantId = 1;
 
   const overviewQuery = useDashboardOverview('today', enabled);
   const signalHealthQuery = useDashboardSignalHealth(enabled);

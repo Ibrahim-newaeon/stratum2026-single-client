@@ -10,7 +10,6 @@ import { apiClient, ApiResponse, PaginatedResponse } from './client'
 // Types
 export interface Client {
   id: number
-  tenant_id: number
   name: string
   slug: string
   logo_url?: string
@@ -36,7 +35,6 @@ export interface Client {
 
 export interface ClientListItem {
   id: number
-  tenant_id: number
   name: string
   slug: string
   industry?: string

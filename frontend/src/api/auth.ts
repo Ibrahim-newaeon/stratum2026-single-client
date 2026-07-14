@@ -14,7 +14,6 @@ export interface User {
   email: string;
   name: string;
   role: 'owner' | 'admin' | 'manager' | 'analyst' | 'viewer';
-  tenant_id: number | null;
   is_active: boolean;
   is_verified: boolean;
   preferences?: Record<string, unknown>;

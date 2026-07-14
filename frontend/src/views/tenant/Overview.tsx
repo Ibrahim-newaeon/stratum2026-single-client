@@ -30,7 +30,6 @@ import { useTenantOverview, useTenantRecommendations } from '@/api/hooks'
 import { useApproveAction, useDismissAction, useQueueAction } from '@/api/autopilot'
 import { TrustGatePanel } from '@/components/trust/TrustGatePanel'
 import { EmergencyStop } from '@/components/autopilot/EmergencyStop'
-import { useTenantId } from '@/stores/tenantStore'
 import { useToast } from '@/components/ui/use-toast'
 import { exportDashboardPDF } from '@/utils/pdfExport'
 import { DocumentArrowDownIcon, CalendarIcon } from '@heroicons/react/24/outline'
@@ -40,11 +39,9 @@ export default function TenantOverview() {
   const { tenantId } = useParams<{ tenantId: string }>()
   const navigate = useNavigate()
   const { toast } = useToast()
-  const sessionTenantId = useTenantId()
   // /dashboard/trust mounts this view with no :tenantId URL segment —
-  // fall back to the session tenant so tenant-scoped calls hit the right
-  // tenant instead of the hardcoded 1.
-  const tid = tenantId ? parseInt(tenantId, 10) : (sessionTenantId ?? 1)
+  // single-client app, so fall back to the fixed account ID.
+  const tid = tenantId ? parseInt(tenantId, 10) : 1
 
   // Date range state
   const [dateRange, setDateRange] = useState({

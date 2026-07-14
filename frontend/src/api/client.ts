@@ -1,8 +1,8 @@
 /**
  * Stratum AI - API Client
  *
- * Centralized axios client with tenant context and authentication.
- * Re-exports the existing api client with tenant-aware features.
+ * Centralized axios client with authentication (single-client app —
+ * no tenant context / X-Tenant-ID header).
  */
 
 import axios, { AxiosInstance, AxiosRequestConfig, AxiosError } from 'axios';
@@ -40,39 +40,13 @@ export const getAccessToken = (): string | null => {
   return accessToken;
 };
 
-// Tenant ID management
-let currentTenantId: number | null = null;
-
-export const setTenantId = (tenantId: number | null) => {
-  currentTenantId = tenantId;
-  if (tenantId) {
-    localStorage.setItem('tenant_id', String(tenantId));
-  } else {
-    localStorage.removeItem('tenant_id');
-  }
-};
-
-export const getTenantId = (): number | null => {
-  if (!currentTenantId) {
-    const stored = localStorage.getItem('tenant_id');
-    currentTenantId = stored ? parseInt(stored, 10) : null;
-  }
-  return currentTenantId;
-};
-
-// Request interceptor - add auth token and tenant ID
+// Request interceptor - add auth token
 // NOTE: X-Superadmin-Bypass removed — bypass must be validated server-side only
 apiClient.interceptors.request.use(
   (config) => {
     const token = getAccessToken();
     if (token && config.headers) {
       config.headers.Authorization = `Bearer ${token}`;
-    }
-
-    // Add tenant ID header
-    const tenantId = getTenantId();
-    if (tenantId && config.headers) {
-      config.headers['X-Tenant-ID'] = String(tenantId);
     }
 
     // Let axios set the correct Content-Type with boundary for FormData

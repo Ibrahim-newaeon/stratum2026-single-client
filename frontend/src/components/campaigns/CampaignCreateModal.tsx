@@ -20,7 +20,7 @@ import {
   Bookmark,
 } from 'lucide-react'
 import { cn } from '@/lib/utils'
-import apiClient, { getTenantId } from '@/api/client'
+import apiClient from '@/api/client'
 
 interface CampaignCreateModalProps {
   open: boolean
@@ -138,11 +138,8 @@ export function CampaignCreateModal({ open, onClose, onSuccess }: CampaignCreate
   // Fetch ad accounts and audiences when platform changes
   useEffect(() => {
     if (formData.platform) {
-      const tenantId = getTenantId()
-      if (!tenantId) {
-        setIsLoadingAccounts(false)
-        return
-      }
+      // Single-client app — no tenant scoping.
+      const tenantId = 1
 
       // Fetch ad accounts from campaign-builder endpoint
       setIsLoadingAccounts(true)

@@ -2,9 +2,9 @@
  * Deterministic mock data for the Overview composition.
  *
  * The real API has hooks for `useDashboardOverview`, `useTrustStatus`,
- * `useDashboardSignalHealth`, etc. — but they require a tenant_id, demo
- * credentials, and live backend wiring that's out of scope for the
- * primitives-rebuild commit. Phase 3 ships the composition + UI contract;
+ * `useDashboardSignalHealth`, etc. — but they require an authenticated
+ * session, demo credentials, and live backend wiring that's out of scope
+ * for the primitives-rebuild commit. Phase 3 ships the composition + UI contract;
  * a follow-up commit replaces these mocks with the live hooks.
  *
  * Every mock here matches the shape the UI sub-components expect, so

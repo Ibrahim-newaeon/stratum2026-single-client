@@ -5,7 +5,7 @@
 
 import { createContext, ReactNode, useCallback, useContext, useEffect, useMemo, useState } from 'react';
 import { queryClient } from '@/lib/queryClient';
-import { useTenantStore } from '@/stores/tenantStore';
+import { useAppStore } from '@/stores/appStore';
 import { useIdleTimeout } from '@/hooks/useIdleTimeout';
 import IdleTimeoutWarning from '@/components/auth/IdleTimeoutWarning';
 
@@ -31,11 +31,11 @@ let _demoCreds: Record<string, { email: string; password: string; user: User }> 
 function getDemoCredentials(): Record<string, { email: string; password: string; user: User }> {
   if (!_demoCreds) {
     _demoCreds = {
-      owner: { email: 'demo-owner@stratum.ai', password: 'demo-only-not-real', user: { id: 'demo-sa-001', email: 'demo-owner@stratum.ai', name: 'Demo Owner', role: 'owner', organization: 'Demo Organization', permissions: ['all'], tenant_id: 1, user_type: 'agency', cms_role: 'super_admin' } },
-      admin: { email: 'demo-admin@stratum.ai', password: 'demo-only-not-real', user: { id: 'demo-admin-001', email: 'demo-admin@stratum.ai', name: 'Demo Admin', role: 'admin', organization: 'Demo Commerce', permissions: ['all'], tenant_id: 1, user_type: 'agency', cms_role: 'admin' } },
-      manager: { email: 'demo-manager@stratum.ai', password: 'demo-only-not-real', user: { id: 'demo-mgr-001', email: 'demo-manager@stratum.ai', name: 'Demo Manager', role: 'manager', organization: 'Demo Commerce', permissions: ['read'], tenant_id: 1, user_type: 'agency' } },
-      analyst: { email: 'demo-analyst@stratum.ai', password: 'demo-only-not-real', user: { id: 'demo-analyst-001', email: 'demo-analyst@stratum.ai', name: 'Demo Analyst', role: 'analyst', organization: 'Demo Commerce', permissions: ['read'], tenant_id: 1, user_type: 'agency' } },
-      viewer: { email: 'demo-viewer@stratum.ai', password: 'demo-only-not-real', user: { id: 'demo-viewer-001', email: 'demo-viewer@stratum.ai', name: 'Demo Client Viewer', role: 'viewer', organization: 'Demo Commerce', permissions: ['read'], tenant_id: 1, user_type: 'portal', client_id: 1 } },
+      owner: { email: 'demo-owner@stratum.ai', password: 'demo-only-not-real', user: { id: 'demo-sa-001', email: 'demo-owner@stratum.ai', name: 'Demo Owner', role: 'owner', organization: 'Demo Organization', permissions: ['all'], user_type: 'agency', cms_role: 'super_admin' } },
+      admin: { email: 'demo-admin@stratum.ai', password: 'demo-only-not-real', user: { id: 'demo-admin-001', email: 'demo-admin@stratum.ai', name: 'Demo Admin', role: 'admin', organization: 'Demo Commerce', permissions: ['all'], user_type: 'agency', cms_role: 'admin' } },
+      manager: { email: 'demo-manager@stratum.ai', password: 'demo-only-not-real', user: { id: 'demo-mgr-001', email: 'demo-manager@stratum.ai', name: 'Demo Manager', role: 'manager', organization: 'Demo Commerce', permissions: ['read'], user_type: 'agency' } },
+      analyst: { email: 'demo-analyst@stratum.ai', password: 'demo-only-not-real', user: { id: 'demo-analyst-001', email: 'demo-analyst@stratum.ai', name: 'Demo Analyst', role: 'analyst', organization: 'Demo Commerce', permissions: ['read'], user_type: 'agency' } },
+      viewer: { email: 'demo-viewer@stratum.ai', password: 'demo-only-not-real', user: { id: 'demo-viewer-001', email: 'demo-viewer@stratum.ai', name: 'Demo Client Viewer', role: 'viewer', organization: 'Demo Commerce', permissions: ['read'], user_type: 'portal', client_id: 1 } },
     };
   }
   return _demoCreds;
@@ -59,7 +59,6 @@ export interface User {
   avatar?: string;
   organization?: string;
   permissions: string[];
-  tenant_id?: number | null;
   /** "agency" (default) or "portal" (client viewer) */
   user_type?: 'agency' | 'portal';
   /** Client ID for portal (VIEWER) users */
@@ -93,7 +92,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [isLoading, setIsLoading] = useState(true);
   const [isDemoSession, setIsDemoSession] = useState(false);
 
-  // Check for existing session on mount and sync tenant store
+  // Check for existing session on mount
   useEffect(() => {
     const isDemo = localStorage.getItem('stratum_demo_mode') === 'true';
     setIsDemoSession(isDemo);
@@ -109,12 +108,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         }
 
         setUser(parsedUser);
-
-        // Sync tenant context to Zustand store on session restore
-        const tenantStore = useTenantStore.getState();
-        if (parsedUser.tenant_id && !tenantStore.tenantId) {
-          tenantStore.setTenantId(parsedUser.tenant_id);
-        }
       } catch (e) {
         localStorage.removeItem(AUTH_STORAGE_KEY);
       }
@@ -137,7 +130,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     }
 
     const jwtPayload = data.data?.access_token ? decodeJwtPayload(data.data.access_token) : {};
-    const jwtTenantId = jwtPayload.tenant_id as number | undefined;
 
     const userResponse = await fetch(`${API_BASE}/users/me`, {
       headers: { Authorization: `Bearer ${data.data.access_token}` },
@@ -146,7 +138,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     let userInfo: User;
     if (userResponse.ok) {
       const userData = await userResponse.json();
-      const tenantId = userData.data.tenant_id ?? jwtTenantId ?? null;
       const backendRole = userData.data.role || 'analyst';
       const validRoles = ['owner', 'admin', 'manager', 'analyst', 'viewer'];
       const mappedRole = validRoles.includes(backendRole) ? backendRole : 'analyst';
@@ -156,7 +147,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         name: userData.data.full_name || userData.data.email,
         role: mappedRole as User['role'],
         permissions: ['all'],
-        tenant_id: tenantId,
         user_type: userData.data.user_type || 'agency',
         client_id: userData.data.client_id ?? null,
         cms_role: userData.data.cms_role ?? null,
@@ -169,7 +159,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         name: email.split('@')[0],
         role: (jwtPayload.role as User['role']) ?? 'admin',
         permissions: ['all'],
-        tenant_id: jwtTenantId ?? null,
         user_type: 'agency',
         cms_role: (jwtPayload.cms_role as string) ?? null,
       };
@@ -178,11 +167,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     setUser(userInfo);
     localStorage.setItem(AUTH_STORAGE_KEY, JSON.stringify(userInfo));
 
-    const tenantStore = useTenantStore.getState();
-    if (userInfo.tenant_id) {
-      tenantStore.setTenantId(userInfo.tenant_id);
-    }
-    tenantStore.setUser({
+    useAppStore.getState().setUser({
       id: Number(userInfo.id),
       email: userInfo.email,
       full_name: userInfo.name,
@@ -362,12 +347,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       sessionStorage.setItem(ACCESS_TOKEN_KEY, 'demo-token');
       sessionStorage.setItem(REFRESH_TOKEN_KEY, 'demo-refresh-token');
 
-      // Sync tenant store
-      const tenantStore = useTenantStore.getState();
-      if (demoUser.tenant_id) {
-        tenantStore.setTenantId(demoUser.tenant_id);
-      }
-      tenantStore.setUser({
+      // Sync app store
+      useAppStore.getState().setUser({
         id: Number(demoUser.id.replace(/\D/g, '')) || 1,
         email: demoUser.email,
         full_name: demoUser.name,
@@ -399,9 +380,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     localStorage.removeItem('stratum_onboarding_skipped');
     localStorage.removeItem('stratum_onboarding_demo_dismissed');
     localStorage.removeItem('stratum_available_tenants');
-    // Clear Zustand tenant store on logout
-    useTenantStore.getState().logout();
-    // Clear React Query cache to prevent stale tenant data after switching accounts
+    // Clear Zustand app store on logout
+    useAppStore.getState().logout();
+    // Clear React Query cache to prevent stale data across sessions
     queryClient.clear();
   };
 

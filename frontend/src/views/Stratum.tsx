@@ -38,7 +38,6 @@ import { cn, formatCurrency, formatCompactNumber } from '@/lib/utils'
 import { SimulateSlider } from '@/components/widgets/SimulateSlider'
 import { useInsights, useRecommendations, useAnomalies, useLivePredictions } from '@/api/hooks'
 import { usePriceMetrics } from '@/hooks/usePriceMetrics'
-import { useTenantStore } from '@/stores/tenantStore'
 
 // (Mock data removed — insights come from useInsights() API hook)
 
@@ -1177,11 +1176,8 @@ export function Stratum() {
   const [alertModalMode, setAlertModalMode] = useState<'create' | 'edit' | 'duplicate'>('create')
   const [createdAlerts, setCreatedAlerts] = useState<AlertRule[]>([])
 
-  // Get tenant ID from tenant store
-  const tenantId = useTenantStore((state) => state.tenantId)
-
-  // Fetch data from API
-  const effectiveTenantId = tenantId ?? 0
+  // Single-client app — no tenant scoping.
+  const effectiveTenantId = 1
   const { data: insightsData, isLoading: insightsLoading, refetch: refetchInsights } = useInsights(effectiveTenantId)
   const { data: _recommendationsData } = useRecommendations(effectiveTenantId)
   const { data: anomaliesData, isLoading: anomaliesLoading } = useAnomalies(effectiveTenantId)

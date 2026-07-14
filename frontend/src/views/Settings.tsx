@@ -27,7 +27,7 @@ import { cn } from '@/lib/utils';
 import { useTheme, type Theme } from '@/components/primitives/theme/ThemeProvider';
 import IntegrationsHub from '@/views/tenant/IntegrationsHub';
 import apiClient from '@/api/client';
-import { useTenantStore } from '@/stores/tenantStore';
+import { useAppStore } from '@/stores/appStore';
 import { useExportData, useRequestDeletion } from '@/api/hooks';
 import { useCurrentUser, useUpdatePreferences } from '@/api/auth';
 import { useMetricVisibility, useUpdateMetricVisibility } from '@/api/dashboard';
@@ -203,9 +203,9 @@ export function Settings() {
 function ProfileSettings() {
   const { t } = useTranslation();
   const { toast } = useToast();
-  // Get user data from tenant store
-  const user = useTenantStore((state) => state.user);
-  const setUser = useTenantStore((state) => state.setUser);
+  // Get user data from app store
+  const user = useAppStore((state) => state.user);
+  const setUser = useAppStore((state) => state.setUser);
 
   const fullName = user?.full_name || '';
   const nameParts = fullName.split(' ');
@@ -356,13 +356,13 @@ function ProfileSettings() {
 function OrganizationSettings() {
   const { t } = useTranslation();
   const { toast } = useToast();
-  // Get tenant data from store
-  const tenant = useTenantStore((state) => state.tenant);
-
-  const companyName = tenant?.name || '';
-  const industry = tenant?.settings?.industry || 'ecommerce';
-  const plan = tenant?.plan || 'pro';
-  const maxUsers = tenant?.max_users || 10;
+  // Organization-level fields are no longer sourced from a per-tenant
+  // store (single-client app); these defaults were always used in
+  // production since the store's `tenant` field was never populated.
+  const companyName = '';
+  const industry = 'ecommerce';
+  const plan = 'pro';
+  const maxUsers = 10;
 
   // State for users management
   const [teamMembers, setTeamMembers] = useState<
@@ -1733,12 +1733,12 @@ function PreferenceSettings() {
 }
 
 function PriceMetricsToggle() {
-  const tenantId = useTenantStore((state) => state.tenantId);
   const features = useFeatureFlagsStore((state) => state.features);
   const setFeatures = useFeatureFlagsStore((state) => state.setFeatures);
 
-  // Load feature flags from API (populates Zustand store)
-  const effectiveTenantId = tenantId ?? 0;
+  // Load feature flags from API (populates Zustand store). Single-client
+  // app — no tenant scoping.
+  const effectiveTenantId = 1;
   useFeatureFlags(effectiveTenantId);
 
   const updateFlags = useUpdateFeatureFlags(effectiveTenantId);
@@ -2188,11 +2188,13 @@ function GDPRSettings() {
 }
 
 function TrustEngineSettings() {
-  const tenant = useTenantStore((state) => state.tenant);
-  const tenantSettings = (tenant?.settings ?? {}) as Record<string, unknown>;
+  // Tenant-scoped settings no longer exist (single-client app); the
+  // store's `tenant` field was always null in production, so this
+  // always resolved to {} anyway — defaults below are unchanged.
+  const tenantSettings = {} as Record<string, unknown>;
 
-  // Seed initial state from the tenant's persisted settings, falling
-  // back to the same defaults the onboarding flow ships.
+  // Seed initial state from the persisted settings, falling back to
+  // the same defaults the onboarding flow ships.
   const [healthyThreshold, setHealthyThreshold] = useState(
     typeof tenantSettings.trust_threshold_autopilot === 'number'
       ? (tenantSettings.trust_threshold_autopilot as number)

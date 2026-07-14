@@ -30,13 +30,13 @@ vi.mock('./overview/useOverviewData', async () => {
   };
 });
 
-// FocusPane's TrustHoldsView pulls in useAuth + useApproveAction +
-// useDismissAction (P15 per-row CTAs). Mock the auth context so the
-// composition test stays focused on routing/composition behaviour
-// rather than the action drawer wiring (which has its own coverage
-// via FocusPane.test.tsx + ConfirmDrawer.test.tsx).
+// FocusPane's TrustHoldsView pulls in useAuth (composition tree) +
+// useApproveAction + useDismissAction (P15 per-row CTAs). Mock the auth
+// context so the composition test stays focused on routing/composition
+// behaviour rather than the action drawer wiring (which has its own
+// coverage via FocusPane.test.tsx + ConfirmDrawer.test.tsx).
 vi.mock('@/contexts/AuthContext', () => ({
-  useAuth: () => ({ user: { tenant_id: 1 }, isAuthenticated: true }),
+  useAuth: () => ({ user: {}, isAuthenticated: true }),
 }));
 
 vi.mock('@/api/autopilot', () => ({

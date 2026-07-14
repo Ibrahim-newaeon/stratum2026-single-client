@@ -15,7 +15,6 @@ import {
   XCircle,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
-import { useTenantStore } from '@/stores/tenantStore';
 import { useQuery } from '@tanstack/react-query';
 
 // Consent types
@@ -76,10 +75,8 @@ export function ConsentManager() {
   const [grantedFilter, setGrantedFilter] = useState<boolean | undefined>(undefined);
   const [searchQuery, setSearchQuery] = useState('');
 
-  // Use active tenant from global store
-  const tenantId = useTenantStore((state) => state.tenantId);
-
-  const effectiveTenantId = tenantId ?? 0
+  // Single-client app — no tenant scoping.
+  const effectiveTenantId = 1
   const { data: stats, isLoading: statsLoading, refetch: refetchStats } = useConsentStats(effectiveTenantId);
   const { data: profilesData, isLoading: profilesLoading } = useConsentProfiles(effectiveTenantId, {
     consent_type: selectedType,

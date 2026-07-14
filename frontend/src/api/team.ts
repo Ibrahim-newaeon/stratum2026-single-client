@@ -12,7 +12,6 @@ import { apiClient, ApiResponse } from './client'
 // Types
 export interface TeamMember {
   id: number
-  tenant_id: number
   email: string
   full_name: string | null
   role: string

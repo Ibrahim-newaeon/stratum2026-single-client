@@ -44,7 +44,6 @@ export interface AdAccount {
 
 export interface CampaignDraft {
   id: string
-  tenant_id: number
   platform: string
   ad_account_id?: string
   name: string

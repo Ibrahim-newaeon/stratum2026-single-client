@@ -93,7 +93,6 @@ export type LifecycleStage = 'anonymous' | 'known' | 'customer' | 'churned';
 
 export interface CDPProfile {
   id: string;
-  tenant_id: number;
   external_id?: string;
   first_seen_at: string;
   last_seen_at: string;

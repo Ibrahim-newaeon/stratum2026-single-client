@@ -52,7 +52,6 @@ import {
 import { useCampaigns, useTenantOverview } from '@/api/hooks'
 import { useSyncAllCampaigns, useSyncCampaign } from '@/api/campaigns'
 import { usePriceMetrics } from '@/hooks/usePriceMetrics'
-import { useTenantStore } from '@/stores/tenantStore'
 import { exportDashboardPDF } from '@/utils/pdfExport'
 import { useToast } from '@/components/ui/use-toast'
 import { useLiveSimulation } from '@/lib/liveSimulation'
@@ -246,7 +245,8 @@ export function Overview() {
   const [showKeyboardHints, setShowKeyboardHints] = useState(false)
   const [timeRange, setTimeRange] = useState<'7D' | '30D' | '90D'>('30D')
 
-  const tenantId = useTenantStore((state) => state.tenantId)
+  // Single-client app — no tenant scoping.
+  const tenantId = 1
   const { showPriceMetrics } = usePriceMetrics()
 
   const syncAllMutation = useSyncAllCampaigns()
@@ -254,7 +254,7 @@ export function Overview() {
   const [syncingCampaignId, setSyncingCampaignId] = useState<string | null>(null)
 
   const { data: campaignsData, isLoading: campaignsLoading, refetch: refetchCampaigns } = useCampaigns()
-  const { data: overviewData } = useTenantOverview(tenantId ?? 0)
+  const { data: overviewData } = useTenantOverview(tenantId)
 
   const simulation = useLiveSimulation(10000)
 
@@ -700,7 +700,7 @@ export function Overview() {
             </div>
           )}
         </div>
-        <ErrorBoundary><AccountBreakdown tenantId={tenantId ?? 0} /></ErrorBoundary>
+        <ErrorBoundary><AccountBreakdown tenantId={tenantId} /></ErrorBoundary>
         <ErrorBoundary><SimulateSlider /></ErrorBoundary>
       </div>
 

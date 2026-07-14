@@ -11,7 +11,7 @@ import { render, screen } from '@testing-library/react';
 // Mock those so the focus-routing test stays scoped to "which sub-view
 // renders for which focus key" without wiring providers.
 vi.mock('@/contexts/AuthContext', () => ({
-  useAuth: () => ({ user: { tenant_id: 1 }, isAuthenticated: true }),
+  useAuth: () => ({ user: {}, isAuthenticated: true }),
 }));
 vi.mock('@/api/autopilot', () => ({
   useApproveAction: () => ({ mutateAsync: () => Promise.resolve(), isPending: false }),

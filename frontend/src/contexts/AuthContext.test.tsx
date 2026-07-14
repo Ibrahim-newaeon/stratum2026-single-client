@@ -63,11 +63,9 @@ Object.defineProperty(window, 'sessionStorage', { value: mockSessionStorage });
 // Mock dependencies
 // ---------------------------------------------------------------------------
 
-vi.mock('@/stores/tenantStore', () => ({
-  useTenantStore: {
+vi.mock('@/stores/appStore', () => ({
+  useAppStore: {
     getState: () => ({
-      tenantId: null,
-      setTenantId: vi.fn(),
       setUser: vi.fn(),
       logout: vi.fn(),
     }),
@@ -186,7 +184,6 @@ describe('AuthContext', () => {
       name: 'Test User',
       role: 'admin',
       permissions: ['all'],
-      tenant_id: 1,
       user_type: 'agency',
     };
     mockStore['stratum_auth'] = JSON.stringify(storedUser);
@@ -250,8 +247,7 @@ describe('AuthContext', () => {
             email: 'user@example.com',
             full_name: 'Test User',
             role: 'admin',
-            tenant_id: 1,
-            user_type: 'agency',
+                  user_type: 'agency',
           },
         }),
       });
@@ -345,7 +341,6 @@ describe('AuthContext', () => {
       name: 'Test',
       role: 'admin',
       permissions: ['all'],
-      tenant_id: 1,
     };
     mockStore['stratum_auth'] = JSON.stringify(storedUser);
     mockSessionStore['access_token'] = 'tok';
@@ -437,7 +432,6 @@ describe('AuthContext', () => {
       name: 'Test User',
       role: 'admin',
       permissions: ['all'],
-      tenant_id: 1,
       user_type: 'agency',
     };
     mockStore['stratum_auth'] = JSON.stringify(storedUser);
