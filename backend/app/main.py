@@ -243,9 +243,9 @@ async def lifespan(app: FastAPI) -> AsyncGenerator:
     from app.core.security import decrypt_pii, encrypt_pii
 
     _pii_probe = encrypt_pii("stratum_ai_pii_startup_probe")
-    assert decrypt_pii(_pii_probe) == "stratum_ai_pii_startup_probe", (
-        "PII encryption key failed self-test at startup"
-    )
+    if decrypt_pii(_pii_probe) != "stratum_ai_pii_startup_probe":
+        # Not an assert: must survive python -O / PYTHONOPTIMIZE.
+        raise RuntimeError("PII encryption key failed self-test at startup")
     logger.info("pii_key_ready")
 
     yield
