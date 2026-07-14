@@ -13,6 +13,7 @@ from fastapi import APIRouter, Depends, HTTPException, Request, status
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from app.auth.deps import get_current_user
 from app.core.config import settings
 from app.core.logging import get_logger
 from app.db.session import get_async_session
@@ -28,7 +29,11 @@ from app.schemas import (
 )
 
 logger = get_logger(__name__)
-router = APIRouter()
+
+# STRAT-SC-001: router-level auth — the registration-time FeatureGate is an
+# env kill-switch, not authentication (same fail-open class C3/C6 closed on
+# 15 sibling routers).
+router = APIRouter(dependencies=[Depends(get_current_user)])
 
 
 @router.post("", response_model=APIResponse[SimulationResponse])

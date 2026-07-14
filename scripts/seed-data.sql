@@ -28,13 +28,13 @@ ON CONFLICT (id) DO NOTHING;
 -- Insert some sample campaigns (global — no tenant/org dimension on
 -- `campaigns` post-conversion; every deployment of this app serves one
 -- organization, so campaigns need no scoping column).
-INSERT INTO campaigns (platform, external_id, account_id, name, status, currency, total_spend_cents, impressions, clicks, conversions, revenue_cents, labels, created_at, updated_at)
+INSERT INTO campaigns (platform, external_id, account_id, name, status, currency, total_spend_cents, impressions, clicks, conversions, revenue_cents, labels, is_deleted, created_at, updated_at)
 SELECT
-    (ARRAY['meta', 'google', 'tiktok'])[1 + (generate_series % 3)],
+    ((ARRAY['meta', 'google', 'tiktok'])[1 + (generate_series % 3)])::adplatform,
     'camp_' || generate_series,
     'act_demo_123',
     'Campaign ' || generate_series,
-    (ARRAY['active', 'paused', 'completed'])[1 + (generate_series % 3)],
+    ((ARRAY['active', 'paused', 'completed'])[1 + (generate_series % 3)])::campaignstatus,
     'USD',
     (random() * 500000)::int,
     (random() * 1000000)::int,
@@ -42,6 +42,7 @@ SELECT
     (random() * 1000)::int,
     (random() * 2000000)::int,
     '["demo"]'::jsonb,
+    false,
     NOW() - (random() * interval '30 days'),
     NOW()
 FROM generate_series(1, 10)
