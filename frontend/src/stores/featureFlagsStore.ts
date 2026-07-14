@@ -1,7 +1,7 @@
 /**
  * Stratum AI - Feature Flags Store
  *
- * Zustand store for managing tenant feature flags.
+ * Zustand store for managing the organization's feature flags.
  * Provides gating helpers for conditional feature rendering.
  */
 
@@ -43,7 +43,7 @@ export interface FeatureCategory {
 }
 
 export interface FeatureFlagsState {
-  // Current tenant's feature flags
+  // Current org's feature flags
   features: FeatureFlags | null
   categories: Record<string, FeatureCategory>
   descriptions: Record<string, string>

@@ -2,8 +2,8 @@
  * Service-layer API namespaces.
  *
  * IMPORTANT: This module re-uses the canonical axios client from `@/api/client`
- * so there is a single source of truth for auth tokens, tenant headers, and
- * token refresh logic. Do NOT create a separate axios instance here.
+ * so there is a single source of truth for auth tokens and token refresh
+ * logic. Do NOT create a separate axios instance here.
  */
 
 import { apiClient, setAccessToken, getAccessToken } from '@/api/client'
@@ -255,11 +255,6 @@ export const analyticsApi = {
   },
 
   // New endpoints for Dashboard v2
-  getTenantOverview: async () => {
-    const response = await apiClient.get('/analytics/tenant-overview')
-    return response.data
-  },
-
   getExecutiveSummary: async () => {
     const response = await apiClient.get('/analytics/executive-summary')
     return response.data

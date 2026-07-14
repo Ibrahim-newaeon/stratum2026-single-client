@@ -3,7 +3,6 @@
  *
  * React Query hooks for platform-owner console analytics:
  * - Platform overview
- * - Tenant profitability
  * - Signal health trends
  * - Actions analytics
  */
@@ -18,7 +17,6 @@ import { apiClient } from './client';
 export interface PlatformOverview {
   period_days: number;
   start_date: string;
-  active_tenants: number;
   total_actions: number;
   applied_actions: number;
   failed_actions: number;
@@ -29,24 +27,6 @@ export interface PlatformOverview {
     record_count: number;
     avg_emq: number | null;
   }>;
-}
-
-export interface TenantProfitability {
-  tenant_id: number;
-  total_actions: number;
-  applied_actions: number;
-  active_days: number;
-  action_efficiency: number;
-  avg_emq_score: number;
-  avg_event_loss: number;
-  health_score: number;
-}
-
-export interface TenantProfitabilityResponse {
-  period_days: number;
-  start_date: string;
-  tenants: TenantProfitability[];
-  total_tenants: number;
 }
 
 export interface SignalHealthTrend {
@@ -94,22 +74,6 @@ export function usePlatformOverview(days: number = 7) {
 }
 
 /**
- * Get tenant profitability metrics.
- */
-export function useTenantProfitability(days: number = 30) {
-  return useQuery({
-    queryKey: ['console-tenant-profitability', days],
-    queryFn: async () => {
-      const response = await apiClient.get<{ data: TenantProfitabilityResponse }>(
-        `/console/tenant-profitability?days=${days}`
-      );
-      return response.data.data;
-    },
-    staleTime: 5 * 60 * 1000, // 5 minutes
-  });
-}
-
-/**
  * Get signal health trends.
  */
 export function useSignalHealthTrends(days: number = 14) {
@@ -142,10 +106,10 @@ export function useActionsAnalytics(days: number = 7) {
 }
 
 // =============================================================================
-// Cross-Tenant Anomalies Rollup
+// Cross-Account Anomalies Rollup
 // =============================================================================
 
-export interface CrossTenantAnomaly {
+export interface CrossAccountAnomaly {
   id: string;
   detected_at: string;
   metric: string;
@@ -156,32 +120,26 @@ export interface CrossTenantAnomaly {
   direction: 'spike' | 'drop';
   current_value: number;
   expected_value: number | null;
-  zscore?: number;
   description: string;
   possible_causes: string[];
   recommended_actions: string[];
-  tenant_id: number;
-  tenant_name: string;
 }
 
 export interface AnomaliesRollupResponse {
   date: string;
-  anomalies: CrossTenantAnomaly[];
+  anomalies: CrossAccountAnomaly[];
   total: number;
-  tenants_scanned: number;
   by_severity: {
     critical: number;
     high: number;
     medium: number;
     low: number;
   };
-  by_tenant: Record<string, { tenant_name: string; count: number }>;
 }
 
 /**
- * Aggregate anomalies across every tenant in one backend call.
- * Replaces the prior client-side fan-out so the page scales past
- * ~50 tenants without N HTTP round-trips.
+ * Scan every top-spend campaign for anomalies in one backend call.
+ * Single-org deployment — no per-tenant fan-out needed.
  */
 export function useAnomaliesRollup(severity?: 'critical' | 'high' | 'medium' | 'low') {
   return useQuery({

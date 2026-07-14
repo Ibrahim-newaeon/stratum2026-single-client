@@ -7,9 +7,11 @@
 import { describe, it, expect, vi, beforeAll } from 'vitest';
 import { render, screen } from '@testing-library/react';
 
-// TrustHoldsView (P15) pulls in useAuth + approve/dismiss mutations.
-// Mock those so the focus-routing test stays scoped to "which sub-view
-// renders for which focus key" without wiring providers.
+// TrustHoldsView (P15) pulls in approve/dismiss mutations (it no longer
+// reads useAuth directly — see AuthContext.tsx). Mock those so the
+// focus-routing test stays scoped to "which sub-view renders for which
+// focus key" without wiring providers. The AuthContext mock is kept for
+// any other sub-view in this suite that still resolves `useAuth()`.
 vi.mock('@/contexts/AuthContext', () => ({
   useAuth: () => ({ user: {}, isAuthenticated: true }),
 }));

@@ -418,7 +418,7 @@ export const dashboardApi = {
    * Get signal health breakdown by ad account
    */
   getAccountSignalHealth: async (
-    tenantId: number,
+    _tenantId: number,
     platform?: string,
     date?: string,
   ): Promise<AccountSignalHealthResponse> => {
@@ -426,7 +426,7 @@ export const dashboardApi = {
     if (platform) params.platform = platform;
     if (date) params.date = date;
     const response = await apiClient.get<ApiResponse<AccountSignalHealthResponse>>(
-      `/trust/tenant/${tenantId}/signal-health/by-account`,
+      `/trust/signal-health/by-account`,
       { params }
     );
     return response.data.data;

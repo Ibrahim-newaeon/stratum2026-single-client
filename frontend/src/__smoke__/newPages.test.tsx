@@ -27,8 +27,8 @@ const NEW_PAGES: { name: string; loader: () => Promise<{ default: unknown }> }[]
     loader: () => import('@/views/console/PlatformAnalytics'),
   },
   {
-    name: 'console/CrossTenantAnomalies',
-    loader: () => import('@/views/console/CrossTenantAnomalies'),
+    name: 'console/CrossAccountAnomalies',
+    loader: () => import('@/views/console/CrossAccountAnomalies'),
   },
   // Phase 6 (post-merge audit) — console credentials health
   {
@@ -77,8 +77,8 @@ const NEW_PAGES: { name: string; loader: () => Promise<{ default: unknown }> }[]
   },
   // Phase J — unified Integrations hub (rendered inside Settings)
   {
-    name: 'tenant/IntegrationsHub',
-    loader: () => import('@/views/tenant/IntegrationsHub'),
+    name: 'operate/IntegrationsHub',
+    loader: () => import('@/views/operate/IntegrationsHub'),
   },
   // Backend-feature surface — EMQ v2 diagnostics
   {

@@ -1,6 +1,6 @@
 /**
  * Owner Console Users Management
- * Manage all users across tenants with role assignment
+ * Manage all platform users with role assignment
  */
 
 import { useState } from 'react';
@@ -32,7 +32,6 @@ const getAuthHeaders = () => {
 
 interface User {
   id: number;
-  tenant_id: number;
   email: string;
   full_name: string | null;
   role: string;

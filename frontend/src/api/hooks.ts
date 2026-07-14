@@ -5,7 +5,7 @@
  * and adds new hooks for platform owner console endpoints.
  */
 
-import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
+import { useQuery } from '@tanstack/react-query'
 import { apiClient, ApiResponse, PaginatedResponse } from './client'
 
 // =============================================================================
@@ -48,7 +48,6 @@ export {
 // Console (Owner) Analytics hooks
 export {
   usePlatformOverview,
-  useTenantProfitability,
   useSignalHealthTrends,
   useActionsAnalytics,
 } from './consoleAnalytics'
@@ -311,7 +310,7 @@ export function useTenantOverview(tenantId: number) {
         total_revenue: number
         portfolio_roas: number
         avg_cpa: number
-      }>>(`/tenant/${tenantId}/dashboard/overview`)
+      }>>(`/dashboard/overview`)
       const overview = response.data.data
       return {
         kpis: {
@@ -357,35 +356,6 @@ export function useTenantRecommendations(tenantId: number, options?: { limit?: n
 // Console (Owner) Dashboard Types
 // =============================================================================
 
-export interface RevenueMetrics {
-  mrr: number
-  arr: number
-  nrr: number
-  mrrGrowth: number
-  arrGrowth: number
-  churnRate: number
-}
-
-export interface RevenueBreakdown {
-  plan: string
-  tenantCount: number
-  mrr: number
-  percentage: number
-}
-
-export interface TenantPortfolioItem {
-  id: number
-  name: string
-  plan: string
-  status: string
-  emqScore: number | null
-  budgetAtRisk: number
-  activeIncidents: number
-  monthlySpend: number
-  churnRisk: number
-  lastActivityAt: string | null
-}
-
 export interface SystemHealthMetrics {
   overallStatus: 'healthy' | 'degraded' | 'down'
   services: Array<{
@@ -422,16 +392,6 @@ export interface SystemHealthMetrics {
   }
 }
 
-export interface ChurnRisk {
-  tenantId: number
-  tenantName: string
-  riskScore: number
-  riskLevel: 'low' | 'medium' | 'high' | 'critical'
-  factors: string[]
-  lastActivityAt: string | null
-  monthlySpend: number
-}
-
 export interface AuditLogEntry {
   id: string
   timestamp: string
@@ -439,53 +399,33 @@ export interface AuditLogEntry {
   details: string
   userId: string
   userName: string | null
-  tenantId: number | null
-  tenantName: string | null
   ipAddress: string | null
   userAgent: string | null
   severity: 'info' | 'warning' | 'error' | 'critical'
   metadata: Record<string, unknown>
 }
 
-export interface BillingPlan {
-  id: string
-  name: string
-  price: number
-  features: string[]
-  subscriberCount: number
-  mrr: number
-}
-
-export interface BillingInvoice {
-  id: string
-  tenantId: number
-  tenantName: string
-  amount: number
-  status: 'paid' | 'pending' | 'overdue' | 'failed'
-  dueDate: string
-  paidAt: string | null
-}
-
-export interface BillingSubscription {
-  id: string
-  tenantId: number
-  tenantName: string
-  plan: string
-  status: 'active' | 'past_due' | 'canceled' | 'trialing'
-  mrr: number
-  startDate: string
-  nextBillingDate: string
-  paymentMethod: string
-  failedPayments: number
-}
-
+/**
+ * Owner console dashboard summary. Combines usage, health, and alert
+ * counts for the single-org deployment (revenue/tenant-portfolio/churn
+ * sections were removed in STRAT-SC-001/C3 — their sole data source was
+ * the deleted Tenant model).
+ */
 export interface ConsoleDashboardSummary {
-  totalRevenue: number
-  mrrGrowth: number
-  activeTenants: number
-  atRiskTenants: number
-  totalBudgetAtRisk: number
-  systemStatus: 'healthy' | 'degraded' | 'down'
+  usage: {
+    total_users: number
+    total_campaigns: number
+  }
+  health: {
+    platform_status: string
+    pipeline_success_rate: number | null
+    api_uptime: number | null
+  }
+  alerts: {
+    critical: number
+    high: number
+    medium: number
+  }
 }
 
 // =============================================================================
@@ -501,53 +441,10 @@ export const consoleApi = {
     return response.data.data
   },
 
-  // Revenue
-  getRevenue: async (): Promise<RevenueMetrics> => {
-    const response = await apiClient.get<ApiResponse<RevenueMetrics>>(
-      '/console/revenue'
-    )
-    return response.data.data
-  },
-
-  getRevenueBreakdown: async (): Promise<RevenueBreakdown[]> => {
-    const response = await apiClient.get<ApiResponse<RevenueBreakdown[]>>(
-      '/console/revenue/breakdown'
-    )
-    return response.data.data
-  },
-
-  // Tenants Portfolio
-  getTenantsPortfolio: async (params?: {
-    status?: string
-    plan?: string
-    sortBy?: string
-    sortOrder?: string
-    skip?: number
-    limit?: number
-  }): Promise<PaginatedResponse<TenantPortfolioItem>> => {
-    const response = await apiClient.get<ApiResponse<PaginatedResponse<TenantPortfolioItem>>>(
-      '/console/tenants/portfolio',
-      { params }
-    )
-    return response.data.data
-  },
-
   // System Health
   getSystemHealth: async (): Promise<SystemHealthMetrics> => {
     const response = await apiClient.get<ApiResponse<SystemHealthMetrics>>(
       '/console/system/health'
-    )
-    return response.data.data
-  },
-
-  // Churn Risks
-  getChurnRisks: async (params?: {
-    minRisk?: number
-    limit?: number
-  }): Promise<ChurnRisk[]> => {
-    const response = await apiClient.get<ApiResponse<ChurnRisk[]>>(
-      '/console/churn/risks',
-      { params }
     )
     return response.data.data
   },
@@ -558,7 +455,6 @@ export const consoleApi = {
     endDate?: string
     action?: string
     userId?: string
-    tenantId?: number
     severity?: string
     skip?: number
     limit?: number
@@ -566,50 +462,6 @@ export const consoleApi = {
     const response = await apiClient.get<ApiResponse<PaginatedResponse<AuditLogEntry>>>(
       '/console/audit',
       { params }
-    )
-    return response.data.data
-  },
-
-  // Billing - Plans
-  getBillingPlans: async (): Promise<BillingPlan[]> => {
-    const response = await apiClient.get<ApiResponse<BillingPlan[]>>(
-      '/console/billing/plans'
-    )
-    return response.data.data
-  },
-
-  // Billing - Invoices
-  getBillingInvoices: async (params?: {
-    status?: string
-    tenantId?: number
-    skip?: number
-    limit?: number
-  }): Promise<PaginatedResponse<BillingInvoice>> => {
-    const response = await apiClient.get<ApiResponse<PaginatedResponse<BillingInvoice>>>(
-      '/console/billing/invoices',
-      { params }
-    )
-    return response.data.data
-  },
-
-  // Billing - Subscriptions
-  getBillingSubscriptions: async (params?: {
-    status?: string
-    plan?: string
-    skip?: number
-    limit?: number
-  }): Promise<PaginatedResponse<BillingSubscription>> => {
-    const response = await apiClient.get<ApiResponse<PaginatedResponse<BillingSubscription>>>(
-      '/console/billing/subscriptions',
-      { params }
-    )
-    return response.data.data
-  },
-
-  // Retry failed payment
-  retryPayment: async (subscriptionId: string): Promise<{ success: boolean }> => {
-    const response = await apiClient.post<ApiResponse<{ success: boolean }>>(
-      `/console/billing/subscriptions/${subscriptionId}/retry-payment`
     )
     return response.data.data
   },
@@ -632,46 +484,6 @@ export function useConsoleOverview() {
 }
 
 /**
- * Get console tenant portfolio
- */
-export function useConsoleTenants(params?: {
-  status?: string
-  plan?: string
-  sortBy?: string
-  sortOrder?: string
-  skip?: number
-  limit?: number
-}) {
-  return useQuery({
-    queryKey: ['console', 'tenants', params],
-    queryFn: () => consoleApi.getTenantsPortfolio(params),
-    staleTime: 30 * 1000,
-  })
-}
-
-/**
- * Get revenue metrics
- */
-export function useRevenue() {
-  return useQuery({
-    queryKey: ['console', 'revenue'],
-    queryFn: consoleApi.getRevenue,
-    staleTime: 60 * 1000,
-  })
-}
-
-/**
- * Get revenue breakdown by plan
- */
-export function useRevenueBreakdown() {
-  return useQuery({
-    queryKey: ['console', 'revenue', 'breakdown'],
-    queryFn: consoleApi.getRevenueBreakdown,
-    staleTime: 60 * 1000,
-  })
-}
-
-/**
  * Get system health metrics
  */
 export function useSystemHealth() {
@@ -684,17 +496,6 @@ export function useSystemHealth() {
 }
 
 /**
- * Get churn risk tenants
- */
-export function useChurnRisks(params?: { minRisk?: number; limit?: number }) {
-  return useQuery({
-    queryKey: ['console', 'churn', 'risks', params],
-    queryFn: () => consoleApi.getChurnRisks(params),
-    staleTime: 5 * 60 * 1000,
-  })
-}
-
-/**
  * Get audit logs
  */
 export function useAuditLogs(params?: {
@@ -702,7 +503,6 @@ export function useAuditLogs(params?: {
   endDate?: string
   action?: string
   userId?: string
-  tenantId?: number
   severity?: string
   skip?: number
   limit?: number
@@ -711,64 +511,6 @@ export function useAuditLogs(params?: {
     queryKey: ['console', 'audit', params],
     queryFn: () => consoleApi.getAuditLogs(params),
     staleTime: 30 * 1000,
-  })
-}
-
-/**
- * Get billing plans
- */
-export function useBillingPlans() {
-  return useQuery({
-    queryKey: ['console', 'billing', 'plans'],
-    queryFn: consoleApi.getBillingPlans,
-    staleTime: 5 * 60 * 1000,
-  })
-}
-
-/**
- * Get billing invoices
- */
-export function useBillingInvoices(params?: {
-  status?: string
-  tenantId?: number
-  skip?: number
-  limit?: number
-}) {
-  return useQuery({
-    queryKey: ['console', 'billing', 'invoices', params],
-    queryFn: () => consoleApi.getBillingInvoices(params),
-    staleTime: 60 * 1000,
-  })
-}
-
-/**
- * Get billing subscriptions
- */
-export function useBillingSubscriptions(params?: {
-  status?: string
-  plan?: string
-  skip?: number
-  limit?: number
-}) {
-  return useQuery({
-    queryKey: ['console', 'billing', 'subscriptions', params],
-    queryFn: () => consoleApi.getBillingSubscriptions(params),
-    staleTime: 60 * 1000,
-  })
-}
-
-/**
- * Retry failed payment
- */
-export function useRetryPayment() {
-  const queryClient = useQueryClient()
-
-  return useMutation({
-    mutationFn: consoleApi.retryPayment,
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['console', 'billing', 'subscriptions'] })
-      queryClient.invalidateQueries({ queryKey: ['console', 'billing', 'invoices'] })
-    },
   })
 }
 

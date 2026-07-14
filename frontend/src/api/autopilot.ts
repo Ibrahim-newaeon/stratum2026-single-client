@@ -108,7 +108,7 @@ export function useAutopilotStatus(tenantId: number) {
   return useQuery({
     queryKey: ['autopilot-status', tenantId],
     queryFn: async () => {
-      const response = await apiClient.get<{ data: AutopilotStatus }>(`/tenant/${tenantId}/autopilot/status`);
+      const response = await apiClient.get<{ data: AutopilotStatus }>(`/autopilot/status`);
       return response.data.data;
     },
     enabled: !!tenantId,
@@ -140,7 +140,7 @@ export function useAutopilotActions(
 
       const response = await apiClient.get<{
         data: { actions: AutopilotAction[]; count: number };
-      }>(`/tenant/${tenantId}/autopilot/actions?${params}`);
+      }>(`/autopilot/actions?${params}`);
       return response.data.data;
     },
     enabled: !!tenantId,
@@ -157,7 +157,7 @@ export function useActionsSummary(tenantId: number, days: number = 7) {
     queryKey: ['autopilot-summary', tenantId, days],
     queryFn: async () => {
       const response = await apiClient.get<{ data: ActionsSummary }>(
-        `/tenant/${tenantId}/autopilot/actions/summary?days=${days}`
+        `/autopilot/actions/summary?days=${days}`
       );
       return response.data.data;
     },
@@ -196,7 +196,7 @@ export function useAutopilotOutcomeSummary(tenantId: number, period: OutcomePeri
     queryKey: ['autopilot-outcomes', tenantId, period],
     queryFn: async () => {
       const response = await apiClient.get<{ data: OutcomeSummary }>(
-        `/tenant/${tenantId}/autopilot/outcomes/summary?period=${period}`
+        `/autopilot/outcomes/summary?period=${period}`
       );
       return response.data.data;
     },
@@ -217,7 +217,7 @@ export function useAutopilotAction(tenantId: number, actionId: string) {
     queryKey: ['autopilot-action', tenantId, actionId],
     queryFn: async () => {
       const response = await apiClient.get<{ data: { action: AutopilotAction } }>(
-        `/tenant/${tenantId}/autopilot/actions/${actionId}`
+        `/autopilot/actions/${actionId}`
       );
       return response.data.data.action;
     },
@@ -244,7 +244,7 @@ export function useQueueAction(tenantId: number) {
           requires_approval: boolean;
           reason: string | null;
         };
-      }>(`/tenant/${tenantId}/autopilot/actions`, request);
+      }>(`/autopilot/actions`, request);
       return response.data.data;
     },
     onSuccess: () => {
@@ -264,7 +264,7 @@ export function useApproveAction(tenantId: number) {
   return useMutation({
     mutationFn: async (actionId: string) => {
       const response = await apiClient.post<{ data: { action: AutopilotAction } }>(
-        `/tenant/${tenantId}/autopilot/actions/${actionId}/approve`
+        `/autopilot/actions/${actionId}/approve`
       );
       return response.data.data.action;
     },
@@ -296,7 +296,7 @@ export function useConfirmAction(tenantId: number) {
       const response = await apiClient.post<{
         data: { action: AutopilotAction; message: string };
       }>(
-        `/tenant/${tenantId}/autopilot/actions/${actionId}/confirm`,
+        `/autopilot/actions/${actionId}/confirm`,
         overrideReason ? { override_reason: overrideReason } : undefined
       );
       return response.data.data;
@@ -318,7 +318,7 @@ export function useApproveAllActions(tenantId: number) {
   return useMutation({
     mutationFn: async (actionIds?: string[]) => {
       const response = await apiClient.post<{ data: { approved_count: number } }>(
-        `/tenant/${tenantId}/autopilot/actions/approve-all`,
+        `/autopilot/actions/approve-all`,
         actionIds ? { action_ids: actionIds } : undefined
       );
       return response.data.data;
@@ -340,7 +340,7 @@ export function useDismissAction(tenantId: number) {
   return useMutation({
     mutationFn: async (actionId: string) => {
       const response = await apiClient.post<{ data: { action: AutopilotAction } }>(
-        `/tenant/${tenantId}/autopilot/actions/${actionId}/dismiss`
+        `/autopilot/actions/${actionId}/dismiss`
       );
       return response.data.data.action;
     },
@@ -373,7 +373,7 @@ export function useEnforcementSettings(tenantId: number) {
     queryFn: async () => {
       const response = await apiClient.get<{
         data: { settings: EnforcementSettings };
-      }>(`/tenant/${tenantId}/autopilot/enforcement/settings`);
+      }>(`/autopilot/enforcement/settings`);
       return response.data.data.settings;
     },
     enabled: !!tenantId,
@@ -396,7 +396,7 @@ export function useSetFreeze(tenantId: number) {
     mutationFn: async ({ frozen, reason }: { frozen: boolean; reason?: string }) => {
       const response = await apiClient.post<{
         data: { autopilot_frozen: boolean; message: string };
-      }>(`/tenant/${tenantId}/autopilot/enforcement/freeze`, { frozen, reason });
+      }>(`/autopilot/enforcement/freeze`, { frozen, reason });
       return response.data.data;
     },
     onSuccess: () => {

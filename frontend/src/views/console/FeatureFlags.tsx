@@ -1,14 +1,19 @@
 /**
  * Feature Flags — Platform Owner page at /console/feature-flags.
  *
- * Lets the owner toggle per-tenant feature gates (signal_health,
+ * Lets the owner toggle the organization's feature gates (signal_health,
  * attribution_variance, anomaly_alerts, autopilot_level, max_campaigns,
  * etc.). Composed thinly over existing react-query hooks:
  *
- *   useTenants                       — tenant picker source
- *   useConsoleFeatureFlags(id)       — load
- *   useConsoleUpdateFeatureFlags     — save
- *   useConsoleResetFeatureFlags      — reset to defaults
+ *   useConsoleFeatureFlags()       — load
+ *   useConsoleUpdateFeatureFlags   — save
+ *   useConsoleResetFeatureFlags    — reset to defaults
+ *
+ * NOTE(STRAT-SC-001/D3): this used to have a tenant picker backed by
+ * `useTenants()` (api/admin.ts) so the owner could select which tenant's
+ * flags to edit. Single-org deployment has exactly one set of feature
+ * flags — the picker (and its `/admin/tenants` data source, which no
+ * longer exists as a backend route) has been removed.
  *
  * Backend exposes the data already grouped by category — we render
  * those groups as collapsible cards. Boolean flags become toggles,
@@ -22,7 +27,6 @@ import {
   useConsoleResetFeatureFlags,
   type FeatureFlagsUpdate,
 } from '@/api/featureFlags';
-import { useTenants } from '@/api/admin';
 import { Card } from '@/components/primitives/Card';
 import { ConfirmDrawer } from '@/components/primitives/ConfirmDrawer';
 import { cn } from '@/lib/utils';
@@ -39,19 +43,9 @@ function isNumericFlag(value: unknown): value is number {
 }
 
 export default function FeatureFlags() {
-  const tenantsQuery = useTenants({ limit: 200 });
-  const [tenantId, setTenantId] = useState<number | null>(null);
-
-  // Auto-pick the first tenant once the list loads.
-  useEffect(() => {
-    if (tenantId !== null) return;
-    const first = tenantsQuery.data?.items?.[0];
-    if (first) setTenantId(first.id);
-  }, [tenantsQuery.data, tenantId]);
-
-  const flagsQuery = useConsoleFeatureFlags(tenantId ?? 0);
-  const updateMutation = useConsoleUpdateFeatureFlags(tenantId ?? 0);
-  const resetMutation = useConsoleResetFeatureFlags(tenantId ?? 0);
+  const flagsQuery = useConsoleFeatureFlags(1);
+  const updateMutation = useConsoleUpdateFeatureFlags(1);
+  const resetMutation = useConsoleResetFeatureFlags(1);
 
   // Local working copy — diffed against server state on save.
   const [working, setWorking] = useState<Record<string, FlagValue>>({});
@@ -85,13 +79,7 @@ export default function FeatureFlags() {
     setResetOpen(false);
   };
 
-  if (tenantsQuery.isPending) {
-    return <div className="text-muted-foreground">Loading tenants…</div>;
-  }
-
-  const tenants = tenantsQuery.data?.items ?? [];
   const data = flagsQuery.data;
-  const selectedTenant = tenants.find((t) => t.id === tenantId);
 
   return (
     <div className="max-w-5xl mx-auto space-y-6">
@@ -100,32 +88,11 @@ export default function FeatureFlags() {
         <div>
           <h1 className="text-2xl font-semibold text-foreground tracking-tight">Feature Flags</h1>
           <p className="mt-1 text-sm text-muted-foreground">
-            Per-tenant feature gates. Changes are written immediately on save and audit-logged.
+            Organization feature gates. Changes are written immediately on save and audit-logged.
           </p>
         </div>
 
         <div className="flex items-center gap-2">
-          {/* Tenant picker */}
-          <label className="sr-only" htmlFor="tenant-picker">
-            Tenant
-          </label>
-          <select
-            id="tenant-picker"
-            value={tenantId ?? ''}
-            onChange={(e) => setTenantId(Number(e.target.value))}
-            className={cn(
-              'h-10 px-3 rounded-lg bg-card border border-border text-foreground text-sm',
-              'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring',
-              'min-w-56'
-            )}
-          >
-            {tenants.map((t) => (
-              <option key={t.id} value={t.id}>
-                {t.name} · {t.plan}
-              </option>
-            ))}
-          </select>
-
           {/* Save */}
           <button
             type="button"
@@ -147,7 +114,7 @@ export default function FeatureFlags() {
           <button
             type="button"
             onClick={() => setResetOpen(true)}
-            disabled={!tenantId || resetMutation.isPending}
+            disabled={resetMutation.isPending}
             className={cn(
               'h-10 inline-flex items-center gap-2 px-4 rounded-lg',
               'border border-border text-muted-foreground text-sm',
@@ -163,7 +130,7 @@ export default function FeatureFlags() {
       </div>
 
       {/* States */}
-      {flagsQuery.isPending && tenantId && (
+      {flagsQuery.isPending && (
         <Card>
           <div className="text-muted-foreground text-sm">Loading feature flags…</div>
         </Card>
@@ -172,7 +139,7 @@ export default function FeatureFlags() {
         <Card>
           <div className="flex items-center gap-3 text-destructive text-sm">
             <AlertTriangle className="w-4 h-4 flex-shrink-0" />
-            Couldn't load feature flags for this tenant.
+            Couldn't load feature flags.
           </div>
         </Card>
       )}
@@ -180,8 +147,7 @@ export default function FeatureFlags() {
         <Card className="border-warning/30 bg-warning/5">
           <div className="flex items-center gap-2 text-warning text-sm">
             <AlertTriangle className="w-4 h-4" />
-            Unsaved changes for{' '}
-            <span className="font-medium text-foreground">{selectedTenant?.name}</span>
+            Unsaved changes
           </div>
         </Card>
       )}
@@ -246,8 +212,8 @@ export default function FeatureFlags() {
       <ConfirmDrawer
         open={resetOpen}
         onOpenChange={setResetOpen}
-        title={`Reset ${selectedTenant?.name ?? 'tenant'} flags to defaults?`}
-        description="This restores every feature flag for this tenant to its plan-default. Cannot be undone."
+        title="Reset feature flags to defaults?"
+        description="This restores every feature flag to its plan-default. Cannot be undone."
         variant="destructive"
         confirmLabel="Reset to defaults"
         onConfirm={handleReset}

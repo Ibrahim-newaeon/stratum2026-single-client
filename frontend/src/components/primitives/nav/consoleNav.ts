@@ -7,9 +7,9 @@
  *
  * Three top-level groups:
  *
- *   Platform     — what the owner manages (tenants, users, flags)
+ *   Platform     — what the owner manages (users, flags)
  *   Operations   — runtime tooling (queues, control tower, logs)
- *   Health       — visibility (readiness, analytics, cross-tenant audit)
+ *   Health       — visibility (readiness, analytics, audit)
  */
 
 import {
@@ -17,7 +17,6 @@ import {
   AlertOctagon,
   BarChart3,
   Beaker,
-  Building2,
   CloudUpload,
   Cog,
   Database,
@@ -44,7 +43,6 @@ export const consoleNavGroups: SidebarGroup[] = [
     label: 'Platform',
     items: [
       { label: 'Overview', href: '/console', icon: Gauge },
-      { label: 'Tenants', href: '/console/tenants', icon: Building2 },
       { label: 'Users', href: '/console/users', icon: Users },
       { label: 'Feature Flags', href: '/console/feature-flags', icon: Flag },
     ],
@@ -81,7 +79,7 @@ export const consoleNavGroups: SidebarGroup[] = [
       { label: 'Launch Readiness', href: '/console/launch-readiness', icon: Rocket },
       { label: 'Platform Analytics', href: '/console/analytics', icon: BarChart3 },
       { label: 'Benchmarks', href: '/console/benchmarks', icon: Database },
-      { label: 'Cross-Tenant Audit', href: '/console/audit', icon: ShieldCheck },
+      { label: 'Audit Log', href: '/console/audit', icon: ShieldCheck },
       { label: 'Anomalies', href: '/console/anomalies', icon: AlertOctagon },
     ],
   },

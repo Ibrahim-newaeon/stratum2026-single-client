@@ -1,15 +1,14 @@
 /**
  * Platform Analytics — Platform Owner page at /console/analytics.
  *
- * Cross-tenant rollup of platform health. Composed thinly over
+ * Platform-wide rollup of automation health. Composed thinly over
  * existing react-query hooks:
  *
  *   usePlatformOverview(days)        — KPI strip
  *   useSignalHealthTrends(days)      — line chart
  *   useActionsAnalytics(days)        — breakdowns + daily counts
- *   useTenantProfitability(days)     — DataTable
  *
- * Window picker (7d / 14d / 30d) drives all four hooks in sync.
+ * Window picker (7d / 14d / 30d) drives all hooks in sync.
  */
 
 import { useState } from 'react';
@@ -17,15 +16,11 @@ import {
   usePlatformOverview,
   useSignalHealthTrends,
   useActionsAnalytics,
-  useTenantProfitability,
   formatPlatformName,
-  type TenantProfitability,
 } from '@/api/consoleAnalytics';
 import { Card } from '@/components/primitives/Card';
 import { KPI } from '@/components/primitives/KPI';
 import { LineChart, AreaChart } from '@/components/primitives/Chart';
-import { DataTable, type DataTableColumn } from '@/components/primitives/DataTable';
-import { StatusPill } from '@/components/primitives/StatusPill';
 import { cn } from '@/lib/utils';
 
 type Window = 7 | 14 | 30;
@@ -42,7 +37,6 @@ export default function PlatformAnalytics() {
   const overview = usePlatformOverview(days);
   const trends = useSignalHealthTrends(days);
   const actions = useActionsAnalytics(days);
-  const profitability = useTenantProfitability(days);
 
   const successRate = overview.data
     ? Math.round(overview.data.success_rate * 100) / 100
@@ -57,7 +51,7 @@ export default function PlatformAnalytics() {
             Platform Analytics
           </h1>
           <p className="mt-1 text-sm text-muted-foreground">
-            Cross-tenant rollup of platform health, automation outcomes, and tenant efficiency.
+            Platform-wide rollup of signal health, automation outcomes, and action efficiency.
           </p>
         </div>
         <div
@@ -87,14 +81,7 @@ export default function PlatformAnalytics() {
       </div>
 
       {/* KPI strip */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
-        <KPI
-          label="Active tenants"
-          value={overview.data?.active_tenants}
-          loading={overview.isPending}
-          error={overview.error?.message}
-          footnote={`${days}-day window`}
-        />
+      <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
         <KPI
           label="Total actions"
           value={overview.data?.total_actions?.toLocaleString()}
@@ -136,7 +123,7 @@ export default function PlatformAnalytics() {
         <div className="mb-4">
           <h2 className="text-lg font-semibold text-foreground">Signal health trends</h2>
           <p className="text-sm text-muted-foreground mt-0.5">
-            Per-day average across all tenants. EMQ + freshness up = healthier; event loss + API
+            Per-day average across the platform. EMQ + freshness up = healthier; event loss + API
             error rate down = healthier.
           </p>
         </div>
@@ -210,102 +197,9 @@ export default function PlatformAnalytics() {
         </Card>
       </div>
 
-      {/* Tenant profitability table */}
-      <Card>
-        <div className="mb-4">
-          <h2 className="text-lg font-semibold text-foreground">Tenant profitability</h2>
-          <p className="text-sm text-muted-foreground mt-0.5">
-            Per-tenant action efficiency, EMQ, and composite health score over the last {days} days.
-          </p>
-        </div>
-        <DataTable<TenantProfitability>
-          data={profitability.data?.tenants ?? []}
-          loading={profitability.isPending}
-          error={profitability.error?.message}
-          emptyMessage="No tenants active in this window."
-          rowKey={(row) => row.tenant_id}
-          ariaLabel="Tenant profitability"
-          columns={tenantColumns}
-        />
-      </Card>
     </div>
   );
 }
-
-const tenantColumns: DataTableColumn<TenantProfitability>[] = [
-  {
-    id: 'tenant',
-    header: 'Tenant',
-    cell: (r) => <span className="font-medium text-foreground">#{r.tenant_id}</span>,
-    sortable: true,
-    sortAccessor: (r) => r.tenant_id,
-  },
-  {
-    id: 'actions',
-    header: 'Actions',
-    cell: (r) => (
-      <span className="font-mono tabular-nums">
-        {r.applied_actions}/{r.total_actions}
-      </span>
-    ),
-    sortable: true,
-    sortAccessor: (r) => r.total_actions,
-    cellClassName: 'text-right',
-    headerClassName: 'text-right',
-  },
-  {
-    id: 'efficiency',
-    header: 'Efficiency',
-    cell: (r) => (
-      <span className="font-mono tabular-nums">{(r.action_efficiency * 100).toFixed(1)}%</span>
-    ),
-    sortable: true,
-    sortAccessor: (r) => r.action_efficiency,
-    cellClassName: 'text-right',
-    headerClassName: 'text-right',
-  },
-  {
-    id: 'emq',
-    header: 'EMQ',
-    cell: (r) => <span className="font-mono tabular-nums">{r.avg_emq_score.toFixed(1)}</span>,
-    sortable: true,
-    sortAccessor: (r) => r.avg_emq_score,
-    cellClassName: 'text-right',
-    headerClassName: 'text-right',
-  },
-  {
-    id: 'event-loss',
-    header: 'Event loss',
-    cell: (r) => (
-      <span className="font-mono tabular-nums">{(r.avg_event_loss * 100).toFixed(1)}%</span>
-    ),
-    sortable: true,
-    sortAccessor: (r) => r.avg_event_loss,
-    cellClassName: 'text-right',
-    headerClassName: 'text-right',
-  },
-  {
-    id: 'days',
-    header: 'Active days',
-    cell: (r) => <span className="font-mono tabular-nums">{r.active_days}</span>,
-    sortable: true,
-    sortAccessor: (r) => r.active_days,
-    cellClassName: 'text-right',
-    headerClassName: 'text-right',
-    hideOnMobile: true,
-  },
-  {
-    id: 'health',
-    header: 'Health',
-    cell: (r) => {
-      const v: 'healthy' | 'degraded' | 'unhealthy' =
-        r.health_score >= 70 ? 'healthy' : r.health_score >= 40 ? 'degraded' : 'unhealthy';
-      return <StatusPill variant={v}>{Math.round(r.health_score)}</StatusPill>;
-    },
-    sortable: true,
-    sortAccessor: (r) => r.health_score,
-  },
-];
 
 interface BreakdownProps {
   title: string;

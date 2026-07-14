@@ -1,15 +1,15 @@
 /**
- * Cross-Tenant Anomalies — Platform Owner page at /console/anomalies.
+ * Cross-Account Anomalies — Platform Owner page at /console/anomalies.
  *
- * Backed by /console/anomalies-rollup, which aggregates every
- * tenant's anomalies in one backend call (one async session, N
- * database queries, zero HTTP fan-out). Replaces the prior pattern
- * of N parallel useAnomalies() requests from the browser, which
- * was fine at ~50 tenants but quadratic in network cost as we grow.
+ * Backed by /console/anomalies-rollup, which scans every high-spend
+ * campaign in one backend call (one async session, one bounded query,
+ * zero HTTP fan-out). Single-org deployment has exactly one
+ * organization, so this is a flat org-wide scan rather than a
+ * per-tenant loop.
  */
 
 import { useMemo, useState } from 'react';
-import { useAnomaliesRollup, type CrossTenantAnomaly } from '@/api/consoleAnalytics';
+import { useAnomaliesRollup, type CrossAccountAnomaly } from '@/api/consoleAnalytics';
 import { Card } from '@/components/primitives/Card';
 import { DataTable, type DataTableColumn } from '@/components/primitives/DataTable';
 import { StatusPill } from '@/components/primitives/StatusPill';
@@ -33,9 +33,9 @@ const SEVERITY_VARIANT: Record<Severity, 'unhealthy' | 'degraded' | 'neutral'> =
   low: 'neutral',
 };
 
-export default function CrossTenantAnomalies() {
+export default function CrossAccountAnomalies() {
   const [filter, setFilter] = useState<Severity | 'all'>('all');
-  const [selected, setSelected] = useState<CrossTenantAnomaly | null>(null);
+  const [selected, setSelected] = useState<CrossAccountAnomaly | null>(null);
 
   const rollupQuery = useAnomaliesRollup();
   const rollup = rollupQuery.data;
@@ -48,7 +48,7 @@ export default function CrossTenantAnomalies() {
 
   const tallies = rollup?.by_severity ?? { critical: 0, high: 0, medium: 0, low: 0 };
 
-  const columns: DataTableColumn<CrossTenantAnomaly>[] = [
+  const columns: DataTableColumn<CrossAccountAnomaly>[] = [
     {
       id: 'time',
       header: 'Detected',
@@ -61,11 +61,11 @@ export default function CrossTenantAnomalies() {
       sortAccessor: (a) => new Date(a.detected_at).getTime(),
     },
     {
-      id: 'tenant',
-      header: 'Tenant',
-      cell: (a) => <span className="font-medium text-foreground">{a.tenant_name}</span>,
+      id: 'entity',
+      header: 'Campaign',
+      cell: (a) => <span className="font-medium text-foreground">{a.entity_name}</span>,
       sortable: true,
-      sortAccessor: (a) => a.tenant_name,
+      sortAccessor: (a) => a.entity_name,
     },
     {
       id: 'metric',
@@ -113,12 +113,11 @@ export default function CrossTenantAnomalies() {
     <div className="space-y-6">
       <div>
         <h1 className="text-2xl font-semibold text-foreground tracking-tight">
-          Cross-Tenant Anomalies
+          Cross-Account Anomalies
         </h1>
         <p className="mt-1 text-sm text-muted-foreground">
-          Aggregated across {rollup?.tenants_scanned ?? '—'} tenant
-          {rollup?.tenants_scanned === 1 ? '' : 's'}. Click a row for diagnosis + recommended
-          actions.
+          {allAnomalies.length} anomal{allAnomalies.length === 1 ? 'y' : 'ies'} detected across
+          top-spend campaigns. Click a row for diagnosis + recommended actions.
         </p>
       </div>
 
@@ -157,16 +156,14 @@ export default function CrossTenantAnomalies() {
       </div>
 
       <Card>
-        <DataTable<CrossTenantAnomaly>
+        <DataTable<CrossAccountAnomaly>
           data={visible}
           columns={columns}
-          rowKey={(r) => `${r.tenant_id}:${r.id}`}
+          rowKey={(r) => r.id}
           onRowClick={(r) => setSelected(r)}
           loading={rollupQuery.isLoading}
-          emptyMessage={
-            filter === 'all' ? 'No anomalies detected in any tenant.' : `No ${filter} anomalies.`
-          }
-          ariaLabel="Cross-tenant anomalies"
+          emptyMessage={filter === 'all' ? 'No anomalies detected.' : `No ${filter} anomalies.`}
+          ariaLabel="Cross-account anomalies"
         />
       </Card>
 
@@ -176,7 +173,7 @@ export default function CrossTenantAnomalies() {
 }
 
 interface AnomalyDetailProps {
-  anomaly: CrossTenantAnomaly;
+  anomaly: CrossAccountAnomaly;
   onClose: () => void;
 }
 
@@ -205,14 +202,9 @@ function AnomalyDetail({ anomaly, onClose }: AnomalyDetailProps) {
               <StatusPill variant={SEVERITY_VARIANT[anomaly.severity]}>
                 {anomaly.severity}
               </StatusPill>
-              {anomaly.zscore != null && (
-                <span className="text-xs font-mono uppercase tracking-wider text-muted-foreground">
-                  z = {anomaly.zscore.toFixed(2)}
-                </span>
-              )}
             </div>
             <h2 id="anomaly-detail-title" className="text-lg font-semibold text-foreground">
-              {anomaly.metric} · {anomaly.tenant_name}
+              {anomaly.metric} · {anomaly.entity_name}
             </h2>
             <p className="text-xs text-muted-foreground font-mono mt-0.5">
               {formatTime(anomaly.detected_at)} · {anomaly.entity_type} ·{' '}

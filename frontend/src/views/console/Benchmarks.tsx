@@ -1,7 +1,7 @@
 /**
  * EMQ Benchmarks (Owner Console View)
  *
- * Cross-tenant EMQ benchmarks by platform and industry
+ * Platform-wide EMQ benchmarks by platform and industry
  * Shows P25/P50/P75 percentiles and trends
  */
 
@@ -128,7 +128,7 @@ export default function Benchmarks() {
       <div className="flex items-center justify-between">
         <div>
           <h1 className="text-2xl font-bold text-white">EMQ Benchmarks</h1>
-          <p className="text-muted-foreground">Cross-tenant performance benchmarks</p>
+          <p className="text-muted-foreground">Platform-wide performance benchmarks</p>
         </div>
         <div className="flex items-center gap-3">
           {/* Time Range */}
@@ -204,7 +204,7 @@ export default function Benchmarks() {
           </div>
           <div className="flex items-center gap-2 text-sm text-muted-foreground">
             <InformationCircleIcon className="w-4 h-4" />
-            Based on {platformBenchmarks.reduce((sum, p) => sum + p.sampleSize, 0)} tenants
+            Based on {platformBenchmarks.reduce((sum, p) => sum + p.sampleSize, 0)} accounts
           </div>
         </div>
 
@@ -216,7 +216,7 @@ export default function Benchmarks() {
                   <div className="flex items-center gap-3">
                     <span className="font-medium text-white">{benchmark.platform}</span>
                     <span className="text-xs text-muted-foreground">
-                      ({benchmark.sampleSize} tenants)
+                      ({benchmark.sampleSize} accounts)
                     </span>
                   </div>
                   <div className="flex items-center gap-4">
@@ -289,7 +289,7 @@ export default function Benchmarks() {
                 <div className="flex items-center justify-between mb-3">
                   <span className="font-medium text-white">{benchmark.industry}</span>
                   <span className="text-xs text-muted-foreground">
-                    {benchmark.count} tenants
+                    {benchmark.count} accounts
                   </span>
                 </div>
                 <div className="flex items-center gap-3">

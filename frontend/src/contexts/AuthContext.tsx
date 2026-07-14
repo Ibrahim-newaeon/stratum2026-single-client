@@ -125,10 +125,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       sessionStorage.setItem(REFRESH_TOKEN_KEY, data.data.refresh_token);
     }
 
-    if (data.data?.available_tenants && Array.isArray(data.data.available_tenants)) {
-      localStorage.setItem('stratum_available_tenants', JSON.stringify(data.data.available_tenants));
-    }
-
     const jwtPayload = data.data?.access_token ? decodeJwtPayload(data.data.access_token) : {};
 
     const userResponse = await fetch(`${API_BASE}/users/me`, {
@@ -379,7 +375,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     localStorage.removeItem('stratum_onboarding_dismissed');
     localStorage.removeItem('stratum_onboarding_skipped');
     localStorage.removeItem('stratum_onboarding_demo_dismissed');
-    localStorage.removeItem('stratum_available_tenants');
     // Clear Zustand app store on logout
     useAppStore.getState().logout();
     // Clear React Query cache to prevent stale data across sessions

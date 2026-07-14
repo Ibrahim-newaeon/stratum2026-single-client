@@ -1,7 +1,7 @@
 /**
  * Launch Readiness (Super Admin Go-Live Wizard)
  *
- * Sequential 12-phase launch gate for multi-tenant production. Phase N+1
+ * Sequential 12-phase launch gate for production. Phase N+1
  * stays locked until phase N is 100% complete. Every check and uncheck
  * appends to an audit trail. No skip.
  */

@@ -138,24 +138,6 @@ export interface Alert {
 
 // ==================== USER & AUTH ====================
 
-export interface User {
-  id: string;
-  email: string;
-  name: string;
-  company: string;
-  role: 'owner' | 'admin' | 'manager' | 'analyst' | 'viewer';
-  avatar_url?: string;
-}
-
-export interface AuthContextType {
-  user: User | null;
-  tenantId: string;
-  loading: boolean;
-  login: (email: string, password: string) => Promise<void>;
-  logout: () => void;
-  refreshToken: () => Promise<void>;
-}
-
 // ==================== API RESPONSES ====================
 
 export interface APIResponse<T> {

@@ -3,7 +3,7 @@
  *
  * Mounts at /console/* and is gated to role=owner via
  * ProtectedRoute at the route level. Distinct from DashboardLayout
- * so platform-level concerns (cross-tenant tooling, feature flags,
+ * so platform-level concerns (platform-wide tooling, feature flags,
  * dead letter queue) never clutter the agency operator's mental
  * model.
  *

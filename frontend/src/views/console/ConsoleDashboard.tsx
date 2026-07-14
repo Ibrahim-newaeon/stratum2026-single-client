@@ -1,105 +1,54 @@
 /**
  * Owner Console Dashboard
- * Comprehensive dashboard for system-wide management and monitoring
- * Blends MRR/ARR metrics, churn prediction, system health, and tenant management
+ * System-wide monitoring for the single-org deployment: usage, platform
+ * health, and audit trail.
+ *
+ * NOTE(STRAT-SC-001/D3): the revenue/tenant-portfolio/churn-risk/billing
+ * tabs and panels that used to live here were removed. Their sole data
+ * source was the deleted Tenant model + Stripe billing tables — C3
+ * deleted the backing routes (/console/revenue, /console/tenants/portfolio,
+ * /console/churn/risks, /console/billing/*) since a single-org deployment
+ * has no MRR, tenant portfolio, churn, or subscription concept. See
+ * task-C3-report.md's console.py route disposition table.
  */
 
-import { useState, useEffect, useMemo, useCallback } from 'react'
-import { useTranslation } from 'react-i18next'
+import { useState, useEffect, useCallback } from 'react'
 import {
-  Users,
-  Building2,
   Server,
   Activity,
-  DollarSign,
   AlertTriangle,
-  TrendingUp,
-  ChevronRight,
-  Shield,
   Globe,
   Database,
   Cpu,
   HardDrive,
   Zap,
   RefreshCw,
-  Plus,
   Search,
   CheckCircle2,
   XCircle,
-  Eye,
-  Edit,
-  Ban,
   Settings,
   Key,
-  CreditCard,
-  BarChart3,
-  PieChart,
-  ArrowUpRight,
-  ArrowDownRight,
   AlertCircle,
   Loader2,
   Crown,
   FileText,
-  Receipt,
-  Package,
-  Calendar,
 } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import { ErrorBoundary } from '@/components/ui/ErrorBoundary'
-import { usePriceMetrics } from '@/hooks/usePriceMetrics'
 import { useAuth } from '@/contexts/AuthContext'
 import apiClient from '@/api/client'
-
-const formatCurrency = (num: number) => {
-  return new Intl.NumberFormat('en-US', {
-    style: 'currency',
-    currency: 'USD',
-    minimumFractionDigits: 0,
-    maximumFractionDigits: 0,
-  }).format(num)
-}
 
 // =============================================================================
 // Types
 // =============================================================================
-interface RevenueMetrics {
-  mrr: number
-  arr: number
-  mrr_growth_pct: number
-  gross_margin_pct: number
-  arpa: number
-  nrr: number
-  churn_rate: number
-  active_tenants: number
-  trial_tenants: number
-  total_tenants: number
-}
-
-interface TenantPortfolioItem {
-  id: number
-  name: string
-  slug: string
-  plan: string
-  status: string
-  mrr: number
-  users_count: number
-  users_limit: number
-  campaigns_count: number
-  connectors: string[]
-  signal_health: string
-  churn_risk: number | null
-  last_admin_login: string | null
-  created_at: string
-}
-
-interface ChurnRisk {
-  tenant_id: number
-  tenant_name: string
-  plan: string
-  risk_score: number
-  risk_factors: string[]
-  recommended_actions: string[]
-  mrr_at_risk: number
+interface DashboardSummary {
+  usage: { total_users: number; total_campaigns: number }
+  health: {
+    platform_status: string
+    pipeline_success_rate: number | null
+    api_uptime: number | null
+  }
+  alerts: { critical: number; high: number; medium: number }
 }
 
 interface SystemHealth {
@@ -117,50 +66,20 @@ interface SystemAlert {
   timestamp: string
 }
 
-interface BillingPlan {
-  id: string
-  name: string
-  display_name?: string
-  tier: string
-  price: number
-  billing_period?: string
-  limits?: { max_users?: number; max_campaigns?: number; max_connectors?: number }
-  is_active?: boolean
-}
-
-interface Invoice {
-  id: string
-  invoice_number: string
-  tenant_name: string
-  total: number
-  status: 'paid' | 'pending' | 'overdue'
-  due_date?: string
-}
-
-interface Subscription {
-  id: string
-  tenantName: string
-  plan: string
-  status: 'active' | 'past_due' | 'trialing' | 'canceled'
-  mrr: number
-  nextBilling: Date
-}
-
 interface AuditLogEntry {
   id: string
   timestamp?: string
   action: string
   user_email?: string
   user_id?: number
-  tenant_id?: number
   resource_type?: string
   resource_id?: number
   success?: boolean
   details?: Record<string, unknown>
 }
 
-/** Derive system alerts from live health data instead of hardcoding */
-function deriveAlerts(health: SystemHealth | null, tenantCount: number, churnCount: number): SystemAlert[] {
+/** Derive system alerts from live health + dashboard summary data. */
+function deriveAlerts(health: SystemHealth | null, alertCounts: DashboardSummary['alerts'] | null): SystemAlert[] {
   const alerts: SystemAlert[] = []
 
   if (health) {
@@ -222,13 +141,13 @@ function deriveAlerts(health: SystemHealth | null, tenantCount: number, churnCou
     })
   }
 
-  if (churnCount > 0) {
+  if (alertCounts && (alertCounts.critical > 0 || alertCounts.high > 0)) {
     alerts.push({
-      id: 'churn-1',
-      type: churnCount >= 5 ? 'error' : 'warning',
-      message: `${churnCount} tenant${churnCount > 1 ? 's' : ''} at high churn risk — review recommended`,
-      component: 'Churn Engine',
-      timestamp: 'Current',
+      id: 'enforcement-1',
+      type: alertCounts.critical > 0 ? 'error' : 'warning',
+      message: `${alertCounts.critical} critical, ${alertCounts.high} high-severity enforcement alerts in the last 24h`,
+      component: 'Trust Engine',
+      timestamp: 'Last 24h',
     })
   }
 
@@ -236,7 +155,7 @@ function deriveAlerts(health: SystemHealth | null, tenantCount: number, churnCou
     alerts.push({
       id: 'ok-1',
       type: 'info',
-      message: `All systems healthy — ${tenantCount} active tenants running smoothly`,
+      message: 'All systems operating normally',
       component: 'System',
       timestamp: new Date().toLocaleTimeString(),
     })
@@ -249,80 +168,34 @@ function deriveAlerts(health: SystemHealth | null, tenantCount: number, churnCou
 // Main Component
 // =============================================================================
 export default function ConsoleDashboard() {
-  const { t: _t } = useTranslation()
-  const { showPriceMetrics } = usePriceMetrics()
   const { user } = useAuth()
   const [isRefreshing, setIsRefreshing] = useState(false)
   const [isLoading, setIsLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
-  const [activeTab, setActiveTab] = useState<'overview' | 'tenants' | 'system' | 'churn' | 'billing' | 'audit'>('overview')
-  const [billingSubTab, setBillingSubTab] = useState<'overview' | 'plans' | 'invoices' | 'subscriptions'>('overview')
-  const [searchQuery, setSearchQuery] = useState('')
-  const [auditFilter, setAuditFilter] = useState({ action: '', tenant_id: '' })
+  const [activeTab, setActiveTab] = useState<'overview' | 'system' | 'audit'>('overview')
+  const [auditFilter, setAuditFilter] = useState({ action: '' })
 
   // API Data
-  const [revenueMetrics, setRevenueMetrics] = useState<RevenueMetrics | null>(null)
-  const [tenants, setTenants] = useState<TenantPortfolioItem[]>([])
-  const [churnRisks, setChurnRisks] = useState<ChurnRisk[]>([])
+  const [dashboard, setDashboard] = useState<DashboardSummary | null>(null)
   const [systemHealth, setSystemHealth] = useState<SystemHealth | null>(null)
-  const [plans, setPlans] = useState<BillingPlan[]>([])
-  const [invoices, setInvoices] = useState<Invoice[]>([])
-  const [subscriptions, setSubscriptions] = useState<Subscription[]>([])
   const [auditLogs, setAuditLogs] = useState<AuditLogEntry[]>([])
-
-  const handleRetryPayment = async (subscriptionId: string) => {
-    try {
-      await apiClient.post(`/console/billing/subscriptions/${subscriptionId}/retry`)
-    } catch {
-      // Retry failed — status will reflect on next refresh
-    }
-  }
 
   const fetchData = useCallback(async () => {
     setIsLoading(true)
     setError(null)
 
     try {
-      const [revenueRes, tenantsRes, healthRes, churnRes, plansRes, invoicesRes, subscriptionsRes, auditRes] = await Promise.allSettled([
-        apiClient.get('/console/revenue'),
-        apiClient.get('/console/tenants/portfolio'),
+      const [dashboardRes, healthRes, auditRes] = await Promise.allSettled([
+        apiClient.get('/console/dashboard'),
         apiClient.get('/console/system/health'),
-        apiClient.get('/console/churn/risks'),
-        apiClient.get('/console/billing/plans'),
-        apiClient.get('/console/billing/invoices'),
-        apiClient.get('/console/billing/subscriptions'),
         apiClient.get('/console/audit', { params: { limit: 100 } }),
       ])
 
-      // Handle each response individually
-      if (revenueRes.status === 'fulfilled' && revenueRes.value.data.success) {
-        setRevenueMetrics(revenueRes.value.data.data)
-      }
-      if (tenantsRes.status === 'fulfilled' && tenantsRes.value.data.success) {
-        setTenants(tenantsRes.value.data.data.tenants || [])
+      if (dashboardRes.status === 'fulfilled' && dashboardRes.value.data.success) {
+        setDashboard(dashboardRes.value.data.data)
       }
       if (healthRes.status === 'fulfilled' && healthRes.value.data.success) {
         setSystemHealth(healthRes.value.data.data)
-      }
-      if (churnRes.status === 'fulfilled' && churnRes.value.data.success) {
-        setChurnRisks(churnRes.value.data.data.at_risk_tenants || [])
-      }
-      if (plansRes.status === 'fulfilled' && plansRes.value.data.success) {
-        setPlans(plansRes.value.data.data.plans || [])
-      }
-      if (invoicesRes.status === 'fulfilled' && invoicesRes.value.data.success) {
-        setInvoices(invoicesRes.value.data.data.invoices || [])
-      }
-      if (subscriptionsRes.status === 'fulfilled' && subscriptionsRes.value.data.success) {
-        const subs = subscriptionsRes.value.data.data.subscriptions || []
-        setSubscriptions(subs.map((s: { id: number; tenant_name?: string; tenant_id: number; plan_name?: string; status?: string; current_period_end?: string; discount_percent?: number }) => ({
-          id: s.id,
-          tenantName: s.tenant_name || `Tenant ${s.tenant_id}`,
-          plan: s.plan_name || 'unknown',
-          status: s.status || 'active',
-          mrr: s.discount_percent ? 0 : 0,
-          nextBilling: new Date(s.current_period_end || Date.now()),
-        })))
       }
       if (auditRes.status === 'fulfilled' && auditRes.value.data.success) {
         setAuditLogs(auditRes.value.data.data.logs || [])
@@ -344,17 +217,6 @@ export default function ConsoleDashboard() {
     fetchData().finally(() => setIsRefreshing(false))
   }
 
-  const filteredTenants = useMemo(() => {
-    if (!searchQuery) return tenants
-    const query = searchQuery.toLowerCase()
-    return tenants.filter(
-      (t) =>
-        t.name.toLowerCase().includes(query) ||
-        t.slug.toLowerCase().includes(query) ||
-        t.plan.toLowerCase().includes(query)
-    )
-  }, [tenants, searchQuery])
-
   if (isLoading) {
     return (
       <div className="flex items-center justify-center h-96 motion-enter">
@@ -375,7 +237,7 @@ export default function ConsoleDashboard() {
             Owner Console Dashboard
           </h1>
           <p className="text-muted-foreground mt-1">
-            System-wide management and monitoring • Welcome back, {user?.name}
+            System-wide monitoring • Welcome back, {user?.name}
           </p>
         </div>
 
@@ -387,10 +249,6 @@ export default function ConsoleDashboard() {
           >
             <RefreshCw className={cn('w-4 h-4', isRefreshing && 'animate-spin')} />
             Refresh
-          </button>
-          <button className="flex items-center gap-2 px-4 py-2 rounded-lg bg-gradient-stratum text-white shadow-glow hover:shadow-glow-lg transition-colors motion-card">
-            <Plus className="w-4 h-4" />
-            New Tenant
           </button>
         </div>
       </div>
@@ -405,11 +263,8 @@ export default function ConsoleDashboard() {
       {/* Tab Navigation */}
       <div className="flex items-center gap-1 p-1 rounded-lg bg-muted/50 w-fit motion-enter overflow-x-auto">
         {[
-          { id: 'overview', label: 'Overview', icon: BarChart3 },
-          { id: 'tenants', label: 'Tenants', icon: Building2 },
+          { id: 'overview', label: 'Overview', icon: Activity },
           { id: 'system', label: 'System', icon: Server },
-          { id: 'churn', label: 'Churn Risk', icon: AlertTriangle },
-          { id: 'billing', label: 'Billing', icon: CreditCard },
           { id: 'audit', label: 'Audit Log', icon: FileText },
         ].map(tab => (
           <button
@@ -429,117 +284,22 @@ export default function ConsoleDashboard() {
       </div>
 
       {/* =========================================================================
-          Overview Tab - Revenue KPIs + Quick Stats
+          Overview Tab - Usage + System Health Summary + Alerts
       ========================================================================= */}
       {activeTab === 'overview' && (
         <div className="space-y-6 motion-enter">
-          {/* Revenue KPIs */}
-          <div className={cn('grid grid-cols-2 gap-4', showPriceMetrics ? 'md:grid-cols-4' : 'md:grid-cols-1')}>
-            {showPriceMetrics && (
-            <KPICard
-              icon={DollarSign}
-              label="MRR"
-              value={revenueMetrics ? formatCurrency(revenueMetrics.mrr) : '$0'}
-              delta={revenueMetrics?.mrr_growth_pct}
-              deltaLabel="vs last month"
-              color="green"
-            />
-            )}
-            {showPriceMetrics && (
-            <KPICard
-              icon={TrendingUp}
-              label="ARR"
-              value={revenueMetrics ? formatCurrency(revenueMetrics.arr) : '$0'}
-              color="purple"
-            />
-            )}
-            <KPICard
-              icon={Building2}
-              label="Active Tenants"
-              value={revenueMetrics?.active_tenants || 0}
-              subValue={`${revenueMetrics?.trial_tenants || 0} trials`}
-              color="blue"
-            />
-            {showPriceMetrics && (
-            <KPICard
-              icon={BarChart3}
-              label="ARPA"
-              value={revenueMetrics ? formatCurrency(revenueMetrics.arpa) : '$0'}
-              color="amber"
-            />
-            )}
-          </div>
-
-          {/* Secondary Metrics */}
-          <div className={cn('grid grid-cols-2 gap-4', showPriceMetrics ? 'md:grid-cols-4' : 'md:grid-cols-2')}>
-            {showPriceMetrics && (
+          {/* Usage Snapshot */}
+          <div className="grid grid-cols-2 gap-4 md:grid-cols-3">
+            <MetricCard label="Total Users" value={dashboard?.usage.total_users ?? 0} status="blue" />
+            <MetricCard label="Total Campaigns" value={dashboard?.usage.total_campaigns ?? 0} status="blue" />
             <MetricCard
-              label="NRR"
-              value={`${revenueMetrics?.nrr || 0}%`}
-              status={(revenueMetrics?.nrr || 0) >= 100 ? 'green' : 'amber'}
-            />
-            )}
-            <MetricCard
-              label="Churn Rate"
-              value={`${revenueMetrics?.churn_rate || 0}%`}
-              status={(revenueMetrics?.churn_rate || 0) < 5 ? 'green' : 'red'}
-            />
-            {showPriceMetrics && (
-            <MetricCard
-              label="Gross Margin"
-              value={`${revenueMetrics?.gross_margin_pct || 0}%`}
-              status="green"
-            />
-            )}
-            <MetricCard
-              label="Total Tenants"
-              value={revenueMetrics?.total_tenants || 0}
-              status="blue"
+              label="Platform Status"
+              value={dashboard?.health.platform_status ?? 'unknown'}
+              status={dashboard?.health.platform_status === 'operational' ? 'green' : 'amber'}
             />
           </div>
 
-          {/* Quick Stats Grid */}
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-            {/* At Risk Tenants */}
-            <div className="rounded-xl border bg-card p-5 shadow-card motion-card">
-              <h3 className="font-semibold mb-4 flex items-center gap-2">
-                <AlertTriangle className="w-5 h-5 text-warning" />
-                Tenants at Churn Risk
-                {showPriceMetrics && churnRisks.length > 0 && (
-                  <span className="ml-auto text-sm font-normal text-warning">
-                    ${churnRisks.reduce((sum, r) => sum + r.mrr_at_risk, 0).toLocaleString()}/mo at risk
-                  </span>
-                )}
-              </h3>
-              {churnRisks.length === 0 ? (
-                <p className="text-muted-foreground py-4 text-center">No tenants at high churn risk 🎉</p>
-              ) : (
-                <div className="space-y-3">
-                  {churnRisks.slice(0, 5).map((risk, idx) => (
-                    <div
-                      key={risk.tenant_id}
-                      className="flex items-center justify-between p-3 rounded-lg bg-muted/50 motion-enter"
-                      style={{ animationDelay: `${idx * 50}ms` }}
-                    >
-                      <div>
-                        <p className="font-medium">{risk.tenant_name}</p>
-                        <p className="text-xs text-muted-foreground">{risk.risk_factors[0]}</p>
-                      </div>
-                      <div className="text-right">
-                        <p className={cn(
-                          'font-bold',
-                          risk.risk_score >= 0.7 ? 'text-danger' : risk.risk_score >= 0.5 ? 'text-warning' : 'text-success'
-                        )}>
-                          {(risk.risk_score * 100).toFixed(0)}% risk
-                        </p>
-                        {showPriceMetrics && <p className="text-xs text-muted-foreground">${risk.mrr_at_risk}/mo</p>}
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              )}
-            </div>
-
             {/* System Health Summary */}
             <div className="rounded-xl border bg-card p-5 shadow-card motion-card">
               <h3 className="font-semibold mb-4 flex items-center gap-2">
@@ -573,6 +333,19 @@ export default function ConsoleDashboard() {
                 <p className="text-muted-foreground py-4 text-center">Loading health metrics...</p>
               )}
             </div>
+
+            {/* Alert Counts */}
+            <div className="rounded-xl border bg-card p-5 shadow-card motion-card">
+              <h3 className="font-semibold mb-4 flex items-center gap-2">
+                <AlertTriangle className="w-5 h-5 text-warning" />
+                Enforcement Alerts (24h)
+              </h3>
+              <div className="space-y-3">
+                <HealthRow label="Critical" value={String(dashboard?.alerts.critical ?? 0)} status={((dashboard?.alerts.critical ?? 0) > 0) ? 'red' : 'green'} />
+                <HealthRow label="High" value={String(dashboard?.alerts.high ?? 0)} status={((dashboard?.alerts.high ?? 0) > 0) ? 'amber' : 'green'} />
+                <HealthRow label="Medium" value={String(dashboard?.alerts.medium ?? 0)} status="green" />
+              </div>
+            </div>
           </div>
 
           {/* System Alerts */}
@@ -582,7 +355,7 @@ export default function ConsoleDashboard() {
               System Alerts
             </h3>
             <div className="space-y-3">
-              {deriveAlerts(systemHealth, revenueMetrics?.active_tenants || tenants.length, churnRisks.length).map((alert, idx) => (
+              {deriveAlerts(systemHealth, dashboard?.alerts ?? null).map((alert, idx) => (
                 <div
                   key={alert.id}
                   className={cn(
@@ -604,230 +377,6 @@ export default function ConsoleDashboard() {
                   </div>
                 </div>
               ))}
-            </div>
-          </div>
-
-          {/* Usage Limits & Overage Warnings */}
-          <div className="rounded-xl border bg-card p-6 shadow-card motion-card">
-            <h3 className="font-semibold mb-4 flex items-center gap-2">
-              <Package className="w-5 h-5 text-purple-500" />
-              Usage Limits
-              <span className="ml-auto text-xs font-normal text-muted-foreground">
-                Tenants approaching plan limits
-              </span>
-            </h3>
-            {(() => {
-              // Calculate tenants near limits
-              const tenantsNearLimits = tenants.filter(t => {
-                const usersPct = (t.users_count / t.users_limit) * 100
-                return usersPct >= 75
-              })
-
-              if (tenantsNearLimits.length === 0) {
-                return (
-                  <p className="text-muted-foreground text-center py-4">
-                    All tenants are within their usage limits
-                  </p>
-                )
-              }
-
-              return (
-                <div className="space-y-3">
-                  {tenantsNearLimits.slice(0, 5).map((tenant, idx) => {
-                    const usersPct = (tenant.users_count / tenant.users_limit) * 100
-                    const isOverLimit = usersPct >= 100
-                    const isNearLimit = usersPct >= 90
-
-                    return (
-                      <div
-                        key={tenant.id}
-                        className={cn(
-                          'flex items-center justify-between p-3 rounded-lg border motion-enter',
-                          isOverLimit ? 'bg-danger/5 border-red-500/20' :
-                          isNearLimit ? 'bg-warning/5 border-amber-500/20' :
-                          'bg-info/5 border-blue-500/20'
-                        )}
-                        style={{ animationDelay: `${idx * 40}ms` }}
-                      >
-                        <div className="flex items-center gap-3">
-                          <div className={cn(
-                            'w-8 h-8 rounded-lg flex items-center justify-center text-white font-bold text-xs',
-                            isOverLimit ? 'bg-danger' : isNearLimit ? 'bg-warning' : 'bg-info'
-                          )}>
-                            {tenant.name.charAt(0)}
-                          </div>
-                          <div>
-                            <p className="font-medium">{tenant.name}</p>
-                            <p className="text-xs text-muted-foreground capitalize">{tenant.plan} plan</p>
-                          </div>
-                        </div>
-                        <div className="text-right">
-                          <div className="flex items-center gap-2">
-                            <Users className="w-4 h-4 text-muted-foreground" />
-                            <span className={cn(
-                              'font-medium',
-                              isOverLimit ? 'text-danger' : isNearLimit ? 'text-warning' : 'text-info'
-                            )}>
-                              {tenant.users_count}/{tenant.users_limit}
-                            </span>
-                          </div>
-                          <div className="w-20 h-1.5 bg-muted rounded-full mt-1">
-                            <div
-                              className={cn(
-                                'h-full rounded-full transition-[width]',
-                                isOverLimit ? 'bg-danger' : isNearLimit ? 'bg-warning' : 'bg-info'
-                              )}
-                              style={{ width: `${Math.min(100, usersPct)}%` }}
-                            />
-                          </div>
-                        </div>
-                      </div>
-                    )
-                  })}
-                  {tenantsNearLimits.length > 5 && (
-                    <button
-                      onClick={() => setActiveTab('tenants')}
-                      className="w-full text-center text-sm text-primary hover:underline py-2"
-                    >
-                      View all {tenantsNearLimits.length} tenants approaching limits →
-                    </button>
-                  )}
-                </div>
-              )
-            })()}
-          </div>
-        </div>
-      )}
-
-      {/* =========================================================================
-          Tenants Tab - Tenant Portfolio with Health & Churn Indicators
-      ========================================================================= */}
-      {activeTab === 'tenants' && (
-        <div className="space-y-4 motion-enter">
-          {/* Search and Filters */}
-          <div className="flex items-center gap-4">
-            <div className="relative flex-1 max-w-md">
-              <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
-              <input
-                type="text"
-                placeholder="Search tenants..."
-                value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
-                className="w-full pl-10 pr-4 py-2 rounded-lg border bg-background focus:ring-2 focus:ring-primary/20"
-              />
-            </div>
-            <select className="px-3 py-2 rounded-lg border bg-background">
-              <option>All Plans</option>
-              <option>Enterprise</option>
-              <option>Professional</option>
-              <option>Starter</option>
-              <option>Free</option>
-            </select>
-            <select className="px-3 py-2 rounded-lg border bg-background">
-              <option>All Status</option>
-              <option>Active</option>
-              <option>Trial</option>
-              <option>Suspended</option>
-            </select>
-          </div>
-
-          {/* Tenants Table */}
-          <div className="rounded-xl border bg-card overflow-hidden shadow-card">
-            <div className="overflow-x-auto">
-            <table className="w-full text-sm">
-              <thead className="bg-muted/30">
-                <tr>
-                  <th scope="col" className="text-left py-3 px-4 font-medium">Tenant</th>
-                  <th scope="col" className="text-left py-3 px-4 font-medium">Plan</th>
-                  {showPriceMetrics && <th scope="col" className="text-right py-3 px-4 font-medium">MRR</th>}
-                  <th scope="col" className="text-center py-3 px-4 font-medium">Users</th>
-                  <th scope="col" className="text-center py-3 px-4 font-medium">Signal Health</th>
-                  <th scope="col" className="text-center py-3 px-4 font-medium">Churn Risk</th>
-                  <th scope="col" className="text-right py-3 px-4 font-medium">Actions</th>
-                </tr>
-              </thead>
-              <tbody className="divide-y">
-                {filteredTenants.length === 0 ? (
-                  <tr>
-                    <td colSpan={showPriceMetrics ? 7 : 6} className="py-8 text-center text-muted-foreground">
-                      No tenants found
-                    </td>
-                  </tr>
-                ) : (
-                  filteredTenants.map((tenant, idx) => (
-                    <tr
-                      key={tenant.id}
-                      className="hover:bg-muted/30 motion-enter"
-                      style={{ animationDelay: `${idx * 20}ms` }}
-                    >
-                      <td className="py-3 px-4">
-                        <div className="flex items-center gap-3">
-                          <div className="w-9 h-9 rounded-lg bg-gradient-stratum flex items-center justify-center text-white font-bold">
-                            {tenant.name.charAt(0)}
-                          </div>
-                          <div>
-                            <p className="font-medium">{tenant.name}</p>
-                            <p className="text-xs text-muted-foreground">{tenant.slug}</p>
-                          </div>
-                        </div>
-                      </td>
-                      <td className="py-3 px-4">
-                        <PlanBadge plan={tenant.plan} />
-                      </td>
-                      {showPriceMetrics && (
-                      <td className="text-right py-3 px-4 font-medium">
-                        {formatCurrency(tenant.mrr)}
-                      </td>
-                      )}
-                      <td className="text-center py-3 px-4">
-                        <div className="flex items-center justify-center gap-2">
-                          <span>{tenant.users_count}/{tenant.users_limit}</span>
-                          <div className="w-12 h-1.5 bg-muted rounded-full">
-                            <div
-                              className={cn(
-                                'h-full rounded-full',
-                                (tenant.users_count / tenant.users_limit) >= 0.9 ? 'bg-danger' :
-                                (tenant.users_count / tenant.users_limit) >= 0.7 ? 'bg-warning' : 'bg-success'
-                              )}
-                              style={{ width: `${Math.min(100, (tenant.users_count / tenant.users_limit) * 100)}%` }}
-                            />
-                          </div>
-                        </div>
-                      </td>
-                      <td className="text-center py-3 px-4">
-                        <HealthBadge status={tenant.signal_health} />
-                      </td>
-                      <td className="text-center py-3 px-4">
-                        {tenant.churn_risk !== null ? (
-                          <span className={cn(
-                            'font-medium',
-                            tenant.churn_risk >= 0.7 ? 'text-danger' :
-                            tenant.churn_risk >= 0.4 ? 'text-warning' : 'text-success'
-                          )}>
-                            {(tenant.churn_risk * 100).toFixed(0)}%
-                          </span>
-                        ) : (
-                          <span className="text-muted-foreground">-</span>
-                        )}
-                      </td>
-                      <td className="text-right py-3 px-4">
-                        <div className="flex items-center justify-end gap-1">
-                          <button className="p-1.5 rounded hover:bg-muted" title="View" aria-label="View tenant">
-                            <Eye className="w-4 h-4" />
-                          </button>
-                          <button className="p-1.5 rounded hover:bg-muted" title="Edit" aria-label="Edit tenant">
-                            <Edit className="w-4 h-4" />
-                          </button>
-                          <button className="p-1.5 rounded hover:bg-muted text-danger" title="Suspend" aria-label="Suspend tenant">
-                            <Ban className="w-4 h-4" />
-                          </button>
-                        </div>
-                      </td>
-                    </tr>
-                  ))
-                )}
-              </tbody>
-            </table>
             </div>
           </div>
         </div>
@@ -949,7 +498,6 @@ export default function ConsoleDashboard() {
                 { icon: Key, label: 'Rotate Keys', color: 'text-warning' },
                 { icon: Globe, label: 'CDN Purge', color: 'text-purple-500' },
                 { icon: Activity, label: 'Health Check', color: 'text-cyan-500' },
-                { icon: Shield, label: 'Security Scan', color: 'text-danger' },
               ].map((action, idx) => (
                 <button
                   key={idx}
@@ -961,402 +509,6 @@ export default function ConsoleDashboard() {
               ))}
             </div>
           </div>
-        </div>
-      )}
-
-      {/* =========================================================================
-          Churn Risk Tab - Detailed Churn Analysis
-      ========================================================================= */}
-      {activeTab === 'churn' && (
-        <div className="space-y-6 motion-enter">
-          {/* Summary */}
-          <div className={cn('grid grid-cols-1 gap-4', showPriceMetrics ? 'md:grid-cols-3' : 'md:grid-cols-2')}>
-            <div className="rounded-xl border bg-card p-5 shadow-card motion-card">
-              <p className="text-muted-foreground text-sm mb-2">Tenants at Risk</p>
-              <p className="text-3xl font-bold text-danger">{churnRisks.length}</p>
-            </div>
-            {showPriceMetrics && (
-            <div className="rounded-xl border bg-card p-5 shadow-card motion-card">
-              <p className="text-muted-foreground text-sm mb-2">MRR at Risk</p>
-              <p className="text-3xl font-bold text-warning">
-                {formatCurrency(churnRisks.reduce((sum, r) => sum + r.mrr_at_risk, 0))}
-              </p>
-            </div>
-            )}
-            <div className="rounded-xl border bg-card p-5 shadow-card motion-card">
-              <p className="text-muted-foreground text-sm mb-2">Avg Risk Score</p>
-              <p className="text-3xl font-bold">
-                {churnRisks.length > 0
-                  ? (churnRisks.reduce((sum, r) => sum + r.risk_score, 0) / churnRisks.length * 100).toFixed(0)
-                  : 0}%
-              </p>
-            </div>
-          </div>
-
-          {/* Churn Risk List */}
-          {churnRisks.length === 0 ? (
-            <div className="rounded-xl border bg-card p-8 text-center shadow-card motion-card">
-              <CheckCircle2 className="w-12 h-12 text-success mx-auto mb-4" />
-              <p className="text-lg font-medium">All Clear!</p>
-              <p className="text-muted-foreground">No tenants are at high churn risk at this time.</p>
-            </div>
-          ) : (
-            <div className="space-y-4">
-              {churnRisks.map((risk, idx) => (
-                <div
-                  key={risk.tenant_id}
-                  className="rounded-xl border bg-card p-5 shadow-card motion-enter"
-                  style={{ animationDelay: `${idx * 50}ms` }}
-                >
-                  <div className="flex items-start justify-between mb-4">
-                    <div>
-                      <h3 className="text-lg font-semibold">{risk.tenant_name}</h3>
-                      <p className="text-sm text-muted-foreground">{risk.plan} plan</p>
-                    </div>
-                    <div className="text-right">
-                      <p className={cn(
-                        'text-2xl font-bold motion-delta',
-                        risk.risk_score >= 0.7 ? 'text-danger' : risk.risk_score >= 0.5 ? 'text-warning' : 'text-success'
-                      )}>
-                        {(risk.risk_score * 100).toFixed(0)}%
-                      </p>
-                      {showPriceMetrics && <p className="text-sm text-muted-foreground">{formatCurrency(risk.mrr_at_risk)}/mo at risk</p>}
-                    </div>
-                  </div>
-
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    <div>
-                      <p className="text-sm font-medium text-muted-foreground mb-2">Risk Factors</p>
-                      <ul className="space-y-2">
-                        {risk.risk_factors.map((factor, i) => (
-                          <li key={i} className="flex items-center gap-2 text-sm motion-enter" style={{ animationDelay: `${i * 30}ms` }}>
-                            <AlertCircle className="w-4 h-4 text-warning flex-shrink-0" />
-                            {factor}
-                          </li>
-                        ))}
-                      </ul>
-                    </div>
-                    <div>
-                      <p className="text-sm font-medium text-muted-foreground mb-2">Recommended Actions</p>
-                      <ul className="space-y-2">
-                        {risk.recommended_actions.map((action, i) => (
-                          <li key={i} className="flex items-center gap-2 text-sm motion-enter" style={{ animationDelay: `${i * 30}ms` }}>
-                            <ChevronRight className="w-4 h-4 text-primary flex-shrink-0" />
-                            {action}
-                          </li>
-                        ))}
-                      </ul>
-                    </div>
-                  </div>
-                </div>
-              ))}
-            </div>
-          )}
-        </div>
-      )}
-
-      {/* =========================================================================
-          Billing Tab - Enhanced with Sub-tabs
-      ========================================================================= */}
-      {activeTab === 'billing' && (
-        <div className="space-y-6 motion-enter">
-          {/* Billing Sub-tabs */}
-          <div className="flex items-center gap-2 border-b pb-3">
-            {[
-              { id: 'overview', label: 'Overview', icon: BarChart3 },
-              { id: 'plans', label: 'Plans Catalog', icon: Package },
-              { id: 'invoices', label: 'Invoices', icon: Receipt },
-              { id: 'subscriptions', label: 'Subscriptions', icon: Calendar },
-            ].map(tab => (
-              <button
-                key={tab.id}
-                onClick={() => setBillingSubTab(tab.id as typeof billingSubTab)}
-                className={cn(
-                  'flex items-center gap-2 px-3 py-1.5 rounded-md text-sm transition-colors',
-                  billingSubTab === tab.id
-                    ? 'bg-primary/10 text-primary font-medium'
-                    : 'text-muted-foreground hover:text-foreground'
-                )}
-              >
-                <tab.icon className="w-4 h-4" />
-                {tab.label}
-              </button>
-            ))}
-          </div>
-
-          {/* Billing Overview */}
-          {billingSubTab === 'overview' && (
-            <>
-              <div className={cn('grid grid-cols-1 gap-4', showPriceMetrics ? 'md:grid-cols-4' : 'md:grid-cols-2')}>
-                {showPriceMetrics && (
-                <div className="p-5 rounded-xl bg-success/10 border border-green-500/20 shadow-card motion-card">
-                  <p className="text-sm text-muted-foreground">MRR</p>
-                  <p className="text-3xl font-bold text-success">
-                    {revenueMetrics ? formatCurrency(revenueMetrics.mrr) : '$0'}
-                  </p>
-                  <p className="text-xs text-green-600 flex items-center gap-1 mt-2">
-                    <TrendingUp className="w-3 h-3" />
-                    +{revenueMetrics?.mrr_growth_pct || 0}% growth
-                  </p>
-                </div>
-                )}
-                {showPriceMetrics && (
-                <div className="p-5 rounded-xl bg-purple-500/10 border border-purple-500/20 shadow-card motion-card">
-                  <p className="text-sm text-muted-foreground">ARR</p>
-                  <p className="text-3xl font-bold text-purple-500">
-                    {revenueMetrics ? formatCurrency(revenueMetrics.arr) : '$0'}
-                  </p>
-                </div>
-                )}
-                <div className="p-5 rounded-xl bg-info/10 border border-blue-500/20 shadow-card motion-card">
-                  <p className="text-sm text-muted-foreground">Pending</p>
-                  <p className="text-3xl font-bold text-info">
-                    {formatCurrency(invoices.filter(i => i.status === 'pending').reduce((s, i) => s + i.total, 0))}
-                  </p>
-                  <p className="text-xs text-muted-foreground mt-2">
-                    {invoices.filter(i => i.status === 'pending').length} invoices
-                  </p>
-                </div>
-                <div className="p-5 rounded-xl bg-warning/10 border border-amber-500/20 shadow-card motion-card">
-                  <p className="text-sm text-muted-foreground">Overdue</p>
-                  <p className="text-3xl font-bold text-warning">
-                    {formatCurrency(invoices.filter(i => i.status === 'overdue').reduce((s, i) => s + i.total, 0))}
-                  </p>
-                  <p className="text-xs text-amber-600 mt-2">
-                    {invoices.filter(i => i.status === 'overdue').length} invoices
-                  </p>
-                </div>
-              </div>
-
-              {/* Plan Distribution */}
-              {showPriceMetrics && (
-              <div className="rounded-xl border bg-card p-6 shadow-card motion-card">
-                <h3 className="font-semibold flex items-center gap-2 mb-4">
-                  <PieChart className="w-5 h-5 text-primary" />
-                  Revenue by Plan
-                </h3>
-                <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-                  {plans.map((plan, idx) => (
-                    <div key={plan.id} className="p-4 rounded-lg bg-muted/30 motion-enter" style={{ animationDelay: `${idx * 50}ms` }}>
-                      <div className="flex items-center gap-2 mb-2">
-                        <div className={cn(
-                          'w-3 h-3 rounded-full',
-                          plan.tier === 'enterprise' ? 'bg-purple-500' :
-                          plan.tier === 'professional' ? 'bg-info' :
-                          plan.tier === 'starter' ? 'bg-success' : 'bg-gray-500'
-                        )} />
-                        <span className="font-medium">{plan.display_name || plan.name}</span>
-                      </div>
-                      <p className="text-xl font-bold">{formatCurrency(plan.price || 0)}/mo</p>
-                      <p className="text-xs text-muted-foreground">
-                        {plan.limits?.max_users || 0} users, {plan.limits?.max_campaigns || 0} campaigns
-                      </p>
-                    </div>
-                  ))}
-                </div>
-              </div>
-              )}
-            </>
-          )}
-
-          {/* Plans Catalog */}
-          {billingSubTab === 'plans' && (
-            <div className="rounded-xl border bg-card shadow-card overflow-hidden">
-              <div className="p-4 border-b flex items-center justify-between">
-                <h3 className="font-semibold">Subscription Plans</h3>
-                <button className="flex items-center gap-2 px-3 py-1.5 rounded-lg bg-primary text-primary-foreground text-sm">
-                  <Plus className="w-4 h-4" />
-                  Add Plan
-                </button>
-              </div>
-              <div className="overflow-x-auto">
-              <table className="w-full text-sm">
-                <thead className="bg-muted/30">
-                  <tr>
-                    <th scope="col" className="text-left py-3 px-4 font-medium">Plan</th>
-                    <th scope="col" className="text-left py-3 px-4 font-medium">Tier</th>
-                    {showPriceMetrics && <th scope="col" className="text-right py-3 px-4 font-medium">Price</th>}
-                    <th scope="col" className="text-center py-3 px-4 font-medium">Users</th>
-                    <th scope="col" className="text-center py-3 px-4 font-medium">Campaigns</th>
-                    <th scope="col" className="text-center py-3 px-4 font-medium">Connectors</th>
-                    <th scope="col" className="text-center py-3 px-4 font-medium">Status</th>
-                    <th scope="col" className="text-right py-3 px-4 font-medium">Actions</th>
-                  </tr>
-                </thead>
-                <tbody className="divide-y">
-                  {plans.map((plan, idx) => (
-                    <tr key={plan.id} className="hover:bg-muted/30 motion-enter" style={{ animationDelay: `${idx * 20}ms` }}>
-                      <td className="py-3 px-4 font-medium">{plan.display_name || plan.name}</td>
-                      <td className="py-3 px-4">
-                        <PlanBadge plan={plan.tier} />
-                      </td>
-                      {showPriceMetrics && (
-                      <td className="py-3 px-4 text-right font-medium">
-                        {formatCurrency(plan.price || 0)}
-                        <span className="text-muted-foreground text-xs">/{plan.billing_period || 'mo'}</span>
-                      </td>
-                      )}
-                      <td className="py-3 px-4 text-center">{plan.limits?.max_users || '-'}</td>
-                      <td className="py-3 px-4 text-center">{plan.limits?.max_campaigns || '-'}</td>
-                      <td className="py-3 px-4 text-center">{plan.limits?.max_connectors || '-'}</td>
-                      <td className="py-3 px-4 text-center">
-                        <span className={cn(
-                          'px-2 py-1 rounded-full text-xs',
-                          plan.is_active !== false ? 'bg-success/10 text-success' : 'bg-gray-500/10 text-gray-500'
-                        )}>
-                          {plan.is_active !== false ? 'Active' : 'Inactive'}
-                        </span>
-                      </td>
-                      <td className="py-3 px-4 text-right">
-                        <button className="p-1.5 rounded hover:bg-muted" title="Edit" aria-label="Edit">
-                          <Edit className="w-4 h-4" />
-                        </button>
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-              </div>
-            </div>
-          )}
-
-          {/* Invoices */}
-          {billingSubTab === 'invoices' && (
-            <div className="rounded-xl border bg-card shadow-card overflow-hidden">
-              <div className="p-4 border-b flex items-center justify-between">
-                <h3 className="font-semibold">Invoices</h3>
-                <div className="flex items-center gap-2">
-                  <select className="px-3 py-1.5 rounded-lg border bg-background text-sm">
-                    <option>All Status</option>
-                    <option>Paid</option>
-                    <option>Pending</option>
-                    <option>Overdue</option>
-                  </select>
-                  <button className="flex items-center gap-2 px-3 py-1.5 rounded-lg bg-primary text-primary-foreground text-sm">
-                    <Plus className="w-4 h-4" />
-                    Generate Invoice
-                  </button>
-                </div>
-              </div>
-              {invoices.length === 0 ? (
-                <div className="p-8 text-center text-muted-foreground">
-                  <Receipt className="w-12 h-12 mx-auto mb-3 opacity-50" />
-                  <p>No invoices found</p>
-                </div>
-              ) : (
-                <div className="overflow-x-auto">
-                <table className="w-full text-sm">
-                  <thead className="bg-muted/30">
-                    <tr>
-                      <th scope="col" className="text-left py-3 px-4 font-medium">Invoice</th>
-                      <th scope="col" className="text-left py-3 px-4 font-medium">Tenant</th>
-                      {showPriceMetrics && <th scope="col" className="text-right py-3 px-4 font-medium">Amount</th>}
-                      <th scope="col" className="text-center py-3 px-4 font-medium">Status</th>
-                      <th scope="col" className="text-left py-3 px-4 font-medium">Due Date</th>
-                      <th scope="col" className="text-right py-3 px-4 font-medium">Actions</th>
-                    </tr>
-                  </thead>
-                  <tbody className="divide-y">
-                    {invoices.map((inv, _idx) => (
-                      <tr key={inv.id} className="hover:bg-muted/30">
-                        <td className="py-3 px-4 font-medium">{inv.invoice_number}</td>
-                        <td className="py-3 px-4">{inv.tenant_name}</td>
-                        {showPriceMetrics && <td className="py-3 px-4 text-right font-medium">{formatCurrency(inv.total)}</td>}
-                        <td className="py-3 px-4 text-center">
-                          <span className={cn(
-                            'px-2 py-1 rounded-full text-xs',
-                            inv.status === 'paid' ? 'bg-success/10 text-success' :
-                            inv.status === 'pending' ? 'bg-info/10 text-info' :
-                            inv.status === 'overdue' ? 'bg-danger/10 text-danger' : 'bg-gray-500/10 text-gray-500'
-                          )}>
-                            {inv.status}
-                          </span>
-                        </td>
-                        <td className="py-3 px-4">{inv.due_date || '-'}</td>
-                        <td className="py-3 px-4 text-right">
-                          <button className="p-1.5 rounded hover:bg-muted" title="View" aria-label="View">
-                            <Eye className="w-4 h-4" />
-                          </button>
-                        </td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
-                </div>
-              )}
-            </div>
-          )}
-
-          {/* Subscriptions */}
-          {billingSubTab === 'subscriptions' && (
-            <div className="rounded-xl border bg-card p-6 shadow-card">
-              <h3 className="font-semibold mb-4">Active Subscriptions</h3>
-              {subscriptions.length === 0 ? (
-                <p className="text-muted-foreground text-center py-8">
-                  No active subscriptions found.
-                </p>
-              ) : (
-                <div className="overflow-x-auto">
-                <table className="w-full text-sm">
-                  <thead>
-                    <tr className="border-b text-muted-foreground">
-                      <th scope="col" className="text-left py-3 px-4 font-medium">Tenant</th>
-                      <th scope="col" className="text-left py-3 px-4 font-medium">Plan</th>
-                      <th scope="col" className="text-left py-3 px-4 font-medium">Status</th>
-                      <th scope="col" className="text-right py-3 px-4 font-medium">MRR</th>
-                      <th scope="col" className="text-left py-3 px-4 font-medium">Next Billing</th>
-                      <th scope="col" className="text-left py-3 px-4 font-medium">Actions</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {subscriptions.map((sub) => (
-                      <tr key={sub.id} className="border-b hover:bg-muted/50">
-                        <td className="py-3 px-4 font-medium">{sub.tenantName}</td>
-                        <td className="py-3 px-4">
-                          <span className="px-2 py-0.5 rounded-full text-xs bg-primary/10 text-primary capitalize">
-                            {sub.plan}
-                          </span>
-                        </td>
-                        <td className="py-3 px-4">
-                          <span className={`px-2 py-0.5 rounded-full text-xs ${
-                            sub.status === 'active' ? 'bg-success/10 text-success' :
-                            sub.status === 'past_due' ? 'bg-danger/10 text-danger' :
-                            sub.status === 'trialing' ? 'bg-info/10 text-info' :
-                            'bg-muted text-muted-foreground'
-                          }`}>
-                            {sub.status}
-                          </span>
-                        </td>
-                        <td className="py-3 px-4 text-right">${sub.mrr.toLocaleString()}</td>
-                        <td className="py-3 px-4 text-muted-foreground">
-                          {sub.nextBilling.toLocaleDateString()}
-                        </td>
-                        <td className="py-3 px-4">
-                          <div className="flex gap-2">
-                            {sub.status === 'past_due' && (
-                              <button
-                                onClick={() => handleRetryPayment?.(sub.id)}
-                                className="text-xs px-2 py-1 rounded bg-primary/10 text-primary hover:bg-primary/20 transition-colors"
-                              >
-                                Retry
-                              </button>
-                            )}
-                            <button
-                              onClick={() => window.location.href = `/console/billing/subscriptions/${sub.id}`}
-                              className="text-xs px-2 py-1 rounded bg-muted text-muted-foreground hover:bg-muted/80 transition-colors"
-                            >
-                              Manage
-                            </button>
-                          </div>
-                        </td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
-                </div>
-              )}
-            </div>
-          )}
         </div>
       )}
 
@@ -1377,16 +529,6 @@ export default function ConsoleDashboard() {
                 className="w-full pl-10 pr-4 py-2 rounded-lg border bg-background focus:ring-2 focus:ring-primary/20"
               />
             </div>
-            <select
-              className="px-3 py-2 rounded-lg border bg-background"
-              value={auditFilter.tenant_id}
-              onChange={(e) => setAuditFilter(f => ({ ...f, tenant_id: e.target.value }))}
-            >
-              <option value="">All Tenants</option>
-              {tenants.map(t => (
-                <option key={t.id} value={t.id}>{t.name}</option>
-              ))}
-            </select>
             <button
               onClick={handleRefresh}
               className="flex items-center gap-2 px-3 py-2 rounded-lg border hover:bg-muted"
@@ -1423,7 +565,6 @@ export default function ConsoleDashboard() {
                   auditLogs
                     .filter(log => {
                       if (auditFilter.action && !log.action?.toLowerCase().includes(auditFilter.action.toLowerCase())) return false
-                      if (auditFilter.tenant_id && log.tenant_id !== parseInt(auditFilter.tenant_id)) return false
                       return true
                     })
                     .map((log, idx) => (
@@ -1470,58 +611,6 @@ export default function ConsoleDashboard() {
 // =============================================================================
 // Sub-Components
 // =============================================================================
-function KPICard({
-  icon: Icon,
-  label,
-  value,
-  delta,
-  deltaLabel,
-  subValue,
-  color = 'blue',
-}: {
-  icon: React.ComponentType<{ className?: string }>
-  label: string
-  value: string | number
-  delta?: number
-  deltaLabel?: string
-  subValue?: string
-  color?: 'blue' | 'green' | 'amber' | 'red' | 'purple'
-}) {
-  const colorClasses = {
-    blue: 'bg-info/10 text-info',
-    green: 'bg-success/10 text-success',
-    amber: 'bg-warning/10 text-warning',
-    red: 'bg-danger/10 text-danger',
-    purple: 'bg-purple-500/10 text-purple-500',
-  }
-
-  return (
-    <div className="rounded-xl border bg-card p-5 shadow-card hover:shadow-card-hover transition-colors motion-card">
-      <div className="flex items-center gap-3 mb-3">
-        <div className={cn('p-2 rounded-lg', colorClasses[color])}>
-          <Icon className="w-5 h-5" />
-        </div>
-        <span className="text-sm text-muted-foreground">{label}</span>
-      </div>
-      <p className="text-2xl font-bold">{value}</p>
-      {delta !== undefined && (
-        <div className="flex items-center gap-1 mt-1">
-          {delta >= 0 ? (
-            <ArrowUpRight className="w-4 h-4 text-success" />
-          ) : (
-            <ArrowDownRight className="w-4 h-4 text-danger" />
-          )}
-          <span className={cn('text-sm font-medium', delta >= 0 ? 'text-success' : 'text-danger')}>
-            {delta >= 0 ? '+' : ''}{delta}%
-          </span>
-          {deltaLabel && <span className="text-xs text-muted-foreground">{deltaLabel}</span>}
-        </div>
-      )}
-      {subValue && <p className="text-sm text-muted-foreground mt-1">{subValue}</p>}
-    </div>
-  )
-}
-
 function MetricCard({
   label,
   value,
@@ -1541,7 +630,7 @@ function MetricCard({
   return (
     <div className="rounded-xl border bg-card p-4 shadow-card motion-card">
       <p className="text-sm text-muted-foreground mb-1">{label}</p>
-      <p className={cn('text-xl font-bold', statusColors[status])}>{value}</p>
+      <p className={cn('text-xl font-bold capitalize', statusColors[status])}>{value}</p>
     </div>
   )
 }
@@ -1569,22 +658,6 @@ function HealthRow({
         {icons[status]}
       </div>
     </div>
-  )
-}
-
-function PlanBadge({ plan }: { plan: string }) {
-  const colors: Record<string, string> = {
-    free: 'bg-gray-500/10 text-gray-500',
-    trial: 'bg-cyan-500/10 text-cyan-500',
-    starter: 'bg-success/10 text-success',
-    professional: 'bg-info/10 text-info',
-    enterprise: 'bg-purple-500/10 text-purple-500',
-  }
-
-  return (
-    <span className={cn('px-2 py-1 rounded-md text-xs font-medium capitalize', colors[plan] || colors.free)}>
-      {plan}
-    </span>
   )
 }
 

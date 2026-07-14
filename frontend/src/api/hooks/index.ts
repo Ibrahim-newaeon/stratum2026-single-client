@@ -23,27 +23,6 @@ export {
   type CommandCenterResponse,
 } from './useTenantDashboard'
 
-// Owner Console hooks
-export {
-  useConsoleOverview,
-  useConsoleTenants,
-  useConsoleTenantDetails,
-  useConsoleSystemHealth,
-  useConsoleBillingPlans,
-  useUpdateBillingPlan,
-  useAuditLogs,
-  useConsoleInvoices,
-  useConsoleSubscriptions,
-  consoleQueryKeys,
-  type ConsoleOverview,
-  type TenantSummary,
-  type SystemHealth,
-  type BillingPlan,
-  type AuditLogEntry,
-  type Invoice,
-  type Subscription,
-} from './useConsole'
-
 // Re-export from API modules
 // Note: Some modules export conflicting types (User, AlertSeverity)
 // Import directly from specific modules if you need to disambiguate

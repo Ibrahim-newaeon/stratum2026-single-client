@@ -370,7 +370,6 @@ describe('AuthContext', () => {
     expect(mockSessionStorage.removeItem).toHaveBeenCalledWith('refresh_token');
     expect(mockLocalStorage.removeItem).toHaveBeenCalledWith('stratum_demo_mode');
     expect(mockLocalStorage.removeItem).toHaveBeenCalledWith('stratum_onboarding_progress');
-    expect(mockLocalStorage.removeItem).toHaveBeenCalledWith('stratum_available_tenants');
   });
 
   // -------------------------------------------------------------------------

@@ -138,12 +138,9 @@ export function CampaignCreateModal({ open, onClose, onSuccess }: CampaignCreate
   // Fetch ad accounts and audiences when platform changes
   useEffect(() => {
     if (formData.platform) {
-      // Single-client app — no tenant scoping.
-      const tenantId = 1
-
       // Fetch ad accounts from campaign-builder endpoint
       setIsLoadingAccounts(true)
-      apiClient.get(`/campaign-builder/tenant/${tenantId}/ad-accounts/${formData.platform}`)
+      apiClient.get(`/campaign-builder/ad-accounts/${formData.platform}`)
         .then((res) => {
           const accounts = res.data?.data || res.data || []
           const mapped = (Array.isArray(accounts) ? accounts : []).map((a: Record<string, unknown>) => ({
@@ -166,8 +163,14 @@ export function CampaignCreateModal({ open, onClose, onSuccess }: CampaignCreate
         .finally(() => setIsLoadingAccounts(false))
 
       // Fetch audiences from campaign-builder endpoint
+      // NOTE(STRAT-SC-001/D3): this endpoint returning a grouped
+      // {custom, lookalike, saved} shape does not exist under
+      // /campaign-builder (verified against backend routes) — this call
+      // 404s and always falls through to the empty-arrays catch below.
+      // Pre-existing bug, unrelated to the single-client conversion;
+      // out of scope here to redesign the audiences contract.
       setIsLoadingAudiences(true)
-      apiClient.get(`/campaign-builder/tenant/${tenantId}/audiences/${formData.platform}`)
+      apiClient.get(`/campaign-builder/audiences/${formData.platform}`)
         .then((res) => {
           const data = res.data?.data || res.data || {}
           setPlatformAudiences({

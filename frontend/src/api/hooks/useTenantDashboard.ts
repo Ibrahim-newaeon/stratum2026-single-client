@@ -145,7 +145,7 @@ export const tenantQueryKeys = {
 // =============================================================================
 
 const fetchDashboardOverview = async (
-  tenantId: number,
+  _tenantId: number,
   date?: string,
   period?: string
 ): Promise<DashboardOverview> => {
@@ -154,13 +154,13 @@ const fetchDashboardOverview = async (
   if (period) params.append('period', period)
 
   const response = await apiClient.get<ApiResponse<DashboardOverview>>(
-    `/tenant/${tenantId}/dashboard/overview?${params.toString()}`
+    `/dashboard/overview?${params.toString()}`
   )
   return response.data.data
 }
 
 const fetchRecommendations = async (
-  tenantId: number,
+  _tenantId: number,
   date?: string,
   limit?: number
 ): Promise<Recommendation[]> => {
@@ -169,13 +169,13 @@ const fetchRecommendations = async (
   if (limit) params.append('limit', String(limit))
 
   const response = await apiClient.get<ApiResponse<Recommendation[]>>(
-    `/tenant/${tenantId}/recommendations?${params.toString()}`
+    `/dashboard/recommendations?${params.toString()}`
   )
   return response.data.data
 }
 
 const fetchAlerts = async (
-  tenantId: number,
+  _tenantId: number,
   filters?: {
     severity?: string
     type?: string
@@ -192,53 +192,53 @@ const fetchAlerts = async (
   if (filters?.limit) params.append('limit', String(filters.limit))
 
   const response = await apiClient.get<ApiResponse<Alert[]>>(
-    `/tenant/${tenantId}/alerts?${params.toString()}`
+    `/dashboard/alerts?${params.toString()}`
   )
   return response.data.data
 }
 
-const fetchSettings = async (tenantId: number): Promise<TenantSettings> => {
+const fetchSettings = async (_tenantId: number): Promise<TenantSettings> => {
   const response = await apiClient.get<ApiResponse<TenantSettings>>(
-    `/tenant/${tenantId}/settings`
+    `/dashboard/settings`
   )
   return response.data.data
 }
 
 const updateSettings = async (
-  tenantId: number,
+  _tenantId: number,
   settings: Partial<TenantSettings>
 ): Promise<TenantSettings> => {
   const response = await apiClient.put<ApiResponse<TenantSettings>>(
-    `/tenant/${tenantId}/settings`,
+    `/dashboard/settings`,
     settings
   )
   return response.data.data
 }
 
 const acknowledgeAlert = async (
-  tenantId: number,
+  _tenantId: number,
   alertId: number
 ): Promise<{ alert_id: number; acknowledged_by: number; acknowledged_at: string }> => {
   const response = await apiClient.post<ApiResponse<{ alert_id: number; acknowledged_by: number; acknowledged_at: string }>>(
-    `/tenant/${tenantId}/alerts/${alertId}/ack`
+    `/dashboard/alerts/${alertId}/ack`
   )
   return response.data.data
 }
 
 const resolveAlert = async (
-  tenantId: number,
+  _tenantId: number,
   alertId: number,
   notes?: string
 ): Promise<{ alert_id: number; resolved_by: number; resolved_at: string }> => {
   const params = notes ? `?resolution_notes=${encodeURIComponent(notes)}` : ''
   const response = await apiClient.post<ApiResponse<{ alert_id: number; resolved_by: number; resolved_at: string }>>(
-    `/tenant/${tenantId}/alerts/${alertId}/resolve${params}`
+    `/dashboard/alerts/${alertId}/resolve${params}`
   )
   return response.data.data
 }
 
 const fetchCommandCenter = async (
-  tenantId: number,
+  _tenantId: number,
   filters?: {
     action?: string
     platform?: string
@@ -251,7 +251,7 @@ const fetchCommandCenter = async (
   if (filters?.limit) params.append('limit', String(filters.limit))
 
   const response = await apiClient.get<ApiResponse<CommandCenterResponse>>(
-    `/tenant/${tenantId}/command-center?${params.toString()}`
+    `/dashboard/command-center?${params.toString()}`
   )
   return response.data.data
 }

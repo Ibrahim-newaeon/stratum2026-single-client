@@ -123,10 +123,10 @@ export const emqV2Api = {
   /**
    * Get current EMQ score for a tenant
    */
-  getEmqScore: async (tenantId: number, date?: string): Promise<EmqScore> => {
+  getEmqScore: async (_tenantId: number, date?: string): Promise<EmqScore> => {
     const params = date ? { date } : {}
     const response = await apiClient.get<ApiResponse<EmqScore>>(
-      `/tenants/${tenantId}/emq/score`,
+      `/emq/score`,
       { params }
     )
     return response.data.data
@@ -135,10 +135,10 @@ export const emqV2Api = {
   /**
    * Get confidence band details
    */
-  getConfidence: async (tenantId: number, date?: string): Promise<ConfidenceData> => {
+  getConfidence: async (_tenantId: number, date?: string): Promise<ConfidenceData> => {
     const params = date ? { date } : {}
     const response = await apiClient.get<ApiResponse<ConfidenceData>>(
-      `/tenants/${tenantId}/emq/confidence`,
+      `/emq/confidence`,
       { params }
     )
     return response.data.data
@@ -147,9 +147,9 @@ export const emqV2Api = {
   /**
    * Get fix playbook items
    */
-  getPlaybook: async (tenantId: number): Promise<PlaybookItem[]> => {
+  getPlaybook: async (_tenantId: number): Promise<PlaybookItem[]> => {
     const response = await apiClient.get<ApiResponse<PlaybookItem[]>>(
-      `/tenants/${tenantId}/emq/playbook`
+      `/emq/playbook`
     )
     return response.data.data
   },
@@ -158,12 +158,12 @@ export const emqV2Api = {
    * Update playbook item status
    */
   updatePlaybookItem: async (
-    tenantId: number,
+    _tenantId: number,
     itemId: string,
     updates: Partial<Pick<PlaybookItem, 'status' | 'owner'>>
   ): Promise<PlaybookItem> => {
     const response = await apiClient.patch<ApiResponse<PlaybookItem>>(
-      `/tenants/${tenantId}/emq/playbook/${itemId}`,
+      `/emq/playbook/${itemId}`,
       updates
     )
     return response.data.data
@@ -173,12 +173,12 @@ export const emqV2Api = {
    * Get incident timeline
    */
   getIncidents: async (
-    tenantId: number,
+    _tenantId: number,
     startDate: string,
     endDate: string
   ): Promise<EmqIncident[]> => {
     const response = await apiClient.get<ApiResponse<EmqIncident[]>>(
-      `/tenants/${tenantId}/emq/incidents`,
+      `/emq/incidents`,
       { params: { start_date: startDate, end_date: endDate } }
     )
     return response.data.data
@@ -187,9 +187,9 @@ export const emqV2Api = {
   /**
    * Get ROAS impact estimate
    */
-  getImpact: async (tenantId: number, startDate: string, endDate: string): Promise<EmqImpact> => {
+  getImpact: async (_tenantId: number, startDate: string, endDate: string): Promise<EmqImpact> => {
     const response = await apiClient.get<ApiResponse<EmqImpact>>(
-      `/tenants/${tenantId}/emq/impact`,
+      `/emq/impact`,
       { params: { start_date: startDate, end_date: endDate } }
     )
     return response.data.data
@@ -198,10 +198,10 @@ export const emqV2Api = {
   /**
    * Get signal volatility data
    */
-  getVolatility: async (tenantId: number, week?: string): Promise<EmqVolatility> => {
+  getVolatility: async (_tenantId: number, week?: string): Promise<EmqVolatility> => {
     const params = week ? { week } : {}
     const response = await apiClient.get<ApiResponse<EmqVolatility>>(
-      `/tenants/${tenantId}/emq/volatility`,
+      `/emq/volatility`,
       { params }
     )
     return response.data.data
@@ -210,9 +210,9 @@ export const emqV2Api = {
   /**
    * Get autopilot state
    */
-  getAutopilotState: async (tenantId: number): Promise<AutopilotState> => {
+  getAutopilotState: async (_tenantId: number): Promise<AutopilotState> => {
     const response = await apiClient.get<ApiResponse<AutopilotState>>(
-      `/tenants/${tenantId}/emq/autopilot-state`
+      `/emq/autopilot-state`
     )
     return response.data.data
   },
@@ -221,12 +221,12 @@ export const emqV2Api = {
    * Update autopilot mode (manual override)
    */
   updateAutopilotMode: async (
-    tenantId: number,
+    _tenantId: number,
     mode: AutopilotMode,
     reason?: string
   ): Promise<AutopilotState> => {
     const response = await apiClient.put<ApiResponse<AutopilotState>>(
-      `/tenants/${tenantId}/emq/autopilot-mode`,
+      `/emq/autopilot-mode`,
       { mode, reason }
     )
     return response.data.data

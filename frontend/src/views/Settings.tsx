@@ -25,7 +25,7 @@ import {
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useTheme, type Theme } from '@/components/primitives/theme/ThemeProvider';
-import IntegrationsHub from '@/views/tenant/IntegrationsHub';
+import IntegrationsHub from '@/views/operate/IntegrationsHub';
 import apiClient from '@/api/client';
 import { useAppStore } from '@/stores/appStore';
 import { useExportData, useRequestDeletion } from '@/api/hooks';
@@ -361,8 +361,6 @@ function OrganizationSettings() {
   // production since the store's `tenant` field was never populated.
   const companyName = '';
   const industry = 'ecommerce';
-  const plan = 'pro';
-  const maxUsers = 10;
 
   // State for users management
   const [teamMembers, setTeamMembers] = useState<
@@ -471,18 +469,6 @@ function OrganizationSettings() {
           <option value="finance">Finance</option>
           <option value="healthcare">Healthcare</option>
         </select>
-      </div>
-
-      <div className="p-4 rounded-lg border bg-muted/30">
-        <div className="flex items-center justify-between">
-          <div>
-            <p className="font-medium capitalize">{plan} Plan</p>
-            <p className="text-sm text-muted-foreground">Max {maxUsers} team members</p>
-          </div>
-          <span className="px-2 py-1 rounded-full bg-primary/10 text-primary text-xs font-medium">
-            Active
-          </span>
-        </div>
       </div>
 
       <div>

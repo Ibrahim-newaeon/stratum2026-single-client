@@ -150,7 +150,7 @@ export function useSignalHealth(tenantId: number, date?: string) {
     queryFn: async () => {
       const params = date ? `?date=${date}` : ''
       const response = await apiClient.get<{ data: SignalHealthData }>(
-        `/trust/tenant/${tenantId}/signal-health${params}`
+        `/trust/signal-health${params}`
       )
       return response.data.data
     },
@@ -175,7 +175,7 @@ export function useSignalHealthHistory(
       if (platform) params.append('platform', platform)
 
       const response = await apiClient.get<{ data: { history: SignalHealthData[] } }>(
-        `/trust/tenant/${tenantId}/signal-health/history?${params}`
+        `/trust/signal-health/history?${params}`
       )
       return response.data.data.history
     },
@@ -193,7 +193,7 @@ export function useAttributionVariance(tenantId: number, date?: string) {
     queryFn: async () => {
       const params = date ? `?date=${date}` : ''
       const response = await apiClient.get<{ data: AttributionVarianceData }>(
-        `/trust/tenant/${tenantId}/attribution-variance${params}`
+        `/trust/attribution-variance${params}`
       )
       return response.data.data
     },
@@ -213,7 +213,7 @@ export function useTrustStatus(tenantId: number, date?: string) {
     queryFn: async () => {
       const params = date ? `?date=${date}` : ''
       const response = await apiClient.get<{ data: TrustStatusData }>(
-        `/trust/tenant/${tenantId}/trust-status${params}`
+        `/trust/trust-status${params}`
       )
       return response.data.data
     },
@@ -233,7 +233,7 @@ export function useTrustGateStatus(tenantId: number, date?: string) {
     queryFn: async () => {
       const params = date ? `?date=${date}` : ''
       const response = await apiClient.get<{ data: TrustGateStatusData }>(
-        `/trust/tenant/${tenantId}/trust-gate${params}`
+        `/trust/trust-gate${params}`
       )
       return response.data.data
     },
@@ -248,11 +248,11 @@ export function useTrustGateStatus(tenantId: number, date?: string) {
  * the dashboard's "would this run right now?" preview. Read-only on the
  * backend: it renders a PASS / HOLD / BLOCK decision, nothing executes.
  */
-export function useEvaluateTrustGate(tenantId: number) {
+export function useEvaluateTrustGate(_tenantId: number) {
   return useMutation({
     mutationFn: async (input: TrustGateEvaluateInput) => {
       const response = await apiClient.post<{ data: TrustGateEvaluation }>(
-        `/trust/tenant/${tenantId}/trust-gate/evaluate`,
+        `/trust/trust-gate/evaluate`,
         input
       )
       return response.data.data

@@ -48,7 +48,7 @@ export function useFeatureFlags(tenantId: number) {
     queryKey: ['feature-flags', tenantId],
     queryFn: async () => {
       const response = await apiClient.get<{ data: FeatureFlagsResponse }>(
-        `/tenants/${tenantId}/features`
+        '/features'
       )
       return response.data.data
     },
@@ -82,7 +82,7 @@ export function useUpdateFeatureFlags(tenantId: number) {
   return useMutation({
     mutationFn: async (updates: FeatureFlagsUpdate) => {
       const response = await apiClient.put<{ data: { features: FeatureFlags } }>(
-        `/tenants/${tenantId}/features`,
+        '/features',
         updates
       )
       return response.data.data
@@ -101,7 +101,7 @@ export function useConsoleFeatureFlags(tenantId: number) {
     queryKey: ['console-feature-flags', tenantId],
     queryFn: async () => {
       const response = await apiClient.get<{ data: FeatureFlagsResponse }>(
-        `/console/tenants/${tenantId}/features`
+        '/console/features'
       )
       return response.data.data
     },
@@ -118,7 +118,7 @@ export function useConsoleUpdateFeatureFlags(tenantId: number) {
   return useMutation({
     mutationFn: async (updates: FeatureFlagsUpdate) => {
       const response = await apiClient.put<{ data: { features: FeatureFlags } }>(
-        `/console/tenants/${tenantId}/features`,
+        '/console/features',
         updates
       )
       return response.data.data
@@ -138,7 +138,7 @@ export function useConsoleResetFeatureFlags(tenantId: number) {
   return useMutation({
     mutationFn: async () => {
       const response = await apiClient.post<{ data: { features: FeatureFlags } }>(
-        `/console/tenants/${tenantId}/features/reset`
+        '/console/features/reset'
       )
       return response.data.data
     },

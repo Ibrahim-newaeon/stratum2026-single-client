@@ -75,7 +75,6 @@ const WhatsAppContacts = lazyWithRetry(() => import('./views/whatsapp/WhatsAppCo
 const WhatsAppMessages = lazyWithRetry(() => import('./views/whatsapp/WhatsAppMessages'));
 const WhatsAppTemplates = lazyWithRetry(() => import('./views/whatsapp/WhatsAppTemplates'));
 const Settings = lazyWithRetry(() => import('./views/Settings'));
-const Tenants = lazyWithRetry(() => import('./views/Tenants'));
 const MLTraining = lazyWithRetry(() => import('./views/MLTraining'));
 const CAPISetup = lazyWithRetry(() => import('./views/CAPISetup'));
 const ConsoleDashboard = lazyWithRetry(() => import('./views/console/ConsoleDashboard'));
@@ -83,8 +82,8 @@ const ConsoleLayout = lazyWithRetry(() => import('./views/ConsoleLayout'));
 const ConsoleFeatureFlags = lazyWithRetry(() => import('./views/console/FeatureFlags'));
 const ConsolePlatformAnalytics = lazyWithRetry(() => import('./views/console/PlatformAnalytics'));
 const ConsoleCredentials = lazyWithRetry(() => import('./views/console/Credentials'));
-const ConsoleCrossTenantAnomalies = lazyWithRetry(
-  () => import('./views/console/CrossTenantAnomalies')
+const ConsoleCrossAccountAnomalies = lazyWithRetry(
+  () => import('./views/console/CrossAccountAnomalies')
 );
 const ConsoleAuditServices = lazyWithRetry(() => import('./views/console/AuditServices'));
 const ConsoleEMQMeasure = lazyWithRetry(() => import('./views/console/EMQMeasureWorkflow'));
@@ -106,7 +105,7 @@ const CDPFunnels = lazyWithRetry(() => import('./views/cdp/CDPFunnels'));
 const CDPComputedTraits = lazyWithRetry(() => import('./views/cdp/CDPComputedTraits'));
 const CDPConsent = lazyWithRetry(() => import('./views/cdp/CDPConsent'));
 const CDPPredictiveChurn = lazyWithRetry(() => import('./views/cdp/CDPPredictiveChurn'));
-// Tenant-scoped anomaly detection dashboard (rendered at /dashboard/anomalies)
+// Account-scoped anomaly detection dashboard (rendered at /dashboard/anomalies)
 const AnomalyDashboard = lazyWithRetry(() => import('./components/cdp/AnomalyDashboard'));
 
 // Newsletter / Email Campaigns views
@@ -132,9 +131,6 @@ const KGRevenueAttribution = lazyWithRetry(
 
 // Platform Owner Console views
 const ControlTower = lazyWithRetry(() => import('./views/console/ControlTower'));
-// TenantsList/TenantProfile remain under views/superadmin/ pending Task D3 removal
-const ConsoleTenantsList = lazyWithRetry(() => import('./views/superadmin/TenantsList'));
-const ConsoleTenantProfile = lazyWithRetry(() => import('./views/superadmin/TenantProfile'));
 const ConsoleBenchmarks = lazyWithRetry(() => import('./views/console/Benchmarks'));
 const ConsoleAudit = lazyWithRetry(() => import('./views/console/Audit'));
 const ConsoleSystem = lazyWithRetry(() => import('./views/console/System'));
@@ -159,35 +155,35 @@ const CMSUsers = lazyWithRetry(() => import('./views/cms/CMSUsers'));
 
 // Operator-dashboard surfaces shared with the (now-removed) /app/:tenantId
 // twin shell. These views resolve their scope from context, not the URL.
-const PublishLogs = lazyWithRetry(() => import('./views/tenant/PublishLogs'));
-const TeamManagement = lazyWithRetry(() => import('./views/tenant/TeamManagement'));
-const TenantAuditLog = lazyWithRetry(() => import('./views/tenant/AuditLog'));
+const PublishLogs = lazyWithRetry(() => import('./views/operate/PublishLogs'));
+const TeamManagement = lazyWithRetry(() => import('./views/operate/TeamManagement'));
+const AccountAuditLog = lazyWithRetry(() => import('./views/operate/AuditLog'));
 
-// Role-based tenant views
-const TenantAdminOverview = lazyWithRetry(() => import('./views/tenant/Overview'));
-const SignalHub = lazyWithRetry(() => import('./views/tenant/SignalHub'));
+// Role-based operator views
+const TrustOverview = lazyWithRetry(() => import('./views/operate/Overview'));
+const SignalHub = lazyWithRetry(() => import('./views/operate/SignalHub'));
 
 // Sprint feature views
 // IntegrationsHub is rendered from Settings → Integrations tab now;
 // the bare /dashboard/integrations route just 302s there.
 const GDPR = lazyWithRetry(() => import('./views/GDPR'));
 const APIKeys = lazyWithRetry(() => import('./views/APIKeys'));
-const Pacing = lazyWithRetry(() => import('./views/tenant/Pacing'));
-const ProfitROAS = lazyWithRetry(() => import('./views/tenant/ProfitROAS'));
-const Attribution = lazyWithRetry(() => import('./views/tenant/Attribution'));
-const Reporting = lazyWithRetry(() => import('./views/tenant/Reporting'));
+const Pacing = lazyWithRetry(() => import('./views/operate/Pacing'));
+const ProfitROAS = lazyWithRetry(() => import('./views/operate/ProfitROAS'));
+const Attribution = lazyWithRetry(() => import('./views/operate/Attribution'));
+const Reporting = lazyWithRetry(() => import('./views/operate/Reporting'));
 
 // P1 Feature views - A/B Testing, DLQ, Model Explainability
-const ABTesting = lazyWithRetry(() => import('./views/tenant/ABTesting'));
-const DeadLetterQueue = lazyWithRetry(() => import('./views/tenant/DeadLetterQueue'));
-const ModelExplainability = lazyWithRetry(() => import('./views/tenant/ModelExplainability'));
+const ABTesting = lazyWithRetry(() => import('./views/operate/ABTesting'));
+const DeadLetterQueue = lazyWithRetry(() => import('./views/operate/DeadLetterQueue'));
+const ModelExplainability = lazyWithRetry(() => import('./views/operate/ModelExplainability'));
 
 // Enterprise feature views
 const CustomAutopilotRules = lazyWithRetry(() => import('./views/CustomAutopilotRules'));
 const CustomReportBuilder = lazyWithRetry(() => import('./views/CustomReportBuilder'));
 
 // Embed Widgets
-const EmbedWidgets = lazyWithRetry(() => import('./views/tenant/EmbedWidgets'));
+const EmbedWidgets = lazyWithRetry(() => import('./views/operate/EmbedWidgets'));
 
 // Account Manager views
 const AMPortfolio = lazyWithRetry(() => import('./views/am/Portfolio'));
@@ -970,14 +966,6 @@ function App() {
                           }
                         />
                         <Route
-                          path="tenants"
-                          element={
-                            <LazyRoute>
-                              <Tenants />
-                            </LazyRoute>
-                          }
-                        />
-                        <Route
                           path="ml-training"
                           element={
                             <LazyRoute>
@@ -1332,18 +1320,18 @@ function App() {
                           }
                         />
 
-                        {/* Operator-dashboard surfaces for tenant-scoped
-                            features. These views resolve their tenant from
+                        {/* Operator-dashboard surfaces for account-scoped
+                            features. These views resolve their scope from
                             context (not the URL), so the sidebar's static
                             /dashboard/* hrefs render them directly here —
-                            mirroring the /app/:tenantId/* twins below. Without
-                            these, the sidebar links fell through to the `*`
-                            catch-all and 404'd. */}
+                            mirroring the legacy /app/:tenantId/* twins
+                            below. Without these, the sidebar links fell
+                            through to the `*` catch-all and 404'd. */}
                         <Route
                           path="trust"
                           element={
                             <LazyRoute>
-                              <TenantAdminOverview />
+                              <TrustOverview />
                             </LazyRoute>
                           }
                         />
@@ -1426,7 +1414,7 @@ function App() {
                           element={
                             <ProtectedRoute requiredRole="admin">
                               <LazyRoute>
-                                <TenantAuditLog />
+                                <AccountAuditLog />
                               </LazyRoute>
                             </ProtectedRoute>
                           }
@@ -1473,10 +1461,9 @@ function App() {
                       {/* ═══════════════════════════════════════════════
                            Platform Console — owner-only shell at /console/*
                            Distinct from operator dashboard. Reuses
-                           existing views/console/* (and, pending Task D3,
-                           views/superadmin/TenantsList + TenantProfile) as
-                           their canonical home. Old /dashboard/owner/*
-                           paths still work (kept for back-compat).
+                           existing views/console/* as their canonical
+                           home. Old /dashboard/owner/* paths still work
+                           (kept for back-compat).
                          ═══════════════════════════════════════════════ */}
                       <Route
                         path="/console"
@@ -1495,22 +1482,6 @@ function App() {
                           element={
                             <LazyRoute>
                               <ConsoleDashboard />
-                            </LazyRoute>
-                          }
-                        />
-                        <Route
-                          path="tenants"
-                          element={
-                            <LazyRoute>
-                              <ConsoleTenantsList />
-                            </LazyRoute>
-                          }
-                        />
-                        <Route
-                          path="tenants/:tenantId"
-                          element={
-                            <LazyRoute>
-                              <ConsoleTenantProfile />
                             </LazyRoute>
                           }
                         />
@@ -1606,7 +1577,7 @@ function App() {
                           path="anomalies"
                           element={
                             <LazyRoute>
-                              <ConsoleCrossTenantAnomalies />
+                              <ConsoleCrossAccountAnomalies />
                             </LazyRoute>
                           }
                         />
@@ -1668,10 +1639,6 @@ function App() {
                       <Route
                         path="/dashboard/owner"
                         element={<Navigate to="/console" replace />}
-                      />
-                      <Route
-                        path="/dashboard/owner/tenants"
-                        element={<Navigate to="/console/tenants" replace />}
                       />
                       <Route
                         path="/dashboard/owner/users"

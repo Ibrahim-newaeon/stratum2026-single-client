@@ -47,7 +47,7 @@ export function useQAFixesPlaybook(tenantId: number) {
   return useQuery({
     queryKey: ['qa-fixes', 'playbook', tenantId],
     queryFn: async () => {
-      const res = await api.get<QAFixPlaybookResponse>(`/qa-fixes/${tenantId}/playbook`);
+      const res = await api.get<QAFixPlaybookResponse>('/qa-fixes/playbook');
       return res.data;
     },
     enabled: tenantId > 0,
@@ -60,7 +60,7 @@ export function useQAFixesHistory(tenantId: number, limit = 10) {
     queryKey: ['qa-fixes', 'history', tenantId, limit],
     queryFn: async () => {
       const res = await api.get<QAFixHistoryResponse>(
-        `/qa-fixes/${tenantId}/history?limit=${limit}`
+        `/qa-fixes/history?limit=${limit}`
       );
       return res.data;
     },

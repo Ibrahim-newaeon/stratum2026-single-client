@@ -13,7 +13,7 @@ export type { ApiResponse } from '@/api/client';
 /**
  * Thin wrapper that provides the same `.get()` / `.post()` interface as the
  * old fetch-based `ApiClient` class, but delegates to the shared axios instance
- * (which handles auth tokens, tenant headers, and token refresh).
+ * (which handles auth tokens and token refresh).
  */
 const api = {
   async get<T = any>(endpoint: string, params?: Record<string, string>) {
