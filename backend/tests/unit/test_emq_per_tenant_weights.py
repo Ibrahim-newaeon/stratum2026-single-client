@@ -5,11 +5,12 @@
 EMQ driver weights were hardcoded per driver. calculate_emq_score now accepts an
 optional org-level weights map; _apply_weight_overrides applies + renormalizes.
 
-NOTE(STRAT-SC-001/C3): this test file never actually referenced tenant_id in
-code (the "per-tenant" framing was purely in naming/docstrings) — the
-weight-override logic under test (calculate_emq_score, _apply_weight_overrides)
-is unchanged and untouched by the tenant_id sweep; only the docstring/title
-here were re-scoped to org-level per the plan's Step 5 instruction.
+NOTE(STRAT-SC-001/C3): this test file never actually referenced a
+per-organization scoping column in code (the "per-tenant" framing was
+purely in naming/docstrings) — the weight-override logic under test
+(calculate_emq_score, _apply_weight_overrides) is unchanged and untouched
+by the de-tenanting sweep; only the docstring/title here were re-scoped
+to org-level per the plan's Step 5 instruction.
 """
 
 import pytest

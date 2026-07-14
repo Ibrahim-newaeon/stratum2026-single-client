@@ -7,9 +7,9 @@ Exercises the real ASGI app against Postgres + Redis: campaign listing
 with pagination and platform filtering, campaign detail, and auth
 enforcement.
 
-STRAT-SC-001: ``Campaign`` has no ``tenant_id`` column anymore (global
-table, single organization) — the cross-tenant-isolation test was removed
-entirely, that concept no longer exists.
+STRAT-SC-001: ``Campaign`` has no per-organization scoping column anymore
+(global table, single organization) — the cross-tenant-isolation test was
+removed entirely, that concept no longer exists.
 """
 
 import pytest

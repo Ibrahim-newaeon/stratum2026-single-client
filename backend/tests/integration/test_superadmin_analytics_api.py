@@ -7,9 +7,9 @@ trends, and actions analytics. Every route is gated by
 ``Depends(require_owner())`` (``app.auth.deps``).
 
 STRAT-SC-001 (Task C6): ``/tenant-profitability`` (+ its ``calculate_health_score``
-helper) was deleted in C3 — it enumerated tenants and grouped by the dropped
-``tenant_id`` column, which makes no sense for a single-org deployment.
-Removed from this suite's endpoint list accordingly.
+helper) was deleted in C3 — it enumerated tenants and grouped by the
+now-dropped per-organization scoping column, which makes no sense for a
+single-org deployment. Removed from this suite's endpoint list accordingly.
 """
 
 import pytest

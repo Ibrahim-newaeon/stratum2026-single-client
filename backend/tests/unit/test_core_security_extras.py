@@ -298,10 +298,10 @@ class TestPasswordHashing:
 class TestTokenCreation:
     def test_access_token_carries_additional_claims(self) -> None:
         """additional_claims are merged into the encoded payload."""
-        token = create_access_token(subject=1, additional_claims={"tenant_id": 5})
+        token = create_access_token(subject=1, additional_claims={"seat_count": 5})
         payload = decode_token(token)
         assert payload is not None
-        assert payload["tenant_id"] == 5
+        assert payload["seat_count"] == 5
         assert payload["type"] == "access"
 
     def test_refresh_token_has_type_and_jti(self) -> None:

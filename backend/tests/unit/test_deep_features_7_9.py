@@ -73,7 +73,6 @@ def _mock_campaign(**overrides: Any) -> MagicMock:
     defaults = dict(
         id=1,
         name="Test Campaign",
-        tenant_id=1,
         platform=MagicMock(value="meta"),
         total_spend_cents=100000,
         revenue_cents=500000,

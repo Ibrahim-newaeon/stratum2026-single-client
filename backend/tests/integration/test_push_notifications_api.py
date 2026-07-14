@@ -6,11 +6,12 @@
 Exercises the real ASGI app: VAPID key retrieval, device subscribe /
 unsubscribe, subscriber listing, history, and analytics, plus auth.
 
-Subscriptions are persisted to PostgreSQL, so list assertions use
-tenant-scoped subset checks (each test runs under a fresh tenant_id). The
-send -> history -> analytics flow is covered in
-``test_push_persistence_api.py``; the /send path's actual web-push
-dispatch is left to service-level tests.
+Subscriptions are persisted to PostgreSQL, so list assertions use subset
+checks against uniquely-created rows (each test creates its own
+fresh-tagged subscriptions) rather than exact-list equality, since the
+table is global and shared across the run. The send -> history ->
+analytics flow is covered in ``test_push_persistence_api.py``; the
+/send path's actual web-push dispatch is left to service-level tests.
 """
 
 import pytest

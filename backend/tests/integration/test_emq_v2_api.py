@@ -5,8 +5,8 @@
 under ``/emq/playbook``. The router is guarded by get_current_user; the
 read-only EMQ score / incident routes are out of scope here.
 
-STRAT-SC-001: this route used to be scoped under
-``/tenants/{tenant_id}/emq/playbook``; there is now exactly one
+STRAT-SC-001: this route used to be scoped under a path-organization
+prefix (``/tenants/<id>/emq/playbook``); there is now exactly one
 organization, so the path is un-prefixed. The tenant-mismatch test was
 removed entirely (that concept no longer exists).
 """

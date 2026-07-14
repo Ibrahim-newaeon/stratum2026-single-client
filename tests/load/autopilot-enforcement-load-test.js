@@ -26,15 +26,14 @@ const API_V1 = `${BASE_URL}/api/v1`;
 
 // Test credentials - supports multiple users to avoid rate limiting
 const TEST_PASSWORD = __ENV.TEST_PASSWORD || 'TestPassword123!';
-const TEST_TENANT_ID = __ENV.TEST_TENANT_ID || '1';
 const NUM_TEST_USERS = parseInt(__ENV.NUM_TEST_USERS || '25');
 
 // Generate user emails for load testing (each VU gets its own user)
 function getTestEmail(vuIndex) {
     if (vuIndex === 0) {
-        return 'admin@test-tenant.com';
+        return 'admin@test-org.com';
     }
-    return `loadtest${vuIndex}@test-tenant.com`;
+    return `loadtest${vuIndex}@test-org.com`;
 }
 
 // =============================================================================
@@ -235,9 +234,9 @@ function handleRateLimit(res) {
 // Test Functions
 // =============================================================================
 
-function testGetSettings(token, tenantId) {
+function testGetSettings(token) {
     const res = http.get(
-        `${API_V1}/tenant/${tenantId}/autopilot/enforcement/settings`,
+        `${API_V1}/autopilot/enforcement/settings`,
         { headers: getHeaders(token), tags: { name: 'get_settings' } }
     );
 
@@ -280,9 +279,9 @@ function testGetSettings(token, tenantId) {
     return res;
 }
 
-function testUpdateSettings(token, tenantId) {
+function testUpdateSettings(token) {
     const res = http.put(
-        `${API_V1}/tenant/${tenantId}/autopilot/enforcement/settings`,
+        `${API_V1}/autopilot/enforcement/settings`,
         JSON.stringify({
             max_campaign_budget: randomBudget(5000, 20000),
             min_roas_threshold: 1.0 + Math.random(),
@@ -326,12 +325,12 @@ function testUpdateSettings(token, tenantId) {
     return res;
 }
 
-function testCheckAction(token, tenantId) {
+function testCheckAction(token) {
     const campaignId = randomCampaignId();
     const proposedBudget = randomBudget(500, 15000);
 
     const res = http.post(
-        `${API_V1}/tenant/${tenantId}/autopilot/enforcement/check`,
+        `${API_V1}/autopilot/enforcement/check`,
         JSON.stringify({
             action_type: 'set_budget',
             entity_type: 'campaign',
@@ -385,11 +384,11 @@ function testCheckAction(token, tenantId) {
     }
 }
 
-function testConfirmAction(token, tenantId, confirmationToken) {
+function testConfirmAction(token, confirmationToken) {
     if (!confirmationToken) return null;
 
     const res = http.post(
-        `${API_V1}/tenant/${tenantId}/autopilot/enforcement/confirm`,
+        `${API_V1}/autopilot/enforcement/confirm`,
         JSON.stringify({
             confirmation_token: confirmationToken,
             override_reason: 'Load test override',
@@ -418,11 +417,11 @@ function testConfirmAction(token, tenantId, confirmationToken) {
     return res;
 }
 
-function testKillSwitch(token, tenantId) {
+function testKillSwitch(token) {
     const enabled = Math.random() > 0.5;
 
     const res = http.post(
-        `${API_V1}/tenant/${tenantId}/autopilot/enforcement/kill-switch`,
+        `${API_V1}/autopilot/enforcement/kill-switch`,
         JSON.stringify({
             enabled: enabled,
             reason: 'Load test toggle',
@@ -465,9 +464,9 @@ function testKillSwitch(token, tenantId) {
     return res;
 }
 
-function testAuditLog(token, tenantId) {
+function testAuditLog(token) {
     const res = http.get(
-        `${API_V1}/tenant/${tenantId}/autopilot/enforcement/audit-log?days=7&limit=50`,
+        `${API_V1}/autopilot/enforcement/audit-log?days=7&limit=50`,
         { headers: getHeaders(token), tags: { name: 'audit_log' } }
     );
 
@@ -507,11 +506,11 @@ function testAuditLog(token, tenantId) {
     return res;
 }
 
-function testAddRule(token, tenantId) {
+function testAddRule(token) {
     const ruleId = `rule_${__VU}_${__ITER}_${Math.random().toString(36).substring(7)}`;
 
     const res = http.post(
-        `${API_V1}/tenant/${tenantId}/autopilot/enforcement/rules`,
+        `${API_V1}/autopilot/enforcement/rules`,
         JSON.stringify({
             rule_id: ruleId,
             rule_type: 'budget_exceeded',
@@ -558,11 +557,11 @@ function testAddRule(token, tenantId) {
     return ruleId;
 }
 
-function testDeleteRule(token, tenantId, ruleId) {
+function testDeleteRule(token, ruleId) {
     if (!ruleId) return null;
 
     const res = http.del(
-        `${API_V1}/tenant/${tenantId}/autopilot/enforcement/rules/${ruleId}`,
+        `${API_V1}/autopilot/enforcement/rules/${ruleId}`,
         null,
         { headers: getHeaders(token), tags: { name: 'delete_rule' } }
     );
@@ -596,26 +595,24 @@ export default function () {
         return;
     }
 
-    const tenantId = TEST_TENANT_ID;
-
     // Run test groups
     group('Settings Operations', function () {
-        testGetSettings(token, tenantId);
+        testGetSettings(token);
         sleep(0.3);
 
-        testUpdateSettings(token, tenantId);
+        testUpdateSettings(token);
         sleep(0.3);
     });
 
     group('Enforcement Checks', function () {
         // Run multiple check actions
         for (let i = 0; i < 3; i++) {
-            const confirmToken = testCheckAction(token, tenantId);
+            const confirmToken = testCheckAction(token);
             sleep(0.2);
 
             // Occasionally confirm soft-blocked actions
             if (confirmToken && Math.random() > 0.7) {
-                testConfirmAction(token, tenantId, confirmToken);
+                testConfirmAction(token, confirmToken);
                 sleep(0.1);
             }
         }
@@ -624,12 +621,12 @@ export default function () {
     group('Kill Switch', function () {
         // Only test kill switch occasionally to avoid disrupting other tests
         if (Math.random() > 0.9) {
-            testKillSwitch(token, tenantId);
+            testKillSwitch(token);
             sleep(0.3);
 
             // Re-enable enforcement
             http.post(
-                `${API_V1}/tenant/${tenantId}/autopilot/enforcement/kill-switch`,
+                `${API_V1}/autopilot/enforcement/kill-switch`,
                 JSON.stringify({ enabled: true, reason: 'Re-enable after test' }),
                 { headers: getHeaders(token), tags: { name: 'kill_switch_reenable' } }
             );
@@ -638,18 +635,18 @@ export default function () {
     });
 
     group('Audit Log', function () {
-        testAuditLog(token, tenantId);
+        testAuditLog(token);
         sleep(0.3);
     });
 
     group('Custom Rules', function () {
         // Only test rules occasionally to avoid creating too many
         if (Math.random() > 0.8) {
-            const ruleId = testAddRule(token, tenantId);
+            const ruleId = testAddRule(token);
             sleep(0.2);
 
             // Clean up rule
-            testDeleteRule(token, tenantId, ruleId);
+            testDeleteRule(token, ruleId);
             sleep(0.2);
         }
     });
@@ -666,7 +663,6 @@ export function setup() {
     console.log(`Starting Autopilot Enforcement Load Test`);
     console.log(`Scenario: ${selectedScenario}`);
     console.log(`Base URL: ${BASE_URL}`);
-    console.log(`Tenant ID: ${TEST_TENANT_ID}`);
     console.log(`Number of test users: ${NUM_TEST_USERS}`);
 
     // Verify API is reachable

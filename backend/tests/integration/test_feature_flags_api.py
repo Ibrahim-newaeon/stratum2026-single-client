@@ -12,9 +12,9 @@ handlers previously read ``request.state.user_role`` (never set by the
 tenant middleware, which populates ``request.state.role``), so every
 owner feature-flag route returned 403 regardless of caller.
 
-STRAT-SC-001: these routes used to be scoped under
-``/api/v1/tenant/{tenant_id}/features`` and
-``/api/v1/console/tenants/{tenant_id}/features``; both are now un-prefixed
+STRAT-SC-001: these routes used to be scoped under path-organization
+prefixes (``/api/v1/tenant/<id>/features`` and
+``/api/v1/console/tenants/<id>/features``); both are now un-prefixed
 (``/api/v1/features`` and ``/api/v1/console/features``) since there is
 exactly one organization. Cross-tenant-isolation tests were removed
 entirely — that concept no longer exists.

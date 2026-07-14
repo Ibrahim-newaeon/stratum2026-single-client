@@ -33,7 +33,6 @@ from app.models import (
     AuditLog,
     Campaign,
     CampaignStatus,
-    Tenant,
     User,
     UserRole,
 )
@@ -265,17 +264,7 @@ async def seed_demo_data():
                 print("    To re-seed, delete the demo user first.")
                 return
 
-            print("\n[1/6] Creating demo tenant...")
-            tenant = Tenant(
-                name="Demo Company",
-                slug="demo-company",
-                settings={"timezone": "America/New_York", "currency": "USD"},
-            )
-            db.add(tenant)
-            await db.flush()
-            print(f"      Created tenant: {tenant.name} (ID: {tenant.id})")
-
-            print("\n[2/6] Creating demo user...")
+            print("\n[1/6] Creating demo user...")
             demo_email = "demo@stratum.ai"
             email_hash = hash_pii_for_lookup(demo_email.lower())
             user = User(
@@ -284,7 +273,6 @@ async def seed_demo_data():
                 password_hash=get_password_hash("demo1234"),
                 full_name=encrypt_pii("Demo User"),
                 role=UserRole.ADMIN,
-                tenant_id=tenant.id,
                 is_verified=True,
                 is_active=True,
             )
@@ -292,9 +280,8 @@ async def seed_demo_data():
             await db.flush()
             print(f"      Created user: {demo_email} (password: demo1234)")
 
-            print("\n[3/6] Creating onboarding record...")
+            print("\n[2/6] Creating onboarding record...")
             onboarding = TenantOnboarding(
-                tenant_id=tenant.id,
                 status=OnboardingStatus.COMPLETED.value,
                 current_step=OnboardingStep.TRUST_GATE_CONFIG.value,
                 completed_steps=[s.value for s in OnboardingStep],
@@ -312,7 +299,7 @@ async def seed_demo_data():
             await db.flush()
             print("      Onboarding completed with autopilot mode")
 
-            print("\n[4/6] Creating platform connections...")
+            print("\n[3/6] Creating platform connections...")
             platforms_to_connect = [
                 (AdPlatform.META, "Meta Ads", "act_123456789"),
                 (AdPlatform.GOOGLE, "Google Ads", "123-456-7890"),
@@ -322,7 +309,6 @@ async def seed_demo_data():
 
             for platform, name, account_id in platforms_to_connect:
                 connection = TenantPlatformConnection(
-                    tenant_id=tenant.id,
                     platform=platform.value,
                     status=ConnectionStatus.CONNECTED.value,
                     access_token_encrypted="demo_token_" + platform.value,
@@ -337,7 +323,6 @@ async def seed_demo_data():
 
                 # Add ad account
                 ad_account = TenantAdAccount(
-                    tenant_id=tenant.id,
                     connection_id=connection.id,
                     platform=platform.value,
                     platform_account_id=account_id,
@@ -359,10 +344,9 @@ async def seed_demo_data():
                 AdPlatform.SNAPCHAT: "snap_demo_456",
             }
 
-            print("\n[5/6] Creating demo campaigns...")
+            print("\n[4/6] Creating demo campaigns...")
             for i, campaign_data in enumerate(DEMO_CAMPAIGNS):
                 campaign = Campaign(
-                    tenant_id=tenant.id,
                     name=campaign_data["name"],
                     platform=campaign_data["platform"],
                     account_id=platform_accounts[campaign_data["platform"]],
@@ -390,10 +374,9 @@ async def seed_demo_data():
 
             await db.flush()
 
-            print("\n[6/7] Creating report templates...")
+            print("\n[5/6] Creating report templates...")
             for template_data in DEMO_REPORT_TEMPLATES:
                 template = ReportTemplate(
-                    tenant_id=tenant.id,
                     name=template_data["name"],
                     description=template_data["description"],
                     report_type=template_data["report_type"],
@@ -408,10 +391,9 @@ async def seed_demo_data():
                 print(f"      {template_data['name']}")
             print(f"      Created {len(DEMO_REPORT_TEMPLATES)} report templates")
 
-            print("\n[7/7] Creating activity log...")
+            print("\n[6/6] Creating activity log...")
             for i, activity in enumerate(DEMO_ACTIVITIES):
                 log = AuditLog(
-                    tenant_id=tenant.id,
                     user_id=user.id,
                     action=activity["action"],
                     resource_type=activity["resource_type"],

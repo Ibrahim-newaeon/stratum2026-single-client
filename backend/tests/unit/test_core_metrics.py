@@ -16,10 +16,11 @@ that values persisting across tests cannot cause false positives.
 process (a second call would register duplicate timeseries); other
 instrumentator tests stub the metric factories.
 
-Single-org conversion (STRAT-SC-001): every metric dropped its ``tenant_id``
-label (there is exactly one organization per deployment now), and the
-per-tenant request-instrumentation closure (``request_by_tenant_instrumentation``)
-was deleted outright along with its main.py wiring.
+Single-org conversion (STRAT-SC-001): every metric dropped its
+per-organization label (there is exactly one organization per deployment
+now), and the per-tenant request-instrumentation closure
+(``request_by_tenant_instrumentation``) was deleted outright along with
+its main.py wiring.
 """
 
 from typing import Optional

@@ -25,12 +25,12 @@ Behavior corrected in #540 and asserted here:
 
 STRAT-SC-001: this suite used to seed a second ``Tenant`` row and assert
 cross-tenant data isolation (``PlatformAudience``/``AudienceSyncJob``/
-``CDPProfile`` rows scoped by ``tenant_id``). The ``Tenant`` model and every
-``tenant_id`` column were removed in the single-client conversion — there is
-now exactly one global organization, so that isolation semantics no longer
-exists. Cross-tenant tests were deleted outright (see inline notes below);
-everything else keeps its original assertions against the now-global
-tables.
+``CDPProfile`` rows scoped by a per-organization column). The ``Tenant``
+model and every per-organization scoping column were removed in the
+single-client conversion — there is now exactly one global organization,
+so that isolation semantics no longer exists. Cross-tenant tests were
+deleted outright (see inline notes below); everything else keeps its
+original assertions against the now-global tables.
 """
 
 import hashlib

@@ -26,19 +26,17 @@ from sqlalchemy.orm import sessionmaker
 
 from app.core.config import settings
 from app.core.security import encrypt_pii, get_password_hash, hash_pii_for_lookup
-from app.models import Tenant, User, UserRole
+from app.models import User, UserRole
 
 # Load test user credentials template
 TEST_PASSWORD = "TestPassword123!"
-TEST_TENANT_NAME = "Load Test Tenant"
-TEST_TENANT_SLUG = "load-test-tenant"
 
 
 def get_test_email(index: int) -> str:
     """Generate test email for given index."""
     if index == 0:
-        return "admin@test-tenant.com"
-    return f"loadtest{index}@test-tenant.com"
+        return "admin@test-org.com"
+    return f"loadtest{index}@test-org.com"
 
 
 async def seed_load_test_users(count: int = 25):
@@ -56,29 +54,6 @@ async def seed_load_test_users(count: int = 25):
 
     async with async_session() as db:
         try:
-            # Get or create tenant
-            result = await db.execute(select(Tenant).where(Tenant.id == 1))
-            tenant = result.scalar_one_or_none()
-
-            if not tenant:
-                result = await db.execute(
-                    select(Tenant).where(Tenant.slug == TEST_TENANT_SLUG)
-                )
-                tenant = result.scalar_one_or_none()
-
-            if not tenant:
-                print("\n[!] Creating load test tenant...")
-                tenant = Tenant(
-                    name=TEST_TENANT_NAME,
-                    slug=TEST_TENANT_SLUG,
-                    settings={"timezone": "UTC", "currency": "USD"},
-                )
-                db.add(tenant)
-                await db.flush()
-                print(f"    Created tenant: {tenant.name} (ID: {tenant.id})")
-            else:
-                print(f"\n[*] Using existing tenant: {tenant.name} (ID: {tenant.id})")
-
             created_users = []
             skipped_users = []
 
@@ -105,7 +80,6 @@ async def seed_load_test_users(count: int = 25):
                     password_hash=get_password_hash(TEST_PASSWORD),
                     full_name=encrypt_pii(f"Load Test User {i}"),
                     role=UserRole.ADMIN,
-                    tenant_id=tenant.id,
                     is_verified=True,
                     is_active=True,
                 )
@@ -124,7 +98,6 @@ async def seed_load_test_users(count: int = 25):
             print("=" * 60)
             print(f"\n  Created: {len(created_users)} new users")
             print(f"  Skipped: {len(skipped_users)} existing users")
-            print(f"  Tenant ID: {tenant.id}")
             print(f"\n  All users use password: {TEST_PASSWORD}")
 
             if created_users:
@@ -142,7 +115,7 @@ async def seed_load_test_users(count: int = 25):
   const USERS = [];
   for (let i = 0; i < 25; i++) {
       USERS.push({
-          email: i === 0 ? 'admin@test-tenant.com' : `loadtest${i}@test-tenant.com`,
+          email: i === 0 ? 'admin@test-org.com' : `loadtest${i}@test-org.com`,
           password: 'TestPassword123!'
       });
   }

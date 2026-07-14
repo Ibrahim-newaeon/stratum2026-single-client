@@ -45,12 +45,9 @@ _UUID3 = uuid.uuid4()
 # ---------------------------------------------------------------------------
 
 
-def _fake_user(
-    *, user_id: int = 1, tenant_id: int = 1, role: str = "admin"
-) -> MagicMock:
+def _fake_user(*, user_id: int = 1, role: str = "admin") -> MagicMock:
     u = MagicMock()
     u.id = user_id
-    u.tenant_id = tenant_id
     u.role = role
     u.email = "test@example.com"
     u.is_deleted = False
@@ -60,14 +57,12 @@ def _fake_user(
 def _fake_template(
     *,
     template_id: uuid.UUID | None = None,
-    tenant_id: int = 1,
     name: str = "Monthly Perf",
     is_system: bool = False,
     is_active: bool = True,
 ) -> MagicMock:
     tpl = MagicMock()
     tpl.id = template_id or _UUID1
-    tpl.tenant_id = tenant_id
     tpl.name = name
     tpl.description = "Test template"
     tpl.report_type = "campaign_performance"
@@ -81,7 +76,6 @@ def _fake_template(
     tpl.__dict__.update(
         {
             "id": tpl.id,
-            "tenant_id": tpl.tenant_id,
             "name": tpl.name,
             "description": tpl.description,
             "report_type": tpl.report_type,
@@ -101,12 +95,10 @@ def _fake_schedule(
     *,
     schedule_id: uuid.UUID | None = None,
     template_id: uuid.UUID | None = None,
-    tenant_id: int = 1,
 ) -> MagicMock:
     s = MagicMock()
     s.id = schedule_id or _UUID2
     s.template_id = template_id or _UUID1
-    s.tenant_id = tenant_id
     s.name = "Weekly report"
     s.description = None
     s.frequency = "weekly"
@@ -159,12 +151,10 @@ def _fake_schedule(
 def _fake_execution(
     *,
     execution_id: uuid.UUID | None = None,
-    tenant_id: int = 1,
     status: str = "completed",
 ) -> MagicMock:
     e = MagicMock()
     e.id = execution_id or _UUID3
-    e.tenant_id = tenant_id
     e.template_id = _UUID1
     e.schedule_id = _UUID2
     e.execution_type = "manual"
@@ -184,7 +174,6 @@ def _fake_execution(
     e.__dict__.update(
         {
             "id": e.id,
-            "tenant_id": e.tenant_id,
             "template_id": e.template_id,
             "schedule_id": e.schedule_id,
             "execution_type": e.execution_type,
@@ -297,7 +286,6 @@ class TestReportingTemplatesCRUD:
             # on add() so the response model validates.
             for attr in (
                 "id",
-                "tenant_id",
                 "name",
                 "description",
                 "report_type",

@@ -5,8 +5,8 @@
 quality-issue detection, the prioritized fix playbook, and applied-fix
 history.
 
-STRAT-SC-001: routes no longer take a tenant_id path segment (single global
-organization); the router now enforces real auth via
+STRAT-SC-001: routes no longer take a path-organization segment (single
+global organization); the router now enforces real auth via
 ``dependencies=[Depends(get_current_user)]`` router-wide.
 """
 
@@ -31,7 +31,7 @@ class TestIssues:
 
     # STRAT-SC-001: cross-tenant isolation no longer exists (single org) —
     # test_cross_tenant_forbidden removed (routes no longer take a
-    # tenant_id path segment to mismatch against).
+    # path-organization segment to mismatch against).
 
     async def test_no_connections_empty_issues(
         self, authenticated_client: AsyncClient
@@ -51,7 +51,7 @@ class TestPlaybook:
 
     # STRAT-SC-001: cross-tenant isolation no longer exists (single org) —
     # test_cross_tenant_forbidden removed (routes no longer take a
-    # tenant_id path segment to mismatch against).
+    # path-organization segment to mismatch against).
 
 
 class TestHistory:

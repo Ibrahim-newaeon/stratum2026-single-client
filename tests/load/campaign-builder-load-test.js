@@ -4,11 +4,10 @@
  * Tests the Campaign Builder endpoints under load.
  *
  * Endpoints tested:
- * - GET /tenant/{id}/campaign-builder/connectors
- * - GET /tenant/{id}/campaign-builder/ad-accounts
- * - GET /tenant/{id}/campaign-builder/drafts
- * - POST /tenant/{id}/campaign-builder/drafts
- * - GET /tenant/{id}/campaign-builder/publish-logs
+ * - GET /campaign-builder/connect/{platform}/status
+ * - GET /campaign-builder/ad-accounts/{platform}
+ * - GET /campaign-builder/campaign-drafts
+ * - POST /campaign-builder/campaign-drafts
  *
  * Usage:
  *   docker run --rm -i --network stratum-ai-final-updates-dec-2025-main_stratum_network \
@@ -27,12 +26,11 @@ const BASE_URL = __ENV.BASE_URL || 'http://api:8000';
 const API_V1 = `${BASE_URL}/api/v1`;
 
 const TEST_PASSWORD = __ENV.TEST_PASSWORD || 'TestPassword123!';
-const TEST_TENANT_ID = __ENV.TEST_TENANT_ID || '1';
 const NUM_TEST_USERS = parseInt(__ENV.NUM_TEST_USERS || '25');
 
 function getTestEmail(vuIndex) {
-    if (vuIndex === 0) return 'admin@test-tenant.com';
-    return `loadtest${vuIndex}@test-tenant.com`;
+    if (vuIndex === 0) return 'admin@test-org.com';
+    return `loadtest${vuIndex}@test-org.com`;
 }
 
 // =============================================================================
@@ -150,9 +148,9 @@ function handleRateLimit(res) {
 // Test Functions
 // =============================================================================
 
-function testConnectorStatus(token, tenantId) {
+function testConnectorStatus(token) {
     // Test Meta connector status - may return 200 or 404 if not connected
-    const res = http.get(`${API_V1}/campaign-builder/tenant/${tenantId}/connect/meta/status`, { headers: getHeaders(token), tags: { name: 'connector_status' } });
+    const res = http.get(`${API_V1}/campaign-builder/connect/meta/status`, { headers: getHeaders(token), tags: { name: 'connector_status' } });
     connectorsDuration.add(res.timings.duration);
     if (isRateLimited(res)) { handleRateLimit(res); return; }
     const success = check(res, {
@@ -161,9 +159,9 @@ function testConnectorStatus(token, tenantId) {
     if (success) connectorsSuccess.add(1); else errorRate.add(1);
 }
 
-function testAdAccounts(token, tenantId) {
+function testAdAccounts(token) {
     // Test Meta ad accounts
-    const res = http.get(`${API_V1}/campaign-builder/tenant/${tenantId}/ad-accounts/meta`, { headers: getHeaders(token), tags: { name: 'ad_accounts' } });
+    const res = http.get(`${API_V1}/campaign-builder/ad-accounts/meta`, { headers: getHeaders(token), tags: { name: 'ad_accounts' } });
     adAccountsDuration.add(res.timings.duration);
     if (isRateLimited(res)) { handleRateLimit(res); return; }
     const success = check(res, {
@@ -173,8 +171,8 @@ function testAdAccounts(token, tenantId) {
     if (success) adAccountsSuccess.add(1); else errorRate.add(1);
 }
 
-function testDrafts(token, tenantId) {
-    const res = http.get(`${API_V1}/campaign-builder/tenant/${tenantId}/campaign-drafts`, { headers: getHeaders(token), tags: { name: 'drafts' } });
+function testDrafts(token) {
+    const res = http.get(`${API_V1}/campaign-builder/campaign-drafts`, { headers: getHeaders(token), tags: { name: 'drafts' } });
     draftsDuration.add(res.timings.duration);
     if (isRateLimited(res)) { handleRateLimit(res); return; }
     const success = check(res, {
@@ -184,8 +182,8 @@ function testDrafts(token, tenantId) {
     if (success) draftsSuccess.add(1); else errorRate.add(1);
 }
 
-function testPublishLogs(token, tenantId) {
-    const res = http.get(`${API_V1}/campaign-builder/tenant/${tenantId}/campaign-drafts`, { headers: getHeaders(token), tags: { name: 'publish_logs' } });
+function testPublishLogs(token) {
+    const res = http.get(`${API_V1}/campaign-builder/campaign-drafts`, { headers: getHeaders(token), tags: { name: 'publish_logs' } });
     if (isRateLimited(res)) { handleRateLimit(res); return; }
     check(res, { 'publish_logs: status 200': (r) => r.status === 200 });
 }
@@ -198,17 +196,15 @@ export default function () {
     const token = getToken();
     if (!token) { errorRate.add(1); sleep(2); return; }
 
-    const tenantId = TEST_TENANT_ID;
-
     group('Campaign Builder', function () {
         // Note: connector status endpoint has a bug, skip for now
-        // testConnectorStatus(token, tenantId);
+        // testConnectorStatus(token);
         // sleep(0.2);
-        testAdAccounts(token, tenantId);
+        testAdAccounts(token);
         sleep(0.2);
-        testDrafts(token, tenantId);
+        testDrafts(token);
         sleep(0.2);
-        testPublishLogs(token, tenantId);
+        testPublishLogs(token);
         sleep(0.3);
     });
 

@@ -26,9 +26,8 @@ const BASE_URL = __ENV.BASE_URL || 'http://localhost:8000';
 const API_V1 = `${BASE_URL}/api/v1`;
 
 // Test credentials (override via environment)
-const TEST_EMAIL = __ENV.TEST_EMAIL || 'admin@test-tenant.com';
+const TEST_EMAIL = __ENV.TEST_EMAIL || 'admin@test-org.com';
 const TEST_PASSWORD = __ENV.TEST_PASSWORD || 'TestPassword123!';
-const TEST_TENANT_ID = __ENV.TEST_TENANT_ID || '1';
 
 // =============================================================================
 // Custom Metrics
@@ -157,7 +156,6 @@ export const options = {
 
 export function setup() {
     console.log(`Starting ${selectedScenario} test against ${BASE_URL}`);
-    console.log(`Test tenant ID: ${TEST_TENANT_ID}`);
 
     // Verify health endpoint is accessible
     const healthRes = http.get(`${BASE_URL}/health`);
@@ -190,7 +188,6 @@ export function setup() {
 
     return {
         authToken: authToken,
-        tenantId: TEST_TENANT_ID,
     };
 }
 
@@ -345,16 +342,16 @@ export default function (data) {
     // -------------------------------------------------------------------------
     group('EMQ Score', function () {
         const emqRes = http.get(
-            `${API_V1}/tenants/${data.tenantId}/emq/score`,
+            `${API_V1}/emq/score`,
             {
                 headers: authHeaders,
-                tags: { name: 'GET /api/v1/tenant/{id}/emq/score' },
+                tags: { name: 'GET /api/v1/emq/score' },
             }
         );
 
         emqScoreDuration.add(emqRes.timings.duration);
 
-        // Accept 200 (success), 401/403 (auth issues), or 404 (tenant not found)
+        // Accept 200 (success), 401/403 (auth issues), or 404 (not found)
         const emqOk = check(emqRes, {
             'emq: status is valid': (r) => [200, 401, 403, 404].includes(r.status),
             'emq: response time < 500ms': (r) => r.timings.duration < 500,
@@ -475,10 +472,10 @@ export default function (data) {
     group('EMQ Additional Endpoints', function () {
         // Confidence data
         const confidenceRes = http.get(
-            `${API_V1}/tenants/${data.tenantId}/emq/confidence`,
+            `${API_V1}/emq/confidence`,
             {
                 headers: authHeaders,
-                tags: { name: 'GET /api/v1/tenant/{id}/emq/confidence' },
+                tags: { name: 'GET /api/v1/emq/confidence' },
             }
         );
 
@@ -489,10 +486,10 @@ export default function (data) {
 
         // Playbook
         const playbookRes = http.get(
-            `${API_V1}/tenants/${data.tenantId}/emq/playbook`,
+            `${API_V1}/emq/playbook`,
             {
                 headers: authHeaders,
-                tags: { name: 'GET /api/v1/tenant/{id}/emq/playbook' },
+                tags: { name: 'GET /api/v1/emq/playbook' },
             }
         );
 
@@ -503,10 +500,10 @@ export default function (data) {
 
         // Autopilot state
         const autopilotRes = http.get(
-            `${API_V1}/tenants/${data.tenantId}/emq/autopilot-state`,
+            `${API_V1}/emq/autopilot-state`,
             {
                 headers: authHeaders,
-                tags: { name: 'GET /api/v1/tenant/{id}/emq/autopilot-state' },
+                tags: { name: 'GET /api/v1/emq/autopilot-state' },
             }
         );
 

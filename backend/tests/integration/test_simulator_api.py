@@ -5,9 +5,10 @@
 budget-change simulation, ROAS forecasting, conversion prediction, and model
 status.
 
-These endpoints resolve the tenant from ``request.state.tenant_id`` (set by the
-tenant middleware from the authenticated client) and depend on
-``get_async_session`` (overridden by the harness). The ML layer
+These endpoints authenticate the caller via the standard JWT dependency
+(there is exactly one global organization, so no per-organization scoping
+is resolved) and depend on ``get_async_session`` (overridden by the
+harness). The ML layer
 (``WhatIfSimulator``/``ROASForecaster``/``ConversionPredictor``) degrades to a
 heuristic when no trained model artifact is present, so the portfolio happy path
 runs without seeded campaigns.

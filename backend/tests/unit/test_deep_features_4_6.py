@@ -47,7 +47,7 @@ NOW = datetime.now(timezone.utc)
 # ---------------------------------------------------------------------------
 
 
-def _mock_connection(*, platform="meta", status="connected", tenant_id=1):
+def _mock_connection(*, platform="meta", status="connected"):
     """Build a mock TenantPlatformConnection row."""
     conn = MagicMock()
     conn.platform = MagicMock(value=platform)
@@ -58,15 +58,13 @@ def _mock_connection(*, platform="meta", status="connected", tenant_id=1):
     conn.last_error = None
     conn.refresh_token_encrypted = "encrypted_refresh_token"
     conn.access_token_encrypted = "encrypted_access_token"
-    conn.tenant_id = tenant_id
     return conn
 
 
-def _mock_ad_account(*, platform="meta", is_enabled=True, tenant_id=1):
+def _mock_ad_account(*, platform="meta", is_enabled=True):
     """Build a mock TenantAdAccount row."""
     acc = MagicMock()
     acc.id = uuid.UUID(FAKE_UUID)
-    acc.tenant_id = tenant_id
     acc.platform = platform
     acc.platform_account_id = "act_123456"
     acc.name = "Test Ad Account"
@@ -79,13 +77,12 @@ def _mock_ad_account(*, platform="meta", is_enabled=True, tenant_id=1):
     return acc
 
 
-def _mock_campaign_draft(*, status="draft", tenant_id=1):
+def _mock_campaign_draft(*, status="draft"):
     """Build a mock CampaignDraft row."""
     from app.models.campaign_builder import DraftStatus
 
     draft = MagicMock()
     draft.id = uuid.UUID(FAKE_UUID)
-    draft.tenant_id = tenant_id
     draft.platform = MagicMock(value="meta")
     draft.ad_account_id = uuid.UUID(FAKE_UUID)
     draft.name = "Test Campaign"
@@ -111,7 +108,6 @@ def _mock_publish_log(*, result_status="failure"):
     log = MagicMock()
     log.id = uuid.UUID(FAKE_UUID2)
     log.draft_id = uuid.UUID(FAKE_UUID)
-    log.tenant_id = 1
     log.platform = MagicMock(value="meta")
     log.platform_account_id = "act_123456"
     log.event_time = NOW
@@ -124,11 +120,10 @@ def _mock_publish_log(*, result_status="failure"):
     return log
 
 
-def _mock_user(*, user_id=1, tenant_id=1, role_value="admin"):
+def _mock_user(*, user_id=1, role_value="admin"):
     """Build a mock User ORM object for auth dependency overrides."""
     user = MagicMock()
     user.id = user_id
-    user.tenant_id = tenant_id
     user.role = MagicMock(value=role_value)
     user.cms_role = "admin"
     user.is_active = True

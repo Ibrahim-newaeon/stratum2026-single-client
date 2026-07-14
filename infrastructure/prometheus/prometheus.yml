@@ -20,7 +20,7 @@ scrape_configs:
   # Stratum API
   - job_name: 'stratum-api'
     metrics_path: '/metrics'
-    # /metrics carries tenant_id-labeled series. When the API sets
+    # /metrics carries route/status-labeled series. When the API sets
     # METRICS_API_KEY (required in production), uncomment and supply the
     # same key so scrapes send "Authorization: Bearer <key>":
     # authorization:

@@ -423,7 +423,8 @@ class TestRunNow:
 
     # STRAT-SC-001: cross-tenant isolation no longer exists (single org) —
     # test_foreign_tenant_schedule_raises removed (ReportScheduler no longer
-    # takes a tenant_id, so there is no "foreign tenant" to scope against).
+    # takes an organization-scoping argument, so there is no "foreign
+    # tenant" to scope against).
 
     async def test_run_now_dispatches_execute_schedule(self, db_session, scheduler):
         template = await _seed_template(db_session, "RN2 Tmpl")

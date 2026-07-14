@@ -23,11 +23,12 @@ NOTE: run with the session-scoped event loop CI uses
 loop — these tests only use the db_session fixture, not the ASGI app.
 
 STRAT-SC-001: ``Target``, ``DailyKPI``, and ``PacingAlert`` lost their
-``tenant_id`` columns and ``PacingAlertService``/``AlertNotificationService``
-lost the ``tenant_id`` constructor argument in the single-client conversion
-— there is now exactly one global organization, so per-tenant scoping and
-isolation no longer exist. Tests that only existed to assert cross-tenant
-isolation were deleted (see inline notes below); everything else keeps its
+per-organization scoping columns and
+``PacingAlertService``/``AlertNotificationService`` lost the matching
+constructor argument in the single-client conversion — there is now
+exactly one global organization, so per-tenant scoping and isolation no
+longer exist. Tests that only existed to assert cross-tenant isolation
+were deleted (see inline notes below); everything else keeps its
 original assertions against the now-global tables.
 """
 
@@ -659,9 +660,10 @@ class TestAlertQueries:
 
     # STRAT-SC-001: cross-tenant isolation no longer exists (single org) —
     # ``test_tenant_isolation_on_queries`` removed. It constructed a second
-    # ``PacingAlertService(db_session, tenant_id + 999)`` to assert the
-    # "other tenant" saw no alerts; the service no longer takes a tenant_id
-    # at all, so there is nothing left to scope.
+    # ``PacingAlertService`` with a distinct organization identifier to
+    # assert the "other tenant" saw no alerts; the service no longer takes
+    # an organization-scoping argument at all, so there is nothing left to
+    # scope.
 
 
 # =============================================================================
@@ -713,9 +715,10 @@ class TestAlertLifecycle:
 
     # STRAT-SC-001: cross-tenant isolation no longer exists (single org) —
     # ``test_lifecycle_respects_tenant`` removed. It constructed a second
-    # ``PacingAlertService(db_session, tenant_id + 999)`` and asserted the
-    # "other tenant" service instance could not acknowledge/resolve/dismiss
-    # the alert; the service no longer takes a tenant_id at all.
+    # ``PacingAlertService`` with a distinct organization identifier and
+    # asserted the "other tenant" service instance could not
+    # acknowledge/resolve/dismiss the alert; the service no longer takes
+    # an organization-scoping argument at all.
 
 
 # =============================================================================
@@ -1069,9 +1072,10 @@ class TestNotifyAlert:
     # STRAT-SC-001: cross-tenant isolation no longer exists (single org) —
     # ``test_foreign_tenant_target_is_not_resolved`` removed. It asserted
     # that ``notify_alert`` filtered the Target lookup by the alert's
-    # tenant_id so a target owned by "another tenant" wasn't resolved;
-    # neither ``Target`` nor ``PacingAlert`` carry a tenant_id anymore and
-    # the lookup is unscoped globally by design.
+    # organization scope so a target owned by "another tenant" wasn't
+    # resolved; neither ``Target`` nor ``PacingAlert`` carry a
+    # per-organization scoping column anymore and the lookup is unscoped
+    # globally by design.
 
     async def test_all_channels_dispatched(self, notifier, db_session):
         target = await _make_target(

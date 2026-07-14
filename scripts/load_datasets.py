@@ -43,7 +43,7 @@ def infer_sql_type(dtype, col_name):
     # Check column name patterns first
     if 'date' in col_lower:
         return 'DATE'
-    if col_lower in ['id', 'tenant_id']:
+    if col_lower == 'id':
         return 'INTEGER'
     if '_id' in col_lower:
         return 'VARCHAR(100)'
@@ -118,10 +118,6 @@ def load_csv_to_table(engine, csv_path: Path, table_name: str, schema: str = "wa
         # Clean column names (remove spaces, lowercase)
         df.columns = df.columns.str.strip().str.lower().str.replace(' ', '_')
 
-        # Add tenant_id if not present
-        if 'tenant_id' not in df.columns:
-            df['tenant_id'] = 1
-
         # Handle date columns
         date_cols = [c for c in df.columns if 'date' in c.lower()]
         for col in date_cols:
@@ -161,7 +157,6 @@ def create_indexes(engine):
         "CREATE INDEX IF NOT EXISTS idx_fact_daily_date ON warehouse.fact_daily(date)",
         "CREATE INDEX IF NOT EXISTS idx_fact_daily_platform ON warehouse.fact_daily(platform)",
         "CREATE INDEX IF NOT EXISTS idx_fact_daily_campaign ON warehouse.fact_daily(campaign_id)",
-        "CREATE INDEX IF NOT EXISTS idx_fact_daily_tenant ON warehouse.fact_daily(tenant_id)",
         "CREATE INDEX IF NOT EXISTS idx_fact_daily_geo ON warehouse.fact_daily(geo)",
     ]
 

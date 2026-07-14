@@ -1036,7 +1036,7 @@ class TestNLFilter:
 
 
 class TestAttributionConfidence:
-    """Regression for #525: 500ed on user.current_tenant_id +
+    """Regression for #525: 500ed on a non-existent user attribute +
     CampaignStatus.DELETED."""
 
     async def test_empty(self, authenticated_client: AsyncClient):

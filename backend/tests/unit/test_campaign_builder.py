@@ -1356,11 +1356,12 @@ class TestRetryPublish:
 # =============================================================================
 
 # NOTE (STRAT-SC-001, closed in C4): app/workers/campaign_builder_tasks.py
-# used to query TenantPlatformConnection.tenant_id / TenantAdAccount.tenant_id
-# (and construct TenantAdAccount(tenant_id=...)), but those columns were
-# removed from the models — the tasks raised AttributeError at runtime. C4's
-# de-fan-out rewrote the tasks to operate on the single org (one connection
-# per platform, no tenant filter), so these tests now exercise real behavior
+# used to query the per-organization scoping columns on
+# TenantPlatformConnection/TenantAdAccount (and construct TenantAdAccount
+# with that scoping kwarg), but those columns were removed from the
+# models — the tasks raised AttributeError at runtime. C4's de-fan-out
+# rewrote the tasks to operate on the single org (one connection per
+# platform, no tenant filter), so these tests now exercise real behavior
 # again (no more xfail).
 
 

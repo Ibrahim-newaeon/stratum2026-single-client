@@ -158,11 +158,12 @@ class TestGDPR:
         data = resp.json()["data"]
         assert data["profile_retention_days"] == 365
 
-    # STRAT-SC-001: GDPRRetentionPolicy no longer carries a tenant_id field at
-    # all (single global org, no scoping dimension) — renamed from
-    # test_update_retention_policy_echoes_tenant, which asserted the server
-    # overrode a client-supplied tenant_id; that concept no longer exists, so
-    # this now just checks the PUT actually persists the updated fields.
+    # STRAT-SC-001: GDPRRetentionPolicy no longer carries a per-organization
+    # scoping field at all (single global org, no scoping dimension) —
+    # renamed from test_update_retention_policy_echoes_tenant, which
+    # asserted the server overrode a client-supplied scoping value; that
+    # concept no longer exists, so this now just checks the PUT actually
+    # persists the updated fields.
     async def test_update_retention_policy_updates_fields(
         self, authenticated_client: AsyncClient
     ):

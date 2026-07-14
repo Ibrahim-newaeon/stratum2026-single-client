@@ -8,11 +8,11 @@ DB-backed connection/metric state (no live HubSpot API calls).
 Every route is owner-gated (``require_owner``). The 200-path therefore uses
 owner auth.
 
-STRAT-SC-001: these routes used to also enforce a ``tenant_id`` query param
-matching the request's tenant (``_verify_tenant_access``) — there is now
-exactly one organization, so that query param and the ``X-Tenant-ID``
-header are gone, and the tenant-mismatch test was removed entirely (that
-concept no longer exists).
+STRAT-SC-001: these routes used to also enforce a per-organization query
+param matching the request's organization (``_verify_tenant_access``) —
+there is now exactly one organization, so that query param and its
+matching request header are gone, and the tenant-mismatch test was
+removed entirely (that concept no longer exists).
 
 NOTE: run with the session-scoped event loop CI uses
 (``-o asyncio_default_test_loop_scope=session``).

@@ -599,8 +599,9 @@ class TestDeliverReport:
             await service.deliver_report(uuid.uuid4(), ["email"], {})
 
     # STRAT-SC-001: cross-tenant isolation no longer exists (single org) —
-    # test_wrong_tenant_raises removed (DeliveryService no longer takes a
-    # tenant_id, and ReportExecution has no tenant scoping at all).
+    # test_wrong_tenant_raises removed (DeliveryService no longer takes an
+    # organization-scoping argument, and ReportExecution has no tenant
+    # scoping at all).
 
     async def test_incomplete_execution_raises(self, db_session):
         execution = await _seed_execution(

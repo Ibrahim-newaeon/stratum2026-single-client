@@ -4,9 +4,10 @@
 """
 One positive+negative pair per §4.9 constraint conversion.
 
-Every constraint below used to be scoped by ``tenant_id`` (composite unique
-key) and is now a bare global unique constraint, per the single-client
-conversion (Tenant/tenant_id deleted in this task). Each pair proves:
+Every constraint below used to be scoped by a per-organization column
+(composite unique key) and is now a bare global unique constraint, per the
+single-client conversion (the ``Tenant`` model and its scoping column were
+deleted in this task). Each pair proves:
 
 - positive: the first row inserts cleanly.
 - negative: a second row that only duplicates the *remaining* (post-rescope)
@@ -301,7 +302,7 @@ def make_delivery_channel_config(**overrides):
 
 
 # =============================================================================
-# 1. base_models.py:481 - User.email_hash  (was tenant_id, email_hash)
+# 1. base_models.py:481 - User.email_hash  (was org-scope + email_hash)
 # =============================================================================
 
 
@@ -317,7 +318,7 @@ async def test_user_email_hash_globally_unique(db_session) -> None:
 
 
 # =============================================================================
-# 2. base_models.py:637 - Campaign(platform, external_id)  (was + tenant_id)
+# 2. base_models.py:637 - Campaign(platform, external_id)  (was + org-scope)
 # =============================================================================
 
 
@@ -335,7 +336,7 @@ async def test_campaign_platform_external_id_globally_unique(db_session) -> None
 
 
 # =============================================================================
-# 3. base_models.py:958 - CompetitorBenchmark.domain  (was + tenant_id)
+# 3. base_models.py:958 - CompetitorBenchmark.domain  (was + org-scope)
 # =============================================================================
 
 
@@ -351,7 +352,7 @@ async def test_competitor_benchmark_domain_globally_unique(db_session) -> None:
 
 
 # =============================================================================
-# 4. base_models.py:524 - UserTenantMembership(user_id, tenant_id)
+# 4. base_models.py:524 - UserTenantMembership(user_id, org-scope)
 #    Table deleted entirely (multi-tenant membership concept removed) --
 #    no conversion to test; nothing left to assert uniqueness on.
 # =============================================================================

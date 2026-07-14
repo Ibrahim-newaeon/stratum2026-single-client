@@ -590,10 +590,9 @@ class TestEmqPortfolio:
 # ============================================================================
 
 
-def _make_cdp_current_user(tenant_id: int = 1, user_id: int = 1):
+def _make_cdp_current_user(user_id: int = 1):
     """Build a minimal mock matching the CurrentUser interface used by CDP."""
     user = MagicMock()
-    user.tenant_id = tenant_id
     user.id = user_id
     user.role = "admin"
     user.is_active = True
@@ -601,7 +600,6 @@ def _make_cdp_current_user(tenant_id: int = 1, user_id: int = 1):
     user.permissions = {}
     user.cms_role = None
     cu = MagicMock()
-    cu.tenant_id = tenant_id
     cu.id = user_id
     cu.user = user
     cu.role = "admin"

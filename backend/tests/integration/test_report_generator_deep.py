@@ -36,9 +36,10 @@ lines.
 STRAT-SC-001: ``ReportDataCollector``/``ReportGenerator`` and every model
 seeded here (``ReportTemplate``, ``ReportExecution``, ``Target``,
 ``PacingAlert``, ``CRMConnection``, ``CRMDeal``, ``DailyPipelineMetrics``,
-``DailyProfitMetrics``) lost their ``tenant_id`` column/constructor arg in
-the single-client conversion — there is now exactly one global
-organization, so per-tenant scoping and isolation no longer exist.
+``DailyProfitMetrics``) lost their per-organization scoping
+column/constructor arg in the single-client conversion — there is now
+exactly one global organization, so per-tenant scoping and isolation no
+longer exist.
 """
 
 import json
@@ -698,8 +699,9 @@ class TestGenerateReport:
     # STRAT-SC-001: cross-tenant isolation no longer exists (single org) —
     # ``test_template_of_other_tenant_not_found`` removed. It seeded a
     # ``Tenant`` row (now deleted from the schema entirely) and a template
-    # "belonging" to it, asserting the generator 404'd on it; ``ReportTemplate``
-    # has no tenant_id column anymore and the lookup is unscoped globally.
+    # "belonging" to it, asserting the generator 404'd on it;
+    # ``ReportTemplate`` has no per-organization scoping column anymore
+    # and the lookup is unscoped globally.
 
     async def test_json_success_persists_execution(self, db_session, test_user):
         await _seed_deals(db_session)

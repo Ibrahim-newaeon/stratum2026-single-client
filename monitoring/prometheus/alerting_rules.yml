@@ -154,8 +154,8 @@ groups:
         annotations:
           summary: "Budget at risk > $10,000"
           description: >
-            Tenant {{ $labels.tenant_id }} has ${{ $value | humanize }}
-            budget at risk due to signal health issues.
+            ${{ $value | humanize }} in budget is at risk due to signal
+            health issues.
 
   # ===========================================================================
   # 3. Signal Health & EMQ
@@ -172,8 +172,8 @@ groups:
         annotations:
           summary: "Signal health score < 40 (degraded)"
           description: >
-            Tenant {{ $labels.tenant_id }} platform {{ $labels.platform }}
-            has signal health at {{ $value }}. Autopilot is in degraded mode.
+            Platform {{ $labels.platform }} has signal health at
+            {{ $value }}. Autopilot is in degraded mode.
 
       - alert: CriticalSignalHealth
         expr: stratum_signal_health_score < 20
@@ -184,8 +184,8 @@ groups:
         annotations:
           summary: "Signal health score < 20 (unhealthy)"
           description: >
-            Tenant {{ $labels.tenant_id }} platform {{ $labels.platform }}
-            has critical signal health at {{ $value }}. All automation blocked.
+            Platform {{ $labels.platform }} has critical signal health at
+            {{ $value }}. All automation blocked.
 
       - alert: EMQScoreDrop
         expr: >
@@ -198,8 +198,7 @@ groups:
         annotations:
           summary: "EMQ score dropped > 20% in 1 hour"
           description: >
-            EMQ score for tenant {{ $labels.tenant_id }} on
-            {{ $labels.platform }} dropped significantly.
+            EMQ score on {{ $labels.platform }} dropped significantly.
 
       - alert: HighSignalVolatility
         expr: stratum_signal_volatility_index > 80
@@ -210,8 +209,8 @@ groups:
         annotations:
           summary: "High signal volatility (SVI > 80)"
           description: >
-            Tenant {{ $labels.tenant_id }} has high signal volatility
-            (SVI={{ $value }}). Data may be unreliable.
+            Signal volatility is high (SVI={{ $value }}). Data may be
+            unreliable.
 
   # ===========================================================================
   # 4. Platform Integration
@@ -261,8 +260,7 @@ groups:
         annotations:
           summary: "Platform sync stale (> 2h since last success)"
           description: >
-            Tenant {{ $labels.tenant_id }} has not synced with
-            {{ $labels.platform }} for over 2 hours.
+            {{ $labels.platform }} has not synced for over 2 hours.
 
       - alert: CAPIMatchRateLow
         expr: stratum_capi_match_rate < 30
@@ -273,8 +271,8 @@ groups:
         annotations:
           summary: "CAPI match rate < 30%"
           description: >
-            Tenant {{ $labels.tenant_id }} CAPI match rate on
-            {{ $labels.platform }} is {{ $value }}%. Check event parameters.
+            CAPI match rate on {{ $labels.platform }} is {{ $value }}%.
+            Check event parameters.
 
   # ===========================================================================
   # 5. Celery Workers & Queue
@@ -373,12 +371,12 @@ groups:
         annotations:
           summary: "{{ $value }} critical incident(s) open"
           description: >
-            Tenant {{ $labels.tenant_id }} has {{ $value }} open critical
-            incidents requiring immediate attention.
+            {{ $value }} open critical incidents requiring immediate
+            attention.
 
       - alert: HighIncidentRate
         expr: >
-          sum(rate(stratum_incidents_total[1h])) by (tenant_id) > 5
+          sum(rate(stratum_incidents_total[1h])) > 5
         for: 30m
         labels:
           severity: warning
@@ -386,8 +384,7 @@ groups:
         annotations:
           summary: "High incident rate (> 5/hour)"
           description: >
-            Tenant {{ $labels.tenant_id }} is generating incidents at
-            {{ $value | humanize }}/hour.
+            Incidents are being generated at {{ $value | humanize }}/hour.
 
       - alert: SlowIncidentResolution
         expr: >

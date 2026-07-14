@@ -30,14 +30,12 @@ from sqlalchemy.orm import sessionmaker
 
 from app.core.config import settings
 from app.core.security import encrypt_pii, get_password_hash, hash_pii_for_lookup
-from app.models import Tenant, User, UserRole
+from app.models import User, UserRole
 
 # Default CMS admin credentials (should be changed after first login)
 DEFAULT_EMAIL = "cms-admin@stratum.ai"
 DEFAULT_PASSWORD = "StratumCMS2024!"
 DEFAULT_NAME = "CMS Root Admin"
-DEFAULT_TENANT_NAME = "Stratum Platform"
-DEFAULT_TENANT_SLUG = "stratum-platform"
 
 
 async def seed_cms_admin(email: str, password: str, name: str):
@@ -84,42 +82,13 @@ async def seed_cms_admin(email: str, password: str, name: str):
                 print(f"    User {existing_user.id} is now the protected root admin.")
                 return
 
-            # Check for existing platform tenant or create one
-            result = await db.execute(
-                select(Tenant).where(Tenant.slug == DEFAULT_TENANT_SLUG)
-            )
-            tenant = result.scalar_one_or_none()
-
-            if not tenant:
-                # Try to get first tenant
-                result = await db.execute(select(Tenant).limit(1))
-                tenant = result.scalar_one_or_none()
-
-            if not tenant:
-                print("\n[1/2] Creating platform tenant...")
-                tenant = Tenant(
-                    name=DEFAULT_TENANT_NAME,
-                    slug=DEFAULT_TENANT_SLUG,
-                    plan="enterprise",
-                    settings={"timezone": "UTC", "currency": "USD"},
-                    feature_flags={"cms_access": True, "owner": True},
-                    max_users=999,
-                    max_campaigns=9999,
-                )
-                db.add(tenant)
-                await db.flush()
-                print(f"      Created tenant: {tenant.name} (ID: {tenant.id})")
-            else:
-                print(f"\n[1/2] Using existing tenant: {tenant.name} (ID: {tenant.id})")
-
-            print("\n[2/2] Creating protected CMS root admin...")
+            print("\nCreating protected CMS root admin...")
             user = User(
                 email=encrypt_pii(email.lower()),
                 email_hash=email_hash,
                 password_hash=get_password_hash(password),
                 full_name=encrypt_pii(name),
                 role=UserRole.OWNER,
-                tenant_id=tenant.id,
                 is_verified=True,
                 is_active=True,
                 is_protected=True,  # This account cannot be deleted or demoted

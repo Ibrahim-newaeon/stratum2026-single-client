@@ -572,24 +572,6 @@
         "regex": "",
         "skipUrlSync": false,
         "type": "datasource"
-      },
-      {
-        "allValue": ".*",
-        "current": { "selected": true, "text": "All", "value": "$__all" },
-        "datasource": { "type": "prometheus", "uid": "${datasource}" },
-        "definition": "label_values(stratum_emq_score, tenant_id)",
-        "hide": 0,
-        "includeAll": true,
-        "label": "Tenant",
-        "multi": true,
-        "name": "tenant",
-        "options": [],
-        "query": { "query": "label_values(stratum_emq_score, tenant_id)", "refId": "PrometheusVariableQueryEditor-VariableQuery" },
-        "refresh": 2,
-        "regex": "",
-        "skipUrlSync": false,
-        "sort": 1,
-        "type": "query"
       }
     ]
   },

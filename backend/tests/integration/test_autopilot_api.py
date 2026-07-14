@@ -4,9 +4,9 @@
 """Integration tests for the autopilot API under ``/api/v1/autopilot/...``:
 status, action queue listing, and the action/outcome summaries.
 
-STRAT-SC-001: this router used to be scoped under
-``/api/v1/tenant/{tenant_id}/autopilot/...`` with a path-tenant / token
-match check; there is now exactly one organization, so the path is
+STRAT-SC-001: this router used to be scoped under a path-organization
+prefix (``/api/v1/tenant/<id>/autopilot/...``) with a path-organization /
+token match check; there is now exactly one organization, so the path is
 un-prefixed and the cross-tenant-forbidden test was removed entirely
 (that concept no longer exists).
 """

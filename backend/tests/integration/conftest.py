@@ -315,7 +315,8 @@ async def organization(db_session):
 async def test_user(db_session) -> dict:
     """Create a test user.
 
-    STRAT-SC-001: no more ``tenant_id`` — ``User`` is a global row post-C1.
+    STRAT-SC-001: no more per-organization scoping column — ``User`` is a
+    global row post-C1.
     """
     from app.base_models import User, UserRole
     from app.core.security import get_password_hash
@@ -345,7 +346,8 @@ async def test_user(db_session) -> dict:
 async def test_campaign(db_session) -> dict:
     """Create a test campaign draft.
 
-    STRAT-SC-001: no more ``tenant_id`` — ``CampaignDraft`` is global.
+    STRAT-SC-001: no more per-organization scoping column — ``CampaignDraft``
+    is global.
     """
     from app.models.campaign_builder import CampaignDraft
 
@@ -376,8 +378,8 @@ async def test_campaign(db_session) -> dict:
 async def test_signal_health(db_session) -> dict:
     """Create a test signal health record.
 
-    STRAT-SC-001: no more ``tenant_id`` — one row per platform, no tenant
-    dimension (C4 de-fan-out).
+    STRAT-SC-001: no more per-organization scoping column — one row per
+    platform, no organization dimension (C4 de-fan-out).
     """
     from app.models.trust_layer import FactSignalHealthDaily, SignalHealthStatus
 
@@ -406,7 +408,7 @@ async def test_signal_health(db_session) -> dict:
 async def test_action(db_session, test_user) -> dict:
     """Create a test action queue item.
 
-    STRAT-SC-001: no more ``tenant_id``.
+    STRAT-SC-001: no more per-organization scoping column.
     """
     import json
 

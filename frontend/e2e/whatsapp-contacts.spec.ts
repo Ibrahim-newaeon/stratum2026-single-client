@@ -54,7 +54,6 @@ async function mockAuth(page: Page) {
         role: 'admin',
         organization: 'Acme Corp',
         permissions: ['campaigns', 'analytics', 'users', 'whatsapp'],
-        tenant_id: 1,
       })
     )
   })

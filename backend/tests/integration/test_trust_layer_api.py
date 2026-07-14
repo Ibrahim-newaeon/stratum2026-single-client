@@ -13,7 +13,7 @@ deterministic regardless of plan defaults.
 
 STRAT-SC-001: de-tenanted. There is exactly one Organization singleton
 (id=1) now, so feature flags live on ``Organization.feature_flags`` rather
-than a per-tenant row, and the routes no longer take a tenant_id path
+than a per-tenant row, and the routes no longer take a path-organization
 segment.
 """
 
@@ -77,7 +77,7 @@ class TestSignalHealthGates:
 
     # STRAT-SC-001: cross-tenant isolation no longer exists (single org) —
     # test_cross_tenant_forbidden removed (routes no longer take a
-    # tenant_id path segment to mismatch against).
+    # path-organization segment to mismatch against).
 
     async def test_feature_disabled_forbidden(
         self,
@@ -152,8 +152,8 @@ class TestSignalHealth:
 # =============================================================================
 class TestTrustStatus:
     # STRAT-SC-001: cross-tenant isolation no longer exists (single org) —
-    # test_requires_tenant_match removed (routes no longer take a tenant_id
-    # path segment to mismatch against).
+    # test_requires_tenant_match removed (routes no longer take a
+    # path-organization segment to mismatch against).
 
     async def test_ok_when_no_features(
         self,

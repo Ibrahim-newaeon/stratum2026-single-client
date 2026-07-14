@@ -15,7 +15,7 @@ so those tests and their fictitious tenant/exception scaffolding
 (TenantScopingError, TenantAccessDeniedError, TenantMismatchError, etc.)
 were deleted outright rather than "re-scoped" — there is nothing real for
 them to re-scope to. The EMQ gating logic below is untouched and does not
-reference tenant_id at all.
+reference any per-organization scoping column at all.
 """
 
 from typing import Any, Dict

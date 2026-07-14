@@ -403,7 +403,6 @@ class TestClientSchemas:
         now = datetime.now(timezone.utc)
         data = ClientResponse(
             id=1,
-            tenant_id=1,
             name="Test",
             slug="test",
             currency="USD",
@@ -541,7 +540,7 @@ class TestGetAccessibleClientIds:
         """OWNER should get None (unrestricted access)."""
         db = AsyncMock()
         result = await get_accessible_client_ids(
-            user_id=1, user_role=UserRole.OWNER, tenant_id=1, db=db
+            user_id=1, user_role=UserRole.OWNER, db=db
         )
         assert result is None
 
@@ -550,7 +549,7 @@ class TestGetAccessibleClientIds:
         """ADMIN should get None (unrestricted within tenant)."""
         db = AsyncMock()
         result = await get_accessible_client_ids(
-            user_id=1, user_role=UserRole.ADMIN, tenant_id=1, db=db
+            user_id=1, user_role=UserRole.ADMIN, db=db
         )
         assert result is None
 
@@ -559,7 +558,7 @@ class TestGetAccessibleClientIds:
         """VIEWER with explicit client_id should get [client_id]."""
         db = AsyncMock()
         result = await get_accessible_client_ids(
-            user_id=1, user_role=UserRole.VIEWER, tenant_id=1, db=db, client_id=42
+            user_id=1, user_role=UserRole.VIEWER, db=db, client_id=42
         )
         assert result == [42]
 
@@ -572,7 +571,7 @@ class TestGetAccessibleClientIds:
         db.execute.return_value = mock_result
 
         result = await get_accessible_client_ids(
-            user_id=1, user_role=UserRole.VIEWER, tenant_id=1, db=db
+            user_id=1, user_role=UserRole.VIEWER, db=db
         )
         assert result == [99]
         db.execute.assert_called_once()
@@ -586,7 +585,7 @@ class TestGetAccessibleClientIds:
         db.execute.return_value = mock_result
 
         result = await get_accessible_client_ids(
-            user_id=1, user_role=UserRole.VIEWER, tenant_id=1, db=db
+            user_id=1, user_role=UserRole.VIEWER, db=db
         )
         assert result == []
 
@@ -601,7 +600,7 @@ class TestGetAccessibleClientIds:
         db.execute.return_value = mock_result
 
         result = await get_accessible_client_ids(
-            user_id=5, user_role=UserRole.MANAGER, tenant_id=1, db=db
+            user_id=5, user_role=UserRole.MANAGER, db=db
         )
         assert result == [10, 20, 30]
         db.execute.assert_called_once()
@@ -617,7 +616,7 @@ class TestGetAccessibleClientIds:
         db.execute.return_value = mock_result
 
         result = await get_accessible_client_ids(
-            user_id=5, user_role=UserRole.ANALYST, tenant_id=1, db=db
+            user_id=5, user_role=UserRole.ANALYST, db=db
         )
         assert result == [7]
 
@@ -633,7 +632,7 @@ class TestEnforceClientAccess:
         db = AsyncMock()
         # Should not raise
         await enforce_client_access(
-            user_id=1, user_role=UserRole.ADMIN, client_id=999, tenant_id=1, db=db
+            user_id=1, user_role=UserRole.ADMIN, client_id=999, db=db
         )
 
     @pytest.mark.asyncio
@@ -646,7 +645,6 @@ class TestEnforceClientAccess:
             user_id=1,
             user_role=UserRole.VIEWER,
             client_id=42,
-            tenant_id=1,
             db=db,
             user_client_id=42,
         )
@@ -664,7 +662,6 @@ class TestEnforceClientAccess:
                 user_id=1,
                 user_role=UserRole.VIEWER,
                 client_id=999,
-                tenant_id=1,
                 db=db,
                 user_client_id=42,
             )
@@ -683,7 +680,7 @@ class TestEnforceClientAccess:
         db.execute.return_value = mock_result
 
         await enforce_client_access(
-            user_id=5, user_role=UserRole.MANAGER, client_id=10, tenant_id=1, db=db
+            user_id=5, user_role=UserRole.MANAGER, client_id=10, db=db
         )
 
     @pytest.mark.asyncio
@@ -702,6 +699,6 @@ class TestEnforceClientAccess:
 
         with pytest.raises(HTTPException) as exc_info:
             await enforce_client_access(
-                user_id=5, user_role=UserRole.MANAGER, client_id=999, tenant_id=1, db=db
+                user_id=5, user_role=UserRole.MANAGER, client_id=999, db=db
             )
         assert exc_info.value.status_code == 403

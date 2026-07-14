@@ -115,12 +115,12 @@ class TestJWTAccessToken:
 
     def test_token_with_additional_claims(self) -> None:
         """Extra claims passed at creation appear in the decoded payload."""
-        extra = {"role": "admin", "tenant_id": 5}
+        extra = {"role": "admin", "seat_count": 5}
         token = create_access_token(subject="user-1", additional_claims=extra)
         payload = decode_token(token)
         assert payload is not None
         assert payload.get("role") == "admin"
-        assert payload.get("tenant_id") == 5
+        assert payload.get("seat_count") == 5
 
     def test_expired_token_returns_none(self) -> None:
         """A token created with a negative expiry is already expired."""

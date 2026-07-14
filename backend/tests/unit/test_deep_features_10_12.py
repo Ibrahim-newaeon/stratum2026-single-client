@@ -7,7 +7,7 @@ httpx.AsyncClient, going through real middleware (JWT decode)
 while mocking services/DB at the endpoint handler level.
 
 Feature 10: WhatsApp Integration
-Feature 11: Payments (Stripe) — removed
+Feature 11: Payments — removed (no billing provider)
 Feature 12: Dashboard settings (formerly multi-tenancy; single-org now)
 """
 
@@ -27,7 +27,6 @@ def _mock_contact(**overrides):
     """Build a mock WhatsApp contact ORM object."""
     defaults = dict(
         id=1,
-        tenant_id=1,
         user_id=1,
         phone_number="+15551234567",
         country_code="US",
@@ -52,7 +51,6 @@ def _mock_template(**overrides):
     """Build a mock WhatsApp template ORM object."""
     defaults = dict(
         id=1,
-        tenant_id=1,
         name="welcome_template",
         language="en",
         category="marketing",
@@ -73,7 +71,6 @@ def _mock_message(**overrides):
     """Build a mock WhatsApp message ORM object."""
     defaults = dict(
         id=1,
-        tenant_id=1,
         contact_id=1,
         direction="outbound",
         message_type="template",

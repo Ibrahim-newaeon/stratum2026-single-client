@@ -3236,9 +3236,9 @@ def upgrade() -> None:
     # works from Base.metadata, so it silently omitted them; discovered via
     # the C6 green gate (dashboard endpoints failing on
     # 'relation "fact_platform_daily" does not exist'). Recreated here
-    # verbatim from the old 008 schema MINUS the tenant_id columns and
-    # tenant-scoped indexes (the raw-SQL consumers were de-tenanted in C3/C4
-    # and no longer reference tenant_id).
+    # verbatim from the old 008 schema minus the per-organization scoping
+    # column and its indexes (the raw-SQL consumers were de-tenanted in
+    # C3/C4 and no longer reference that scoping).
     op.create_table(
         'dim_platform',
         sa.Column('platform', sa.String(20), primary_key=True),

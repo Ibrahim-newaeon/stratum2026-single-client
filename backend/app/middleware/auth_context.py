@@ -181,15 +181,18 @@ class AuthContextMiddleware(BaseHTTPMiddleware):
         # state token the endpoint validates (CSRF check).
         if re.fullmatch(r"/api/v1/oauth/[^/]+/callback", path):
             return True
-        # Allow webhook endpoints (they authenticate via signature/verify-token, not JWT)
-        # Platform webhooks live under /api/v1/<platform>/webhooks/, generic ones under
-        # /api/v1/webhooks/. Each handler is responsible for verifying the request
-        # (HMAC signature for Meta/SendGrid, hub.verify_token for WhatsApp).
-        # STRAT-SC-001 (E1): a prior allowance here for a since-removed billing
-        # provider's webhook path was dead code (no such router is mounted) and
-        # has been dropped.
-        if path.startswith("/api/v1/webhooks/"):
+        # Allow webhook endpoints (they authenticate via signature/verify-token, not JWT).
+        # STRAT-SC-001 (E1): a blanket `/api/v1/webhooks/` prefix match here used to
+        # also swallow the owner-gated webhooks-management router (same /webhooks
+        # prefix, see app/api/v1/endpoints/webhooks.py) — every sub-route
+        # (/event-types, /{id}, /{id}/test, /{id}/deliveries) skipped auth-context
+        # setup and 401'd unconditionally. Narrowed to the exact two inbound
+        # SendGrid receiver routes (app/api/v1/endpoints/sendgrid_webhook.py),
+        # which self-authenticate via a URL token, not JWT.
+        if path in ("/api/v1/webhooks/sendgrid", "/api/v1/webhooks/sendgrid/test"):
             return True
+        # WhatsApp platform webhooks (self-authenticate via Meta HMAC signature /
+        # hub.verify_token challenge, not JWT).
         if path.startswith("/api/v1/whatsapp/webhooks/"):
             return True
         # Programmatic API — authenticates via the X-API-Key header, not a JWT.

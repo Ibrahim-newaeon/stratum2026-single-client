@@ -23,7 +23,7 @@ pytestmark = pytest.mark.integration
 
 
 class TestEmqScoreEndpoint:
-    """Tests for GET /api/v1/tenants/{tenant_id}/emq/score"""
+    """Tests for GET /api/v1/emq/score"""
 
     @pytest.mark.asyncio
     async def test_get_emq_score_success(
@@ -96,7 +96,7 @@ class TestEmqScoreEndpoint:
 
 
 class TestConfidenceEndpoint:
-    """Tests for GET /api/v1/tenants/{tenant_id}/emq/confidence"""
+    """Tests for GET /api/v1/emq/confidence"""
 
     @pytest.mark.asyncio
     async def test_get_confidence_success(
@@ -192,7 +192,7 @@ class TestPlaybookEndpoint:
 
 
 class TestIncidentsEndpoint:
-    """Tests for GET /api/v1/tenants/{tenant_id}/emq/incidents"""
+    """Tests for GET /api/v1/emq/incidents"""
 
     @pytest.mark.asyncio
     async def test_get_incidents_success(
@@ -226,7 +226,7 @@ class TestIncidentsEndpoint:
 
 
 class TestImpactEndpoint:
-    """Tests for GET /api/v1/tenants/{tenant_id}/emq/impact"""
+    """Tests for GET /api/v1/emq/impact"""
 
     @pytest.mark.asyncio
     async def test_get_impact_success(
@@ -251,7 +251,7 @@ class TestImpactEndpoint:
 
 
 class TestVolatilityEndpoint:
-    """Tests for GET /api/v1/tenants/{tenant_id}/emq/volatility"""
+    """Tests for GET /api/v1/emq/volatility"""
 
     @pytest.mark.asyncio
     async def test_get_volatility_success(

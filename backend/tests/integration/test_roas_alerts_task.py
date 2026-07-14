@@ -6,8 +6,9 @@ Integration tests for ``generate_roas_alerts`` and its dispatch from
 ``run_all_predictions``.
 
 These guard the regression where the task called ``detect_anomalies`` with a
-signature it never had (``campaign_id=``/``tenant_id=``/``metrics=``) and read
-dict keys off ``AnomalyResult`` objects — every campaign raised ``TypeError``,
+signature it never had (``campaign_id=``/an organization-scoping
+kwarg/``metrics=``) and read dict keys off ``AnomalyResult`` objects — every
+campaign raised ``TypeError``,
 which was swallowed, so the task silently emitted zero alerts forever and was
 never dispatched by the beat fan-out.
 

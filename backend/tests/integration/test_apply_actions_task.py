@@ -90,12 +90,12 @@ def _soft_block(token: str = "confirm-tok-123") -> EnforcementResult:
 def seeded(sync_engine):
     """A committed operator user + factory for committed queue actions.
 
-    STRAT-SC-001: no more per-tenant ``Tenant`` row — ``User`` /
+    STRAT-SC-001: no more per-organization ``Tenant`` row — ``User`` /
     ``FactActionsQueue`` / ``FactSignalHealthDaily`` are global rows and
     ``TenantEnforcementSettings`` is a global singleton (residual name,
-    no ``tenant_id`` column). Yields a dict with the operator user id and
-    an ``add_action`` factory; every row created here is deleted on
-    teardown.
+    no per-organization scoping column). Yields a dict with the operator
+    user id and an ``add_action`` factory; every row created here is
+    deleted on teardown.
     """
     from app.base_models import User
 

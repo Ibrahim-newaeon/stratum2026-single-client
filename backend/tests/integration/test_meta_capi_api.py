@@ -62,7 +62,7 @@ class TestValidate:
 
 class TestQuality:
     # STRAT-SC-001: cross-tenant isolation no longer exists (single org) —
-    # the endpoint also dropped its ``{tenant_id}`` path param entirely, so
+    # the endpoint also dropped its path-organization param entirely, so
     # the old cross-tenant-forbidden test has no route left to hit.
 
     async def test_quality_empty_fallback(self, authenticated_client: AsyncClient):

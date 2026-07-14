@@ -4,7 +4,7 @@
 """Deep coverage for ``app.services.reporting.pdf_generator``.
 
 The generator renders plain dicts into HTML and (when weasyprint's native
-libraries are present) into PDF bytes under ``/tmp/reports/{tenant}/``.
+libraries are present) into PDF bytes under ``/tmp/reports/<execution_id>.pdf``.
 ``ReportTemplate`` instances are constructed in memory — the generator only
 reads ``name`` / ``description`` / ``report_type`` / ``config`` — so no DB
 rows are needed here (the shared conftest still migrates the scratch DB).

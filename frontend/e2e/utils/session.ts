@@ -12,10 +12,11 @@ export interface E2EUser {
   id: string
   email: string
   name: string
-  role: 'superadmin' | 'admin' | 'manager' | 'analyst' | 'viewer'
+  role: 'owner' | 'admin' | 'manager' | 'analyst' | 'viewer'
   organization?: string
   permissions: string[]
-  tenant_id?: number | null
+  /** Client ID for portal (VIEWER) users */
+  client_id?: number | null
   user_type?: 'agency' | 'portal'
 }
 
@@ -26,7 +27,6 @@ export const DEFAULT_USER: E2EUser = {
   role: 'admin',
   organization: 'E2E Org',
   permissions: ['all'],
-  tenant_id: 1,
   user_type: 'agency',
 }
 

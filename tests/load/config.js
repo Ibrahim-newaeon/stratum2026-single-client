@@ -17,9 +17,8 @@ export const config = {
     apiV1: (__ENV.BASE_URL || 'http://localhost:8000') + '/api/v1',
 
     // Test credentials
-    testEmail: __ENV.TEST_EMAIL || 'admin@test-tenant.com',
+    testEmail: __ENV.TEST_EMAIL || 'admin@test-org.com',
     testPassword: __ENV.TEST_PASSWORD || 'TestPassword123!',
-    testTenantId: __ENV.TEST_TENANT_ID || '1',
 
     // Timeouts
     requestTimeout: '30s',

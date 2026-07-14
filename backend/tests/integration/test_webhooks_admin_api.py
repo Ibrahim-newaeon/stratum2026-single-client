@@ -29,3 +29,22 @@ class TestOwnerReads:
         resp = await client.get(_BASE, headers=owner_headers)
         assert resp.status_code == 200, resp.text
         assert resp.json()["data"] == []
+
+
+class TestEventTypesRoute:
+    """Regression test for STRAT-SC-001 (E1): AuthContextMiddleware's public-
+    endpoint allowlist used to blanket-match the ``/api/v1/webhooks/`` prefix
+    for the self-authenticating SendGrid receiver, which also swallowed every
+    sub-route of this owner-gated router (e.g. ``/event-types``) — auth
+    context was never set on those requests, so they 401'd unconditionally
+    even with valid owner credentials. The allowlist now exact-matches only
+    the two real SendGrid receiver paths.
+    """
+
+    async def test_event_types_owner_ok(self, client: AsyncClient, owner_headers):
+        resp = await client.get(f"{_BASE}/event-types", headers=owner_headers)
+        assert resp.status_code == 200, resp.text
+
+    async def test_event_types_unauthenticated_rejected(self, client: AsyncClient):
+        resp = await client.get(f"{_BASE}/event-types")
+        assert resp.status_code in {401, 403}

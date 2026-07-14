@@ -4,15 +4,15 @@
  * Tests the Trust Layer and EMQ (Event Match Quality) endpoints under load.
  *
  * Endpoints tested:
- * - GET /tenant/{id}/signal-health
- * - GET /tenant/{id}/signal-health/history
- * - GET /tenant/{id}/attribution-variance
- * - GET /tenant/{id}/trust-status
- * - GET /tenants/{id}/emq/score
- * - GET /tenants/{id}/emq/confidence
- * - GET /tenants/{id}/emq/playbook
- * - GET /tenants/{id}/emq/volatility
- * - GET /tenants/{id}/emq/autopilot-state
+ * - GET /trust/signal-health
+ * - GET /trust/signal-health/history
+ * - GET /trust/attribution-variance
+ * - GET /trust/trust-status
+ * - GET /emq/score
+ * - GET /emq/confidence
+ * - GET /emq/playbook
+ * - GET /emq/volatility
+ * - GET /emq/autopilot-state
  *
  * Usage:
  *   docker run --rm -i --network stratum-ai-final-updates-dec-2025-main_stratum_network \
@@ -37,14 +37,13 @@ const API_V1 = `${BASE_URL}/api/v1`;
 
 // Test credentials - supports multiple users
 const TEST_PASSWORD = __ENV.TEST_PASSWORD || 'TestPassword123!';
-const TEST_TENANT_ID = __ENV.TEST_TENANT_ID || '1';
 const NUM_TEST_USERS = parseInt(__ENV.NUM_TEST_USERS || '25');
 
 function getTestEmail(vuIndex) {
     if (vuIndex === 0) {
-        return 'admin@test-tenant.com';
+        return 'admin@test-org.com';
     }
-    return `loadtest${vuIndex}@test-tenant.com`;
+    return `loadtest${vuIndex}@test-org.com`;
 }
 
 // =============================================================================
@@ -221,9 +220,9 @@ function handleRateLimit(res) {
 // Test Functions - Trust Layer
 // =============================================================================
 
-function testSignalHealth(token, tenantId) {
+function testSignalHealth(token) {
     const res = http.get(
-        `${API_V1}/trust/tenant/${tenantId}/signal-health`,
+        `${API_V1}/trust/signal-health`,
         { headers: getHeaders(token), tags: { name: 'signal_health' } }
     );
 
@@ -265,9 +264,9 @@ function testSignalHealth(token, tenantId) {
     return res;
 }
 
-function testSignalHealthHistory(token, tenantId) {
+function testSignalHealthHistory(token) {
     const res = http.get(
-        `${API_V1}/trust/tenant/${tenantId}/signal-health/history?days=7`,
+        `${API_V1}/trust/signal-health/history?days=7`,
         { headers: getHeaders(token), tags: { name: 'signal_health_history' } }
     );
 
@@ -283,9 +282,9 @@ function testSignalHealthHistory(token, tenantId) {
     return res;
 }
 
-function testAttributionVariance(token, tenantId) {
+function testAttributionVariance(token) {
     const res = http.get(
-        `${API_V1}/trust/tenant/${tenantId}/attribution-variance`,
+        `${API_V1}/trust/attribution-variance`,
         { headers: getHeaders(token), tags: { name: 'attribution_variance' } }
     );
 
@@ -301,9 +300,9 @@ function testAttributionVariance(token, tenantId) {
     return res;
 }
 
-function testTrustStatus(token, tenantId) {
+function testTrustStatus(token) {
     const res = http.get(
-        `${API_V1}/trust/tenant/${tenantId}/trust-status`,
+        `${API_V1}/trust/trust-status`,
         { headers: getHeaders(token), tags: { name: 'trust_status' } }
     );
 
@@ -348,9 +347,9 @@ function testTrustStatus(token, tenantId) {
 // Test Functions - EMQ
 // =============================================================================
 
-function testEmqScore(token, tenantId) {
+function testEmqScore(token) {
     const res = http.get(
-        `${API_V1}/tenants/${tenantId}/emq/score`,
+        `${API_V1}/emq/score`,
         { headers: getHeaders(token), tags: { name: 'emq_score' } }
     );
 
@@ -391,9 +390,9 @@ function testEmqScore(token, tenantId) {
     return res;
 }
 
-function testEmqConfidence(token, tenantId) {
+function testEmqConfidence(token) {
     const res = http.get(
-        `${API_V1}/tenants/${tenantId}/emq/confidence`,
+        `${API_V1}/emq/confidence`,
         { headers: getHeaders(token), tags: { name: 'emq_confidence' } }
     );
 
@@ -434,9 +433,9 @@ function testEmqConfidence(token, tenantId) {
     return res;
 }
 
-function testEmqPlaybook(token, tenantId) {
+function testEmqPlaybook(token) {
     const res = http.get(
-        `${API_V1}/tenants/${tenantId}/emq/playbook`,
+        `${API_V1}/emq/playbook`,
         { headers: getHeaders(token), tags: { name: 'emq_playbook' } }
     );
 
@@ -462,9 +461,9 @@ function testEmqPlaybook(token, tenantId) {
     return res;
 }
 
-function testEmqVolatility(token, tenantId) {
+function testEmqVolatility(token) {
     const res = http.get(
-        `${API_V1}/tenants/${tenantId}/emq/volatility?weeks=8`,
+        `${API_V1}/emq/volatility?weeks=8`,
         { headers: getHeaders(token), tags: { name: 'emq_volatility' } }
     );
 
@@ -490,9 +489,9 @@ function testEmqVolatility(token, tenantId) {
     return res;
 }
 
-function testEmqAutopilotState(token, tenantId) {
+function testEmqAutopilotState(token) {
     const res = http.get(
-        `${API_V1}/tenants/${tenantId}/emq/autopilot-state`,
+        `${API_V1}/emq/autopilot-state`,
         { headers: getHeaders(token), tags: { name: 'emq_autopilot_state' } }
     );
 
@@ -533,40 +532,38 @@ export default function () {
         return;
     }
 
-    const tenantId = TEST_TENANT_ID;
-
     // Trust Layer Endpoints
     group('Trust Layer', function () {
-        testSignalHealth(token, tenantId);
+        testSignalHealth(token);
         sleep(0.2);
 
-        testSignalHealthHistory(token, tenantId);
+        testSignalHealthHistory(token);
         sleep(0.2);
 
-        testAttributionVariance(token, tenantId);
+        testAttributionVariance(token);
         sleep(0.2);
 
-        testTrustStatus(token, tenantId);
+        testTrustStatus(token);
         sleep(0.3);
     });
 
     // EMQ Endpoints
     group('EMQ Score & Status', function () {
-        testEmqScore(token, tenantId);
+        testEmqScore(token);
         sleep(0.2);
 
-        testEmqConfidence(token, tenantId);
+        testEmqConfidence(token);
         sleep(0.2);
 
-        testEmqAutopilotState(token, tenantId);
+        testEmqAutopilotState(token);
         sleep(0.2);
     });
 
     group('EMQ Analysis', function () {
-        testEmqPlaybook(token, tenantId);
+        testEmqPlaybook(token);
         sleep(0.2);
 
-        testEmqVolatility(token, tenantId);
+        testEmqVolatility(token);
         sleep(0.2);
     });
 
@@ -582,7 +579,6 @@ export function setup() {
     console.log(`Starting Trust Layer Load Test`);
     console.log(`Scenario: ${selectedScenario}`);
     console.log(`Base URL: ${BASE_URL}`);
-    console.log(`Tenant ID: ${TEST_TENANT_ID}`);
     console.log(`Number of test users: ${NUM_TEST_USERS}`);
 
     const healthRes = http.get(`${BASE_URL}/health`);

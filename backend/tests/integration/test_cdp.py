@@ -44,8 +44,8 @@ async def cdp_client(app, db_session) -> AsyncClient:
     Create an async HTTP client for CDP API testing with mocked auth.
 
     STRAT-SC-001: no more tenant context to extract — there is exactly
-    one organization, so the JWT no longer carries a tenant claim and no
-    ``X-Tenant-ID`` header is needed.
+    one organization, so the JWT no longer carries an organization claim
+    and no tenant-scoping header is needed.
     """
     from app.auth.deps import get_current_user
     from app.core.security import create_access_token

@@ -5,11 +5,11 @@
 ``/campaign-builder/campaign-drafts``. The OAuth connect/refresh routes
 (external API calls) are out of scope here.
 
-STRAT-SC-001: these routes used to be scoped under
-``/tenant/{tenant_id}/campaign-drafts``; there is now exactly one
+STRAT-SC-001: these routes used to be scoped under a path-organization
+prefix (``/tenant/<id>/campaign-drafts``); there is now exactly one
 organization, so the path is un-prefixed. ``TenantAdAccount`` /
 ``TenantPlatformConnection`` keep their residual "Tenant"-prefixed class
-names but have no ``tenant_id`` column (global tables).
+names but have no per-organization scoping column (global tables).
 """
 
 import uuid

@@ -9,8 +9,8 @@ recommendations, anomalies, and KPIs. These endpoints are feature-gated
 turns those flags on for the organization. With no analytics data seeded,
 the reads return empty/default payloads.
 
-STRAT-SC-001: these routes used to be scoped under
-``/api/v1/insights/tenant/{tenant_id}/...``; there is now exactly one
+STRAT-SC-001: these routes used to be scoped under a path-organization
+prefix (``/api/v1/insights/tenant/<id>/...``); there is now exactly one
 organization, so the path is un-prefixed (``/api/v1/insights/...``), and
 feature flags live on the ``Organization`` singleton rather than a
 ``Tenant`` row. Cross-tenant-isolation tests were removed entirely.
