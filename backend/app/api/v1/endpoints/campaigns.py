@@ -14,6 +14,7 @@ from sqlalchemy import and_, func, select
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import load_only
 
+from app.auth.deps import get_current_user
 from app.core.logging import get_logger
 from app.db.session import get_async_session
 from app.models import AdPlatform, Campaign, CampaignMetric, CampaignStatus
@@ -30,7 +31,11 @@ from app.schemas import (
 )
 
 logger = get_logger(__name__)
-router = APIRouter()
+router = APIRouter(
+    # SECURITY (STRAT-SC-001/C3): the old per-org guards this router relied
+    # on were deleted in the de-tenanting sweep; real auth now enforced here.
+    dependencies=[Depends(get_current_user)],
+)
 
 
 @router.get("", response_model=APIResponse[PaginatedResponse[CampaignListResponse]])
@@ -419,13 +424,13 @@ async def trigger_platform_sync(
     platform API (Meta, TikTok, Snapchat) and upsert them into the DB.
     Use this to force-discover new campaigns that haven't been seen before.
 
-    NOTE(C3): this endpoint (and every other endpoint in this router) has no
-    per-request auth dependency — it previously relied solely on the removed
-    tenant-scoping middleware to reject requests (a check that would now
-    always 401, since that middleware no longer sets any such context). That
-    dead guard was deleted here per the sweep, but nothing replaces it; this
-    whole router should get a real `CurrentUserDep`/role gate in a follow-up,
-    not a piecemeal fix on this one endpoint.
+    NOTE(C3): this router previously had no per-request auth dependency on
+    any of its 8 routes — it relied solely on the removed tenant-scoping
+    middleware to reject requests (a check that would otherwise always 401,
+    since that middleware no longer sets any such context). CLOSED in the
+    post-review fix loop: `router = APIRouter(dependencies=[Depends(get_current_user)])`
+    now gates every route in this file, matching the pattern applied to the
+    11 sibling routers (rules.py, qa_fixes.py, etc.).
     """
     from app.services.sync.orchestrator import PlatformSyncOrchestrator
 
@@ -482,7 +487,7 @@ async def trigger_campaign_sync(
         )
 
     # Queue sync task
-    # TODO(C3): app/workers/tasks/sync.py sync_campaign_data still declares a
+    # TODO(C4): app/workers/tasks/sync.py sync_campaign_data still declares a
     # required tenant-scoping positional param — dropped here assuming that
     # task gets de-tenanted separately; verify before relying on this queue.
     from app.workers.tasks import sync_campaign_data

@@ -284,7 +284,7 @@ async def refresh_competitor_data(
         )
 
     # Queue refresh task
-    # TODO(C3): see note in add_competitor — fetch_competitor_data is not yet
+    # TODO(C4): see note in add_competitor — fetch_competitor_data is not yet
     # de-tenanted.
     from app.workers.tasks import fetch_competitor_data
 
