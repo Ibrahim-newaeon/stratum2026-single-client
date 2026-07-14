@@ -3,7 +3,7 @@
  *
  * Composes the primitives:
  *   <Sidebar groups={buildDashboardNav(role)} mobileOpen={...} />
- *   header (custom — preserves CommandPalette, TenantSwitcher, profile menu)
+ *   header (custom — preserves CommandPalette, profile menu)
  *   <Outlet />
  *
  * The legacy ~200-line bespoke sidebar is gone — collapsible groups,
@@ -32,7 +32,6 @@ import { OnboardingChat, OnboardingChatButton } from '@/components/onboarding';
 import { FeedbackWidget } from '@/components/feedback/FeedbackWidget';
 import { CopilotChat } from '@/components/dashboard/CopilotChat';
 import ClientContextSwitcher from '@/components/client/ClientContextSwitcher';
-import TenantSwitcher from '@/components/tenant/TenantSwitcher';
 import { Sidebar } from '@/components/primitives/nav/Sidebar';
 import { ThemeToggle } from '@/components/primitives/theme/ThemeToggle';
 import { buildDashboardNav } from '@/components/primitives/nav/dashboardNav';
@@ -174,7 +173,6 @@ export default function DashboardLayout() {
             </div>
 
             <div className="flex items-center gap-2">
-              <TenantSwitcher />
               <ClientContextSwitcher />
 
               <ThemeToggle />

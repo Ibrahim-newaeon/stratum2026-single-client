@@ -2,7 +2,7 @@ import { Navigate, Route, Routes } from 'react-router-dom';
 import { ComponentType, lazy } from 'react';
 import { HelmetProvider } from 'react-helmet-async';
 import DashboardLayout from './views/DashboardLayout';
-import TenantLayout from './views/TenantLayout';
+import LegacyTenantRedirect from './components/routing/LegacyTenantRedirect';
 import { Toaster } from './components/ui/toaster';
 import { TooltipProvider } from './components/ui/tooltip';
 import { JoyrideProvider } from './components/guide/JoyrideWrapper';
@@ -157,22 +157,14 @@ const CMSLandingFAQ = lazyWithRetry(() => import('./views/cms/CMSLandingFAQ'));
 const CMSSettingsView = lazyWithRetry(() => import('./views/cms/CMSSettings'));
 const CMSUsers = lazyWithRetry(() => import('./views/cms/CMSUsers'));
 
-// Tenant-scoped views (Campaign Builder)
-const ConnectPlatforms = lazyWithRetry(() => import('./views/tenant/ConnectPlatforms'));
-const AdAccounts = lazyWithRetry(() => import('./views/tenant/AdAccounts'));
-const CampaignBuilder = lazyWithRetry(() => import('./views/tenant/CampaignBuilder'));
-const CampaignDrafts = lazyWithRetry(() => import('./views/tenant/CampaignDrafts'));
+// Operator-dashboard surfaces shared with the (now-removed) /app/:tenantId
+// twin shell. These views resolve their scope from context, not the URL.
 const PublishLogs = lazyWithRetry(() => import('./views/tenant/PublishLogs'));
-const TenantOverview = lazyWithRetry(() => import('./views/tenant/TenantOverview'));
-const TenantCampaigns = lazyWithRetry(() => import('./views/tenant/TenantCampaigns'));
-const TenantSettings = lazyWithRetry(() => import('./views/tenant/TenantSettings'));
 const TeamManagement = lazyWithRetry(() => import('./views/tenant/TeamManagement'));
-const TenantInsights = lazyWithRetry(() => import('./views/tenant/Insights'));
 const TenantAuditLog = lazyWithRetry(() => import('./views/tenant/AuditLog'));
 
 // Role-based tenant views
 const TenantAdminOverview = lazyWithRetry(() => import('./views/tenant/Overview'));
-const MediaBuyerConsole = lazyWithRetry(() => import('./views/tenant/Console'));
 const SignalHub = lazyWithRetry(() => import('./views/tenant/SignalHub'));
 
 // Sprint feature views
@@ -207,9 +199,6 @@ const PortalDashboard = lazyWithRetry(() => import('./views/portal/PortalDashboa
 
 // Accept Invite (portal user onboarding)
 const AcceptInvite = lazyWithRetry(() => import('./views/AcceptInvite'));
-
-// Client Assignments (admin UI)
-const ClientAssignments = lazyWithRetry(() => import('./views/tenant/ClientAssignments'));
 
 // Public pages (Product)
 const FeaturesPage = lazyWithRetry(() => import('./views/pages/Features'));
@@ -1477,332 +1466,9 @@ function App() {
                         />
                       </Route>
 
-                      {/* Tenant-scoped routes with :tenantId parameter - wrapped with onboarding guard + ErrorBoundary */}
-                      <Route
-                        path="/app/:tenantId"
-                        element={
-                          <ProtectedRoute>
-                            <OnboardingGuard>
-                              <ErrorBoundary message="Something went wrong. Please try refreshing.">
-                                <TenantLayout />
-                              </ErrorBoundary>
-                            </OnboardingGuard>
-                          </ProtectedRoute>
-                        }
-                      >
-                        {/* Tenant Dashboard */}
-                        <Route
-                          index
-                          element={
-                            <LazyRoute>
-                              <TenantOverview />
-                            </LazyRoute>
-                          }
-                        />
-                        <Route
-                          path="overview"
-                          element={
-                            <LazyRoute>
-                              <TenantOverview />
-                            </LazyRoute>
-                          }
-                        />
-
-                        {/* Role-based views */}
-                        <Route
-                          path="trust"
-                          element={
-                            <LazyRoute>
-                              <TenantAdminOverview />
-                            </LazyRoute>
-                          }
-                        />
-                        <Route
-                          path="trust/emq"
-                          element={
-                            <LazyRoute>
-                              <EMQDiagnostics />
-                            </LazyRoute>
-                          }
-                        />
-                        <Route
-                          path="console"
-                          element={
-                            <LazyRoute>
-                              <MediaBuyerConsole />
-                            </LazyRoute>
-                          }
-                        />
-                        <Route
-                          path="signal-hub"
-                          element={
-                            <LazyRoute>
-                              <SignalHub />
-                            </LazyRoute>
-                          }
-                        />
-
-                        {/* Campaigns Management */}
-                        <Route
-                          path="campaigns"
-                          element={
-                            <LazyRoute>
-                              <TenantCampaigns />
-                            </LazyRoute>
-                          }
-                        />
-
-                        {/* Campaign Builder Routes */}
-                        <Route
-                          path="campaigns/connect"
-                          element={
-                            <LazyRoute>
-                              <ConnectPlatforms />
-                            </LazyRoute>
-                          }
-                        />
-                        <Route
-                          path="campaigns/accounts"
-                          element={
-                            <LazyRoute>
-                              <AdAccounts />
-                            </LazyRoute>
-                          }
-                        />
-                        <Route
-                          path="campaigns/new"
-                          element={
-                            <LazyRoute>
-                              <CampaignBuilder />
-                            </LazyRoute>
-                          }
-                        />
-                        <Route
-                          path="campaigns/drafts"
-                          element={
-                            <LazyRoute>
-                              <CampaignDrafts />
-                            </LazyRoute>
-                          }
-                        />
-                        <Route
-                          path="campaigns/drafts/:draftId"
-                          element={
-                            <LazyRoute>
-                              <CampaignBuilder />
-                            </LazyRoute>
-                          }
-                        />
-                        <Route
-                          path="campaigns/logs"
-                          element={
-                            <LazyRoute>
-                              <PublishLogs />
-                            </LazyRoute>
-                          }
-                        />
-
-                        {/* Tenant Settings (admin+ only) */}
-                        <Route
-                          path="settings"
-                          element={
-                            <ProtectedRoute requiredRole="admin">
-                              <LazyRoute>
-                                <TenantSettings />
-                              </LazyRoute>
-                            </ProtectedRoute>
-                          }
-                        />
-
-                        {/* Team Management (admin+ only) */}
-                        <Route
-                          path="team"
-                          element={
-                            <ProtectedRoute requiredRole="admin">
-                              <LazyRoute>
-                                <TeamManagement />
-                              </LazyRoute>
-                            </ProtectedRoute>
-                          }
-                        />
-
-                        {/* Client Assignments (admin+ only) */}
-                        <Route
-                          path="client-assignments"
-                          element={
-                            <ProtectedRoute requiredRole="admin">
-                              <LazyRoute>
-                                <ClientAssignments />
-                              </LazyRoute>
-                            </ProtectedRoute>
-                          }
-                        />
-
-                        {/* Tenant Insights (manager+ only) */}
-                        <Route
-                          path="insights"
-                          element={
-                            <ProtectedRoute requiredRole="manager">
-                              <LazyRoute>
-                                <TenantInsights />
-                              </LazyRoute>
-                            </ProtectedRoute>
-                          }
-                        />
-
-                        {/* Tenant Audit Log (admin+ only) */}
-                        <Route
-                          path="audit-log"
-                          element={
-                            <ProtectedRoute requiredRole="admin">
-                              <LazyRoute>
-                                <TenantAuditLog />
-                              </LazyRoute>
-                            </ProtectedRoute>
-                          }
-                        />
-
-                        {/* Competitors */}
-                        <Route
-                          path="competitors"
-                          element={
-                            <LazyRoute>
-                              <Competitors />
-                            </LazyRoute>
-                          }
-                        />
-
-                        {/* Benchmarks */}
-                        <Route
-                          path="benchmarks"
-                          element={
-                            <LazyRoute>
-                              <Benchmarks />
-                            </LazyRoute>
-                          }
-                        />
-
-                        {/* Assets */}
-                        <Route
-                          path="assets"
-                          element={
-                            <LazyRoute>
-                              <Assets />
-                            </LazyRoute>
-                          }
-                        />
-
-                        {/* Rules */}
-                        <Route
-                          path="rules"
-                          element={
-                            <LazyRoute>
-                              <Rules />
-                            </LazyRoute>
-                          }
-                        />
-
-                        {/* Predictions */}
-                        <Route
-                          path="predictions"
-                          element={
-                            <LazyRoute>
-                              <Predictions />
-                            </LazyRoute>
-                          }
-                        />
-
-                        {/* Sprint Feature Routes */}
-                        {/* Integrations is the canonical surface inside Settings.
-                            Old /dashboard/integrations redirects so bookmarks
-                            and the IntegrationsHub's "Open hub" links stay valid. */}
-                        <Route
-                          path="integrations"
-                          element={<Navigate to="/dashboard/settings/integrations" replace />}
-                        />
-
-                        {/* Pacing & Forecasting */}
-                        <Route
-                          path="pacing"
-                          element={
-                            <LazyRoute>
-                              <Pacing />
-                            </LazyRoute>
-                          }
-                        />
-
-                        {/* Profit ROAS */}
-                        <Route
-                          path="profit"
-                          element={
-                            <LazyRoute>
-                              <ProfitROAS />
-                            </LazyRoute>
-                          }
-                        />
-
-                        {/* Attribution */}
-                        <Route
-                          path="attribution"
-                          element={
-                            <LazyRoute>
-                              <Attribution />
-                            </LazyRoute>
-                          }
-                        />
-
-                        {/* Reporting (manager+ only) */}
-                        <Route
-                          path="reporting"
-                          element={
-                            <ProtectedRoute requiredRole="manager">
-                              <LazyRoute>
-                                <Reporting />
-                              </LazyRoute>
-                            </ProtectedRoute>
-                          }
-                        />
-
-                        {/* A/B Testing */}
-                        <Route
-                          path="ab-testing"
-                          element={
-                            <LazyRoute>
-                              <ABTesting />
-                            </LazyRoute>
-                          }
-                        />
-
-                        {/* Dead Letter Queue (CAPI) */}
-                        <Route
-                          path="dead-letter-queue"
-                          element={
-                            <LazyRoute>
-                              <DeadLetterQueue />
-                            </LazyRoute>
-                          }
-                        />
-
-                        {/* Model Explainability (SHAP/LIME/LTV) */}
-                        <Route
-                          path="explainability"
-                          element={
-                            <LazyRoute>
-                              <ModelExplainability />
-                            </LazyRoute>
-                          }
-                        />
-
-                        {/* Embed Widgets */}
-                        <Route
-                          path="embed-widgets"
-                          element={
-                            <LazyRoute>
-                              <EmbedWidgets />
-                            </LazyRoute>
-                          }
-                        />
-                      </Route>
+                      {/* Legacy multi-tenant bookmarks: /app/7/campaigns -> /dashboard/campaigns
+                          (tenant segment discarded; single-client conversion, spec §5.1) */}
+                      <Route path="/app/:tenantId/*" element={<LegacyTenantRedirect />} />
 
                       {/* ═══════════════════════════════════════════════
                            Platform Console — owner-only shell at /console/*

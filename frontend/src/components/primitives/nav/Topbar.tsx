@@ -8,7 +8,7 @@
  * which fires on Enter (or debounced via `onChange` if they prefer).
  *
  * Profile slot is intentionally generic — the dashboard already has its
- * own profile dropdown in TenantLayout; we just expose a slot so callers
+ * own profile dropdown in DashboardLayout; we just expose a slot so callers
  * compose the existing dropdown without us re-implementing it.
  */
 
