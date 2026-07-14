@@ -4,7 +4,7 @@
 """Integration tests for the client-management CRUD API.
 
 Exercises the real ASGI app against Postgres + Redis: client creation
-(201), duplicate-slug conflict (409), tenant-scoped listing (filters,
+(201), duplicate-slug conflict (409), listing (filters,
 pagination, role scoping), detail (200/404), update/delete flows,
 KPI summaries, assignments, portal invitations, portal requests, and
 auth/permission enforcement.
@@ -36,13 +36,12 @@ async def _create_client_api(ac: AsyncClient, slug: str, name: str, **extra) -> 
     return resp.json()["data"]
 
 
-async def _make_user(db_session, tenant_id: int, role, email: str, client_id=None):
+async def _make_user(db_session, role, email: str, client_id=None):
     """Insert a user with properly encrypted PII (so decrypt paths work)."""
     from app.base_models import User
     from app.core.security import encrypt_pii, get_password_hash, hash_pii_for_lookup
 
     user = User(
-        tenant_id=tenant_id,
         email=encrypt_pii(email),
         email_hash=hash_pii_for_lookup(email),
         password_hash=get_password_hash("integration-pass-123"),
@@ -57,7 +56,7 @@ async def _make_user(db_session, tenant_id: int, role, email: str, client_id=Non
     return user
 
 
-def _headers_for(user, tenant_id: int, email: str = "fixture@example.com") -> dict:
+def _headers_for(user, email: str = "fixture@example.com") -> dict:
     """Build auth headers for an arbitrary DB user (role claim from user.role)."""
     from app.core.security import create_access_token
 
@@ -65,11 +64,10 @@ def _headers_for(user, tenant_id: int, email: str = "fixture@example.com") -> di
         subject=user.id,
         additional_claims={
             "email": email,
-            "tenant_id": tenant_id,
             "role": user.role.value,
         },
     )
-    return {"Authorization": f"Bearer {token}", "X-Tenant-ID": str(tenant_id)}
+    return {"Authorization": f"Bearer {token}"}
 
 
 _ext_counter = iter(range(10_000))
@@ -77,7 +75,6 @@ _ext_counter = iter(range(10_000))
 
 async def _make_campaign(
     db_session,
-    tenant_id: int,
     client_id: int,
     *,
     status=None,
@@ -92,7 +89,6 @@ async def _make_campaign(
     from app.base_models import AdPlatform, Campaign, CampaignStatus
 
     campaign = Campaign(
-        tenant_id=tenant_id,
         client_id=client_id,
         platform=AdPlatform.META,
         external_id=f"ext-{next(_ext_counter)}",
@@ -128,13 +124,12 @@ async def _make_assignment(db_session, user_id: int, client_id: int, assigned_by
 
 
 async def _make_request_row(
-    db_session, tenant_id: int, client_id: int, requested_by: int, *, status=None
+    db_session, client_id: int, requested_by: int, *, status=None
 ):
     """Insert a ClientRequest row directly."""
     from app.models.client import ClientRequest, ClientRequestStatus, ClientRequestType
 
     row = ClientRequest(
-        tenant_id=tenant_id,
         client_id=client_id,
         requested_by=requested_by,
         request_type=ClientRequestType.ADJUST_BUDGET,
@@ -297,16 +292,12 @@ class TestListFilters:
 
     @pytest.mark.asyncio
     async def test_list_includes_campaign_stats(
-        self, authenticated_client: AsyncClient, db_session, test_tenant
+        self, authenticated_client: AsyncClient, db_session
     ):
         with_stats = await _create_client_api(authenticated_client, "stats", "Stats Co")
         bare = await _create_client_api(authenticated_client, "bare", "Bare Co")
-        await _make_campaign(
-            db_session, test_tenant["id"], with_stats["id"], spend=50_000
-        )
-        await _make_campaign(
-            db_session, test_tenant["id"], with_stats["id"], spend=25_000
-        )
+        await _make_campaign(db_session, with_stats["id"], spend=50_000)
+        await _make_campaign(db_session, with_stats["id"], spend=25_000)
 
         resp = await authenticated_client.get("/api/v1/clients")
         by_slug = {c["slug"]: c for c in resp.json()["data"]["items"]}
@@ -318,7 +309,7 @@ class TestListFilters:
 
     @pytest.mark.asyncio
     async def test_manager_sees_only_assigned_clients(
-        self, authenticated_client: AsyncClient, db_session, test_tenant
+        self, authenticated_client: AsyncClient, db_session
     ):
         from app.base_models import UserRole
 
@@ -326,13 +317,13 @@ class TestListFilters:
         await _create_client_api(authenticated_client, "theirs", "Theirs Co")
 
         manager = await _make_user(
-            db_session, test_tenant["id"], UserRole.MANAGER, "manager@example.com"
+            db_session, UserRole.MANAGER, "manager@example.com"
         )
         await _make_assignment(db_session, manager.id, assigned["id"])
 
         resp = await authenticated_client.get(
             "/api/v1/clients",
-            headers=_headers_for(manager, test_tenant["id"], "manager@example.com"),
+            headers=_headers_for(manager, "manager@example.com"),
         )
         assert resp.status_code == 200
         items = resp.json()["data"]["items"]
@@ -340,18 +331,18 @@ class TestListFilters:
 
     @pytest.mark.asyncio
     async def test_manager_without_assignments_sees_none(
-        self, authenticated_client: AsyncClient, db_session, test_tenant
+        self, authenticated_client: AsyncClient, db_session
     ):
         from app.base_models import UserRole
 
         await _create_client_api(authenticated_client, "unseen", "Unseen Co")
         manager = await _make_user(
-            db_session, test_tenant["id"], UserRole.MANAGER, "lonely@example.com"
+            db_session, UserRole.MANAGER, "lonely@example.com"
         )
 
         resp = await authenticated_client.get(
             "/api/v1/clients",
-            headers=_headers_for(manager, test_tenant["id"], "lonely@example.com"),
+            headers=_headers_for(manager, "lonely@example.com"),
         )
         assert resp.status_code == 200
         data = resp.json()["data"]
@@ -410,7 +401,7 @@ class TestUpdateClient:
         self, authenticated_client: AsyncClient
     ):
         # Soft-deleted rows escape the pre-check but still hold the unique
-        # (tenant_id, slug) constraint -> IntegrityError path -> 409.
+        # slug constraint -> IntegrityError path -> 409.
         ghost = await _create_client_api(authenticated_client, "ghost", "Ghost Co")
         deleted = await authenticated_client.delete(f"/api/v1/clients/{ghost['id']}")
         assert deleted.status_code == 200
@@ -438,14 +429,13 @@ class TestUpdateClient:
 
     @pytest.mark.asyncio
     async def test_update_forbidden_for_viewer(
-        self, authenticated_client: AsyncClient, db_session, test_tenant
+        self, authenticated_client: AsyncClient, db_session
     ):
         from app.base_models import UserRole
 
         created = await _create_client_api(authenticated_client, "vw", "Viewer Co")
         viewer = await _make_user(
             db_session,
-            test_tenant["id"],
             UserRole.VIEWER,
             "viewer@example.com",
             client_id=created["id"],
@@ -453,7 +443,7 @@ class TestUpdateClient:
         resp = await authenticated_client.patch(
             f"/api/v1/clients/{created['id']}",
             json={"name": "Hacked"},
-            headers=_headers_for(viewer, test_tenant["id"], "viewer@example.com"),
+            headers=_headers_for(viewer, "viewer@example.com"),
         )
         assert resp.status_code == 403
 
@@ -496,19 +486,19 @@ class TestDeleteClient:
 
     @pytest.mark.asyncio
     async def test_delete_forbidden_for_manager(
-        self, authenticated_client: AsyncClient, db_session, test_tenant
+        self, authenticated_client: AsyncClient, db_session
     ):
         from app.base_models import UserRole
 
         created = await _create_client_api(authenticated_client, "keep", "Keep Co")
         manager = await _make_user(
-            db_session, test_tenant["id"], UserRole.MANAGER, "delmgr@example.com"
+            db_session, UserRole.MANAGER, "delmgr@example.com"
         )
         await _make_assignment(db_session, manager.id, created["id"])
 
         resp = await authenticated_client.delete(
             f"/api/v1/clients/{created['id']}",
-            headers=_headers_for(manager, test_tenant["id"], "delmgr@example.com"),
+            headers=_headers_for(manager, "delmgr@example.com"),
         )
         assert resp.status_code == 403
 
@@ -536,7 +526,7 @@ class TestClientSummary:
 
     @pytest.mark.asyncio
     async def test_summary_aggregates_campaigns(
-        self, authenticated_client: AsyncClient, db_session, test_tenant
+        self, authenticated_client: AsyncClient, db_session
     ):
         from app.base_models import CampaignStatus
 
@@ -546,7 +536,6 @@ class TestClientSummary:
         cid = created["id"]
         await _make_campaign(
             db_session,
-            test_tenant["id"],
             cid,
             status=CampaignStatus.ACTIVE,
             spend=50_000,
@@ -557,7 +546,6 @@ class TestClientSummary:
         )
         await _make_campaign(
             db_session,
-            test_tenant["id"],
             cid,
             status=CampaignStatus.PAUSED,
             spend=25_000,
@@ -565,9 +553,7 @@ class TestClientSummary:
             clicks=100,
         )
         # Soft-deleted campaigns must be excluded from all aggregates
-        await _make_campaign(
-            db_session, test_tenant["id"], cid, spend=999_999, is_deleted=True
-        )
+        await _make_campaign(db_session, cid, spend=999_999, is_deleted=True)
 
         resp = await authenticated_client.get(f"/api/v1/clients/{cid}/summary")
         assert resp.status_code == 200
@@ -592,17 +578,17 @@ class TestClientSummary:
 
     @pytest.mark.asyncio
     async def test_summary_forbidden_for_unassigned_analyst(
-        self, authenticated_client: AsyncClient, db_session, test_tenant
+        self, authenticated_client: AsyncClient, db_session
     ):
         from app.base_models import UserRole
 
         created = await _create_client_api(authenticated_client, "sec", "Secret Co")
         analyst = await _make_user(
-            db_session, test_tenant["id"], UserRole.ANALYST, "analyst@example.com"
+            db_session, UserRole.ANALYST, "analyst@example.com"
         )
         resp = await authenticated_client.get(
             f"/api/v1/clients/{created['id']}/summary",
-            headers=_headers_for(analyst, test_tenant["id"], "analyst@example.com"),
+            headers=_headers_for(analyst, "analyst@example.com"),
         )
         assert resp.status_code == 403
 
@@ -631,13 +617,13 @@ class TestAssignments:
 
     @pytest.mark.asyncio
     async def test_create_and_list_assignment(
-        self, authenticated_client: AsyncClient, db_session, test_tenant, test_user
+        self, authenticated_client: AsyncClient, db_session, test_user
     ):
         from app.base_models import UserRole
 
         created = await _create_client_api(authenticated_client, "team", "Team Co")
         manager = await _make_user(
-            db_session, test_tenant["id"], UserRole.MANAGER, "assignee@example.com"
+            db_session, UserRole.MANAGER, "assignee@example.com"
         )
 
         resp = await authenticated_client.post(
@@ -665,12 +651,12 @@ class TestAssignments:
 
     @pytest.mark.asyncio
     async def test_create_assignment_client_not_found(
-        self, authenticated_client: AsyncClient, db_session, test_tenant
+        self, authenticated_client: AsyncClient, db_session
     ):
         from app.base_models import UserRole
 
         manager = await _make_user(
-            db_session, test_tenant["id"], UserRole.MANAGER, "orphan@example.com"
+            db_session, UserRole.MANAGER, "orphan@example.com"
         )
         resp = await authenticated_client.post(
             "/api/v1/clients/999999/assignments", json={"user_id": manager.id}
@@ -700,13 +686,13 @@ class TestAssignments:
 
     @pytest.mark.asyncio
     async def test_create_assignment_duplicate(
-        self, authenticated_client: AsyncClient, db_session, test_tenant
+        self, authenticated_client: AsyncClient, db_session
     ):
         from app.base_models import UserRole
 
         created = await _create_client_api(authenticated_client, "dupa", "Dup Assign")
         analyst = await _make_user(
-            db_session, test_tenant["id"], UserRole.ANALYST, "twice@example.com"
+            db_session, UserRole.ANALYST, "twice@example.com"
         )
         first = await authenticated_client.post(
             f"/api/v1/clients/{created['id']}/assignments",
@@ -721,13 +707,13 @@ class TestAssignments:
 
     @pytest.mark.asyncio
     async def test_delete_assignment(
-        self, authenticated_client: AsyncClient, db_session, test_tenant
+        self, authenticated_client: AsyncClient, db_session
     ):
         from app.base_models import UserRole
 
         created = await _create_client_api(authenticated_client, "unassign", "Unassign")
         manager = await _make_user(
-            db_session, test_tenant["id"], UserRole.MANAGER, "leaver@example.com"
+            db_session, UserRole.MANAGER, "leaver@example.com"
         )
         await _make_assignment(db_session, manager.id, created["id"])
 
@@ -811,13 +797,13 @@ class TestPortalInvite:
 
     @pytest.mark.asyncio
     async def test_invite_forbidden_for_analyst(
-        self, authenticated_client: AsyncClient, db_session, test_tenant
+        self, authenticated_client: AsyncClient, db_session
     ):
         from app.base_models import UserRole
 
         created = await _create_client_api(authenticated_client, "guard", "Guard Co")
         analyst = await _make_user(
-            db_session, test_tenant["id"], UserRole.ANALYST, "noinvite@example.com"
+            db_session, UserRole.ANALYST, "noinvite@example.com"
         )
         resp = await authenticated_client.post(
             f"/api/v1/clients/{created['id']}/invite-portal",
@@ -826,7 +812,7 @@ class TestPortalInvite:
                 "full_name": "Target",
                 "client_id": created["id"],
             },
-            headers=_headers_for(analyst, test_tenant["id"], "noinvite@example.com"),
+            headers=_headers_for(analyst, "noinvite@example.com"),
         )
         assert resp.status_code == 403
 
@@ -895,17 +881,14 @@ class TestCreatePortalRequest:
 class TestClientRequestWorkflow:
     @pytest.mark.asyncio
     async def test_list_requests(
-        self, authenticated_client: AsyncClient, db_session, test_tenant, test_user
+        self, authenticated_client: AsyncClient, db_session, test_user
     ):
         from app.models.client import ClientRequestStatus
 
         created = await _create_client_api(authenticated_client, "wf", "WF Co")
-        await _make_request_row(
-            db_session, test_tenant["id"], created["id"], test_user["id"]
-        )
+        await _make_request_row(db_session, created["id"], test_user["id"])
         await _make_request_row(
             db_session,
-            test_tenant["id"],
             created["id"],
             test_user["id"],
             status=ClientRequestStatus.APPROVED,
@@ -925,18 +908,15 @@ class TestClientRequestWorkflow:
 
     @pytest.mark.asyncio
     async def test_list_requests_status_filter_and_pagination(
-        self, authenticated_client: AsyncClient, db_session, test_tenant, test_user
+        self, authenticated_client: AsyncClient, db_session, test_user
     ):
         from app.models.client import ClientRequestStatus
 
         created = await _create_client_api(authenticated_client, "wff", "WFF Co")
         for _ in range(2):
-            await _make_request_row(
-                db_session, test_tenant["id"], created["id"], test_user["id"]
-            )
+            await _make_request_row(db_session, created["id"], test_user["id"])
         await _make_request_row(
             db_session,
-            test_tenant["id"],
             created["id"],
             test_user["id"],
             status=ClientRequestStatus.REJECTED,
@@ -956,12 +936,10 @@ class TestClientRequestWorkflow:
 
     @pytest.mark.asyncio
     async def test_review_approve(
-        self, authenticated_client: AsyncClient, db_session, test_tenant, test_user
+        self, authenticated_client: AsyncClient, db_session, test_user
     ):
         created = await _create_client_api(authenticated_client, "appr", "Appr Co")
-        row = await _make_request_row(
-            db_session, test_tenant["id"], created["id"], test_user["id"]
-        )
+        row = await _make_request_row(db_session, created["id"], test_user["id"])
 
         resp = await authenticated_client.post(
             f"/api/v1/clients/{created['id']}/requests/{row.id}/review",
@@ -979,12 +957,10 @@ class TestClientRequestWorkflow:
 
     @pytest.mark.asyncio
     async def test_review_reject(
-        self, authenticated_client: AsyncClient, db_session, test_tenant, test_user
+        self, authenticated_client: AsyncClient, db_session, test_user
     ):
         created = await _create_client_api(authenticated_client, "rej", "Rej Co")
-        row = await _make_request_row(
-            db_session, test_tenant["id"], created["id"], test_user["id"]
-        )
+        row = await _make_request_row(db_session, created["id"], test_user["id"])
 
         resp = await authenticated_client.post(
             f"/api/v1/clients/{created['id']}/requests/{row.id}/review",
@@ -995,14 +971,13 @@ class TestClientRequestWorkflow:
 
     @pytest.mark.asyncio
     async def test_review_already_reviewed(
-        self, authenticated_client: AsyncClient, db_session, test_tenant, test_user
+        self, authenticated_client: AsyncClient, db_session, test_user
     ):
         from app.models.client import ClientRequestStatus
 
         created = await _create_client_api(authenticated_client, "done", "Done Co")
         row = await _make_request_row(
             db_session,
-            test_tenant["id"],
             created["id"],
             test_user["id"],
             status=ClientRequestStatus.APPROVED,
@@ -1017,12 +992,10 @@ class TestClientRequestWorkflow:
 
     @pytest.mark.asyncio
     async def test_review_invalid_action(
-        self, authenticated_client: AsyncClient, db_session, test_tenant, test_user
+        self, authenticated_client: AsyncClient, db_session, test_user
     ):
         created = await _create_client_api(authenticated_client, "inv", "Inv Co")
-        row = await _make_request_row(
-            db_session, test_tenant["id"], created["id"], test_user["id"]
-        )
+        row = await _make_request_row(db_session, created["id"], test_user["id"])
 
         resp = await authenticated_client.post(
             f"/api/v1/clients/{created['id']}/requests/{row.id}/review",
@@ -1041,7 +1014,7 @@ class TestClientRequestWorkflow:
 
     @pytest.mark.asyncio
     async def test_list_requests_forbidden_without_client_access(
-        self, authenticated_client: AsyncClient, db_session, test_tenant, test_user
+        self, authenticated_client: AsyncClient, db_session, test_user
     ):
         """Regression (#534): a role without access to the client gets 403.
 
@@ -1052,17 +1025,15 @@ class TestClientRequestWorkflow:
         from app.base_models import UserRole
 
         created = await _create_client_api(authenticated_client, "noacc", "NoAcc Co")
-        await _make_request_row(
-            db_session, test_tenant["id"], created["id"], test_user["id"]
-        )
+        await _make_request_row(db_session, created["id"], test_user["id"])
         # Analyst with no ClientAssignment and no user.client_id -> no access.
         analyst = await _make_user(
-            db_session, test_tenant["id"], UserRole.ANALYST, "outsider@example.com"
+            db_session, UserRole.ANALYST, "outsider@example.com"
         )
 
         resp = await authenticated_client.get(
             f"/api/v1/clients/{created['id']}/requests",
-            headers=_headers_for(analyst, test_tenant["id"], "outsider@example.com"),
+            headers=_headers_for(analyst, "outsider@example.com"),
         )
         assert resp.status_code == 403, resp.text
         assert "access" in resp.json()["detail"].lower()

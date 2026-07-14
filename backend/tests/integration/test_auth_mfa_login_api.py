@@ -11,10 +11,13 @@
 The user is seeded with a fixed (encrypted) TOTP secret and driven with real
 pyotp codes, mirroring test_mfa_api.py.
 
-``/api/v1/auth/login/mfa`` is in TenantMiddleware's PUBLIC_ENDPOINTS (#534):
-the client's only credential at this point is the ``mfa_token`` challenge
-from the login response body, so the exchange requests here are deliberately
-sent with NO Authorization header — the production shape.
+``/api/v1/auth/login/mfa`` used to need to be in TenantMiddleware's
+PUBLIC_ENDPOINTS (#534); TenantMiddleware itself is gone post-STRAT-SC-001
+(replaced by AuthContextMiddleware, which only decodes an optional JWT and
+never blocks unauthenticated requests), but the exchange requests here are
+still deliberately sent with NO Authorization header — the client's only
+credential at this point is the ``mfa_token`` challenge from the login
+response body, which is the production shape.
 """
 
 import pyotp
@@ -31,13 +34,12 @@ _PASSWORD = "Testpassword123"
 
 
 @pytest_asyncio.fixture
-async def mfa_user(db_session, test_tenant) -> dict:
+async def mfa_user(db_session) -> dict:
     """An active, verified user with TOTP MFA fully enabled."""
     from app.base_models import User, UserRole
     from app.core.security import encrypt_pii, get_password_hash, hash_pii_for_lookup
 
     user = User(
-        tenant_id=test_tenant["id"],
         email=encrypt_pii(_EMAIL),
         email_hash=hash_pii_for_lookup(_EMAIL),
         password_hash=get_password_hash(_PASSWORD),
@@ -51,18 +53,17 @@ async def mfa_user(db_session, test_tenant) -> dict:
     )
     db_session.add(user)
     await db_session.flush()
-    return {"id": user.id, "tenant_id": test_tenant["id"]}
+    return {"id": user.id}
 
 
 @pytest_asyncio.fixture
-async def plain_user(db_session, test_tenant) -> dict:
+async def plain_user(db_session) -> dict:
     """A user WITHOUT MFA, for challenge-token misuse tests."""
     from app.base_models import User, UserRole
     from app.core.security import encrypt_pii, get_password_hash, hash_pii_for_lookup
 
     email = "no-mfa-login@example.com"
     user = User(
-        tenant_id=test_tenant["id"],
         email=encrypt_pii(email),
         email_hash=hash_pii_for_lookup(email),
         password_hash=get_password_hash(_PASSWORD),
@@ -74,7 +75,7 @@ async def plain_user(db_session, test_tenant) -> dict:
     )
     db_session.add(user)
     await db_session.flush()
-    return {"id": user.id, "tenant_id": test_tenant["id"]}
+    return {"id": user.id}
 
 
 def _challenge_for(user_id: int) -> str:
@@ -113,7 +114,6 @@ class TestLoginMfaExchange:
         data = resp.json()["data"]
         assert data["access_token"]
         assert data["refresh_token"]
-        assert "available_tenants" in data
 
     async def test_wrong_code_401(self, client, mfa_user):
         login = await client.post(_LOGIN, json={"email": _EMAIL, "password": _PASSWORD})

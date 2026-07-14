@@ -26,7 +26,12 @@ _SMOKE_GETS = [
 
 
 class TestAuth:
-    @pytest.mark.parametrize("path", ["/info", "/admin/config"])
+    # STRAT-SC-001 (C6): "/info" dropped from this parametrization — its
+    # handler docstring declares it a public API-discovery endpoint (static
+    # metadata, no per-route auth dependency). Under the old TenantMiddleware
+    # it was 401'd anyway (middleware rejected everything not allowlisted);
+    # AuthContextMiddleware (C2) honors the endpoint's own public contract.
+    @pytest.mark.parametrize("path", ["/admin/config"])
     async def test_requires_auth(self, client: AsyncClient, path):
         resp = await client.get(f"{_BASE}{path}")
         assert resp.status_code in {401, 403}

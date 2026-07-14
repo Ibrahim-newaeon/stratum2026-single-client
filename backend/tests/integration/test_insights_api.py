@@ -6,8 +6,14 @@
 Exercises the real ASGI app against Postgres + Redis: daily insights,
 recommendations, anomalies, and KPIs. These endpoints are feature-gated
 (ai_recommendations / anomaly_alerts), so an ``insights_enabled`` fixture
-turns those flags on for the test tenant. A fresh tenant has no analytics
-data, so the reads return empty/default payloads.
+turns those flags on for the organization. With no analytics data seeded,
+the reads return empty/default payloads.
+
+STRAT-SC-001: these routes used to be scoped under
+``/api/v1/insights/tenant/{tenant_id}/...``; there is now exactly one
+organization, so the path is un-prefixed (``/api/v1/insights/...``), and
+feature flags live on the ``Organization`` singleton rather than a
+``Tenant`` row. Cross-tenant-isolation tests were removed entirely.
 """
 
 import pytest
@@ -18,71 +24,62 @@ pytestmark = pytest.mark.integration
 
 
 @pytest_asyncio.fixture
-async def insights_enabled(db_session, test_tenant):
-    """Enable the AI-insight feature flags on the test tenant."""
+async def insights_enabled(db_session, organization):
+    """Enable the AI-insight feature flags on the organization."""
     from sqlalchemy import update
 
-    from app.base_models import Tenant
+    from app.base_models import Organization
 
     await db_session.execute(
-        update(Tenant)
-        .where(Tenant.id == test_tenant["id"])
+        update(Organization)
+        .where(Organization.id == organization["id"])
         .values(feature_flags={"ai_recommendations": True, "anomaly_alerts": True})
     )
     await db_session.flush()
 
 
-def _url(path: str, tenant_id: int) -> str:
-    return f"/api/v1/insights/tenant/{tenant_id}/{path}"
+def _url(path: str) -> str:
+    return f"/api/v1/insights/{path}"
 
 
 class TestAuth:
+    # STRAT-SC-001 (C6): the fail-open this test briefly documented (no auth
+    # dependency on the insights router after the C2 middleware swap) was
+    # fixed in C6 — router now carries dependencies=[Depends(get_current_user)].
     @pytest.mark.asyncio
-    async def test_requires_auth(self, client: AsyncClient, test_tenant: dict):
-        resp = await client.get(_url("insights", test_tenant["id"]))
+    async def test_requires_auth(self, client: AsyncClient):
+        resp = await client.get(_url("insights"))
         assert resp.status_code in {401, 403}
-
-    @pytest.mark.asyncio
-    async def test_cross_tenant_forbidden(
-        self, authenticated_client: AsyncClient, test_tenant: dict, insights_enabled
-    ):
-        other = test_tenant["id"] + 99999
-        resp = await authenticated_client.get(_url("insights", other))
-        assert resp.status_code == 403
 
 
 class TestInsightReads:
     @pytest.mark.asyncio
     async def test_insights(
-        self, authenticated_client: AsyncClient, test_tenant: dict, insights_enabled
+        self, authenticated_client: AsyncClient, insights_enabled
     ):
-        resp = await authenticated_client.get(_url("insights", test_tenant["id"]))
+        resp = await authenticated_client.get(_url("insights"))
         assert resp.status_code == 200
         assert resp.json()["success"] is True
 
     @pytest.mark.asyncio
     async def test_recommendations(
-        self, authenticated_client: AsyncClient, test_tenant: dict, insights_enabled
+        self, authenticated_client: AsyncClient, insights_enabled
     ):
-        resp = await authenticated_client.get(
-            _url("recommendations", test_tenant["id"])
-        )
+        resp = await authenticated_client.get(_url("recommendations"))
         assert resp.status_code == 200
         assert resp.json()["success"] is True
 
     @pytest.mark.asyncio
     async def test_anomalies(
-        self, authenticated_client: AsyncClient, test_tenant: dict, insights_enabled
+        self, authenticated_client: AsyncClient, insights_enabled
     ):
-        resp = await authenticated_client.get(_url("anomalies", test_tenant["id"]))
+        resp = await authenticated_client.get(_url("anomalies"))
         assert resp.status_code == 200
         assert resp.json()["success"] is True
 
     @pytest.mark.asyncio
-    async def test_kpis(
-        self, authenticated_client: AsyncClient, test_tenant: dict, insights_enabled
-    ):
-        resp = await authenticated_client.get(_url("kpis", test_tenant["id"]))
+    async def test_kpis(self, authenticated_client: AsyncClient, insights_enabled):
+        resp = await authenticated_client.get(_url("kpis"))
         assert resp.status_code == 200
         assert resp.json()["success"] is True
 
@@ -95,7 +92,6 @@ class TestKpiAggregation:
     async def test_kpis_aggregate_seeded_campaigns(
         self,
         authenticated_client: AsyncClient,
-        test_tenant: dict,
         insights_enabled,
         db_session,
     ):
@@ -110,7 +106,6 @@ class TestKpiAggregation:
         for i, (platform, spend_c, rev_c, conv, impr, clk) in enumerate(seed):
             db_session.add(
                 Campaign(
-                    tenant_id=test_tenant["id"],
                     platform=platform,
                     external_id=f"kpi_ext_{i}",
                     account_id="acct_kpi",
@@ -125,7 +120,7 @@ class TestKpiAggregation:
             )
         await db_session.flush()
 
-        resp = await authenticated_client.get(_url("kpis", test_tenant["id"]))
+        resp = await authenticated_client.get(_url("kpis"))
         assert resp.status_code == 200
         data = resp.json()["data"]
 

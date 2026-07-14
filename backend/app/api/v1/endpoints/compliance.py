@@ -17,13 +17,23 @@ from sqlalchemy import and_, func, select, text
 from sqlalchemy.exc import SQLAlchemyError
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from app.auth.deps import get_current_user
 from app.base_models import AuditAction
 from app.core.logging import get_logger
 from app.db.session import get_async_session
 from app.schemas.response import APIResponse
 
 logger = get_logger(__name__)
-router = APIRouter(prefix="/admin/compliance", tags=["Enterprise Compliance"])
+
+# NOTE(STRAT-SC-001/C6): router-level auth — the old TenantMiddleware 401'd
+# every non-public request; AuthContextMiddleware (C2) only decodes the JWT,
+# so an admin/compliance surface with no explicit dependency was reachable
+# anonymously. Same fail-open class C3 closed on 11 sibling routers.
+router = APIRouter(
+    prefix="/admin/compliance",
+    tags=["Enterprise Compliance"],
+    dependencies=[Depends(get_current_user)],
+)
 
 
 # The audit_logs table does not store a severity column; severity is derived

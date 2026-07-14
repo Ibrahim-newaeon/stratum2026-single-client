@@ -3,7 +3,7 @@
 # =============================================================================
 """Integration tests for the Meta Conversions API surface under
 ``/api/v1/meta-capi/...``: health, event-payload validation (no external send),
-and tenant-scoped data-quality metrics.
+and org-wide data-quality metrics.
 """
 
 import pytest
@@ -61,27 +61,19 @@ class TestValidate:
 
 
 class TestQuality:
-    async def test_cross_tenant_forbidden(
-        self, authenticated_client: AsyncClient, test_tenant
-    ):
-        resp = await authenticated_client.get(
-            f"{_BASE}/quality/{test_tenant['id'] + 99999}"
-        )
-        assert resp.status_code == 403
+    # STRAT-SC-001: cross-tenant isolation no longer exists (single org) —
+    # the endpoint also dropped its ``{tenant_id}`` path param entirely, so
+    # the old cross-tenant-forbidden test has no route left to hit.
 
-    async def test_quality_empty_fallback(
-        self, authenticated_client: AsyncClient, test_tenant
-    ):
-        resp = await authenticated_client.get(f"{_BASE}/quality/{test_tenant['id']}")
+    async def test_quality_empty_fallback(self, authenticated_client: AsyncClient):
+        resp = await authenticated_client.get(f"{_BASE}/quality")
         assert resp.status_code == 200, resp.text
         data = resp.json()["data"]
         # No events sent yet -> graceful fallback envelope.
         assert "overall_score" in data
         assert isinstance(data["platform_scores"], dict)
 
-    async def test_quality_report(self, authenticated_client: AsyncClient, test_tenant):
-        resp = await authenticated_client.get(
-            f"{_BASE}/quality/{test_tenant['id']}/report"
-        )
+    async def test_quality_report(self, authenticated_client: AsyncClient):
+        resp = await authenticated_client.get(f"{_BASE}/quality/report")
         assert resp.status_code == 200, resp.text
         assert "data" in resp.json()

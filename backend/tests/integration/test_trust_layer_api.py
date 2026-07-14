@@ -2,14 +2,19 @@
 # Stratum AI - Trust Layer Endpoint Integration Tests
 # =============================================================================
 """Integration tests for the Trust Layer surface under
-``/api/v1/trust/tenant/{tenant_id}/...``: signal-health (+history), trust-status,
-and the feature-flag / tenant-context gates.
+``/api/v1/trust/...``: signal-health (+history), trust-status,
+and the feature-flag gates.
 
 Signal health reads ``fact_signal_health_daily``; the happy-path tests seed
 a real row for today and assert the computed overall status + automation
 block. The ``signal_health`` feature flag is toggled per-test via the
-tenant's ``feature_flags`` JSON override so behaviour is deterministic
-regardless of plan defaults.
+Organization singleton's ``feature_flags`` JSON override so behaviour is
+deterministic regardless of plan defaults.
+
+STRAT-SC-001: de-tenanted. There is exactly one Organization singleton
+(id=1) now, so feature flags live on ``Organization.feature_flags`` rather
+than a per-tenant row, and the routes no longer take a tenant_id path
+segment.
 """
 
 import datetime as dt
@@ -21,26 +26,23 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 pytestmark = [pytest.mark.integration, pytest.mark.asyncio]
 
-
-def _base(tenant_id: int) -> str:
-    return f"/api/v1/trust/tenant/{tenant_id}"
+_BASE = "/api/v1/trust"
 
 
-async def _set_features(db: AsyncSession, tenant_id: int, **flags) -> None:
-    """Override the tenant's feature_flags JSON (overrides beat plan defaults)."""
+async def _set_features(db: AsyncSession, **flags) -> None:
+    """Override the Organization's feature_flags JSON (overrides beat plan defaults)."""
     from sqlalchemy import update
 
-    from app.base_models import Tenant
+    from app.base_models import Organization
 
     await db.execute(
-        update(Tenant).where(Tenant.id == tenant_id).values(feature_flags=flags)
+        update(Organization).where(Organization.id == 1).values(feature_flags=flags)
     )
     await db.flush()
 
 
 async def _seed_signal_health(
     db: AsyncSession,
-    tenant_id: int,
     *,
     platform: str,
     status,
@@ -51,7 +53,6 @@ async def _seed_signal_health(
     from app.models.trust_layer import FactSignalHealthDaily
 
     record = FactSignalHealthDaily(
-        tenant_id=tenant_id,
         date=dt.date.today(),
         platform=platform,
         account_id="acct_1",
@@ -70,28 +71,22 @@ async def _seed_signal_health(
 # Signal health — gates
 # =============================================================================
 class TestSignalHealthGates:
-    async def test_requires_auth(self, client: AsyncClient, test_tenant):
-        resp = await client.get(f"{_base(test_tenant['id'])}/signal-health")
+    async def test_requires_auth(self, client: AsyncClient):
+        resp = await client.get(f"{_BASE}/signal-health")
         assert resp.status_code in {401, 403}
 
-    async def test_cross_tenant_forbidden(
-        self, authenticated_client: AsyncClient, test_tenant
-    ):
-        resp = await authenticated_client.get(
-            f"{_base(test_tenant['id'] + 99999)}/signal-health"
-        )
-        assert resp.status_code == 403
+    # STRAT-SC-001: cross-tenant isolation no longer exists (single org) —
+    # test_cross_tenant_forbidden removed (routes no longer take a
+    # tenant_id path segment to mismatch against).
 
     async def test_feature_disabled_forbidden(
         self,
         authenticated_client: AsyncClient,
         db_session: AsyncSession,
-        test_tenant,
+        organization,
     ):
-        await _set_features(db_session, test_tenant["id"], signal_health=False)
-        resp = await authenticated_client.get(
-            f"{_base(test_tenant['id'])}/signal-health"
-        )
+        await _set_features(db_session, signal_health=False)
+        resp = await authenticated_client.get(f"{_BASE}/signal-health")
         assert resp.status_code == 403
 
 
@@ -103,12 +98,10 @@ class TestSignalHealth:
         self,
         authenticated_client: AsyncClient,
         db_session: AsyncSession,
-        test_tenant,
+        organization,
     ):
-        await _set_features(db_session, test_tenant["id"], signal_health=True)
-        resp = await authenticated_client.get(
-            f"{_base(test_tenant['id'])}/signal-health"
-        )
+        await _set_features(db_session, signal_health=True)
+        resp = await authenticated_client.get(f"{_BASE}/signal-health")
         assert resp.status_code == 200, resp.text
         data = resp.json()["data"]
         assert data["status"] == "no_data"
@@ -118,22 +111,19 @@ class TestSignalHealth:
         self,
         authenticated_client: AsyncClient,
         db_session: AsyncSession,
-        test_tenant,
+        organization,
     ):
         from app.models.trust_layer import SignalHealthStatus
 
-        await _set_features(db_session, test_tenant["id"], signal_health=True)
+        await _set_features(db_session, signal_health=True)
         await _seed_signal_health(
             db_session,
-            test_tenant["id"],
             platform="meta",
             status=SignalHealthStatus.CRITICAL,
             emq_score=55.0,
             event_loss_pct=40.0,
         )
-        resp = await authenticated_client.get(
-            f"{_base(test_tenant['id'])}/signal-health"
-        )
+        resp = await authenticated_client.get(f"{_BASE}/signal-health")
         assert resp.status_code == 200, resp.text
         data = resp.json()["data"]
         assert data["status"] == "critical"
@@ -145,11 +135,11 @@ class TestSignalHealth:
         self,
         authenticated_client: AsyncClient,
         db_session: AsyncSession,
-        test_tenant,
+        organization,
     ):
-        await _set_features(db_session, test_tenant["id"], signal_health=True)
+        await _set_features(db_session, signal_health=True)
         resp = await authenticated_client.get(
-            f"{_base(test_tenant['id'])}/signal-health/history", params={"days": 7}
+            f"{_BASE}/signal-health/history", params={"days": 7}
         )
         assert resp.status_code == 200, resp.text
         data = resp.json()["data"]
@@ -161,30 +151,23 @@ class TestSignalHealth:
 # Combined trust status
 # =============================================================================
 class TestTrustStatus:
-    async def test_requires_tenant_match(
-        self, authenticated_client: AsyncClient, test_tenant
-    ):
-        resp = await authenticated_client.get(
-            f"{_base(test_tenant['id'] + 99999)}/trust-status"
-        )
-        assert resp.status_code == 403
+    # STRAT-SC-001: cross-tenant isolation no longer exists (single org) —
+    # test_requires_tenant_match removed (routes no longer take a tenant_id
+    # path segment to mismatch against).
 
     async def test_ok_when_no_features(
         self,
         authenticated_client: AsyncClient,
         db_session: AsyncSession,
-        test_tenant,
+        organization,
     ):
         # Both trust features off -> bare status, automation allowed.
         await _set_features(
             db_session,
-            test_tenant["id"],
             signal_health=False,
             attribution_variance=False,
         )
-        resp = await authenticated_client.get(
-            f"{_base(test_tenant['id'])}/trust-status"
-        )
+        resp = await authenticated_client.get(f"{_BASE}/trust-status")
         assert resp.status_code == 200, resp.text
         data = resp.json()["data"]
         assert data["overall_status"] == "ok"
@@ -195,27 +178,23 @@ class TestTrustStatus:
         self,
         authenticated_client: AsyncClient,
         db_session: AsyncSession,
-        test_tenant,
+        organization,
     ):
         from app.models.trust_layer import SignalHealthStatus
 
         await _set_features(
             db_session,
-            test_tenant["id"],
             signal_health=True,
             attribution_variance=False,
         )
         await _seed_signal_health(
             db_session,
-            test_tenant["id"],
             platform="google",
             status=SignalHealthStatus.DEGRADED,
             emq_score=70.0,
             event_loss_pct=20.0,
         )
-        resp = await authenticated_client.get(
-            f"{_base(test_tenant['id'])}/trust-status"
-        )
+        resp = await authenticated_client.get(f"{_BASE}/trust-status")
         assert resp.status_code == 200, resp.text
         data = resp.json()["data"]
         assert data["overall_status"] == "degraded"

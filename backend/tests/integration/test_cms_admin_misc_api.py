@@ -16,7 +16,7 @@ _MISSING = "00000000-0000-0000-0000-000000000000"
 
 
 @pytest_asyncio.fixture
-async def cms_client(client, test_user, test_tenant) -> AsyncClient:
+async def cms_client(client, test_user) -> AsyncClient:
     """An authenticated client whose JWT carries a CMS super_admin role."""
     from app.core.security import create_access_token
 
@@ -24,24 +24,21 @@ async def cms_client(client, test_user, test_tenant) -> AsyncClient:
         subject=test_user["id"],
         additional_claims={
             "email": test_user["email"],
-            "tenant_id": test_tenant["id"],
             "role": test_user["role"],
             "cms_role": "super_admin",
         },
     )
     client.headers["Authorization"] = f"Bearer {token}"
-    client.headers["X-Tenant-ID"] = str(test_tenant["id"])
     return client
 
 
 @pytest_asyncio.fixture
-async def editor_user(db_session, test_tenant) -> dict:
+async def editor_user(db_session) -> dict:
     """A second user holding a CMS editor role (role change/revoke target)."""
     from app.base_models import User, UserRole
     from app.core.security import get_password_hash
 
     user = User(
-        tenant_id=test_tenant["id"],
         email="editor@example.com",
         email_hash="editor@example.com",
         password_hash=get_password_hash("editorpassword123"),
@@ -57,13 +54,12 @@ async def editor_user(db_session, test_tenant) -> dict:
 
 
 @pytest_asyncio.fixture
-async def plain_user(db_session, test_tenant) -> dict:
+async def plain_user(db_session) -> dict:
     """A user without any CMS role."""
     from app.base_models import User, UserRole
     from app.core.security import get_password_hash
 
     user = User(
-        tenant_id=test_tenant["id"],
         email="plain@example.com",
         email_hash="plain@example.com",
         password_hash=get_password_hash("plainpassword123"),
@@ -75,28 +71,6 @@ async def plain_user(db_session, test_tenant) -> dict:
     db_session.add(user)
     await db_session.flush()
     return {"id": user.id, "email": user.email}
-
-
-@pytest_asyncio.fixture
-async def global_cms_tenant(db_session, test_tenant) -> None:
-    """Ensure tenant id=1 exists (invite_cms_user hardcodes tenant_id=1)."""
-    from sqlalchemy import select
-
-    from app.base_models import Tenant
-
-    existing = await db_session.execute(select(Tenant).where(Tenant.id == 1))
-    if existing.scalar_one_or_none() is None:
-        db_session.add(
-            Tenant(
-                id=1,
-                name="Global CMS Tenant",
-                slug="global-cms-tenant",
-                plan="enterprise",
-                max_users=100,
-                max_campaigns=100,
-            )
-        )
-        await db_session.flush()
 
 
 async def _submit_contact(client: AsyncClient, email="lead@example.com") -> None:
@@ -584,7 +558,7 @@ class TestCmsUserManagement:
 
     @pytest.mark.asyncio
     async def test_my_permissions_invalid_role(
-        self, client: AsyncClient, test_user, test_tenant
+        self, client: AsyncClient, test_user
     ):
         from app.core.security import create_access_token
 
@@ -592,13 +566,11 @@ class TestCmsUserManagement:
             subject=test_user["id"],
             additional_claims={
                 "email": test_user["email"],
-                "tenant_id": test_tenant["id"],
                 "role": test_user["role"],
                 "cms_role": "not_a_role",
             },
         )
         client.headers["Authorization"] = f"Bearer {token}"
-        client.headers["X-Tenant-ID"] = str(test_tenant["id"])
         resp = await client.get("/api/v1/cms/admin/me/permissions")
         assert resp.status_code == 403
         assert "Invalid CMS role" in resp.json()["detail"]
@@ -696,7 +668,7 @@ class TestCmsUserManagement:
         assert resp.status_code == 404
 
     @pytest.mark.asyncio
-    async def test_invite_user(self, cms_client: AsyncClient, global_cms_tenant):
+    async def test_invite_user(self, cms_client: AsyncClient):
         resp = await cms_client.post(
             "/api/v1/cms/admin/users/invite",
             json={
@@ -717,7 +689,7 @@ class TestCmsUserManagement:
 
     @pytest.mark.asyncio
     async def test_invite_duplicate_email(
-        self, cms_client: AsyncClient, global_cms_tenant
+        self, cms_client: AsyncClient
     ):
         body = {
             "email": "twice@example.com",

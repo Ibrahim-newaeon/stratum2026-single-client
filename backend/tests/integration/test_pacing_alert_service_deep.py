@@ -13,7 +13,7 @@ real Postgres test database:
   math (no ``daily_kpis`` -> critical underpacing; uniform spend -> on
   track + auto-resolve).
 - Pacing-cliff detection over seeded ``DailyKPI`` series.
-- Alert lifecycle (acknowledge / resolve / dismiss) incl. tenant isolation.
+- Alert lifecycle (acknowledge / resolve / dismiss).
 - Alert summary aggregation (status/severity/type counts, resolution time).
 - Notification building/dispatch, with true externals (Slack HTTP, SMTP,
   WhatsApp API) mocked at the service boundary per Batch-3 rules.
@@ -21,6 +21,14 @@ real Postgres test database:
 NOTE: run with the session-scoped event loop CI uses
 (``-o asyncio_default_test_loop_scope=session``) or the default per-test
 loop — these tests only use the db_session fixture, not the ASGI app.
+
+STRAT-SC-001: ``Target``, ``DailyKPI``, and ``PacingAlert`` lost their
+``tenant_id`` columns and ``PacingAlertService``/``AlertNotificationService``
+lost the ``tenant_id`` constructor argument in the single-client conversion
+— there is now exactly one global organization, so per-tenant scoping and
+isolation no longer exist. Tests that only existed to assert cross-tenant
+isolation were deleted (see inline notes below); everything else keeps its
+original assertions against the now-global tables.
 """
 
 import smtplib
@@ -99,10 +107,9 @@ def _pacing_payload(
     }
 
 
-async def _make_target(db_session, tenant_id: int, **overrides) -> Target:
+async def _make_target(db_session, **overrides) -> Target:
     """Create and flush a Target row (notifications off by default)."""
     fields = dict(
-        tenant_id=tenant_id,
         name="June Spend",
         period_type=TargetPeriod.MONTHLY,
         period_start=PERIOD_START,
@@ -125,7 +132,6 @@ async def _make_target(db_session, tenant_id: int, **overrides) -> Target:
 
 async def _make_kpi(
     db_session,
-    tenant_id: int,
     day: date,
     *,
     spend_cents: int = 0,
@@ -134,7 +140,6 @@ async def _make_kpi(
     **overrides,
 ) -> DailyKPI:
     fields = dict(
-        tenant_id=tenant_id,
         date=day,
         platform=platform,
         campaign_id=campaign_id,
@@ -151,7 +156,6 @@ async def _make_kpi(
 
 async def _make_alert(
     db_session,
-    tenant_id: int,
     target_id=None,
     *,
     alert_type: AlertType = AlertType.UNDERPACING_SPEND,
@@ -161,7 +165,6 @@ async def _make_alert(
     **overrides,
 ) -> PacingAlert:
     fields = dict(
-        tenant_id=tenant_id,
         target_id=target_id,
         alert_type=alert_type,
         severity=severity,
@@ -180,7 +183,6 @@ async def _make_alert(
 def _detached_alert(**overrides) -> PacingAlert:
     """A non-persisted PacingAlert for direct notification-method tests."""
     fields = dict(
-        tenant_id=1,
         alert_type=AlertType.UNDERPACING_SPEND,
         severity=AlertSeverity.CRITICAL,
         status=AlertStatus.ACTIVE,
@@ -198,13 +200,13 @@ def _detached_alert(**overrides) -> PacingAlert:
 
 
 @pytest.fixture
-async def svc(db_session, test_tenant) -> PacingAlertService:
-    return PacingAlertService(db_session, test_tenant["id"])
+async def svc(db_session) -> PacingAlertService:
+    return PacingAlertService(db_session)
 
 
 @pytest.fixture
-async def notifier(db_session, test_tenant) -> AlertNotificationService:
-    return AlertNotificationService(db_session, test_tenant["id"])
+async def notifier(db_session) -> AlertNotificationService:
+    return AlertNotificationService(db_session)
 
 
 def _patch_pacing(svc: PacingAlertService, payload: dict):
@@ -221,23 +223,21 @@ def _patch_pacing(svc: PacingAlertService, payload: dict):
 
 
 class TestCheckTargetAlerts:
-    async def test_pacing_error_returns_empty(self, svc, db_session, test_tenant):
-        target = await _make_target(db_session, test_tenant["id"])
+    async def test_pacing_error_returns_empty(self, svc, db_session):
+        target = await _make_target(db_session)
         with _patch_pacing(svc, {"status": "error", "message": "Target not found"}):
             alerts = await svc.check_target_alerts(target.id, AS_OF)
         assert alerts == []
 
-    async def test_default_as_of_date_is_today(self, svc, db_session, test_tenant):
-        target = await _make_target(db_session, test_tenant["id"])
+    async def test_default_as_of_date_is_today(self, svc, db_session):
+        target = await _make_target(db_session)
         mock = AsyncMock(return_value={"status": "error"})
         with patch.object(svc.pacing_service, "get_target_pacing", mock):
             await svc.check_target_alerts(target.id)
         assert mock.await_args.args[1] == date.today()
 
-    async def test_critical_underpacing_creates_alert(
-        self, svc, db_session, test_tenant
-    ):
-        target = await _make_target(db_session, test_tenant["id"])
+    async def test_critical_underpacing_creates_alert(self, svc, db_session):
+        target = await _make_target(db_session)
         payload = _pacing_payload(pct=60.0, actual=3000.0, expected=5000.0, eom=6000.0)
         with _patch_pacing(svc, payload):
             alerts = await svc.check_target_alerts(target.id, AS_OF)
@@ -262,8 +262,8 @@ class TestCheckTargetAlerts:
         row = await db_session.get(PacingAlert, alert.id)
         assert row is not None
 
-    async def test_warning_underpacing(self, svc, db_session, test_tenant):
-        target = await _make_target(db_session, test_tenant["id"])
+    async def test_warning_underpacing(self, svc, db_session):
+        target = await _make_target(db_session)
         with _patch_pacing(svc, _pacing_payload(pct=85.0)):
             alerts = await svc.check_target_alerts(target.id, AS_OF)
         assert len(alerts) == 1
@@ -271,8 +271,8 @@ class TestCheckTargetAlerts:
         assert alerts[0].alert_type == AlertType.UNDERPACING_SPEND
         assert "underpacing" in alerts[0].title
 
-    async def test_critical_overpacing(self, svc, db_session, test_tenant):
-        target = await _make_target(db_session, test_tenant["id"])
+    async def test_critical_overpacing(self, svc, db_session):
+        target = await _make_target(db_session)
         with _patch_pacing(svc, _pacing_payload(pct=130.0)):
             alerts = await svc.check_target_alerts(target.id, AS_OF)
         assert len(alerts) == 1
@@ -282,20 +282,16 @@ class TestCheckTargetAlerts:
         # Overpacing => negative deviation from expected pace
         assert alerts[0].deviation_pct == pytest.approx(-30.0)
 
-    async def test_warning_overpacing(self, svc, db_session, test_tenant):
-        target = await _make_target(db_session, test_tenant["id"])
+    async def test_warning_overpacing(self, svc, db_session):
+        target = await _make_target(db_session)
         with _patch_pacing(svc, _pacing_payload(pct=115.0)):
             alerts = await svc.check_target_alerts(target.id, AS_OF)
         assert len(alerts) == 1
         assert alerts[0].severity == AlertSeverity.WARNING
         assert alerts[0].alert_type == AlertType.OVERPACING_SPEND
 
-    async def test_projected_miss_maps_metric_to_alert_type(
-        self, svc, db_session, test_tenant
-    ):
-        target = await _make_target(
-            db_session, test_tenant["id"], metric_type=TargetMetric.ROAS
-        )
+    async def test_projected_miss_maps_metric_to_alert_type(self, svc, db_session):
+        target = await _make_target(db_session, metric_type=TargetMetric.ROAS)
         # Pacing exactly on 100% (no under/over branch) but projected to miss.
         payload = _pacing_payload(
             pct=100.0, will_miss=True, gap_pct=-30.0, metric_type="roas"
@@ -307,10 +303,8 @@ class TestCheckTargetAlerts:
         assert alerts[0].severity == AlertSeverity.CRITICAL
         assert "projected to miss" in alerts[0].title
 
-    async def test_on_track_with_nothing_to_resolve_is_noop(
-        self, svc, db_session, test_tenant
-    ):
-        target = await _make_target(db_session, test_tenant["id"])
+    async def test_on_track_with_nothing_to_resolve_is_noop(self, svc, db_session):
+        target = await _make_target(db_session)
         with _patch_pacing(svc, _pacing_payload(pct=100.0, on_track=True)):
             alerts = await svc.check_target_alerts(target.id, AS_OF)
         assert alerts == []
@@ -319,8 +313,8 @@ class TestCheckTargetAlerts:
         )
         assert result.scalars().all() == []
 
-    async def test_duplicate_overpacing_suppressed(self, svc, db_session, test_tenant):
-        target = await _make_target(db_session, test_tenant["id"])
+    async def test_duplicate_overpacing_suppressed(self, svc, db_session):
+        target = await _make_target(db_session)
         # Critical first, then warning + critical repeats: no new rows either way.
         with _patch_pacing(svc, _pacing_payload(pct=130.0)):
             first = await svc.check_target_alerts(target.id, AS_OF)
@@ -335,17 +329,15 @@ class TestCheckTargetAlerts:
         )
         assert len(result.scalars().all()) == 1
 
-    async def test_projected_miss_below_critical_gap_no_alert(
-        self, svc, db_session, test_tenant
-    ):
-        target = await _make_target(db_session, test_tenant["id"])
+    async def test_projected_miss_below_critical_gap_no_alert(self, svc, db_session):
+        target = await _make_target(db_session)
         payload = _pacing_payload(pct=100.0, will_miss=True, gap_pct=15.0)
         with _patch_pacing(svc, payload):
             alerts = await svc.check_target_alerts(target.id, AS_OF)
         assert alerts == []
 
-    async def test_duplicate_alert_suppressed(self, svc, db_session, test_tenant):
-        target = await _make_target(db_session, test_tenant["id"])
+    async def test_duplicate_alert_suppressed(self, svc, db_session):
+        target = await _make_target(db_session)
         with _patch_pacing(svc, _pacing_payload(pct=85.0)):
             first = await svc.check_target_alerts(target.id, AS_OF)
             second = await svc.check_target_alerts(target.id, AS_OF)
@@ -356,10 +348,8 @@ class TestCheckTargetAlerts:
         )
         assert len(result.scalars().all()) == 1
 
-    async def test_warning_escalates_to_critical_in_place(
-        self, svc, db_session, test_tenant
-    ):
-        target = await _make_target(db_session, test_tenant["id"])
+    async def test_warning_escalates_to_critical_in_place(self, svc, db_session):
+        target = await _make_target(db_session)
         with _patch_pacing(svc, _pacing_payload(pct=85.0)):
             first = await svc.check_target_alerts(target.id, AS_OF)
         assert first[0].severity == AlertSeverity.WARNING
@@ -377,10 +367,8 @@ class TestCheckTargetAlerts:
         assert rows[0].severity == AlertSeverity.CRITICAL
         assert "severely underpacing" in rows[0].title
 
-    async def test_on_track_auto_resolves_pacing_alerts(
-        self, svc, db_session, test_tenant
-    ):
-        target = await _make_target(db_session, test_tenant["id"])
+    async def test_on_track_auto_resolves_pacing_alerts(self, svc, db_session):
+        target = await _make_target(db_session)
         with _patch_pacing(svc, _pacing_payload(pct=60.0)):
             created = await svc.check_target_alerts(target.id, AS_OF)
         assert len(created) == 1
@@ -394,10 +382,8 @@ class TestCheckTargetAlerts:
         assert row.resolved_at is not None
         assert "Auto-resolved" in row.resolution_notes
 
-    async def test_notification_failure_does_not_block_creation(
-        self, svc, db_session, test_tenant
-    ):
-        target = await _make_target(db_session, test_tenant["id"])
+    async def test_notification_failure_does_not_block_creation(self, svc, db_session):
+        target = await _make_target(db_session)
         with patch.object(
             AlertNotificationService,
             "notify_alert",
@@ -426,21 +412,15 @@ class TestCheckAllTargets:
             "alerts_created": 0,
         }
 
-    async def test_no_kpi_data_flags_critical_underpacing(
-        self, svc, db_session, test_tenant
-    ):
-        tenant_id = test_tenant["id"]
-        await _make_target(db_session, tenant_id, name="meta spend", platform="meta")
-        await _make_target(
-            db_session, tenant_id, name="google spend", platform="google"
-        )
+    async def test_no_kpi_data_flags_critical_underpacing(self, svc, db_session):
+        await _make_target(db_session, name="meta spend", platform="meta")
+        await _make_target(db_session, name="google spend", platform="google")
         # Excluded: inactive + out-of-period targets
         await _make_target(
-            db_session, tenant_id, name="inactive", platform="tiktok", is_active=False
+            db_session, name="inactive", platform="tiktok", is_active=False
         )
         await _make_target(
             db_session,
-            tenant_id,
             name="last month",
             platform="snapchat",
             period_start=date(2026, 5, 1),
@@ -461,21 +441,17 @@ class TestCheckAllTargets:
         assert all(a.current_value == 0.0 for a in alerts)
 
     async def test_on_track_spend_creates_no_alerts_and_resolves_old(
-        self, svc, db_session, test_tenant
+        self, svc, db_session
     ):
-        tenant_id = test_tenant["id"]
         # 3000 over 30 days -> 100/day expected; seed exactly 100/day actual.
-        target = await _make_target(
-            db_session, tenant_id, platform=None, target_value=3000.0
-        )
+        target = await _make_target(db_session, platform=None, target_value=3000.0)
         for offset in range(15):
             await _make_kpi(
                 db_session,
-                tenant_id,
                 PERIOD_START + timedelta(days=offset),
                 spend_cents=100_00,
             )
-        stale = await _make_alert(db_session, tenant_id, target.id)
+        stale = await _make_alert(db_session, target.id)
 
         summary = await svc.check_all_targets(AS_OF)
 
@@ -498,22 +474,17 @@ class TestCheckPacingCliff:
     async def test_unknown_target_returns_none(self, svc):
         assert await svc.check_pacing_cliff(uuid4()) is None
 
-    async def test_insufficient_data_returns_none(self, svc, db_session, test_tenant):
-        tenant_id = test_tenant["id"]
-        target = await _make_target(db_session, tenant_id, platform=None)
-        await _make_kpi(db_session, tenant_id, AS_OF, spend_cents=100_00)
-        await _make_kpi(
-            db_session, tenant_id, AS_OF - timedelta(days=1), spend_cents=100_00
-        )
+    async def test_insufficient_data_returns_none(self, svc, db_session):
+        target = await _make_target(db_session, platform=None)
+        await _make_kpi(db_session, AS_OF, spend_cents=100_00)
+        await _make_kpi(db_session, AS_OF - timedelta(days=1), spend_cents=100_00)
         assert await svc.check_pacing_cliff(target.id, AS_OF) is None
 
-    async def test_cliff_detected(self, svc, db_session, test_tenant):
-        tenant_id = test_tenant["id"]
-        target = await _make_target(db_session, tenant_id, platform=None)
+    async def test_cliff_detected(self, svc, db_session):
+        target = await _make_target(db_session, platform=None)
         for offset, cents in ((3, 100_00), (2, 100_00), (1, 100_00), (0, 10_00)):
             await _make_kpi(
                 db_session,
-                tenant_id,
                 AS_OF - timedelta(days=offset),
                 spend_cents=cents,
             )
@@ -528,53 +499,44 @@ class TestCheckPacingCliff:
         assert alert.details["latest_value"] == pytest.approx(10.0)
         assert alert.details["previous_avg"] == pytest.approx(100.0)
 
-    async def test_stable_series_no_cliff(self, svc, db_session, test_tenant):
-        tenant_id = test_tenant["id"]
-        target = await _make_target(db_session, tenant_id, platform=None)
+    async def test_stable_series_no_cliff(self, svc, db_session):
+        target = await _make_target(db_session, platform=None)
         for offset in range(4):
             await _make_kpi(
                 db_session,
-                tenant_id,
                 AS_OF - timedelta(days=offset),
                 spend_cents=100_00,
             )
         assert await svc.check_pacing_cliff(target.id, AS_OF) is None
 
-    async def test_zero_previous_average_guard(self, svc, db_session, test_tenant):
-        tenant_id = test_tenant["id"]
-        target = await _make_target(db_session, tenant_id, platform=None)
+    async def test_zero_previous_average_guard(self, svc, db_session):
+        target = await _make_target(db_session, platform=None)
         for offset in range(4):
-            await _make_kpi(
-                db_session, tenant_id, AS_OF - timedelta(days=offset), spend_cents=0
-            )
+            await _make_kpi(db_session, AS_OF - timedelta(days=offset), spend_cents=0)
         # previous_avg == 0 -> division guard, no alert
         assert await svc.check_pacing_cliff(target.id, AS_OF) is None
 
-    async def test_unmapped_metric_yields_no_values(self, svc, db_session, test_tenant):
-        tenant_id = test_tenant["id"]
+    async def test_unmapped_metric_yields_no_values(self, svc, db_session):
         target = await _make_target(
-            db_session, tenant_id, platform=None, metric_type=TargetMetric.CPA
+            db_session, platform=None, metric_type=TargetMetric.CPA
         )
         for offset in range(4):
             await _make_kpi(
                 db_session,
-                tenant_id,
                 AS_OF - timedelta(days=offset),
                 spend_cents=100_00,
             )
         # _get_metric_value returns None for CPA -> fewer than 3 usable points
         assert await svc.check_pacing_cliff(target.id, AS_OF) is None
 
-    async def test_scoped_to_platform_and_campaign(self, svc, db_session, test_tenant):
-        tenant_id = test_tenant["id"]
+    async def test_scoped_to_platform_and_campaign(self, svc, db_session):
         target = await _make_target(
-            db_session, tenant_id, platform="meta", campaign_id="cmp-1"
+            db_session, platform="meta", campaign_id="cmp-1"
         )
         # Matching scope: cliff series
         for offset, cents in ((3, 200_00), (2, 200_00), (1, 200_00), (0, 20_00)):
             await _make_kpi(
                 db_session,
-                tenant_id,
                 AS_OF - timedelta(days=offset),
                 spend_cents=cents,
                 platform="meta",
@@ -584,7 +546,6 @@ class TestCheckPacingCliff:
         for offset in range(4):
             await _make_kpi(
                 db_session,
-                tenant_id,
                 AS_OF - timedelta(days=offset),
                 spend_cents=999_00,
                 platform="google",
@@ -595,13 +556,10 @@ class TestCheckPacingCliff:
         assert alert is not None
         assert alert.details["previous_avg"] == pytest.approx(200.0)
 
-    async def test_metric_value_extraction_from_real_kpi_row(
-        self, svc, db_session, test_tenant
-    ):
+    async def test_metric_value_extraction_from_real_kpi_row(self, svc, db_session):
         """Cover _get_metric_value against a fully-populated DailyKPI row."""
         kpi = await _make_kpi(
             db_session,
-            test_tenant["id"],
             AS_OF,
             spend_cents=12345,
             revenue_cents=50000,
@@ -621,13 +579,11 @@ class TestCheckPacingCliff:
         assert svc._get_metric_value(kpi, TargetMetric.WON_REVENUE) == 2500.0
         assert svc._get_metric_value(kpi, TargetMetric.CPA) is None
 
-    async def test_custom_drop_threshold_not_met(self, svc, db_session, test_tenant):
-        tenant_id = test_tenant["id"]
-        target = await _make_target(db_session, tenant_id, platform=None)
+    async def test_custom_drop_threshold_not_met(self, svc, db_session):
+        target = await _make_target(db_session, platform=None)
         for offset, cents in ((3, 100_00), (2, 100_00), (1, 100_00), (0, 60_00)):
             await _make_kpi(
                 db_session,
-                tenant_id,
                 AS_OF - timedelta(days=offset),
                 spend_cents=cents,
             )
@@ -644,22 +600,18 @@ class TestCheckPacingCliff:
 
 
 class TestAlertQueries:
-    async def test_get_active_alerts_filters(self, svc, db_session, test_tenant):
-        tenant_id = test_tenant["id"]
-        target_a = await _make_target(db_session, tenant_id, platform="meta")
-        target_b = await _make_target(db_session, tenant_id, platform="google")
+    async def test_get_active_alerts_filters(self, svc, db_session):
+        target_a = await _make_target(db_session, platform="meta")
+        target_b = await _make_target(db_session, platform="google")
 
-        active_warn = await _make_alert(db_session, tenant_id, target_a.id)
+        active_warn = await _make_alert(db_session, target_a.id)
         active_crit = await _make_alert(
             db_session,
-            tenant_id,
             target_b.id,
             severity=AlertSeverity.CRITICAL,
             alert_type=AlertType.OVERPACING_SPEND,
         )
-        await _make_alert(
-            db_session, tenant_id, target_a.id, status=AlertStatus.RESOLVED
-        )
+        await _make_alert(db_session, target_a.id, status=AlertStatus.RESOLVED)
 
         all_active = await svc.get_active_alerts()
         assert {a.id for a in all_active} == {active_warn.id, active_crit.id}
@@ -673,24 +625,21 @@ class TestAlertQueries:
         by_type = await svc.get_active_alerts(alert_type=AlertType.OVERPACING_SPEND)
         assert [a.id for a in by_type] == [active_crit.id]
 
-    async def test_get_alerts_by_status_filters(self, svc, db_session, test_tenant):
-        tenant_id = test_tenant["id"]
-        target = await _make_target(db_session, tenant_id)
+    async def test_get_alerts_by_status_filters(self, svc, db_session):
+        target = await _make_target(db_session)
         resolved = await _make_alert(
             db_session,
-            tenant_id,
             target.id,
             status=AlertStatus.RESOLVED,
             severity=AlertSeverity.CRITICAL,
         )
         acked = await _make_alert(
             db_session,
-            tenant_id,
             target.id,
             status=AlertStatus.ACKNOWLEDGED,
             alert_type=AlertType.PACING_CLIFF,
         )
-        await _make_alert(db_session, tenant_id, target.id)  # active
+        await _make_alert(db_session, target.id)  # active
 
         got_resolved = await svc.get_alerts_by_status(AlertStatus.RESOLVED)
         assert [a.id for a in got_resolved] == [resolved.id]
@@ -708,13 +657,11 @@ class TestAlertQueries:
         )
         assert none_match == []
 
-    async def test_tenant_isolation_on_queries(self, svc, db_session, test_tenant):
-        tenant_id = test_tenant["id"]
-        target = await _make_target(db_session, tenant_id)
-        await _make_alert(db_session, tenant_id, target.id)
-
-        other = PacingAlertService(db_session, tenant_id + 999)
-        assert await other.get_active_alerts() == []
+    # STRAT-SC-001: cross-tenant isolation no longer exists (single org) —
+    # ``test_tenant_isolation_on_queries`` removed. It constructed a second
+    # ``PacingAlertService(db_session, tenant_id + 999)`` to assert the
+    # "other tenant" saw no alerts; the service no longer takes a tenant_id
+    # at all, so there is nothing left to scope.
 
 
 # =============================================================================
@@ -723,8 +670,8 @@ class TestAlertQueries:
 
 
 class TestAlertLifecycle:
-    async def test_acknowledge(self, svc, db_session, test_tenant, test_user):
-        alert = await _make_alert(db_session, test_tenant["id"])
+    async def test_acknowledge(self, svc, db_session, test_user):
+        alert = await _make_alert(db_session)
         got = await svc.acknowledge_alert(alert.id, user_id=test_user["id"])
         assert got is not None
         assert got.status == AlertStatus.ACKNOWLEDGED
@@ -734,8 +681,8 @@ class TestAlertLifecycle:
     async def test_acknowledge_unknown_returns_none(self, svc):
         assert await svc.acknowledge_alert(uuid4()) is None
 
-    async def test_resolve_with_notes(self, svc, db_session, test_tenant, test_user):
-        alert = await _make_alert(db_session, test_tenant["id"])
+    async def test_resolve_with_notes(self, svc, db_session, test_user):
+        alert = await _make_alert(db_session)
         got = await svc.resolve_alert(
             alert.id, user_id=test_user["id"], resolution_notes="budget fixed"
         )
@@ -747,8 +694,8 @@ class TestAlertLifecycle:
     async def test_resolve_unknown_returns_none(self, svc):
         assert await svc.resolve_alert(uuid4()) is None
 
-    async def test_dismiss_with_reason(self, svc, db_session, test_tenant, test_user):
-        alert = await _make_alert(db_session, test_tenant["id"])
+    async def test_dismiss_with_reason(self, svc, db_session, test_user):
+        alert = await _make_alert(db_session)
         got = await svc.dismiss_alert(
             alert.id, user_id=test_user["id"], reason="false positive"
         )
@@ -756,22 +703,19 @@ class TestAlertLifecycle:
         assert got.resolution_notes == "Dismissed: false positive"
         assert got.resolved_at is not None
 
-    async def test_dismiss_without_reason(self, svc, db_session, test_tenant):
-        alert = await _make_alert(db_session, test_tenant["id"])
+    async def test_dismiss_without_reason(self, svc, db_session):
+        alert = await _make_alert(db_session)
         got = await svc.dismiss_alert(alert.id)
         assert got.resolution_notes == "Dismissed"
 
     async def test_dismiss_unknown_returns_none(self, svc):
         assert await svc.dismiss_alert(uuid4()) is None
 
-    async def test_lifecycle_respects_tenant(self, svc, db_session, test_tenant):
-        alert = await _make_alert(db_session, test_tenant["id"])
-        other = PacingAlertService(db_session, test_tenant["id"] + 999)
-        assert await other.acknowledge_alert(alert.id) is None
-        assert await other.resolve_alert(alert.id) is None
-        assert await other.dismiss_alert(alert.id) is None
-        row = await db_session.get(PacingAlert, alert.id)
-        assert row.status == AlertStatus.ACTIVE
+    # STRAT-SC-001: cross-tenant isolation no longer exists (single org) —
+    # ``test_lifecycle_respects_tenant`` removed. It constructed a second
+    # ``PacingAlertService(db_session, tenant_id + 999)`` and asserted the
+    # "other tenant" service instance could not acknowledge/resolve/dismiss
+    # the alert; the service no longer takes a tenant_id at all.
 
 
 # =============================================================================
@@ -789,14 +733,12 @@ class TestAlertSummary:
         assert summary["period"] == {"start": "2025-01-01", "end": "2025-01-31"}
         assert all(v == 0 for v in summary["by_status"].values())
 
-    async def test_counts_and_resolution_time(self, svc, db_session, test_tenant):
-        tenant_id = test_tenant["id"]
+    async def test_counts_and_resolution_time(self, svc, db_session):
         now = datetime.now(timezone.utc)
 
-        await _make_alert(db_session, tenant_id, severity=AlertSeverity.INFO)
+        await _make_alert(db_session, severity=AlertSeverity.INFO)
         await _make_alert(
             db_session,
-            tenant_id,
             severity=AlertSeverity.CRITICAL,
             alert_type=AlertType.PACING_CLIFF,
             status=AlertStatus.ACKNOWLEDGED,
@@ -804,14 +746,12 @@ class TestAlertSummary:
         # Two resolved alerts: 4h and 6h to resolve -> avg 5.0h
         await _make_alert(
             db_session,
-            tenant_id,
             status=AlertStatus.RESOLVED,
             created_at=now - timedelta(hours=4),
             resolved_at=now,
         )
         await _make_alert(
             db_session,
-            tenant_id,
             status=AlertStatus.RESOLVED,
             alert_type=AlertType.OVERPACING_SPEND,
             created_at=now - timedelta(hours=6),
@@ -837,8 +777,8 @@ class TestAlertSummary:
         assert summary["resolution"]["total_resolved"] == 2
         assert summary["resolution"]["avg_hours"] == pytest.approx(5.0, abs=0.1)
 
-    async def test_default_dates_cover_last_30_days(self, svc, db_session, test_tenant):
-        await _make_alert(db_session, test_tenant["id"])
+    async def test_default_dates_cover_last_30_days(self, svc, db_session):
+        await _make_alert(db_session)
         summary = await svc.get_alert_summary()
         assert summary["total_alerts"] == 1
         assert summary["period"]["end"] == date.today().isoformat()
@@ -1107,11 +1047,10 @@ class TestWhatsAppNotification:
 # =============================================================================
 
 
-async def _make_slack_integration(db_session, tenant_id: int, **overrides):
+async def _make_slack_integration(db_session, **overrides):
     from app.models.settings import SlackIntegration
 
     fields = dict(
-        tenant_id=tenant_id,
         webhook_url="https://hooks.slack.com/services/T/B/secret",
         is_active=True,
     )
@@ -1123,29 +1062,20 @@ async def _make_slack_integration(db_session, tenant_id: int, **overrides):
 
 
 class TestNotifyAlert:
-    async def test_target_not_found_returns_empty(
-        self, notifier, db_session, test_tenant
-    ):
-        alert = await _make_alert(db_session, test_tenant["id"], target_id=None)
+    async def test_target_not_found_returns_empty(self, notifier, db_session):
+        alert = await _make_alert(db_session, target_id=None)
         assert await notifier.notify_alert(alert) == {}
 
-    async def test_foreign_tenant_target_is_not_resolved(
-        self, notifier, db_session, test_tenant
-    ):
-        # Regression: notify_alert filters the Target lookup by the alert's
-        # tenant_id, so a target owned by another tenant is never resolved
-        # (previously it was looked up by id alone, crossing tenants).
-        target = await _make_target(db_session, test_tenant["id"], notify_slack=True)
-        foreign_alert = _detached_alert(
-            tenant_id=test_tenant["id"] + 999, target_id=target.id
-        )
-        assert await notifier.notify_alert(foreign_alert) == {}
+    # STRAT-SC-001: cross-tenant isolation no longer exists (single org) —
+    # ``test_foreign_tenant_target_is_not_resolved`` removed. It asserted
+    # that ``notify_alert`` filtered the Target lookup by the alert's
+    # tenant_id so a target owned by "another tenant" wasn't resolved;
+    # neither ``Target`` nor ``PacingAlert`` carry a tenant_id anymore and
+    # the lookup is unscoped globally by design.
 
-    async def test_all_channels_dispatched(self, notifier, db_session, test_tenant):
-        tenant_id = test_tenant["id"]
+    async def test_all_channels_dispatched(self, notifier, db_session):
         target = await _make_target(
             db_session,
-            tenant_id,
             notify_slack=True,
             notify_email=True,
             notify_whatsapp=True,
@@ -1156,8 +1086,8 @@ class TestNotifyAlert:
                 "not-an-email-or-phone",
             ],
         )
-        await _make_slack_integration(db_session, tenant_id)
-        alert = await _make_alert(db_session, tenant_id, target.id)
+        await _make_slack_integration(db_session)
+        alert = await _make_alert(db_session, target.id)
 
         slack_mock = AsyncMock(return_value=True)
         email_mock = AsyncMock(return_value=True)
@@ -1193,31 +1123,26 @@ class TestNotifyAlert:
         }
 
     async def test_slack_enabled_without_integration_is_skipped(
-        self, notifier, db_session, test_tenant
+        self, notifier, db_session
     ):
-        tenant_id = test_tenant["id"]
-        target = await _make_target(db_session, tenant_id, notify_slack=True)
-        alert = await _make_alert(db_session, tenant_id, target.id)
+        target = await _make_target(db_session, notify_slack=True)
+        alert = await _make_alert(db_session, target.id)
         results = await notifier.notify_alert(alert)
         assert results == {}
 
-    async def test_inactive_slack_integration_is_skipped(
-        self, notifier, db_session, test_tenant
-    ):
-        tenant_id = test_tenant["id"]
-        target = await _make_target(db_session, tenant_id, notify_slack=True)
-        await _make_slack_integration(db_session, tenant_id, is_active=False)
-        alert = await _make_alert(db_session, tenant_id, target.id)
+    async def test_inactive_slack_integration_is_skipped(self, notifier, db_session):
+        target = await _make_target(db_session, notify_slack=True)
+        await _make_slack_integration(db_session, is_active=False)
+        alert = await _make_alert(db_session, target.id)
         results = await notifier.notify_alert(alert)
         assert "slack" not in results
 
     async def test_slack_dispatch_exception_recorded_as_false(
-        self, notifier, db_session, test_tenant
+        self, notifier, db_session
     ):
-        tenant_id = test_tenant["id"]
-        target = await _make_target(db_session, tenant_id, notify_slack=True)
-        await _make_slack_integration(db_session, tenant_id)
-        alert = await _make_alert(db_session, tenant_id, target.id)
+        target = await _make_target(db_session, notify_slack=True)
+        await _make_slack_integration(db_session)
+        alert = await _make_alert(db_session, target.id)
 
         with patch.object(
             AlertNotificationService,
@@ -1228,30 +1153,26 @@ class TestNotifyAlert:
         assert results == {"slack": False}
 
     async def test_email_enabled_without_recipients_is_skipped(
-        self, notifier, db_session, test_tenant
+        self, notifier, db_session
     ):
-        tenant_id = test_tenant["id"]
         target = await _make_target(
             db_session,
-            tenant_id,
             notify_email=True,
             notification_recipients=["+15551234567"],  # phones only, no emails
         )
-        alert = await _make_alert(db_session, tenant_id, target.id)
+        alert = await _make_alert(db_session, target.id)
         results = await notifier.notify_alert(alert)
         assert results == {}
 
     async def test_email_dispatch_exception_recorded_as_false(
-        self, notifier, db_session, test_tenant
+        self, notifier, db_session
     ):
-        tenant_id = test_tenant["id"]
         target = await _make_target(
             db_session,
-            tenant_id,
             notify_email=True,
             notification_recipients=["ops@example.com"],
         )
-        alert = await _make_alert(db_session, tenant_id, target.id)
+        alert = await _make_alert(db_session, target.id)
         with patch.object(
             AlertNotificationService,
             "send_email_notification",
@@ -1261,30 +1182,26 @@ class TestNotifyAlert:
         assert results == {"email": False}
 
     async def test_whatsapp_enabled_without_phones_is_skipped(
-        self, notifier, db_session, test_tenant
+        self, notifier, db_session
     ):
-        tenant_id = test_tenant["id"]
         target = await _make_target(
             db_session,
-            tenant_id,
             notify_whatsapp=True,
             notification_recipients=["ops@example.com"],  # emails only
         )
-        alert = await _make_alert(db_session, tenant_id, target.id)
+        alert = await _make_alert(db_session, target.id)
         results = await notifier.notify_alert(alert)
         assert results == {}
 
     async def test_whatsapp_dispatch_exception_recorded_as_false(
-        self, notifier, db_session, test_tenant
+        self, notifier, db_session
     ):
-        tenant_id = test_tenant["id"]
         target = await _make_target(
             db_session,
-            tenant_id,
             notify_whatsapp=True,
             notification_recipients=["+15551234567"],
         )
-        alert = await _make_alert(db_session, tenant_id, target.id)
+        alert = await _make_alert(db_session, target.id)
         with patch.object(
             AlertNotificationService,
             "send_whatsapp_notification",
@@ -1293,17 +1210,13 @@ class TestNotifyAlert:
             results = await notifier.notify_alert(alert)
         assert results == {"whatsapp": False}
 
-    async def test_null_recipients_defaults_to_empty(
-        self, notifier, db_session, test_tenant
-    ):
-        tenant_id = test_tenant["id"]
+    async def test_null_recipients_defaults_to_empty(self, notifier, db_session):
         target = await _make_target(
             db_session,
-            tenant_id,
             notify_email=True,
             notify_whatsapp=True,
             notification_recipients=None,
         )
-        alert = await _make_alert(db_session, tenant_id, target.id)
+        alert = await _make_alert(db_session, target.id)
         results = await notifier.notify_alert(alert)
         assert results == {}

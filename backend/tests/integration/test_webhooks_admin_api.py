@@ -2,8 +2,7 @@
 # Stratum AI - Webhook Subscription (admin) Endpoint Integration Tests
 # =============================================================================
 """Integration tests for the super-admin webhook-subscription management API
-under ``/api/v1/webhooks``. Every route is gated by ``require_owner``;
-the tenant-scoped reads also need an ``X-Tenant-ID``.
+under ``/api/v1/webhooks``. Every route is gated by ``require_owner``.
 """
 
 import pytest
@@ -26,10 +25,7 @@ class TestGate:
 
 
 class TestOwnerReads:
-    async def test_list_webhooks_empty(
-        self, client: AsyncClient, owner_headers, test_tenant
-    ):
-        headers = {**owner_headers, "X-Tenant-ID": str(test_tenant["id"])}
-        resp = await client.get(_BASE, headers=headers)
+    async def test_list_webhooks_empty(self, client: AsyncClient, owner_headers):
+        resp = await client.get(_BASE, headers=owner_headers)
         assert resp.status_code == 200, resp.text
         assert resp.json()["data"] == []

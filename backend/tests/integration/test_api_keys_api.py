@@ -3,10 +3,8 @@
 # =============================================================================
 """Integration tests for the ``/api-keys`` CRUD endpoints.
 
-All routes are owner-gated and read ``request.state.user_id`` /
-``tenant_id``; the owner JWT carries the role + subject and the
-TenantMiddleware accepts an ``X-Tenant-ID`` header for a owner caller,
-so requests run against the owner's own tenant.
+All routes are owner-gated and read ``request.state.user_id``; the owner
+JWT carries the role + subject (single-organization, no tenant dimension).
 """
 
 import pytest
@@ -24,12 +22,10 @@ def _headers(owner_user) -> dict:
         additional_claims={
             "email": owner_user["email"],
             "role": owner_user["role"],
-            "tenant_id": owner_user["tenant_id"],
         },
     )
     return {
         "Authorization": f"Bearer {token}",
-        "X-Tenant-ID": str(owner_user["tenant_id"]),
     }
 
 

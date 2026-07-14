@@ -29,12 +29,11 @@ class TestEmqScoreEndpoint:
     async def test_get_emq_score_success(
         self,
         authenticated_client: AsyncClient,
-        test_tenant: dict,
         test_signal_health: dict,
     ):
         """Test successful EMQ score retrieval."""
         response = await authenticated_client.get(
-            f"/api/v1/tenants/{test_tenant['id']}/emq/score"
+            f"/api/v1/emq/score"
         )
 
         assert response.status_code == 200
@@ -59,13 +58,13 @@ class TestEmqScoreEndpoint:
 
     @pytest.mark.asyncio
     async def test_get_emq_score_with_date(
-        self, authenticated_client: AsyncClient, test_tenant: dict
+        self, authenticated_client: AsyncClient
     ):
         """Test EMQ score retrieval with specific date."""
         target_date = (date.today() - timedelta(days=1)).isoformat()
 
         response = await authenticated_client.get(
-            f"/api/v1/tenants/{test_tenant['id']}/emq/score",
+            f"/api/v1/emq/score",
             params={"date": target_date},
         )
 
@@ -75,11 +74,11 @@ class TestEmqScoreEndpoint:
 
     @pytest.mark.asyncio
     async def test_get_emq_score_invalid_date(
-        self, authenticated_client: AsyncClient, test_tenant: dict
+        self, authenticated_client: AsyncClient
     ):
         """Test EMQ score with invalid date format."""
         response = await authenticated_client.get(
-            f"/api/v1/tenants/{test_tenant['id']}/emq/score",
+            f"/api/v1/emq/score",
             params={"date": "invalid-date"},
         )
 
@@ -87,10 +86,10 @@ class TestEmqScoreEndpoint:
 
     @pytest.mark.asyncio
     async def test_get_emq_score_unauthorized(
-        self, client: AsyncClient, test_tenant: dict
+        self, client: AsyncClient
     ):
         """Test EMQ score without authentication."""
-        response = await client.get(f"/api/v1/tenants/{test_tenant['id']}/emq/score")
+        response = await client.get(f"/api/v1/emq/score")
 
         # Should return 401 or 403 depending on auth implementation
         assert response.status_code in [401, 403]
@@ -101,11 +100,11 @@ class TestConfidenceEndpoint:
 
     @pytest.mark.asyncio
     async def test_get_confidence_success(
-        self, authenticated_client: AsyncClient, test_tenant: dict
+        self, authenticated_client: AsyncClient
     ):
         """Test successful confidence band retrieval."""
         response = await authenticated_client.get(
-            f"/api/v1/tenants/{test_tenant['id']}/emq/confidence"
+            f"/api/v1/emq/confidence"
         )
 
         assert response.status_code == 200
@@ -127,11 +126,11 @@ class TestPlaybookEndpoint:
 
     @pytest.mark.asyncio
     async def test_get_playbook_success(
-        self, authenticated_client: AsyncClient, test_tenant: dict
+        self, authenticated_client: AsyncClient
     ):
         """Test successful playbook retrieval."""
         response = await authenticated_client.get(
-            f"/api/v1/tenants/{test_tenant['id']}/emq/playbook"
+            f"/api/v1/emq/playbook"
         )
 
         assert response.status_code == 200
@@ -149,10 +148,10 @@ class TestPlaybookEndpoint:
 
     @pytest.mark.asyncio
     async def test_update_playbook_item(
-        self, authenticated_client: AsyncClient, test_tenant: dict
+        self, authenticated_client: AsyncClient
     ):
         """Updating a playbook item persists its status/owner across requests."""
-        base = f"/api/v1/tenants/{test_tenant['id']}/emq/playbook"
+        base = f"/api/v1/emq/playbook"
 
         # The playbook is generated from EMQ driver scores; with no signal data
         # the tenant's score is below the perfect threshold, so at least the
@@ -182,11 +181,11 @@ class TestPlaybookEndpoint:
 
     @pytest.mark.asyncio
     async def test_update_unknown_playbook_item_returns_404(
-        self, authenticated_client: AsyncClient, test_tenant: dict
+        self, authenticated_client: AsyncClient
     ):
         """Updating a non-existent playbook item key returns 404."""
         response = await authenticated_client.patch(
-            f"/api/v1/tenants/{test_tenant['id']}/emq/playbook/not_a_real_key",
+            f"/api/v1/emq/playbook/not_a_real_key",
             json={"status": "completed"},
         )
         assert response.status_code == 404
@@ -197,14 +196,14 @@ class TestIncidentsEndpoint:
 
     @pytest.mark.asyncio
     async def test_get_incidents_success(
-        self, authenticated_client: AsyncClient, test_tenant: dict
+        self, authenticated_client: AsyncClient
     ):
         """Test successful incidents retrieval."""
         start_date = (date.today() - timedelta(days=7)).isoformat()
         end_date = date.today().isoformat()
 
         response = await authenticated_client.get(
-            f"/api/v1/tenants/{test_tenant['id']}/emq/incidents",
+            f"/api/v1/emq/incidents",
             params={"start_date": start_date, "end_date": end_date},
         )
 
@@ -216,11 +215,11 @@ class TestIncidentsEndpoint:
 
     @pytest.mark.asyncio
     async def test_get_incidents_missing_dates(
-        self, authenticated_client: AsyncClient, test_tenant: dict
+        self, authenticated_client: AsyncClient
     ):
         """Test incidents without required date parameters."""
         response = await authenticated_client.get(
-            f"/api/v1/tenants/{test_tenant['id']}/emq/incidents"
+            f"/api/v1/emq/incidents"
         )
 
         assert response.status_code == 422  # Validation error
@@ -231,14 +230,14 @@ class TestImpactEndpoint:
 
     @pytest.mark.asyncio
     async def test_get_impact_success(
-        self, authenticated_client: AsyncClient, test_tenant: dict
+        self, authenticated_client: AsyncClient
     ):
         """Test successful ROAS impact retrieval."""
         start_date = (date.today() - timedelta(days=30)).isoformat()
         end_date = date.today().isoformat()
 
         response = await authenticated_client.get(
-            f"/api/v1/tenants/{test_tenant['id']}/emq/impact",
+            f"/api/v1/emq/impact",
             params={"start_date": start_date, "end_date": end_date},
         )
 
@@ -256,11 +255,11 @@ class TestVolatilityEndpoint:
 
     @pytest.mark.asyncio
     async def test_get_volatility_success(
-        self, authenticated_client: AsyncClient, test_tenant: dict
+        self, authenticated_client: AsyncClient
     ):
         """Test successful volatility retrieval."""
         response = await authenticated_client.get(
-            f"/api/v1/tenants/{test_tenant['id']}/emq/volatility"
+            f"/api/v1/emq/volatility"
         )
 
         assert response.status_code == 200
@@ -279,11 +278,11 @@ class TestAutopilotStateEndpoint:
 
     @pytest.mark.asyncio
     async def test_get_autopilot_state_success(
-        self, authenticated_client: AsyncClient, test_tenant: dict
+        self, authenticated_client: AsyncClient
     ):
         """Test successful autopilot state retrieval."""
         response = await authenticated_client.get(
-            f"/api/v1/tenants/{test_tenant['id']}/emq/autopilot-state"
+            f"/api/v1/emq/autopilot-state"
         )
 
         assert response.status_code == 200
@@ -298,11 +297,11 @@ class TestAutopilotStateEndpoint:
 
     @pytest.mark.asyncio
     async def test_update_autopilot_mode(
-        self, authenticated_client: AsyncClient, test_tenant: dict
+        self, authenticated_client: AsyncClient
     ):
         """Test autopilot mode update."""
         response = await authenticated_client.put(
-            f"/api/v1/tenants/{test_tenant['id']}/emq/autopilot-mode",
+            f"/api/v1/emq/autopilot-mode",
             json={
                 "mode": "limited",
                 "reason": "Testing manual override",

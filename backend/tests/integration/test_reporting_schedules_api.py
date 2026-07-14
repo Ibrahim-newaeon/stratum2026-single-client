@@ -42,7 +42,7 @@ def _schedule(template_id, name="Weekly exec", frequency="weekly", **extra):
 
 async def _create(client: AsyncClient, **extra) -> dict:
     name = extra.get("name", "Weekly exec")
-    # Template names are unique per tenant, so derive a distinct one per call.
+    # Template names are globally unique, so derive a distinct one per call.
     template_id = extra.pop("template_id", None) or await _make_template(
         client, name=f"Tmpl for {name}"
     )

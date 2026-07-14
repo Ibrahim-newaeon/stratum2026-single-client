@@ -32,6 +32,13 @@ NOTE: ``ReportGenerator.parse_date_range`` already has a dedicated unit
 suite (tests/unit/test_report_date_range.py); only a compact smoke test is
 kept here so this module's isolated coverage run still executes the branch
 lines.
+
+STRAT-SC-001: ``ReportDataCollector``/``ReportGenerator`` and every model
+seeded here (``ReportTemplate``, ``ReportExecution``, ``Target``,
+``PacingAlert``, ``CRMConnection``, ``CRMDeal``, ``DailyPipelineMetrics``,
+``DailyProfitMetrics``) lost their ``tenant_id`` column/constructor arg in
+the single-client conversion — there is now exactly one global
+organization, so per-tenant scoping and isolation no longer exist.
 """
 
 import json
@@ -99,9 +106,8 @@ def _mock_db(*result_batches):
     return db
 
 
-async def _make_template(db_session, tenant_id, report_type, name, config=None):
+async def _make_template(db_session, report_type, name, config=None):
     template = ReportTemplate(
-        tenant_id=tenant_id,
         name=name,
         description=f"{name} description",
         report_type=report_type,
@@ -112,9 +118,8 @@ async def _make_template(db_session, tenant_id, report_type, name, config=None):
     return template
 
 
-async def _seed_crm_connection(db_session, tenant_id) -> CRMConnection:
+async def _seed_crm_connection(db_session) -> CRMConnection:
     conn = CRMConnection(
-        tenant_id=tenant_id,
         provider=CRMProvider.HUBSPOT,
         status=CRMConnectionStatus.CONNECTED,
     )
@@ -129,13 +134,12 @@ def _won_at(day: date) -> datetime:
     )
 
 
-async def _seed_deals(db_session, tenant_id) -> None:
+async def _seed_deals(db_session) -> None:
     """4 in-period won deals, 1 lost deal, 1 out-of-period won deal."""
-    conn = await _seed_crm_connection(db_session, tenant_id)
+    conn = await _seed_crm_connection(db_session)
     deals = [
         # counted
         CRMDeal(
-            tenant_id=tenant_id,
             connection_id=conn.id,
             crm_deal_id="deal-1",
             amount=1000.0,
@@ -145,7 +149,6 @@ async def _seed_deals(db_session, tenant_id) -> None:
             attributed_campaign_id="c1",
         ),
         CRMDeal(
-            tenant_id=tenant_id,
             connection_id=conn.id,
             crm_deal_id="deal-2",
             amount=500.0,
@@ -155,7 +158,6 @@ async def _seed_deals(db_session, tenant_id) -> None:
             attributed_campaign_id=None,  # -> "unattributed" campaign bucket
         ),
         CRMDeal(
-            tenant_id=tenant_id,
             connection_id=conn.id,
             crm_deal_id="deal-3",
             amount=2000.0,
@@ -165,7 +167,6 @@ async def _seed_deals(db_session, tenant_id) -> None:
             attributed_campaign_id="c2",
         ),
         CRMDeal(  # repeats campaign c1 -> exercises the existing-bucket branch
-            tenant_id=tenant_id,
             connection_id=conn.id,
             crm_deal_id="deal-6",
             amount=300.0,
@@ -176,7 +177,6 @@ async def _seed_deals(db_session, tenant_id) -> None:
         ),
         # excluded: not won
         CRMDeal(
-            tenant_id=tenant_id,
             connection_id=conn.id,
             crm_deal_id="deal-4",
             amount=9999.0,
@@ -184,7 +184,6 @@ async def _seed_deals(db_session, tenant_id) -> None:
         ),
         # excluded: won before period
         CRMDeal(
-            tenant_id=tenant_id,
             connection_id=conn.id,
             crm_deal_id="deal-5",
             amount=8888.0,
@@ -196,10 +195,9 @@ async def _seed_deals(db_session, tenant_id) -> None:
     await db_session.flush()
 
 
-async def _seed_pipeline_metrics(db_session, tenant_id) -> None:
+async def _seed_pipeline_metrics(db_session) -> None:
     rows = [
         DailyPipelineMetrics(
-            tenant_id=tenant_id,
             date=START + timedelta(days=1),
             leads_created=10,
             mqls_created=5,
@@ -209,7 +207,6 @@ async def _seed_pipeline_metrics(db_session, tenant_id) -> None:
             won_revenue_cents=100_000,
         ),
         DailyPipelineMetrics(
-            tenant_id=tenant_id,
             date=START + timedelta(days=2),
             leads_created=10,
             mqls_created=3,
@@ -220,7 +217,6 @@ async def _seed_pipeline_metrics(db_session, tenant_id) -> None:
         ),
         # excluded: outside the range
         DailyPipelineMetrics(
-            tenant_id=tenant_id,
             date=START - timedelta(days=10),
             leads_created=77,
             mqls_created=77,
@@ -249,7 +245,6 @@ class _FakeCampaign(_FakeBase):
     __tablename__ = "_fake_campaigns_reportgen_deep"
 
     id = sa.Column(sa.Integer, primary_key=True)
-    tenant_id = sa.Column(sa.Integer)
     is_deleted = sa.Column(sa.Boolean)
     platform = sa.Column(sa.String(50))
     total_spend_cents = sa.Column(sa.Integer)
@@ -286,8 +281,8 @@ def _fake_campaign_row(
 
 
 class TestCollectAttributionSummary:
-    async def test_empty_period_returns_zero_summary(self, db_session, test_tenant):
-        collector = ReportDataCollector(db_session, test_tenant["id"])
+    async def test_empty_period_returns_zero_summary(self, db_session):
+        collector = ReportDataCollector(db_session)
         data = await collector.collect_attribution_summary(START, END, {})
 
         assert data["summary"] == {
@@ -302,11 +297,9 @@ class TestCollectAttributionSummary:
             "end_date": END.isoformat(),
         }
 
-    async def test_groups_won_deals_by_platform_and_campaign(
-        self, db_session, test_tenant
-    ):
-        await _seed_deals(db_session, test_tenant["id"])
-        collector = ReportDataCollector(db_session, test_tenant["id"])
+    async def test_groups_won_deals_by_platform_and_campaign(self, db_session):
+        await _seed_deals(db_session)
+        collector = ReportDataCollector(db_session)
 
         data = await collector.collect_attribution_summary(START, END, {})
 
@@ -329,17 +322,17 @@ class TestCollectAttributionSummary:
 
 
 class TestCollectPipelineMetrics:
-    async def test_empty_period_skips_funnel_rates(self, db_session, test_tenant):
-        collector = ReportDataCollector(db_session, test_tenant["id"])
+    async def test_empty_period_skips_funnel_rates(self, db_session):
+        collector = ReportDataCollector(db_session)
         data = await collector.collect_pipeline_metrics(START, END, {})
 
         assert data["summary"]["total_leads"] == 0
         assert data["daily"] == []
         assert data["funnel"] == {"lead_to_mql": 0, "mql_to_sql": 0, "sql_to_won": 0}
 
-    async def test_totals_daily_rows_and_funnel(self, db_session, test_tenant):
-        await _seed_pipeline_metrics(db_session, test_tenant["id"])
-        collector = ReportDataCollector(db_session, test_tenant["id"])
+    async def test_totals_daily_rows_and_funnel(self, db_session):
+        await _seed_pipeline_metrics(db_session)
+        collector = ReportDataCollector(db_session)
 
         data = await collector.collect_pipeline_metrics(START, END, {})
 
@@ -367,13 +360,11 @@ class TestCollectPipelineMetrics:
 
 
 class TestCollectPacingStatus:
-    async def test_alerts_without_targets(self, db_session, test_tenant):
+    async def test_alerts_without_targets(self, db_session):
         """With zero targets the collector works; alerts are serialized."""
-        tenant_id = test_tenant["id"]
         db_session.add_all(
             [
                 PacingAlert(
-                    tenant_id=tenant_id,
                     alert_type=AlertType.OVERPACING_SPEND,
                     severity=AlertSeverity.CRITICAL,
                     title="Overpacing",
@@ -382,7 +373,6 @@ class TestCollectPacingStatus:
                 ),
                 # excluded by the created_at >= start filter
                 PacingAlert(
-                    tenant_id=tenant_id,
                     alert_type=AlertType.UNDERPACING_SPEND,
                     severity=AlertSeverity.INFO,
                     title="Old alert",
@@ -394,7 +384,7 @@ class TestCollectPacingStatus:
         )
         await db_session.flush()
 
-        collector = ReportDataCollector(db_session, tenant_id)
+        collector = ReportDataCollector(db_session)
         data = await collector.collect_pacing_status(START, END, {})
 
         assert data["summary"]["total_targets"] == 0
@@ -406,14 +396,11 @@ class TestCollectPacingStatus:
         assert alert["message"] == "Spend is 30% over plan"
         assert alert["created_at"]  # iso string
 
-    async def test_active_target_serialized_from_real_columns(
-        self, db_session, test_tenant
-    ):
+    async def test_active_target_serialized_from_real_columns(self, db_session):
         """An active Target is reported via its real ``metric_type`` column;
         the phantom ``current_value`` field is not emitted."""
         db_session.add(
             Target(
-                tenant_id=test_tenant["id"],
                 name="July spend",
                 period_type=TargetPeriod.MONTHLY,
                 period_start=START,
@@ -425,7 +412,7 @@ class TestCollectPacingStatus:
         )
         await db_session.flush()
 
-        collector = ReportDataCollector(db_session, test_tenant["id"])
+        collector = ReportDataCollector(db_session)
         data = await collector.collect_pacing_status(START, END, {})
 
         assert data["summary"]["total_targets"] == 1
@@ -436,7 +423,7 @@ class TestCollectPacingStatus:
         assert "current_value" not in target
         assert "progress_pct" not in target
 
-    async def test_target_loop_logic_with_service_boundary_mock(self, test_tenant):
+    async def test_target_loop_logic_with_service_boundary_mock(self):
         """Covers the target/alert serialization loop against mocked rows."""
         targets = [
             types.SimpleNamespace(
@@ -466,7 +453,7 @@ class TestCollectPacingStatus:
                 created_at=datetime(2026, 7, 1, 9, 0, tzinfo=timezone.utc),
             ),
         ]
-        collector = ReportDataCollector(_mock_db(targets, alerts), test_tenant["id"])
+        collector = ReportDataCollector(_mock_db(targets, alerts))
 
         data = await collector.collect_pacing_status(START, END, {})
 
@@ -491,8 +478,8 @@ class TestCollectPacingStatus:
 
 
 class TestCollectProfitRoas:
-    async def test_empty_period_returns_zero_summary(self, db_session, test_tenant):
-        collector = ReportDataCollector(db_session, test_tenant["id"])
+    async def test_empty_period_returns_zero_summary(self, db_session):
+        collector = ReportDataCollector(db_session)
         data = await collector.collect_profit_roas(START, END, {})
 
         assert data["summary"] == {
@@ -505,15 +492,12 @@ class TestCollectProfitRoas:
         }
         assert data["daily"] == []
 
-    async def test_seeded_row_aggregates_from_real_columns(
-        self, db_session, test_tenant
-    ):
+    async def test_seeded_row_aggregates_from_real_columns(self, db_session):
         """A seeded DailyProfitMetrics row is aggregated via its real
         ``gross_revenue_cents`` / ``total_cogs_cents`` / ``ad_spend_cents`` /
         ``gross_profit_roas`` columns."""
         db_session.add(
             DailyProfitMetrics(
-                tenant_id=test_tenant["id"],
                 date=START + timedelta(days=1),
                 gross_revenue_cents=100_000,
                 total_cogs_cents=40_000,
@@ -523,7 +507,7 @@ class TestCollectProfitRoas:
         )
         await db_session.flush()
 
-        collector = ReportDataCollector(db_session, test_tenant["id"])
+        collector = ReportDataCollector(db_session)
         data = await collector.collect_profit_roas(START, END, {})
 
         s = data["summary"]
@@ -540,7 +524,7 @@ class TestCollectProfitRoas:
         assert day["gross_profit"] == 600.0
         assert day["profit_roas"] is None  # gross_profit_roas not set on the row
 
-    async def test_aggregation_logic_with_service_boundary_mock(self, test_tenant):
+    async def test_aggregation_logic_with_service_boundary_mock(self):
         """Covers the cents accumulation/rounding over mocked rows."""
         rows = [
             types.SimpleNamespace(
@@ -560,7 +544,7 @@ class TestCollectProfitRoas:
                 gross_profit_roas=None,
             ),
         ]
-        collector = ReportDataCollector(_mock_db(rows), test_tenant["id"])
+        collector = ReportDataCollector(_mock_db(rows))
 
         data = await collector.collect_profit_roas(START, END, {})
 
@@ -589,9 +573,9 @@ class TestCollectProfitRoas:
 
 
 class TestCollectCampaignPerformance:
-    async def test_empty_period_returns_zero_summary(self, db_session, test_tenant):
+    async def test_empty_period_returns_zero_summary(self, db_session):
         """With no campaigns the collector returns an empty, zeroed report."""
-        collector = ReportDataCollector(db_session, test_tenant["id"])
+        collector = ReportDataCollector(db_session)
         data = await collector.collect_campaign_performance(START, END, {})
 
         assert data["summary"]["total_campaigns"] == 0
@@ -600,19 +584,15 @@ class TestCollectCampaignPerformance:
         assert data["campaigns"] == []
         assert data["by_platform"] == {}
 
-    async def test_executive_summary_runs_with_empty_data(
-        self, db_session, test_tenant
-    ):
-        collector = ReportDataCollector(db_session, test_tenant["id"])
+    async def test_executive_summary_runs_with_empty_data(self, db_session):
+        collector = ReportDataCollector(db_session)
         data = await collector.collect_executive_summary(START, END, {})
 
         assert data["highlights"]["total_spend"] == 0
         assert data["highlights"]["overall_roas"] == 0
         assert data["highlights"]["deals_won"] == 0
 
-    async def test_aggregation_logic_with_service_boundary_mock(
-        self, test_tenant, monkeypatch
-    ):
+    async def test_aggregation_logic_with_service_boundary_mock(self, monkeypatch):
         """Covers rollups/ROAS math using a schema-compatible fake entity."""
         import app.models as models_pkg
 
@@ -623,7 +603,7 @@ class TestCollectCampaignPerformance:
             _fake_campaign_row("Beta", None, None, 0.0, 50.0, 2),  # unknown + roas 0
             _fake_campaign_row("Gamma", "meta", "paused", 100.0, 100.0, 3),
         ]
-        collector = ReportDataCollector(_mock_db(campaigns), test_tenant["id"])
+        collector = ReportDataCollector(_mock_db(campaigns))
 
         config = {"filters": {"platforms": ["meta", "google"]}}
         data = await collector.collect_campaign_performance(START, END, config)
@@ -649,16 +629,14 @@ class TestCollectCampaignPerformance:
         }
         assert data["by_platform"]["unknown"]["revenue"] == 50.0
 
-    async def test_no_platform_filter_and_zero_spend_overall(
-        self, test_tenant, monkeypatch
-    ):
+    async def test_no_platform_filter_and_zero_spend_overall(self, monkeypatch):
         """No filters config + zero total spend -> overall_roas stays 0."""
         import app.models as models_pkg
 
         monkeypatch.setattr(models_pkg, "Campaign", _FakeCampaign)
 
         campaigns = [_fake_campaign_row("ZeroSpend", "meta", "active", 0.0, 10.0, 1)]
-        collector = ReportDataCollector(_mock_db(campaigns), test_tenant["id"])
+        collector = ReportDataCollector(_mock_db(campaigns))
 
         data = await collector.collect_campaign_performance(START, END, {})
 
@@ -673,8 +651,8 @@ class TestCollectCampaignPerformance:
 
 
 class TestCollectExecutiveSummary:
-    async def test_composes_highlights_from_sub_collectors(self, test_tenant):
-        collector = ReportDataCollector(MagicMock(), test_tenant["id"])
+    async def test_composes_highlights_from_sub_collectors(self):
+        collector = ReportDataCollector(MagicMock())
         campaign_data = {
             "summary": {
                 "total_spend": 100.0,
@@ -710,44 +688,29 @@ class TestCollectExecutiveSummary:
 
 
 class TestGenerateReport:
-    async def test_template_not_found(self, db_session, test_tenant):
-        generator = ReportGenerator(db_session, test_tenant["id"])
+    async def test_template_not_found(self, db_session):
+        generator = ReportGenerator(db_session)
         result = await generator.generate_report(
             template_id=uuid4(), start_date=START, end_date=END
         )
         assert result == {"success": False, "error": "template_not_found"}
 
-    async def test_template_of_other_tenant_not_found(self, db_session, test_tenant):
-        """Tenant scoping: a template that belongs to another tenant is 404."""
-        from app.base_models import Tenant
+    # STRAT-SC-001: cross-tenant isolation no longer exists (single org) —
+    # ``test_template_of_other_tenant_not_found`` removed. It seeded a
+    # ``Tenant`` row (now deleted from the schema entirely) and a template
+    # "belonging" to it, asserting the generator 404'd on it; ``ReportTemplate``
+    # has no tenant_id column anymore and the lookup is unscoped globally.
 
-        other = Tenant(name="Other", slug="other-tenant-rg", plan="starter")
-        db_session.add(other)
-        await db_session.flush()
-        template = await _make_template(
-            db_session, other.id, ReportType.ATTRIBUTION_SUMMARY, "other-tmpl"
-        )
-
-        generator = ReportGenerator(db_session, test_tenant["id"])
-        result = await generator.generate_report(
-            template_id=template.id, start_date=START, end_date=END
-        )
-        assert result == {"success": False, "error": "template_not_found"}
-
-    async def test_json_success_persists_execution(
-        self, db_session, test_tenant, test_user
-    ):
-        tenant_id = test_tenant["id"]
-        await _seed_deals(db_session, tenant_id)
+    async def test_json_success_persists_execution(self, db_session, test_user):
+        await _seed_deals(db_session)
         template = await _make_template(
             db_session,
-            tenant_id,
             ReportType.ATTRIBUTION_SUMMARY,
             "attr-json",
             config={"sections": ["summary"]},
         )
 
-        generator = ReportGenerator(db_session, tenant_id)
+        generator = ReportGenerator(db_session)
         result = await generator.generate_report(
             template_id=template.id,
             start_date=START,
@@ -789,14 +752,13 @@ class TestGenerateReport:
         assert execution.file_size_bytes == result["file_size_bytes"]
         assert execution.completed_at is not None
 
-    async def test_csv_success_daily_table(self, db_session, test_tenant):
-        tenant_id = test_tenant["id"]
-        await _seed_pipeline_metrics(db_session, tenant_id)
+    async def test_csv_success_daily_table(self, db_session):
+        await _seed_pipeline_metrics(db_session)
         template = await _make_template(
-            db_session, tenant_id, ReportType.PIPELINE_METRICS, "pipe-csv"
+            db_session, ReportType.PIPELINE_METRICS, "pipe-csv"
         )
 
-        generator = ReportGenerator(db_session, tenant_id)
+        generator = ReportGenerator(db_session)
         result = await generator.generate_report(
             template_id=template.id,
             start_date=START,
@@ -811,16 +773,13 @@ class TestGenerateReport:
         assert lines[0].split(",")[0] == "date"
         assert len(lines) == 3  # header + 2 daily rows
 
-    async def test_csv_without_tabular_data_writes_empty_file(
-        self, db_session, test_tenant
-    ):
+    async def test_csv_without_tabular_data_writes_empty_file(self, db_session):
         """Attribution data has neither 'campaigns' nor 'daily' keys."""
-        tenant_id = test_tenant["id"]
         template = await _make_template(
-            db_session, tenant_id, ReportType.ATTRIBUTION_SUMMARY, "attr-csv"
+            db_session, ReportType.ATTRIBUTION_SUMMARY, "attr-csv"
         )
 
-        generator = ReportGenerator(db_session, tenant_id)
+        generator = ReportGenerator(db_session)
         result = await generator.generate_report(
             template_id=template.id,
             start_date=START,
@@ -831,14 +790,13 @@ class TestGenerateReport:
         assert result["success"] is True, result
         assert result["file_size_bytes"] == 0
 
-    async def test_csv_campaigns_table_direct(self, db_session, test_tenant):
+    async def test_csv_campaigns_table_direct(self, db_session):
         """Cover the campaigns CSV branch of _generate_csv directly with a
         campaign-shaped payload (no seeded campaigns needed)."""
-        tenant_id = test_tenant["id"]
         template = await _make_template(
-            db_session, tenant_id, ReportType.CAMPAIGN_PERFORMANCE, "camp-csv"
+            db_session, ReportType.CAMPAIGN_PERFORMANCE, "camp-csv"
         )
-        generator = ReportGenerator(db_session, tenant_id)
+        generator = ReportGenerator(db_session)
 
         data = {
             "campaigns": [
@@ -861,29 +819,25 @@ class TestGenerateReport:
         assert "Campaign,Platform,Spend,Revenue,ROAS,Conversions" in content
         assert "Alpha,meta,100.0,300.0,3.0,5" in content
 
-    async def test_csv_empty_daily_list_writes_no_rows(self, db_session, test_tenant):
+    async def test_csv_empty_daily_list_writes_no_rows(self, db_session):
         """'daily' key present but empty -> header loop skipped."""
-        tenant_id = test_tenant["id"]
         template = await _make_template(
-            db_session, tenant_id, ReportType.PROFIT_ROAS, "profit-empty-csv"
+            db_session, ReportType.PROFIT_ROAS, "profit-empty-csv"
         )
-        generator = ReportGenerator(db_session, tenant_id)
+        generator = ReportGenerator(db_session)
 
         _file_path, size = await generator._generate_csv(
             template, {"daily": []}, uuid4()
         )
         assert size == 0
 
-    async def test_pdf_success_with_stub_weasyprint(
-        self, db_session, test_tenant, monkeypatch
-    ):
+    async def test_pdf_success_with_stub_weasyprint(self, db_session, monkeypatch):
         """PDF format path; weasyprint is stubbed because the container's
         native pango libs are missing (see BUG-5 in the pdf test module)."""
         import sys
 
-        tenant_id = test_tenant["id"]
         template = await _make_template(
-            db_session, tenant_id, ReportType.PROFIT_ROAS, "profit-pdf"
+            db_session, ReportType.PROFIT_ROAS, "profit-pdf"
         )
 
         fake = types.ModuleType("weasyprint")
@@ -899,7 +853,7 @@ class TestGenerateReport:
         fake.HTML = _HTML
         monkeypatch.setitem(sys.modules, "weasyprint", fake)
 
-        generator = ReportGenerator(db_session, tenant_id)
+        generator = ReportGenerator(db_session)
         result = await generator.generate_report(
             template_id=template.id,
             start_date=START,
@@ -912,13 +866,12 @@ class TestGenerateReport:
         with open(result["file_path"], "rb") as f:
             assert f.read().startswith(b"%PDF")
 
-    async def test_unhandled_format_falls_back_to_json(self, db_session, test_tenant):
-        tenant_id = test_tenant["id"]
+    async def test_unhandled_format_falls_back_to_json(self, db_session):
         template = await _make_template(
-            db_session, tenant_id, ReportType.PIPELINE_METRICS, "pipe-excel"
+            db_session, ReportType.PIPELINE_METRICS, "pipe-excel"
         )
 
-        generator = ReportGenerator(db_session, tenant_id)
+        generator = ReportGenerator(db_session)
         result = await generator.generate_report(
             template_id=template.id,
             start_date=START,
@@ -929,15 +882,10 @@ class TestGenerateReport:
         assert result["success"] is True, result
         assert result["file_path"].endswith(".json")
 
-    async def test_custom_report_type_is_unsupported_payload(
-        self, db_session, test_tenant
-    ):
-        tenant_id = test_tenant["id"]
-        template = await _make_template(
-            db_session, tenant_id, ReportType.CUSTOM, "custom-json"
-        )
+    async def test_custom_report_type_is_unsupported_payload(self, db_session):
+        template = await _make_template(db_session, ReportType.CUSTOM, "custom-json")
 
-        generator = ReportGenerator(db_session, tenant_id)
+        generator = ReportGenerator(db_session)
         result = await generator.generate_report(
             template_id=template.id,
             start_date=START,
@@ -950,14 +898,13 @@ class TestGenerateReport:
             assert json.load(f) == {"error": "unsupported_report_type"}
 
     async def test_collector_error_marks_execution_failed(
-        self, db_session, test_tenant, monkeypatch
+        self, db_session, monkeypatch
     ):
         """BUG-4 durability: an exception outside the old hard-coded tuple
         (here AttributeError) must still move the execution to a committed
         FAILED state rather than leaving it stuck in RUNNING."""
-        tenant_id = test_tenant["id"]
         template = await _make_template(
-            db_session, tenant_id, ReportType.PIPELINE_METRICS, "pipe-fail"
+            db_session, ReportType.PIPELINE_METRICS, "pipe-fail"
         )
 
         async def boom(*args, **kwargs):
@@ -967,7 +914,7 @@ class TestGenerateReport:
             ReportDataCollector, "collect_pipeline_metrics", boom, raising=True
         )
 
-        generator = ReportGenerator(db_session, tenant_id)
+        generator = ReportGenerator(db_session)
         result = await generator.generate_report(
             template_id=template.id, start_date=START, end_date=END
         )
@@ -993,8 +940,8 @@ class TestGenerateReport:
 
 
 class TestCollectDataDispatch:
-    async def test_routes_each_report_type_to_its_collector(self, test_tenant):
-        generator = ReportGenerator(MagicMock(), test_tenant["id"])
+    async def test_routes_each_report_type_to_its_collector(self):
+        generator = ReportGenerator(MagicMock())
         expected = {
             ReportType.CAMPAIGN_PERFORMANCE: "collect_campaign_performance",
             ReportType.ATTRIBUTION_SUMMARY: "collect_attribution_summary",
@@ -1017,8 +964,8 @@ class TestCollectDataDispatch:
                 START, END, {"c": 1}
             )
 
-    async def test_unknown_type_returns_error_dict(self, test_tenant):
-        generator = ReportGenerator(MagicMock(), test_tenant["id"])
+    async def test_unknown_type_returns_error_dict(self):
+        generator = ReportGenerator(MagicMock())
         data = await generator._collect_data(ReportType.CUSTOM, START, END, {})
         assert data == {"error": "unsupported_report_type"}
 

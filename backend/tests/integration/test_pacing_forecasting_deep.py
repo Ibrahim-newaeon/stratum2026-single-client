@@ -39,7 +39,6 @@ AS_OF = date(2026, 6, 15)  # mid-June: EOM 2026-06-30 is 15 days out
 
 
 def _kpi(
-    tenant_id: int,
     d: date,
     *,
     spend: float = 100.0,
@@ -49,7 +48,6 @@ def _kpi(
     roas: float | None = None,
 ) -> DailyKPI:
     return DailyKPI(
-        tenant_id=tenant_id,
         date=d,
         platform=platform,
         campaign_id=campaign_id,
@@ -66,16 +64,16 @@ def _kpi(
 
 
 @pytest_asyncio.fixture
-async def forecasting(db_session, test_tenant) -> ForecastingService:
-    return ForecastingService(db_session, test_tenant["id"])
+async def forecasting(db_session) -> ForecastingService:
+    return ForecastingService(db_session)
 
 
 @pytest_asyncio.fixture
-async def constant_meta_history(db_session, test_tenant) -> None:
+async def constant_meta_history(db_session) -> None:
     """56 days of constant meta spend (100/day) ending at AS_OF."""
     start = AS_OF - timedelta(days=55)
     db_session.add_all(
-        _kpi(test_tenant["id"], start + timedelta(days=i)) for i in range(56)
+        _kpi(start + timedelta(days=i)) for i in range(56)
     )
     await db_session.flush()
 
@@ -144,7 +142,7 @@ class TestForecastMetric:
         assert result["eom_projection"] is None
 
     async def test_dow_seasonality_and_ci_widening(
-        self, db_session, test_tenant, forecasting
+        self, db_session, forecasting
     ):
         # Weekdays 100, weekends 40: DoW factors split around 1.0 and the
         # residual std becomes non-zero so CIs widen with the horizon.
@@ -152,7 +150,7 @@ class TestForecastMetric:
         for i in range(42):
             d = start + timedelta(days=i)
             spend = 40.0 if d.weekday() >= 5 else 100.0
-            db_session.add(_kpi(test_tenant["id"], d, spend=spend))
+            db_session.add(_kpi(d, spend=spend))
         await db_session.flush()
 
         result = await forecasting.forecast_metric(
@@ -169,12 +167,10 @@ class TestForecastMetric:
         assert widths[-1] > widths[0] > 0  # horizon factor widens the CI
         assert all(f["lower_bound"] >= 0 for f in daily)
 
-    async def test_campaign_scope(self, db_session, test_tenant, forecasting):
+    async def test_campaign_scope(self, db_session, forecasting):
         for i in range(10):
             db_session.add(
-                _kpi(
-                    test_tenant["id"],
-                    AS_OF - timedelta(days=i),
+                _kpi(AS_OF - timedelta(days=i),
                     spend=20.0,
                     campaign_id="camp-fc",
                 )
@@ -211,13 +207,13 @@ class TestForecastMetric:
 
 class TestForecastEom:
     async def test_current_month_with_history(
-        self, db_session, test_tenant, forecasting
+        self, db_session, forecasting
     ):
         # 45 days of tenant-level (platform=None) revenue through today.
         today = date.today()
         for i in range(45):
             d = today - timedelta(days=i)
-            db_session.add(_kpi(test_tenant["id"], d, revenue=200.0, platform=None))
+            db_session.add(_kpi(d, revenue=200.0, platform=None))
         await db_session.flush()
 
         result = await forecasting.forecast_eom(TargetMetric.REVENUE)
@@ -241,7 +237,7 @@ class TestForecastEom:
         assert result["projected_lower"] <= result["projected_upper"]
 
     async def test_linear_fallback_when_insufficient_history(
-        self, db_session, test_tenant, forecasting
+        self, db_session, forecasting
     ):
         # Only 3 days of campaign data: forecast_metric returns
         # insufficient_data, so the linear +-20% fallback is used.
@@ -251,9 +247,7 @@ class TestForecastEom:
         for i in range(3):
             d = today - timedelta(days=i)
             db_session.add(
-                _kpi(
-                    test_tenant["id"],
-                    d,
+                _kpi(d,
                     spend=50.0,
                     platform=None,
                     campaign_id="sparse-eom",
@@ -300,7 +294,7 @@ class TestForecastEom:
         assert result["daily_needed"] == 0
 
     async def test_past_month_caps_actuals_window_at_eom(
-        self, db_session, test_tenant, forecasting
+        self, db_session, forecasting
     ):
         # forecast_eom must cap the actuals window at min(today, eom): for a
         # fully elapsed past month, spend logged *after* that month ends must
@@ -315,18 +309,14 @@ class TestForecastEom:
         in_month_day = month_start + timedelta(days=10)
         after_month_day = eom + timedelta(days=5)
         db_session.add(
-            _kpi(
-                test_tenant["id"],
-                in_month_day,
+            _kpi(in_month_day,
                 spend=50.0,
                 platform=None,
                 campaign_id="past-eom-cap",
             )
         )
         db_session.add(
-            _kpi(
-                test_tenant["id"],
-                after_month_day,
+            _kpi(after_month_day,
                 spend=999.0,
                 platform=None,
                 campaign_id="past-eom-cap",
@@ -353,12 +343,12 @@ class TestForecastEom:
 
 class TestLoadHistoricalData:
     async def test_window_scope_and_ordering(
-        self, db_session, test_tenant, forecasting, constant_meta_history
+        self, db_session, forecasting, constant_meta_history
     ):
         # Rows outside the 60-day window and other scopes must be excluded.
-        db_session.add(_kpi(test_tenant["id"], AS_OF - timedelta(days=90), spend=999.0))
-        db_session.add(_kpi(test_tenant["id"], AS_OF, spend=999.0, campaign_id="other"))
-        db_session.add(_kpi(test_tenant["id"], AS_OF, spend=999.0, platform="google"))
+        db_session.add(_kpi(AS_OF - timedelta(days=90), spend=999.0))
+        db_session.add(_kpi(AS_OF, spend=999.0, campaign_id="other"))
+        db_session.add(_kpi(AS_OF, spend=999.0, platform="google"))
         await db_session.flush()
 
         hist = await forecasting._load_historical_data(
@@ -373,11 +363,11 @@ class TestLoadHistoricalData:
         assert hist[-1]["dow"] == AS_OF.weekday()
 
     async def test_tenant_level_scope_excludes_platform_rows(
-        self, db_session, test_tenant, forecasting, constant_meta_history
+        self, db_session, forecasting, constant_meta_history
     ):
         # platform=None loads only tenant-level rows; the 56 meta rows are
         # invisible at this scope.
-        db_session.add(_kpi(test_tenant["id"], AS_OF, spend=77.0, platform=None))
+        db_session.add(_kpi(AS_OF, spend=77.0, platform=None))
         await db_session.flush()
 
         hist = await forecasting._load_historical_data(
@@ -447,10 +437,9 @@ class TestHelperEdgeCases:
         ],
     )
     async def test_get_metric_value_branches(
-        self, forecasting, test_tenant, metric, expected
+        self, forecasting, metric, expected
     ):
         record = DailyKPI(
-            tenant_id=test_tenant["id"],
             date=AS_OF,
             spend_cents=12345,
             revenue_cents=67890,
@@ -476,7 +465,7 @@ class TestHelperEdgeCases:
 
 class TestSaveForecast:
     async def test_persists_daily_rows(
-        self, db_session, test_tenant, forecasting, constant_meta_history
+        self, db_session, forecasting, constant_meta_history
     ):
         forecast = await forecasting.forecast_metric(
             TargetMetric.SPEND, forecast_days=5, platform="meta", as_of_date=AS_OF
@@ -489,7 +478,6 @@ class TestSaveForecast:
             (
                 await db_session.execute(
                     select(Forecast)
-                    .where(Forecast.tenant_id == test_tenant["id"])
                     .order_by(Forecast.forecast_for_date)
                 )
             )
@@ -511,14 +499,14 @@ class TestSaveForecast:
         assert first.model_params["type"] == "ewma_dow"
 
     async def test_empty_result_saves_nothing(
-        self, db_session, test_tenant, forecasting
+        self, db_session, forecasting
     ):
         await forecasting.save_forecast({}, TargetMetric.SPEND)
 
         count = (
             (
                 await db_session.execute(
-                    select(Forecast).where(Forecast.tenant_id == test_tenant["id"])
+                    select(Forecast)
                 )
             )
             .scalars()

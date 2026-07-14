@@ -28,7 +28,7 @@ _PASSWORD = "Chosenpassword123"
 
 
 @pytest_asyncio.fixture
-async def invited_user(db_session, test_tenant) -> dict:
+async def invited_user(db_session) -> dict:
     """An invited-but-not-yet-accepted user, as /users/invite creates them."""
     import secrets
 
@@ -36,7 +36,6 @@ async def invited_user(db_session, test_tenant) -> dict:
     from app.core.security import encrypt_pii, get_password_hash, hash_pii_for_lookup
 
     user = User(
-        tenant_id=test_tenant["id"],
         email=encrypt_pii(_EMAIL),
         email_hash=hash_pii_for_lookup(_EMAIL),
         password_hash=get_password_hash(secrets.token_urlsafe(16)),

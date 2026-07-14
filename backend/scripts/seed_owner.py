@@ -2,8 +2,10 @@
 """
 Stratum AI - Owner Seed Script
 
-Creates an owner user with cross-tenant platform access.
-Uses raw SQL to bypass Row-Level Security policies.
+Creates the Organization singleton (id=1) and the owner user for this
+single-client deployment. STRAT-SC-001: replaces the old per-tenant
+seed_superadmin.py — there is exactly one organization now, so this script
+no longer creates or looks up a `tenants` row.
 
 Usage:
     docker compose exec api python scripts/seed_owner.py
@@ -36,8 +38,9 @@ from app.core.security import encrypt_pii, get_password_hash, hash_pii_for_looku
 SUPERADMIN_EMAIL = os.environ.get("SUPERADMIN_EMAIL")
 SUPERADMIN_PASSWORD = os.environ.get("SUPERADMIN_PASSWORD")
 SUPERADMIN_NAME = os.environ.get("SUPERADMIN_NAME", "Platform Owner")
-SUPERADMIN_TENANT_NAME = os.environ.get("SUPERADMIN_TENANT_NAME", "Stratum Platform")
-SUPERADMIN_TENANT_SLUG = os.environ.get("SUPERADMIN_TENANT_SLUG", "stratum-platform")
+# Organization identity (single-client: there is exactly one org, id=1).
+ORG_NAME = os.environ.get("SUPERADMIN_TENANT_NAME", "Stratum AI")
+ORG_SLUG = os.environ.get("SUPERADMIN_TENANT_SLUG", "stratum-ai")
 
 if not SUPERADMIN_EMAIL or not SUPERADMIN_PASSWORD:
     print(
@@ -55,7 +58,7 @@ if len(SUPERADMIN_PASSWORD) < 16:
 
 
 async def create_owner():
-    """Create owner user and platform tenant using raw SQL."""
+    """Create the Organization singleton and owner user using raw SQL."""
 
     # Create async engine
     engine = create_async_engine(
@@ -63,39 +66,38 @@ async def create_owner():
         echo=False,
     )
 
-    # Step 1: Add 'owner' to userrole enum if missing (requires AUTOCOMMIT)
-    # ALTER TYPE ADD VALUE cannot run inside a transaction block
-    async with engine.connect() as conn:
-        await conn.execution_options(isolation_level="AUTOCOMMIT")
-        try:
-            result = await conn.execute(
-                text(
-                    "SELECT 1 FROM pg_enum WHERE enumtypid = 'userrole'::regtype AND enumlabel = 'owner'"
-                )
-            )
-            if not result.fetchone():
-                await conn.execute(text("ALTER TYPE userrole ADD VALUE 'owner'"))
-                print("Added 'owner' to userrole enum")
-        except Exception as e:
-            print(f"Note: enum check skipped ({e})")
-
-    # Step 2: Create tenant and user in a transaction
-    async with engine.begin() as conn:
-        try:
-            # Set owner context to bypass RLS policies (may not exist yet)
-            try:
-                await conn.execute(text("SELECT set_tenant_context(1, true)"))
-            except Exception:
-                pass  # RLS function not yet created, that's OK
-
-            # Prepare values
-            email_hash = hash_pii_for_lookup(SUPERADMIN_EMAIL.lower())
-            encrypted_email = encrypt_pii(SUPERADMIN_EMAIL.lower())
-            encrypted_name = encrypt_pii(SUPERADMIN_NAME)
-            password_hash = get_password_hash(SUPERADMIN_PASSWORD)
+    try:
+        async with engine.begin() as conn:
             now = datetime.now(UTC)
 
-            # Check if owner already exists
+            # Step 1: Ensure the Organization singleton (id=1) exists.
+            result = await conn.execute(
+                text("SELECT id, name FROM organization WHERE id = 1")
+            )
+            org = result.fetchone()
+
+            if not org:
+                print(f"Creating organization: {ORG_NAME}")
+                await conn.execute(
+                    text("""
+                        INSERT INTO organization (
+                            id, name, slug, branding, settings, feature_flags,
+                            enforcement_mode, onboarding_state, is_onboarded,
+                            created_at, updated_at
+                        ) VALUES (
+                            1, :name, :slug, '{}', '{}', '{}',
+                            'advisory', '{}', false,
+                            :now, :now
+                        )
+                    """),
+                    {"name": ORG_NAME, "slug": ORG_SLUG, "now": now},
+                )
+                print("  Organization ID: 1")
+            else:
+                print(f"Using existing organization: {org[1]} (ID: {org[0]})")
+
+            # Step 2: Check if owner already exists
+            email_hash = hash_pii_for_lookup(SUPERADMIN_EMAIL.lower())
             result = await conn.execute(
                 text(
                     "SELECT id, role, is_active, is_verified FROM users WHERE email_hash = :email_hash"
@@ -105,67 +107,46 @@ async def create_owner():
             existing = result.fetchone()
 
             if existing:
+                password_hash = get_password_hash(SUPERADMIN_PASSWORD)
                 print(f"Owner already exists: {SUPERADMIN_EMAIL}")
                 print(f"  User ID: {existing[0]}")
-                print(f"  Updating password and ensuring active/verified...")
+                print("  Updating password and ensuring active/verified...")
                 await conn.execute(
                     text(
-                        "UPDATE users SET password_hash = :password_hash, is_active = true, is_verified = true WHERE email_hash = :email_hash"
+                        "UPDATE users SET password_hash = :password_hash, role = 'owner', "
+                        "is_active = true, is_verified = true WHERE email_hash = :email_hash"
                     ),
                     {"password_hash": password_hash, "email_hash": email_hash},
                 )
                 print("  Password updated successfully!")
                 return
 
-            # Check/create tenant
-            result = await conn.execute(
-                text("SELECT id, name FROM tenants WHERE slug = :slug"),
-                {"slug": SUPERADMIN_TENANT_SLUG},
-            )
-            tenant = result.fetchone()
-
-            if not tenant:
-                print(f"Creating platform tenant: {SUPERADMIN_TENANT_NAME}")
-                result = await conn.execute(
-                    text("""
-                        INSERT INTO tenants (name, slug, plan, settings, feature_flags, max_users, max_campaigns, created_at, updated_at, is_deleted)
-                        VALUES (:name, :slug, 'enterprise', '{}', '{}', 100, 1000, :now, :now, false)
-                        RETURNING id
-                    """),
-                    {
-                        "name": SUPERADMIN_TENANT_NAME,
-                        "slug": SUPERADMIN_TENANT_SLUG,
-                        "now": now,
-                    },
-                )
-                tenant_id = result.fetchone()[0]
-                print(f"  Tenant ID: {tenant_id}")
-            else:
-                tenant_id = tenant[0]
-                print(f"Using existing tenant: {tenant[1]} (ID: {tenant_id})")
-
-            # Create owner user using raw SQL
+            # Step 3: Create owner user using raw SQL
             print(f"\nCreating owner user: {SUPERADMIN_EMAIL}")
+            encrypted_email = encrypt_pii(SUPERADMIN_EMAIL.lower())
+            encrypted_name = encrypt_pii(SUPERADMIN_NAME)
+            password_hash = get_password_hash(SUPERADMIN_PASSWORD)
 
             result = await conn.execute(
                 text("""
                     INSERT INTO users (
-                        tenant_id, email, email_hash, password_hash, full_name,
-                        role, permissions, is_active, is_verified,
+                        email, email_hash, password_hash, full_name,
+                        role, permissions, is_active, is_verified, is_protected,
                         locale, timezone, preferences,
                         consent_marketing, consent_analytics,
+                        totp_enabled, failed_totp_attempts, user_type,
                         created_at, updated_at, is_deleted
                     ) VALUES (
-                        :tenant_id, :email, :email_hash, :password_hash, :full_name,
-                        'owner', '{}', true, true,
+                        :email, :email_hash, :password_hash, :full_name,
+                        'owner', '{}', true, true, false,
                         'en', 'UTC', '{}',
                         false, true,
+                        false, 0, 'agency',
                         :now, :now, false
                     )
                     RETURNING id
                 """),
                 {
-                    "tenant_id": tenant_id,
                     "email": encrypted_email,
                     "email_hash": email_hash,
                     "password_hash": password_hash,
@@ -181,16 +162,16 @@ async def create_owner():
             print(f"  Email:    {SUPERADMIN_EMAIL}")
             print("  Password:  [set via SUPERADMIN_PASSWORD env var]")
             print("  Role:     owner")
-            print(f"  Tenant:   {SUPERADMIN_TENANT_NAME}")
+            print(f"  Organization: {ORG_NAME}")
             print(f"  User ID:  {user_id}")
             print("=" * 50)
             print("\nYou can now log in at /login with these credentials.")
 
-        except Exception as e:
-            print(f"\nError creating owner: {e}")
-            raise
-        finally:
-            await engine.dispose()
+    except Exception as e:
+        print(f"\nError creating owner: {e}")
+        raise
+    finally:
+        await engine.dispose()
 
 
 if __name__ == "__main__":

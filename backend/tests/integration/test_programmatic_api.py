@@ -7,9 +7,7 @@
 ``GET /programmatic/whoami`` resolves the inbound ``X-API-Key`` header to a
 principal via ``get_api_key_principal`` (which uses the harness-overridden
 ``get_async_session`` and looks the SHA-256 key hash up in the ``api_keys``
-table). The route self-authenticates, so ``TenantMiddleware`` bypasses JWT-based
-tenant extraction for ``/programmatic/*`` and the api-key dependency populates
-``request.state.tenant_id`` from the validated key.
+table). The route self-authenticates.
 
 NOTE: run with the session-scoped event loop CI uses
 (``-o asyncio_default_test_loop_scope=session``).
@@ -26,13 +24,12 @@ _PLAINTEXT_KEY = "stratum-test-key-abc123"
 
 
 @pytest_asyncio.fixture
-async def seeded_api_key(db_session, test_tenant, test_user) -> dict:
+async def seeded_api_key(db_session, test_user) -> dict:
     """Persist an active API key whose hash matches ``_PLAINTEXT_KEY``."""
     from app.core.security import hash_api_key
     from app.models import APIKey
 
     key = APIKey(
-        tenant_id=test_tenant["id"],
         user_id=test_user["id"],
         name="test-key",
         key_hash=hash_api_key(_PLAINTEXT_KEY),
@@ -42,7 +39,7 @@ async def seeded_api_key(db_session, test_tenant, test_user) -> dict:
     )
     db_session.add(key)
     await db_session.flush()
-    return {"id": key.id, "tenant_id": key.tenant_id, "user_id": key.user_id}
+    return {"id": key.id, "user_id": key.user_id}
 
 
 class TestWhoami:
@@ -65,7 +62,6 @@ class TestWhoami:
         assert resp.status_code == 200, resp.text
         data = resp.json()["data"]
         assert data["key_id"] == seeded_api_key["id"]
-        assert data["tenant_id"] == seeded_api_key["tenant_id"]
         assert data["scopes"] == ["read"]
 
     async def test_inactive_key_401(

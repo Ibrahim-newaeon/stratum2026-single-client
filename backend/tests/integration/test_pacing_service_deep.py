@@ -45,7 +45,6 @@ PERIOD_END = date(2026, 6, 30)
 
 
 def _kpi(
-    tenant_id: int,
     d: date,
     *,
     spend: float = 100.0,
@@ -59,7 +58,6 @@ def _kpi(
     roas: float | None = None,
 ) -> DailyKPI:
     return DailyKPI(
-        tenant_id=tenant_id,
         date=d,
         platform=platform,
         campaign_id=campaign_id,
@@ -76,24 +74,24 @@ def _kpi(
 
 
 @pytest_asyncio.fixture
-async def pacing_service(db_session, test_tenant) -> PacingService:
-    return PacingService(db_session, test_tenant["id"])
+async def pacing_service(db_session) -> PacingService:
+    return PacingService(db_session)
 
 
 @pytest_asyncio.fixture
-async def target_service(db_session, test_tenant) -> TargetService:
-    return TargetService(db_session, test_tenant["id"])
+async def target_service(db_session) -> TargetService:
+    return TargetService(db_session)
 
 
 @pytest_asyncio.fixture
-async def seeded_kpis(db_session, test_tenant) -> None:
+async def seeded_kpis(db_session) -> None:
     """56 days of constant meta history ending at AS_OF.
 
     spend=100/day, revenue=200/day, conversions=2/day, leads=2/day (1+1 crm).
     MTD (June 1-15): spend 1500, revenue 3000, conversions 30.
     """
     start = AS_OF - timedelta(days=55)
-    rows = [_kpi(test_tenant["id"], start + timedelta(days=i)) for i in range(56)]
+    rows = [_kpi(start + timedelta(days=i)) for i in range(56)]
     db_session.add_all(rows)
     await db_session.flush()
 
@@ -246,16 +244,14 @@ class TestGetTargetPacing:
         assert result["daily"]["needed"] == 0
 
     async def test_forecast_fallback_linear(
-        self, db_session, test_tenant, pacing_service, target_service
+        self, db_session, pacing_service, target_service
     ):
         # Campaign scope with only 3 days of data: the forecasting service
         # returns insufficient_data and pacing falls back to a linear
         # projection with fixed +-20% bounds.
         for i in range(3):
             db_session.add(
-                _kpi(
-                    test_tenant["id"],
-                    AS_OF - timedelta(days=i),
+                _kpi(AS_OF - timedelta(days=i),
                     spend=50.0,
                     campaign_id="camp-low",
                 )
@@ -310,10 +306,10 @@ class TestGetTargetPacing:
         assert result["as_of_date"] == today.isoformat()
 
     async def test_tenant_level_scope_platform_none(
-        self, db_session, test_tenant, pacing_service, target_service
+        self, db_session, pacing_service, target_service
     ):
         # platform=None target reads only tenant-level KPI rows.
-        db_session.add(_kpi(test_tenant["id"], AS_OF, spend=42.0, platform=None))
+        db_session.add(_kpi(AS_OF, spend=42.0, platform=None))
         await db_session.flush()
 
         target = await _make_target(
@@ -452,13 +448,12 @@ class TestGetAllTargetsPacing:
 
 class TestSnapshots:
     async def test_create_snapshot_persists(
-        self, db_session, pacing_service, target_service, seeded_kpis, test_tenant
+        self, db_session, pacing_service, target_service, seeded_kpis
     ):
         target = await _make_target(target_service, target_value=3000.0)
         snapshot = await pacing_service.create_pacing_snapshot(target.id, AS_OF)
 
         assert snapshot is not None
-        assert snapshot.tenant_id == test_tenant["id"]
         assert snapshot.target_id == target.id
         assert snapshot.snapshot_date == AS_OF
         assert snapshot.period_start == PERIOD_START
@@ -602,9 +597,8 @@ class TestSnapshots:
 
 
 class TestTargetService:
-    async def test_create_monetary_sets_cents(self, target_service, test_tenant):
+    async def test_create_monetary_sets_cents(self, target_service):
         target = await _make_target(target_service, target_value=1234.56)
-        assert target.tenant_id == test_tenant["id"]
         assert target.target_value_cents == 123456
         assert target.period_type == TargetPeriod.MONTHLY
         assert target.is_active is True
@@ -744,10 +738,9 @@ class TestTargetService:
 
 class TestGetMetricValue:
     @pytest.fixture
-    def record(self, test_tenant) -> DailyKPI:
+    def record(self) -> DailyKPI:
         d = AS_OF
         return DailyKPI(
-            tenant_id=test_tenant["id"],
             date=d,
             spend_cents=12345,
             revenue_cents=67890,

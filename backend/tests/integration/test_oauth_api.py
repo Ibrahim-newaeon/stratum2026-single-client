@@ -111,7 +111,7 @@ def oauth_creds(monkeypatch):
 def no_auto_sync(monkeypatch):
     """Replace the fire-and-forget post-OAuth sync with a no-op coroutine."""
 
-    async def _noop(tenant_id, platform):
+    async def _noop(platform):
         return None
 
     monkeypatch.setattr(oauth_ep, "_auto_sync_after_oauth", _noop)
@@ -119,7 +119,6 @@ def no_auto_sync(monkeypatch):
 
 async def _make_connection(
     db_session,
-    tenant_id: int,
     platform: AdPlatform = AdPlatform.META,
     *,
     status: ConnectionStatus = ConnectionStatus.CONNECTED,
@@ -130,7 +129,6 @@ async def _make_connection(
     svc = get_oauth_service(platform.value)
     now = datetime.now(UTC)
     conn = TenantPlatformConnection(
-        tenant_id=tenant_id,
         platform=platform,
         status=status,
         access_token_encrypted=(
@@ -150,21 +148,19 @@ async def _make_connection(
 
 
 @pytest.fixture
-async def meta_connection(db_session, test_tenant) -> TenantPlatformConnection:
-    """A healthy connected Meta connection for the test tenant."""
-    return await _make_connection(db_session, test_tenant["id"])
+async def meta_connection(db_session) -> TenantPlatformConnection:
+    """A healthy connected Meta connection (single global row per platform)."""
+    return await _make_connection(db_session)
 
 
 async def _make_ad_account(
     db_session,
-    tenant_id: int,
     connection_id,
     account_id: str = "act_100",
     *,
     is_enabled: bool = True,
 ) -> TenantAdAccount:
     account = TenantAdAccount(
-        tenant_id=tenant_id,
         connection_id=connection_id,
         platform=AdPlatform.META,
         platform_account_id=account_id,
@@ -180,13 +176,12 @@ async def _make_ad_account(
 
 
 @pytest.fixture
-async def viewer_headers(db_session, test_tenant) -> dict:
-    """Auth headers for a non-admin (viewer) user of the test tenant."""
+async def viewer_headers(db_session) -> dict:
+    """Auth headers for a non-admin (viewer) user."""
     from app.base_models import User, UserRole
     from app.core.security import create_access_token, get_password_hash
 
     user = User(
-        tenant_id=test_tenant["id"],
         email="viewer@example.com",
         email_hash="viewer@example.com",
         password_hash=get_password_hash("viewerpassword123"),
@@ -202,13 +197,11 @@ async def viewer_headers(db_session, test_tenant) -> dict:
         subject=user.id,
         additional_claims={
             "email": user.email,
-            "tenant_id": test_tenant["id"],
             "role": user.role.value,
         },
     )
     return {
         "Authorization": f"Bearer {token}",
-        "X-Tenant-ID": str(test_tenant["id"]),
     }
 
 
@@ -307,11 +300,11 @@ class TestAuthorize:
 class TestCallback:
     """Callback behavior.
 
-    ``/api/v1/oauth/{platform}/callback`` is exempt from TenantMiddleware
+    ``/api/v1/oauth/{platform}/callback`` requires no auth context at all
     (#534): real platform redirects arrive as browser navigations with no
-    JWT or X-Tenant-ID header, and tenant context comes from the
-    Redis-stored state token the endpoint validates. All callback requests
-    here are therefore sent UNAUTHENTICATED — the production contract.
+    JWT, and there is exactly one organization so nothing to disambiguate.
+    All callback requests here are therefore sent UNAUTHENTICATED — the
+    production contract.
     """
 
     async def test_callback_platform_error_redirects(self, client: AsyncClient):
@@ -339,12 +332,11 @@ class TestCallback:
         assert "error=invalid_state" in resp.headers["location"]
 
     async def test_callback_state_platform_mismatch(
-        self, client: AsyncClient, test_tenant, test_user
+        self, client: AsyncClient, test_user
     ):
         # State created for meta but presented on the google callback.
         meta = get_oauth_service("meta")
         state = await meta.create_state(
-            tenant_id=test_tenant["id"],
             user_id=test_user["id"],
             redirect_uri="http://localhost:5173",
         )
@@ -358,7 +350,6 @@ class TestCallback:
     async def test_callback_token_exchange_failure_redirects(
         self,
         client: AsyncClient,
-        test_tenant,
         test_user,
         oauth_creds,
         no_auto_sync,
@@ -366,7 +357,6 @@ class TestCallback:
     ):
         meta = get_oauth_service("meta")
         state = await meta.create_state(
-            tenant_id=test_tenant["id"],
             user_id=test_user["id"],
             redirect_uri="http://localhost:5173",
         )
@@ -386,7 +376,6 @@ class TestCallback:
         self,
         authenticated_client: AsyncClient,
         db_session,
-        test_tenant,
         oauth_creds,
         no_auto_sync,
         monkeypatch,
@@ -408,11 +397,10 @@ class TestCallback:
             AsyncMock(return_value=_tokens(access="meta-long-lived")),
         )
 
-        # The callback is a browser redirect from the platform: no JWT, no
-        # X-Tenant-ID (authenticated_client and client share one instance,
-        # so strip its headers for the unauthenticated leg).
+        # The callback is a browser redirect from the platform: no JWT
+        # (authenticated_client and client share one instance, so strip its
+        # headers for the unauthenticated leg).
         authenticated_client.headers.pop("Authorization", None)
-        authenticated_client.headers.pop("X-Tenant-ID", None)
         resp = await authenticated_client.get(
             f"{_BASE}/meta/callback",
             params={"code": "authcode", "state": state_token},
@@ -426,7 +414,6 @@ class TestCallback:
         result = await db_session.execute(
             select(TenantPlatformConnection).where(
                 and_(
-                    TenantPlatformConnection.tenant_id == test_tenant["id"],
                     TenantPlatformConnection.platform == AdPlatform.META,
                 )
             )
@@ -441,7 +428,6 @@ class TestCallback:
     async def test_callback_state_single_use(
         self,
         client: AsyncClient,
-        test_tenant,
         test_user,
         oauth_creds,
         no_auto_sync,
@@ -450,7 +436,6 @@ class TestCallback:
         """A consumed state token cannot be replayed (getdel semantics)."""
         meta = get_oauth_service("meta")
         state = await meta.create_state(
-            tenant_id=test_tenant["id"],
             user_id=test_user["id"],
             redirect_uri="http://localhost:5173",
         )
@@ -474,7 +459,6 @@ class TestCallback:
         self,
         client: AsyncClient,
         db_session,
-        test_tenant,
         test_user,
         oauth_creds,
         no_auto_sync,
@@ -482,7 +466,6 @@ class TestCallback:
     ):
         conn = await _make_connection(
             db_session,
-            test_tenant["id"],
             status=ConnectionStatus.EXPIRED,
         )
         conn.last_error = "token expired"
@@ -491,7 +474,6 @@ class TestCallback:
 
         meta = get_oauth_service("meta")
         state = await meta.create_state(
-            tenant_id=test_tenant["id"],
             user_id=test_user["id"],
             redirect_uri="http://localhost:5173",
         )
@@ -516,7 +498,6 @@ class TestCallback:
     async def test_callback_storage_failure_redirects(
         self,
         client: AsyncClient,
-        test_tenant,
         test_user,
         oauth_creds,
         no_auto_sync,
@@ -524,7 +505,6 @@ class TestCallback:
     ):
         meta = get_oauth_service("meta")
         state = await meta.create_state(
-            tenant_id=test_tenant["id"],
             user_id=test_user["id"],
             redirect_uri="http://localhost:5173",
         )
@@ -562,15 +542,11 @@ class TestConnectionStatus:
         self,
         authenticated_client: AsyncClient,
         db_session,
-        test_tenant,
         meta_connection,
     ):
-        await _make_ad_account(
-            db_session, test_tenant["id"], meta_connection.id, "act_1"
-        )
+        await _make_ad_account(db_session, meta_connection.id, "act_1")
         await _make_ad_account(
             db_session,
-            test_tenant["id"],
             meta_connection.id,
             "act_2",
             is_enabled=False,
@@ -598,7 +574,7 @@ class TestConnectionStatus:
         assert len(statuses) == 4
 
     async def test_status_survives_fresh_load_from_db(
-        self, authenticated_client: AsyncClient, db_session, test_tenant
+        self, authenticated_client: AsyncClient, db_session
     ):
         """Regression (#534): platform/status are plain String(50) columns.
 
@@ -608,7 +584,7 @@ class TestConnectionStatus:
         returned the fixture-created instance still holding the assigned
         enums — so commit and expunge to force a fresh load in the endpoint.
         """
-        await _make_connection(db_session, test_tenant["id"])
+        await _make_connection(db_session)
         await db_session.commit()
         db_session.expunge_all()
 
@@ -638,11 +614,9 @@ class TestListAdAccounts:
         assert "not connected" in resp.json()["detail"]
 
     async def test_accounts_disconnected_status_400(
-        self, authenticated_client: AsyncClient, db_session, test_tenant
+        self, authenticated_client: AsyncClient, db_session
     ):
-        await _make_connection(
-            db_session, test_tenant["id"], status=ConnectionStatus.DISCONNECTED
-        )
+        await _make_connection(db_session, status=ConnectionStatus.DISCONNECTED)
         resp = await authenticated_client.get(f"{_BASE}/meta/accounts")
         assert resp.status_code == 400
 
@@ -650,13 +624,10 @@ class TestListAdAccounts:
         self,
         authenticated_client: AsyncClient,
         db_session,
-        test_tenant,
         meta_connection,
         monkeypatch,
     ):
-        local = await _make_ad_account(
-            db_session, test_tenant["id"], meta_connection.id, "act_1"
-        )
+        local = await _make_ad_account(db_session, meta_connection.id, "act_1")
         meta = get_oauth_service("meta")
         fetch = AsyncMock(
             return_value=[_account("act_1", "Connected"), _account("act_2", "Fresh")]
@@ -679,12 +650,9 @@ class TestListAdAccounts:
         self,
         authenticated_client: AsyncClient,
         db_session,
-        test_tenant,
         monkeypatch,
     ):
-        conn = await _make_connection(
-            db_session, test_tenant["id"], expires_delta=timedelta(hours=-1)
-        )
+        conn = await _make_connection(db_session, expires_delta=timedelta(hours=-1))
         meta = get_oauth_service("meta")
         refresh = AsyncMock(return_value=_tokens(access="refreshed-access"))
         monkeypatch.setattr(meta, "refresh_access_token", refresh)
@@ -703,12 +671,9 @@ class TestListAdAccounts:
         self,
         authenticated_client: AsyncClient,
         db_session,
-        test_tenant,
         monkeypatch,
     ):
-        conn = await _make_connection(
-            db_session, test_tenant["id"], expires_delta=timedelta(hours=-1)
-        )
+        conn = await _make_connection(db_session, expires_delta=timedelta(hours=-1))
         meta = get_oauth_service("meta")
         monkeypatch.setattr(
             meta,
@@ -725,11 +690,9 @@ class TestListAdAccounts:
         self,
         authenticated_client: AsyncClient,
         db_session,
-        test_tenant,
     ):
         conn = await _make_connection(
             db_session,
-            test_tenant["id"],
             refresh_token=None,
             expires_delta=timedelta(hours=-1),
         )
@@ -777,7 +740,6 @@ class TestConnectAdAccounts:
         self,
         authenticated_client: AsyncClient,
         db_session,
-        test_tenant,
         meta_connection,
         monkeypatch,
     ):
@@ -804,7 +766,6 @@ class TestConnectAdAccounts:
         result = await db_session.execute(
             select(TenantAdAccount).where(
                 and_(
-                    TenantAdAccount.tenant_id == test_tenant["id"],
                     TenantAdAccount.platform_account_id == "act_new",
                 )
             )
@@ -818,13 +779,11 @@ class TestConnectAdAccounts:
         self,
         authenticated_client: AsyncClient,
         db_session,
-        test_tenant,
         meta_connection,
         monkeypatch,
     ):
         existing = await _make_ad_account(
             db_session,
-            test_tenant["id"],
             meta_connection.id,
             "act_exist",
             is_enabled=False,
@@ -891,9 +850,9 @@ class TestRefreshToken:
         assert resp.status_code == 404
 
     async def test_refresh_without_refresh_token_400(
-        self, authenticated_client: AsyncClient, db_session, test_tenant
+        self, authenticated_client: AsyncClient, db_session
     ):
-        await _make_connection(db_session, test_tenant["id"], refresh_token=None)
+        await _make_connection(db_session, refresh_token=None)
         resp = await authenticated_client.post(f"{_BASE}/meta/refresh")
         assert resp.status_code == 400
         assert "No refresh token" in resp.json()["detail"]
@@ -902,12 +861,9 @@ class TestRefreshToken:
         self,
         authenticated_client: AsyncClient,
         db_session,
-        test_tenant,
         monkeypatch,
     ):
-        conn = await _make_connection(
-            db_session, test_tenant["id"], status=ConnectionStatus.EXPIRED
-        )
+        conn = await _make_connection(db_session, status=ConnectionStatus.EXPIRED)
         conn.last_error = "was expired"
         conn.error_count = 2
         await db_session.flush()
@@ -935,10 +891,9 @@ class TestRefreshToken:
         self,
         authenticated_client: AsyncClient,
         db_session,
-        test_tenant,
         monkeypatch,
     ):
-        conn = await _make_connection(db_session, test_tenant["id"])
+        conn = await _make_connection(db_session)
         meta = get_oauth_service("meta")
         monkeypatch.setattr(
             meta,
@@ -969,13 +924,10 @@ class TestDisconnect:
         self,
         authenticated_client: AsyncClient,
         db_session,
-        test_tenant,
         meta_connection,
         monkeypatch,
     ):
-        account = await _make_ad_account(
-            db_session, test_tenant["id"], meta_connection.id, "act_1"
-        )
+        account = await _make_ad_account(db_session, meta_connection.id, "act_1")
         meta = get_oauth_service("meta")
         revoke = AsyncMock(return_value=True)
         monkeypatch.setattr(meta, "revoke_access", revoke)
@@ -1008,32 +960,9 @@ class TestDisconnect:
         assert meta_connection.status == ConnectionStatus.DISCONNECTED
 
 
-# =============================================================================
-# Tenant isolation
-# =============================================================================
-
-
-class TestTenantIsolation:
-    async def test_other_tenant_connection_invisible(
-        self, authenticated_client: AsyncClient, db_session
-    ):
-        """A connection belonging to another tenant must not leak into status."""
-        from app.base_models import Tenant
-
-        other = Tenant(
-            name="Other Tenant",
-            slug="other-tenant-oauth",
-            plan="professional",
-            max_users=10,
-            max_campaigns=100,
-        )
-        db_session.add(other)
-        await db_session.flush()
-        await _make_connection(db_session, other.id)
-
-        resp = await authenticated_client.get(f"{_BASE}/meta/status")
-        assert resp.status_code == 200, resp.text
-        assert resp.json()["data"]["status"] == "disconnected"
+# STRAT-SC-001: cross-tenant isolation no longer exists (single org) —
+# TestTenantIsolation removed (connections are global rows now, there is no
+# "other tenant" whose connection could leak into status).
 
 
 # =============================================================================
@@ -1042,7 +971,7 @@ class TestTenantIsolation:
 
 
 class TestAutoSyncHelper:
-    async def test_auto_sync_success_path(self, test_tenant, monkeypatch):
+    async def test_auto_sync_success_path(self, monkeypatch):
         import app.services.sync.orchestrator as orch_mod
 
         calls = {}
@@ -1051,28 +980,28 @@ class TestAutoSyncHelper:
             def __init__(self, db):
                 calls["db"] = db
 
-            async def sync_platform(self, tenant_id, platform, days_back=30):
-                calls["args"] = (tenant_id, platform, days_back)
+            async def sync_platform(self, platform, days_back=30):
+                calls["args"] = (platform, days_back)
                 return SimpleNamespace(
                     campaigns_synced=3, metrics_upserted=12, errors=[]
                 )
 
         monkeypatch.setattr(orch_mod, "PlatformSyncOrchestrator", FakeOrchestrator)
 
-        await oauth_ep._auto_sync_after_oauth(test_tenant["id"], AdPlatform.META)
-        assert calls["args"] == (test_tenant["id"], AdPlatform.META, 30)
+        await oauth_ep._auto_sync_after_oauth(AdPlatform.META)
+        assert calls["args"] == (AdPlatform.META, 30)
 
-    async def test_auto_sync_swallows_errors(self, test_tenant, monkeypatch):
+    async def test_auto_sync_swallows_errors(self, monkeypatch):
         import app.services.sync.orchestrator as orch_mod
 
         class ExplodingOrchestrator:
             def __init__(self, db):
                 pass
 
-            async def sync_platform(self, tenant_id, platform, days_back=30):
+            async def sync_platform(self, platform, days_back=30):
                 raise ValueError("sync blew up")
 
         monkeypatch.setattr(orch_mod, "PlatformSyncOrchestrator", ExplodingOrchestrator)
 
         # Must not raise — the helper is fire-and-forget.
-        await oauth_ep._auto_sync_after_oauth(test_tenant["id"], AdPlatform.META)
+        await oauth_ep._auto_sync_after_oauth(AdPlatform.META)

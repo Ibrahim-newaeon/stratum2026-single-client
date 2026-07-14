@@ -1,10 +1,18 @@
 # =============================================================================
-# Stratum AI - Owner Endpoint Integration Tests
+# Stratum AI - Owner Console Endpoint Integration Tests
 # =============================================================================
 """Integration tests for the platform Owner API under
-``/api/v1/console/...``: revenue, tenant portfolio, system health, churn
-risks, audit log, and billing reads. Every route is gated by an internal
-``require_owner`` (reads ``request.state.role``).
+``/api/v1/console/...``: system health, audit log, dashboard, credentials
+health, and anomaly rollup reads. Every route is gated by the local
+``require_owner`` dependency (reads ``request.state.role``/``user_id``).
+
+STRAT-SC-001 (Task C6): this file used to cover ``/superadmin/...`` routes
+that read the deleted ``Tenant`` model directly (revenue, tenant portfolio,
+churn risk, billing plans/invoices/subscriptions) — B1 renamed the router
+``/superadmin`` -> ``/console`` and C3 deleted every one of those Tenant-
+sourced/billing routes outright (single-org deployment has no MRR, tenant
+portfolio, churn, or billing concept). Rewritten against the routes that
+actually survive in ``app/api/v1/endpoints/console.py`` today.
 
 NOTE: run with the session-scoped event loop CI uses
 (``-o asyncio_default_test_loop_scope=session``).
@@ -18,27 +26,21 @@ pytestmark = [pytest.mark.integration, pytest.mark.asyncio]
 _BASE = "/api/v1/console"
 
 _GETS = [
-    "/revenue",
-    "/revenue/breakdown",
-    "/tenants/portfolio",
     "/system/health",
-    "/churn/risks",
     "/audit",
-    "/billing/plans",
-    # NOTE: /billing/invoices reads the `invoices` table, which is created by a
-    # migration (not Base.metadata) and isn't registered in the test harness, so
-    # the endpoint correctly returns a graceful 503 there — excluded from the
-    # 200-smoke set rather than asserted.
+    "/dashboard",
+    "/credentials/health",
+    "/anomalies-rollup",
 ]
 
 
 class TestGate:
     async def test_unauthenticated_denied(self, client: AsyncClient):
-        resp = await client.get(f"{_BASE}/revenue")
+        resp = await client.get(f"{_BASE}/audit")
         assert resp.status_code in {401, 403}
 
     async def test_non_owner_denied(self, authenticated_client: AsyncClient):
-        resp = await authenticated_client.get(f"{_BASE}/revenue")
+        resp = await authenticated_client.get(f"{_BASE}/audit")
         assert resp.status_code in {401, 403}
 
 

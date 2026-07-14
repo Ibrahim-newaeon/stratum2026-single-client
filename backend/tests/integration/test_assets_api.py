@@ -26,10 +26,10 @@ def _payload(**overrides) -> dict:
 
 
 class TestAuth:
-    async def test_list_requires_tenant(self, client):
-        # No auth -> middleware leaves tenant_id unset -> empty/!=200-with-data.
+    async def test_list_without_auth(self, client):
+        # No auth -> either rejected outright, or (if the route allows
+        # unauthenticated reads) returns an empty page.
         resp = await client.get(_BASE)
-        # Unauthenticated callers must not receive another tenant's assets.
         assert resp.status_code in (200, 401)
         if resp.status_code == 200:
             assert resp.json()["data"]["total"] == 0

@@ -25,7 +25,6 @@ _BASE = "/api/v1/compliance/admin/compliance"
 
 async def _seed_audit(
     db: AsyncSession,
-    tenant_id: int,
     *,
     action,
     resource_type: str = "campaign",
@@ -35,7 +34,6 @@ async def _seed_audit(
     from app.base_models import AuditLog
 
     entry = AuditLog(
-        tenant_id=tenant_id,
         user_id=None,
         action=action,
         resource_type=resource_type,
@@ -60,13 +58,11 @@ class TestAuditLogSearch:
         self,
         authenticated_client: AsyncClient,
         db_session: AsyncSession,
-        test_tenant,
     ):
         from app.base_models import AuditAction
 
         await _seed_audit(
             db_session,
-            test_tenant["id"],
             action=AuditAction.DELETE,
             resource_type="campaign",
             new_value={"name": "Removed Campaign"},
@@ -85,15 +81,14 @@ class TestAuditLogSearch:
         self,
         authenticated_client: AsyncClient,
         db_session: AsyncSession,
-        test_tenant,
     ):
         from app.base_models import AuditAction
 
         await _seed_audit(
-            db_session, test_tenant["id"], action=AuditAction.DELETE, resource_id="d1"
+            db_session, action=AuditAction.DELETE, resource_id="d1"
         )
         await _seed_audit(
-            db_session, test_tenant["id"], action=AuditAction.LOGIN, resource_id="l1"
+            db_session, action=AuditAction.LOGIN, resource_id="l1"
         )
 
         crit = await authenticated_client.post(
@@ -120,15 +115,14 @@ class TestAuditLogSummary:
         self,
         authenticated_client: AsyncClient,
         db_session: AsyncSession,
-        test_tenant,
     ):
         from app.base_models import AuditAction
 
         await _seed_audit(
-            db_session, test_tenant["id"], action=AuditAction.DELETE, resource_id="s1"
+            db_session, action=AuditAction.DELETE, resource_id="s1"
         )
         await _seed_audit(
-            db_session, test_tenant["id"], action=AuditAction.CREATE, resource_id="s2"
+            db_session, action=AuditAction.CREATE, resource_id="s2"
         )
         resp = await authenticated_client.get(f"{_BASE}/audit-log/summary")
         assert resp.status_code == 200, resp.text
@@ -157,21 +151,24 @@ class TestRBAC:
 # =============================================================================
 class TestGDPR:
     async def test_get_retention_policy_defaults(
-        self, authenticated_client: AsyncClient, test_tenant
+        self, authenticated_client: AsyncClient
     ):
         resp = await authenticated_client.get(f"{_BASE}/gdpr/retention-policy")
         assert resp.status_code == 200, resp.text
         data = resp.json()["data"]
-        assert data["tenant_id"] == test_tenant["id"]
         assert data["profile_retention_days"] == 365
 
-    async def test_update_retention_policy_echoes_tenant(
-        self, authenticated_client: AsyncClient, test_tenant
+    # STRAT-SC-001: GDPRRetentionPolicy no longer carries a tenant_id field at
+    # all (single global org, no scoping dimension) — renamed from
+    # test_update_retention_policy_echoes_tenant, which asserted the server
+    # overrode a client-supplied tenant_id; that concept no longer exists, so
+    # this now just checks the PUT actually persists the updated fields.
+    async def test_update_retention_policy_updates_fields(
+        self, authenticated_client: AsyncClient
     ):
         resp = await authenticated_client.put(
             f"{_BASE}/gdpr/retention-policy",
             json={
-                "tenant_id": 99,  # must be overridden by server to the real tenant
                 "profile_retention_days": 400,
                 "event_retention_days": 200,
                 "audit_log_retention_days": 2000,
@@ -181,7 +178,6 @@ class TestGDPR:
         )
         assert resp.status_code == 200, resp.text
         data = resp.json()["data"]
-        assert data["tenant_id"] == test_tenant["id"]
         assert data["profile_retention_days"] == 400
 
     async def test_purge_preview_empty(self, authenticated_client: AsyncClient):

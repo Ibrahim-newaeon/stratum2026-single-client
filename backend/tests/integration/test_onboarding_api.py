@@ -112,8 +112,13 @@ class TestSteps:
 # Full flow + skip + reset
 # =============================================================================
 class TestFlowSkipReset:
+    # STRAT-SC-001 (C6): completion/skip mark the Organization singleton
+    # onboarded (get_organization(db) raises if it was never seeded), so
+    # these two tests need the `organization` fixture.
     @pytest.mark.asyncio
-    async def test_full_completion_flow(self, authenticated_client: AsyncClient):
+    async def test_full_completion_flow(
+        self, authenticated_client: AsyncClient, organization
+    ):
         await _complete_all_steps(authenticated_client)
 
         status = await authenticated_client.get("/api/v1/onboarding/status")
@@ -128,7 +133,7 @@ class TestFlowSkipReset:
         assert check.json()["data"]["required"] is False
 
     @pytest.mark.asyncio
-    async def test_skip(self, authenticated_client: AsyncClient):
+    async def test_skip(self, authenticated_client: AsyncClient, organization):
         resp = await authenticated_client.post("/api/v1/onboarding/skip")
         assert resp.status_code == 200
         status = await authenticated_client.get("/api/v1/onboarding/status")

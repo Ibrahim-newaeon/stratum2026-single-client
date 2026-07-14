@@ -24,7 +24,7 @@ _MISSING = "00000000-0000-0000-0000-000000000000"
 
 
 @pytest_asyncio.fixture
-async def cms_client(client, test_user, test_tenant) -> AsyncClient:
+async def cms_client(client, test_user) -> AsyncClient:
     """An authenticated client whose JWT carries a CMS super_admin role."""
     from app.core.security import create_access_token
 
@@ -32,29 +32,25 @@ async def cms_client(client, test_user, test_tenant) -> AsyncClient:
         subject=test_user["id"],
         additional_claims={
             "email": test_user["email"],
-            "tenant_id": test_tenant["id"],
             "role": test_user["role"],
             "cms_role": "super_admin",
         },
     )
     client.headers["Authorization"] = f"Bearer {token}"
-    client.headers["X-Tenant-ID"] = str(test_tenant["id"])
     return client
 
 
-def _claims_client(client, test_user, test_tenant, **extra_claims) -> AsyncClient:
+def _claims_client(client, test_user, **extra_claims) -> AsyncClient:
     """Re-sign the client token with custom claims (role / cms_role)."""
     from app.core.security import create_access_token
 
     claims = {
         "email": test_user["email"],
-        "tenant_id": test_tenant["id"],
         "role": test_user["role"],
     }
     claims.update(extra_claims)
     token = create_access_token(subject=test_user["id"], additional_claims=claims)
     client.headers["Authorization"] = f"Bearer {token}"
-    client.headers["X-Tenant-ID"] = str(test_tenant["id"])
     return client
 
 
@@ -196,26 +192,26 @@ class TestAdminCategories:
 class TestCmsPermissionGate:
     @pytest.mark.asyncio
     async def test_platform_superadmin_without_cms_role_allowed(
-        self, client: AsyncClient, test_user, test_tenant
+        self, client: AsyncClient, test_user
     ):
         # Fallback path: platform owner passes even without a cms_role.
-        sa = _claims_client(client, test_user, test_tenant, role="owner")
+        sa = _claims_client(client, test_user, role="owner")
         resp = await sa.get("/api/v1/cms/admin/posts")
         assert resp.status_code == 200
 
     @pytest.mark.asyncio
     async def test_invalid_cms_role_claim_rejected(
-        self, client: AsyncClient, test_user, test_tenant
+        self, client: AsyncClient, test_user
     ):
-        bogus = _claims_client(client, test_user, test_tenant, cms_role="bogus_role")
+        bogus = _claims_client(client, test_user, cms_role="bogus_role")
         resp = await bogus.get("/api/v1/cms/admin/posts")
         assert resp.status_code == 403
 
     @pytest.mark.asyncio
     async def test_viewer_role_can_view_but_not_create(
-        self, client: AsyncClient, test_user, test_tenant
+        self, client: AsyncClient, test_user
     ):
-        viewer = _claims_client(client, test_user, test_tenant, cms_role="viewer")
+        viewer = _claims_client(client, test_user, cms_role="viewer")
         list_resp = await viewer.get("/api/v1/cms/admin/posts")
         assert list_resp.status_code == 200
         create_resp = await viewer.post("/api/v1/cms/admin/posts", json=_post())

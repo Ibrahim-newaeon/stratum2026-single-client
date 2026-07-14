@@ -21,7 +21,7 @@ _MISSING = "00000000-0000-0000-0000-000000000000"
 
 
 @pytest_asyncio.fixture
-async def cms_client(client, test_user, test_tenant) -> AsyncClient:
+async def cms_client(client, test_user) -> AsyncClient:
     """An authenticated client whose JWT carries a CMS super_admin role."""
     from app.core.security import create_access_token
 
@@ -29,13 +29,11 @@ async def cms_client(client, test_user, test_tenant) -> AsyncClient:
         subject=test_user["id"],
         additional_claims={
             "email": test_user["email"],
-            "tenant_id": test_tenant["id"],
             "role": test_user["role"],
             "cms_role": "super_admin",
         },
     )
     client.headers["Authorization"] = f"Bearer {token}"
-    client.headers["X-Tenant-ID"] = str(test_tenant["id"])
     return client
 
 

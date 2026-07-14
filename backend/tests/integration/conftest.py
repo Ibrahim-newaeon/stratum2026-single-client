@@ -6,7 +6,7 @@ Pytest configuration and fixtures for integration tests.
 
 Provides:
 - Database fixtures with async support
-- Test tenant and user factories
+- Test organization and user factories
 - API client fixtures
 
 NOTE: These tests require a running PostgreSQL database.
@@ -180,22 +180,28 @@ async def app():
     "Future attached to a different loop" RuntimeErrors.
 
     To avoid this, we construct a **lightweight test app** that keeps the
-    router & tenant middleware but drops the problematic I/O middleware.
+    router & auth-context middleware but drops the problematic I/O
+    middleware.
+
+    STRAT-SC-001 (Task C6): ``app.middleware.tenant.TenantMiddleware`` was
+    deleted in C2 (replaced by ``AuthContextMiddleware`` — decodes the JWT
+    and sets ``request.state.user_id/role/cms_role``; there is no tenant
+    context left to extract, since there is exactly one organization).
     """
     from fastapi import FastAPI
     from fastapi.responses import ORJSONResponse
 
     from app.api.v1 import api_router
     from app.core.config import settings
-    from app.middleware.tenant import TenantMiddleware
+    from app.middleware.auth_context import AuthContextMiddleware
 
     application = FastAPI(
         title="Stratum AI (test)",
         default_response_class=ORJSONResponse,
     )
 
-    # Only the tenant middleware – enough for auth / row-level security
-    application.add_middleware(TenantMiddleware)
+    # Auth-context middleware – enough for JWT decode / role context.
+    application.add_middleware(AuthContextMiddleware)
 
     # Include the full API router (same routes as production)
     application.include_router(api_router, prefix=settings.api_v1_prefix)
@@ -223,15 +229,16 @@ async def client(app, db_session) -> AsyncGenerator[AsyncClient, None]:
 
     app.dependency_overrides[get_async_session] = get_test_session
 
-    # app.tenancy.deps.get_db is a *separate* wrapper around get_async_session,
-    # so overriding get_async_session alone doesn't reach endpoints that depend
-    # on get_db (e.g. pacing). Override it too so those endpoints share the test
-    # savepoint session and can see fixture-created rows.
+    # STRAT-SC-001: app.tenancy (a get_db wrapper around get_async_session,
+    # used by a handful of endpoints e.g. pacing) was deleted wholesale in
+    # C2/C3 along with the rest of the tenancy layer. The import is gone too,
+    # so there's nothing left to override here — kept as a no-op try/except
+    # in case a future endpoint reintroduces a similar db-session wrapper.
     try:
         from app.tenancy.deps import get_db as tenancy_get_db
 
         app.dependency_overrides[tenancy_get_db] = get_test_session
-    except ImportError:  # pragma: no cover - defensive
+    except ImportError:  # pragma: no cover - app.tenancy no longer exists
         pass
 
     async with AsyncClient(
@@ -245,9 +252,12 @@ async def client(app, db_session) -> AsyncGenerator[AsyncClient, None]:
 
 
 @pytest_asyncio.fixture(scope="function")
-async def authenticated_client(client, test_user, test_tenant) -> AsyncClient:
+async def authenticated_client(client, test_user) -> AsyncClient:
     """
     Create an authenticated client with JWT token.
+
+    STRAT-SC-001: no more tenant claim/header — there is exactly one
+    organization, so nothing to disambiguate.
     """
     from app.core.security import create_access_token
 
@@ -255,13 +265,11 @@ async def authenticated_client(client, test_user, test_tenant) -> AsyncClient:
         subject=test_user["id"],
         additional_claims={
             "email": test_user["email"],
-            "tenant_id": test_tenant["id"],
             "role": test_user["role"],
         },
     )
 
     client.headers["Authorization"] = f"Bearer {token}"
-    client.headers["X-Tenant-ID"] = str(test_tenant["id"])
 
     return client
 
@@ -272,37 +280,47 @@ async def authenticated_client(client, test_user, test_tenant) -> AsyncClient:
 
 
 @pytest_asyncio.fixture(scope="function")
-async def test_tenant(db_session) -> dict:
-    """Create a test tenant."""
-    from app.base_models import Tenant
+async def organization(db_session):
+    """Ensure the Organization singleton (id=1) exists for this test.
 
-    tenant = Tenant(
-        name="Test Tenant",
-        slug="test-tenant",
-        plan="professional",
-        max_users=10,
-        max_campaigns=100,
-    )
+    STRAT-SC-001: replaces the old ``test_tenant`` factory. There is
+    exactly one organization row post-conversion (``Organization.id == 1``,
+    enforced by ``ck_organization_singleton``), so this doesn't create a
+    new row per test — it upserts the singleton and returns it. Endpoints
+    that call ``get_organization(db)`` (features, trust-gate config,
+    console/launch-readiness) need this row to exist or they raise.
+    """
+    from app.base_models import Organization
 
-    db_session.add(tenant)
-    await db_session.flush()
+    org = await db_session.get(Organization, 1)
+    if org is None:
+        org = Organization(
+            id=1,
+            name="Test Organization",
+            slug="test-organization",
+            enforcement_mode="advisory",
+        )
+        db_session.add(org)
+        await db_session.flush()
 
     return {
-        "id": tenant.id,
-        "name": tenant.name,
-        "slug": tenant.slug,
-        "plan": tenant.plan,
+        "id": org.id,
+        "name": org.name,
+        "slug": org.slug,
+        "enforcement_mode": org.enforcement_mode,
     }
 
 
 @pytest_asyncio.fixture(scope="function")
-async def test_user(db_session, test_tenant) -> dict:
-    """Create a test user."""
+async def test_user(db_session) -> dict:
+    """Create a test user.
+
+    STRAT-SC-001: no more ``tenant_id`` — ``User`` is a global row post-C1.
+    """
     from app.base_models import User, UserRole
     from app.core.security import get_password_hash
 
     user = User(
-        tenant_id=test_tenant["id"],
         email="test@example.com",
         email_hash="test@example.com",  # Simplified for tests
         password_hash=get_password_hash("testpassword123"),
@@ -320,17 +338,18 @@ async def test_user(db_session, test_tenant) -> dict:
         "email": user.email,
         "full_name": user.full_name,
         "role": user.role.value,
-        "tenant_id": test_tenant["id"],
     }
 
 
 @pytest_asyncio.fixture(scope="function")
-async def test_campaign(db_session, test_tenant) -> dict:
-    """Create a test campaign."""
+async def test_campaign(db_session) -> dict:
+    """Create a test campaign draft.
+
+    STRAT-SC-001: no more ``tenant_id`` — ``CampaignDraft`` is global.
+    """
     from app.models.campaign_builder import CampaignDraft
 
     campaign = CampaignDraft(
-        tenant_id=test_tenant["id"],
         name="Test Campaign",
         status="draft",
         platform="meta",
@@ -354,12 +373,15 @@ async def test_campaign(db_session, test_tenant) -> dict:
 
 
 @pytest_asyncio.fixture(scope="function")
-async def test_signal_health(db_session, test_tenant) -> dict:
-    """Create a test signal health record."""
+async def test_signal_health(db_session) -> dict:
+    """Create a test signal health record.
+
+    STRAT-SC-001: no more ``tenant_id`` — one row per platform, no tenant
+    dimension (C4 de-fan-out).
+    """
     from app.models.trust_layer import FactSignalHealthDaily, SignalHealthStatus
 
     record = FactSignalHealthDaily(
-        tenant_id=test_tenant["id"],
         date=date.today(),
         platform="meta",
         emq_score=85.0,
@@ -374,7 +396,6 @@ async def test_signal_health(db_session, test_tenant) -> dict:
 
     return {
         "id": str(record.id),
-        "tenant_id": test_tenant["id"],
         "platform": record.platform,
         "emq_score": record.emq_score,
         "status": record.status.value,
@@ -382,14 +403,16 @@ async def test_signal_health(db_session, test_tenant) -> dict:
 
 
 @pytest_asyncio.fixture(scope="function")
-async def test_action(db_session, test_tenant, test_user) -> dict:
-    """Create a test action queue item."""
+async def test_action(db_session, test_user) -> dict:
+    """Create a test action queue item.
+
+    STRAT-SC-001: no more ``tenant_id``.
+    """
     import json
 
     from app.models.trust_layer import FactActionsQueue
 
     action = FactActionsQueue(
-        tenant_id=test_tenant["id"],
         date=date.today(),
         action_type="budget_increase",
         entity_type="campaign",
@@ -406,7 +429,6 @@ async def test_action(db_session, test_tenant, test_user) -> dict:
 
     return {
         "id": str(action.id),
-        "tenant_id": test_tenant["id"],
         "action_type": action.action_type,
         "status": action.status,
         "entity_name": action.entity_name,
@@ -419,49 +441,43 @@ async def test_action(db_session, test_tenant, test_user) -> dict:
 
 
 @pytest.fixture
-def auth_headers(test_user, test_tenant):
-    """Generate authentication headers for API requests."""
+def auth_headers(test_user):
+    """Generate authentication headers for API requests.
+
+    STRAT-SC-001: no more tenant claim/header.
+    """
     from app.core.security import create_access_token
 
     token = create_access_token(
         subject=test_user["id"],
         additional_claims={
             "email": test_user["email"],
-            "tenant_id": test_tenant["id"],
             "role": test_user["role"],
         },
     )
 
     return {
         "Authorization": f"Bearer {token}",
-        "X-Tenant-ID": str(test_tenant["id"]),
     }
 
 
 @pytest_asyncio.fixture(scope="function")
-async def owner_user(db_session) -> dict:
+async def owner_user(db_session, organization) -> dict:
     """Create the owner user backing ``owner_headers``.
 
     Owner endpoints resolve the caller via ``get_current_user``
     (``SELECT User WHERE id = <jwt subject>``) and audit tables FK
     ``user_id -> users.id``. The token must therefore be signed for a real
     owner row, otherwise requests 401 and event inserts violate the FK.
+
+    STRAT-SC-001: no more per-owner ``Tenant`` row — depends on the
+    ``organization`` fixture (the Organization singleton) instead, since
+    owner/console endpoints commonly call ``get_organization(db)``.
     """
-    from app.base_models import Tenant, User, UserRole
+    from app.base_models import User, UserRole
     from app.core.security import get_password_hash
 
-    tenant = Tenant(
-        name="Owner Tenant",
-        slug="owner-tenant",
-        plan="enterprise",
-        max_users=100,
-        max_campaigns=1000,
-    )
-    db_session.add(tenant)
-    await db_session.flush()
-
     user = User(
-        tenant_id=tenant.id,
         email="admin@stratum.ai",
         email_hash="admin@stratum.ai",
         password_hash=get_password_hash("adminpassword123"),
@@ -477,7 +493,6 @@ async def owner_user(db_session) -> dict:
         "id": user.id,
         "email": user.email,
         "role": user.role.value,
-        "tenant_id": tenant.id,
     }
 
 

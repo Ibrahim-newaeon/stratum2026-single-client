@@ -53,14 +53,12 @@ pytestmark = [pytest.mark.integration, pytest.mark.asyncio]
 def _make_entry(
     status: DLQStatus = DLQStatus.PENDING,
     platform: str = "meta",
-    tenant_id: int = 1,
     age: timedelta = timedelta(0),
     category: FailureReason = FailureReason.TIMEOUT,
 ) -> DLQEntry:
     ts = datetime.now(timezone.utc) - age
     return DLQEntry(
         id=str(uuid4()),
-        tenant_id=tenant_id,
         platform=platform,
         event_name="Purchase",
         event_id="evt-1",
@@ -195,7 +193,6 @@ class TestConnection:
 class TestRedisLifecycle:
     async def test_add_failed_event_persists_entry(self, redis_dlq):
         entry = await redis_dlq.add_failed_event(
-            tenant_id=7,
             platform="meta",
             event_name="Purchase",
             event_data={"event_id": "evt-42", "value": 99.0},
@@ -213,7 +210,6 @@ class TestRedisLifecycle:
         # Entry readable back from Redis
         stored = await redis_dlq.get_entry(entry.id)
         assert stored is not None
-        assert stored.tenant_id == 7
         assert stored.retry_count == 2
         assert stored.platform_response == {"error": {"code": 1}}
         assert stored.context == {"batch": "b-1"}
@@ -242,29 +238,28 @@ class TestRedisLifecycle:
         assert found is mem_entry
 
     async def test_get_pending_entries_filters(self, redis_dlq):
-        meta_t1 = await redis_dlq.add_failed_event(
-            tenant_id=1,
+        # STRAT-SC-001: tenant-scoped filtering no longer exists (single
+        # org) — the per-tenant assertions from this test were removed;
+        # the platform filter and pending/pagination behavior remain.
+        meta_1 = await redis_dlq.add_failed_event(
             platform="meta",
             event_name="Purchase",
             event_data={},
             error_message="connection refused",
         )
-        google_t1 = await redis_dlq.add_failed_event(
-            tenant_id=1,
+        google_1 = await redis_dlq.add_failed_event(
             platform="google",
             event_name="Lead",
             event_data={},
             error_message="rate limit exceeded",
         )
-        meta_t2 = await redis_dlq.add_failed_event(
-            tenant_id=2,
+        meta_2 = await redis_dlq.add_failed_event(
             platform="meta",
             event_name="Purchase",
             event_data={},
             error_message="401 unauthorized",
         )
         recovered = await redis_dlq.add_failed_event(
-            tenant_id=1,
             platform="meta",
             event_name="Purchase",
             event_data={},
@@ -273,16 +268,10 @@ class TestRedisLifecycle:
         await redis_dlq.mark_recovered(recovered.id)
 
         all_pending = await redis_dlq.get_pending_entries()
-        assert {e.id for e in all_pending} == {meta_t1.id, google_t1.id, meta_t2.id}
+        assert {e.id for e in all_pending} == {meta_1.id, google_1.id, meta_2.id}
 
         meta_only = await redis_dlq.get_pending_entries(platform="meta")
-        assert {e.id for e in meta_only} == {meta_t1.id, meta_t2.id}
-
-        tenant1 = await redis_dlq.get_pending_entries(tenant_id=1)
-        assert {e.id for e in tenant1} == {meta_t1.id, google_t1.id}
-
-        both = await redis_dlq.get_pending_entries(platform="meta", tenant_id=2)
-        assert [e.id for e in both] == [meta_t2.id]
+        assert {e.id for e in meta_only} == {meta_1.id, meta_2.id}
 
         # Pagination over the sorted set
         page = await redis_dlq.get_pending_entries(limit=1)
@@ -290,7 +279,6 @@ class TestRedisLifecycle:
 
     async def test_mark_recovered(self, redis_dlq):
         entry = await redis_dlq.add_failed_event(
-            tenant_id=1,
             platform="meta",
             event_name="Purchase",
             event_data={},
@@ -309,7 +297,6 @@ class TestRedisLifecycle:
 
     async def test_mark_discarded_with_reason(self, redis_dlq):
         entry = await redis_dlq.add_failed_event(
-            tenant_id=1,
             platform="meta",
             event_name="Purchase",
             event_data={},
@@ -324,7 +311,6 @@ class TestRedisLifecycle:
 
     async def test_mark_discarded_without_reason(self, redis_dlq):
         entry = await redis_dlq.add_failed_event(
-            tenant_id=1,
             platform="meta",
             event_name="Purchase",
             event_data={},
@@ -341,7 +327,6 @@ class TestRedisLifecycle:
 
     async def test_update_retry_increments_and_resets_status(self, redis_dlq):
         entry = await redis_dlq.add_failed_event(
-            tenant_id=1,
             platform="meta",
             event_name="Purchase",
             event_data={},
@@ -364,7 +349,6 @@ class TestRedisLifecycle:
 
     async def test_replay_event_marks_retrying(self, redis_dlq):
         entry = await redis_dlq.add_failed_event(
-            tenant_id=3,
             platform="tiktok",
             event_name="CompletePayment",
             event_data={"value": 5},
@@ -376,7 +360,6 @@ class TestRedisLifecycle:
 
         assert payload == {
             "dlq_entry_id": entry.id,
-            "tenant_id": 3,
             "platform": "tiktok",
             "event_data": {"value": 5},
             "original_retry_count": 2,
@@ -390,28 +373,24 @@ class TestRedisLifecycle:
 
     async def test_get_stats_aggregates(self, redis_dlq):
         pending = await redis_dlq.add_failed_event(
-            tenant_id=1,
             platform="meta",
             event_name="Purchase",
             event_data={},
             error_message="timed out",
         )
         recovered = await redis_dlq.add_failed_event(
-            tenant_id=1,
             platform="google",
             event_name="Lead",
             event_data={},
             error_message="rate limit",
         )
         discarded = await redis_dlq.add_failed_event(
-            tenant_id=1,
             platform="meta",
             event_name="Purchase",
             event_data={},
             error_message="invalid payload",
         )
         retrying = await redis_dlq.add_failed_event(
-            tenant_id=1,
             platform="snapchat",
             event_name="PURCHASE",
             event_data={},
@@ -451,7 +430,6 @@ class TestRedisLifecycle:
         """A queued id whose entry key expired (TTL) is skipped."""
         await redis_dlq._redis.zadd(redis_dlq.QUEUE_KEY, {"orphan-id": 1.0})
         live = await redis_dlq.add_failed_event(
-            tenant_id=1,
             platform="meta",
             event_name="Purchase",
             event_data={},
@@ -466,7 +444,6 @@ class TestRedisLifecycle:
 
     async def test_categorization_circuit_platform_and_unknown(self, redis_dlq):
         circuit = await redis_dlq.add_failed_event(
-            tenant_id=1,
             platform="meta",
             event_name="Purchase",
             event_data={},
@@ -475,7 +452,6 @@ class TestRedisLifecycle:
         assert circuit.failure_category == FailureReason.CIRCUIT_OPEN
 
         platform_err = await redis_dlq.add_failed_event(
-            tenant_id=1,
             platform="meta",
             event_name="Purchase",
             event_data={},
@@ -485,7 +461,6 @@ class TestRedisLifecycle:
         assert platform_err.failure_category == FailureReason.PLATFORM_ERROR
 
         unknown = await redis_dlq.add_failed_event(
-            tenant_id=1,
             platform="meta",
             event_name="Purchase",
             event_data={},
@@ -502,7 +477,6 @@ class TestRedisLifecycle:
         await redis_dlq._store_entry(old_recovered)
         # Fresh entry -> untouched
         fresh = await redis_dlq.add_failed_event(
-            tenant_id=1,
             platform="meta",
             event_name="Purchase",
             event_data={},
@@ -547,7 +521,6 @@ class TestRedisLifecycle:
 class TestMemoryFallback:
     async def test_add_and_get_in_memory(self, memory_dlq):
         entry = await memory_dlq.add_failed_event(
-            tenant_id=1,
             platform="meta",
             event_name="Purchase",
             event_data={"event_id": "m-1"},
@@ -565,7 +538,6 @@ class TestMemoryFallback:
         for i in range(5):
             entries.append(
                 await memory_dlq.add_failed_event(
-                    tenant_id=i,
                     platform="meta",
                     event_name="Purchase",
                     event_data={},
@@ -577,10 +549,13 @@ class TestMemoryFallback:
         assert memory_dlq._memory_queue == entries[-3:]
 
     async def test_get_pending_entries_memory_filters_and_pagination(self, memory_dlq):
-        e1 = _make_entry(platform="meta", tenant_id=1)
-        e2 = _make_entry(platform="google", tenant_id=1)
-        e3 = _make_entry(platform="meta", tenant_id=2)
-        e4 = _make_entry(platform="meta", tenant_id=1, status=DLQStatus.DISCARDED)
+        # STRAT-SC-001: tenant-scoped filtering no longer exists (single
+        # org) — the by-tenant assertion from this test was removed; the
+        # platform filter and pagination behavior remain.
+        e1 = _make_entry(platform="meta")
+        e2 = _make_entry(platform="google")
+        e3 = _make_entry(platform="meta")
+        e4 = _make_entry(platform="meta", status=DLQStatus.DISCARDED)
         memory_dlq._memory_queue.extend([e1, e2, e3, e4])
 
         assert {e.id for e in await memory_dlq.get_pending_entries()} == {
@@ -591,10 +566,6 @@ class TestMemoryFallback:
         assert [
             e.id for e in await memory_dlq.get_pending_entries(platform="google")
         ] == [e2.id]
-        assert {e.id for e in await memory_dlq.get_pending_entries(tenant_id=1)} == {
-            e1.id,
-            e2.id,
-        }
         # offset/limit slice
         paged = await memory_dlq.get_pending_entries(limit=1, offset=1)
         assert [e.id for e in paged] == [e2.id]
@@ -677,7 +648,6 @@ class TestDegradedRedisFallback:
 
     async def test_store_entry_falls_back_to_memory(self, broken_dlq):
         entry = await broken_dlq.add_failed_event(
-            tenant_id=1,
             platform="meta",
             event_name="Purchase",
             event_data={},

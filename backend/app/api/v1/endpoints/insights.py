@@ -20,12 +20,17 @@ from app.analytics.logic.recommend import (
     generate_recommendations,
 )
 from app.analytics.logic.types import BaselineMetrics, EntityMetrics
+from app.auth.deps import get_current_user
 from app.db.session import get_async_session
 from app.features.service import can_access_feature, get_org_features
 from app.quality.trust_layer_service import SignalHealthService
 from app.schemas.response import APIResponse
 
-router = APIRouter(tags=["insights"])
+# NOTE(STRAT-SC-001/C6): router-level auth — the old TenantMiddleware 401'd
+# every non-public request; AuthContextMiddleware (C2) only decodes the JWT,
+# so these analytics reads were reachable anonymously. Same fail-open class
+# C3 closed on 11 sibling routers.
+router = APIRouter(tags=["insights"], dependencies=[Depends(get_current_user)])
 
 
 # =============================================================================

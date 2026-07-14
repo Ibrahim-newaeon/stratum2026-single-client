@@ -1,69 +1,38 @@
 -- Stratum AI Seed Data
--- Creates demo tenant and admin user
+-- Single-client conversion (STRAT-SC-001): seeds the Organization singleton
+-- (id=1) and a small set of demo campaigns. The owner user is NOT seeded
+-- here — use `python backend/scripts/seed_owner.py` (reads
+-- SUPERADMIN_EMAIL/SUPERADMIN_PASSWORD from the environment; never commit
+-- credentials to this file).
 
--- Insert demo tenant
-INSERT INTO tenants (name, slug, plan, max_users, max_campaigns, settings, feature_flags, created_at, updated_at)
+-- Organization singleton (id=1). ON CONFLICT is a true no-op re-run guard:
+-- the `organization` table's only row is pinned to id=1 by
+-- ck_organization_singleton, so a second run just leaves the existing row
+-- untouched rather than erroring.
+INSERT INTO organization (id, name, slug, branding, settings, feature_flags, enforcement_mode, onboarding_state, is_onboarded, created_at, updated_at)
 VALUES (
-    'Demo Company',
-    'demo',
-    'professional',
-    50,
-    200,
+    1,
+    'Stratum AI',
+    'stratum-ai',
+    '{}'::jsonb,
     '{"timezone": "UTC", "currency": "USD"}'::jsonb,
     '{"signal_health": true, "attribution_variance": true, "ai_recommendations": true, "anomaly_alerts": true, "creative_fatigue": true, "campaign_builder": true, "autopilot_level": 2}'::jsonb,
+    'advisory',
+    '{}'::jsonb,
+    false,
     NOW(),
     NOW()
 )
-ON CONFLICT (slug) DO NOTHING;
+ON CONFLICT (id) DO NOTHING;
 
--- Get the tenant ID
-DO $$
-DECLARE
-    v_tenant_id INTEGER;
-    v_email_hash VARCHAR(64);
-    v_password_hash VARCHAR(255);
-BEGIN
-    SELECT id INTO v_tenant_id FROM tenants WHERE slug = 'demo';
-
-    -- Email hash for admin@stratum.ai (SHA256)
-    v_email_hash := '7c6a180b36896a65c3a7f3c0c0a3d9fb5c6b0c21a4c3d8e9f0a1b2c3d4e5f6a7';
-
-    -- Generate a secure random password hash at runtime.
-    -- NOTE: This seed script now requires the admin password to be set via
-    -- the STRATUM_SEED_ADMIN_PASSWORD environment variable. The application
-    -- startup logic hashes it before executing this script.
-    v_password_hash := COALESCE(current_setting('app.seed_admin_password', true), '');
-    IF v_password_hash = '' THEN
-        RAISE EXCEPTION 'STRATUM_SEED_ADMIN_PASSWORD must be set to seed demo data';
-    END IF;
-
-    -- Insert admin user
-    INSERT INTO users (tenant_id, email, email_hash, password_hash, full_name, role, is_active, is_verified, locale, timezone, preferences, created_at, updated_at)
-    VALUES (
-        v_tenant_id,
-        'admin@stratum.ai',
-        v_email_hash,
-        v_password_hash,
-        'Admin User',
-        'admin',
-        true,
-        true,
-        'en',
-        'UTC',
-        '{}'::jsonb,
-        NOW(),
-        NOW()
-    )
-    ON CONFLICT DO NOTHING;
-END $$;
-
--- Insert some sample campaigns for the demo tenant
-INSERT INTO campaigns (tenant_id, external_id, account_id, platform, name, status, currency, total_spend_cents, impressions, clicks, conversions, revenue_cents, labels, created_at, updated_at)
+-- Insert some sample campaigns (global — no tenant/org dimension on
+-- `campaigns` post-conversion; every deployment of this app serves one
+-- organization, so campaigns need no scoping column).
+INSERT INTO campaigns (platform, external_id, account_id, name, status, currency, total_spend_cents, impressions, clicks, conversions, revenue_cents, labels, created_at, updated_at)
 SELECT
-    t.id,
+    (ARRAY['meta', 'google', 'tiktok'])[1 + (generate_series % 3)],
     'camp_' || generate_series,
     'act_demo_123',
-    (ARRAY['meta', 'google', 'tiktok'])[1 + (generate_series % 3)],
     'Campaign ' || generate_series,
     (ARRAY['active', 'paused', 'completed'])[1 + (generate_series % 3)],
     'USD',
@@ -72,9 +41,8 @@ SELECT
     (random() * 50000)::int,
     (random() * 1000)::int,
     (random() * 2000000)::int,
-    ARRAY['demo'],
+    '["demo"]'::jsonb,
     NOW() - (random() * interval '30 days'),
     NOW()
-FROM tenants t, generate_series(1, 10)
-WHERE t.slug = 'demo'
+FROM generate_series(1, 10)
 ON CONFLICT DO NOTHING;

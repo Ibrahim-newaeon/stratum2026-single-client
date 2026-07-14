@@ -22,7 +22,10 @@ def _payload(**overrides) -> dict:
 
 
 class TestAuth:
-    async def test_create_requires_tenant(self, client):
+    # STRAT-SC-001 (C6): renamed from test_create_requires_tenant — there is
+    # no tenant context anymore; the admin router now carries an explicit
+    # get_current_user dependency (fail-open closed in C6).
+    async def test_create_requires_auth(self, client):
         resp = await client.post(_BASE, json=_payload())
         assert resp.status_code == 401
 

@@ -21,7 +21,7 @@ import asyncio
 import json
 import uuid
 from datetime import date, datetime, timezone
-from typing import Any, Dict, Optional
+from typing import Any
 from unittest.mock import AsyncMock, patch
 
 import pytest
@@ -88,24 +88,21 @@ def _soft_block(token: str = "confirm-tok-123") -> EnforcementResult:
 
 @pytest.fixture
 def seeded(sync_engine):
-    """A committed tenant + factory for committed queue actions.
+    """A committed operator user + factory for committed queue actions.
 
-    Yields a dict with the tenant id and an ``add_action`` factory; every
-    row created here is deleted (and the tenant removed) on teardown.
+    STRAT-SC-001: no more per-tenant ``Tenant`` row — ``User`` /
+    ``FactActionsQueue`` / ``FactSignalHealthDaily`` are global rows and
+    ``TenantEnforcementSettings`` is a global singleton (residual name,
+    no ``tenant_id`` column). Yields a dict with the operator user id and
+    an ``add_action`` factory; every row created here is deleted on
+    teardown.
     """
-    from app.base_models import Tenant, User
+    from app.base_models import User
 
     session = Session(bind=sync_engine)
-    tenant = Tenant(
-        name="Exec Pipeline Tenant",
-        slug=f"exec-pipeline-{uuid.uuid4().hex[:10]}",
-    )
-    session.add(tenant)
-    session.commit()
 
     # The applied_by_user_id FK requires a real user row.
     operator = User(
-        tenant_id=tenant.id,
         email=f"exec-op-{uuid.uuid4().hex[:8]}@test.local",
         email_hash=uuid.uuid4().hex + uuid.uuid4().hex,
         password_hash="x",
@@ -121,11 +118,9 @@ def seeded(sync_engine):
         platform: str = "meta",
         action_type: str = "budget_increase",
         amount: int = 50,
-        tenant_id: Optional[int] = None,
         **overrides: Any,
     ) -> uuid.UUID:
         action = FactActionsQueue(
-            tenant_id=tenant_id or tenant.id,
             date=date.today(),
             action_type=action_type,
             entity_type="campaign",
@@ -144,7 +139,6 @@ def seeded(sync_engine):
 
     def add_health_row(status: SignalHealthStatus) -> None:
         row = FactSignalHealthDaily(
-            tenant_id=tenant.id,
             date=datetime.now(timezone.utc).date(),
             platform="meta",
             status=status,
@@ -154,33 +148,27 @@ def seeded(sync_engine):
         created_health_ids.append(row.id)
 
     def set_frozen(frozen: bool = True) -> None:
-        """Upsert the tenant's enforcement settings with the freeze flag so the
-        worker's own session reads the operator emergency-stop state."""
+        """Upsert the global enforcement settings singleton with the freeze
+        flag so the worker's own session reads the operator emergency-stop
+        state."""
         from app.models.autopilot import TenantEnforcementSettings
 
-        row = (
-            session.query(TenantEnforcementSettings)
-            .filter_by(tenant_id=tenant.id)
-            .one_or_none()
-        )
+        row = session.query(TenantEnforcementSettings).one_or_none()
         if row is None:
-            row = TenantEnforcementSettings(
-                tenant_id=tenant.id, autopilot_frozen=frozen
-            )
+            row = TenantEnforcementSettings(autopilot_frozen=frozen)
             session.add(row)
         else:
             row.autopilot_frozen = frozen
         session.commit()
 
     # The signal-health gate now fails CLOSED on no recent data (P0 TRUST-001),
-    # so a tenant with no rollup would defer every action. Seed a healthy rollup
-    # (trust_layer's enum spells it OK, not HEALTHY) for today by default; tests
-    # that exercise the gate add their own DEGRADED/CRITICAL row, which wins on
-    # severity at the latest date.
+    # so with no rollup at all every action would be deferred. Seed a healthy
+    # rollup (trust_layer's enum spells it OK, not HEALTHY) for today by
+    # default; tests that exercise the gate add their own DEGRADED/CRITICAL
+    # row, which wins on severity at the latest date.
     add_health_row(SignalHealthStatus.OK)
 
     yield {
-        "tenant_id": tenant.id,
         "user_id": operator.id,
         "add_action": add_action,
         "add_health_row": add_health_row,
@@ -190,11 +178,7 @@ def seeded(sync_engine):
 
     from app.models.autopilot import TenantEnforcementSettings
 
-    settings_row = (
-        session.query(TenantEnforcementSettings)
-        .filter_by(tenant_id=tenant.id)
-        .one_or_none()
-    )
+    settings_row = session.query(TenantEnforcementSettings).one_or_none()
     if settings_row is not None:
         session.delete(settings_row)
         session.commit()
@@ -209,8 +193,6 @@ def seeded(sync_engine):
             session.delete(row)
     session.commit()
     session.delete(session.get(User, operator.id))
-    session.commit()
-    session.delete(session.get(Tenant, tenant.id))
     session.commit()
     session.close()
 
@@ -412,9 +394,7 @@ class TestApplyActionsQueueSweep:
             ),
             patch.object(mod.settings, "use_mock_ad_data", True),
         ):
-            result = mod.apply_actions_queue.apply(
-                kwargs={"tenant_id": seeded["tenant_id"]}
-            ).get()
+            result = mod.apply_actions_queue.apply().get()
 
         assert result["status"] == "success"
         assert result["processed"] == 2
@@ -438,9 +418,7 @@ class TestApplyActionsQueueSweep:
             patch.object(mod, "enforce_before_execute", per_action),
             patch.object(mod.settings, "use_mock_ad_data", True),
         ):
-            result = mod.apply_actions_queue.apply(
-                kwargs={"tenant_id": seeded["tenant_id"]}
-            ).get()
+            result = mod.apply_actions_queue.apply().get()
 
         assert result["processed"] == 1
         assert result["failed"] == 1
@@ -452,9 +430,7 @@ class TestApplyActionsQueueSweep:
 
     def test_sweep_with_no_approved_actions_is_noop(self, seeded):
         with patch.object(mod, "publish_action_status_update", AsyncMock()):
-            result = mod.apply_actions_queue.apply(
-                kwargs={"tenant_id": seeded["tenant_id"]}
-            ).get()
+            result = mod.apply_actions_queue.apply().get()
         assert result == {"status": "success", "processed": 0, "failed": 0}
 
     def test_sweep_skips_every_action_when_frozen(self, seeded):
@@ -471,9 +447,7 @@ class TestApplyActionsQueueSweep:
             ),
             patch.object(mod.settings, "use_mock_ad_data", True),
         ):
-            result = mod.apply_actions_queue.apply(
-                kwargs={"tenant_id": seeded["tenant_id"]}
-            ).get()
+            result = mod.apply_actions_queue.apply().get()
 
         assert result == {"status": "success", "processed": 0, "failed": 0}
         session = seeded["session"]

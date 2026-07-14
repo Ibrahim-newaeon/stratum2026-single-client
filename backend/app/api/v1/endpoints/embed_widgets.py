@@ -44,13 +44,25 @@ from app.schemas.embed_widgets import WidgetType as WidgetTypeEnum
 from app.schemas.embed_widgets import (
     WidgetUpdate,
 )
+from app.auth.deps import get_current_user
 from app.services.embed_widgets import (
     EmbedSecurityService,
     EmbedTokenService,
     EmbedWidgetService,
 )
 
-router = APIRouter(prefix="/embed-widgets", tags=["embed-widgets"])
+# NOTE(STRAT-SC-001/C6): router-level auth on the ADMIN router only — the
+# old TenantMiddleware 401'd every non-public request; AuthContextMiddleware
+# (C2) only decodes the JWT, so widget CRUD/token-minting was reachable
+# anonymously. Same fail-open class C3 closed on 11 sibling routers.
+# `public_router` (/embed/v1) below stays unauthenticated by design: it
+# serves the embedded widgets themselves, which authenticate via their own
+# signed embed tokens.
+router = APIRouter(
+    prefix="/embed-widgets",
+    tags=["embed-widgets"],
+    dependencies=[Depends(get_current_user)],
+)
 
 
 # =============================================================================

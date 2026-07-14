@@ -40,7 +40,6 @@ pytestmark = [pytest.mark.integration, pytest.mark.asyncio]
 TODAY = date(2026, 7, 1)
 START = TODAY - timedelta(days=6)
 
-TENANT_ID = 424242
 
 
 # =============================================================================
@@ -172,11 +171,11 @@ class TestGenerateFileOutput:
             "period": _period(),
         }
 
-        generator = PDFGenerator(TENANT_ID)
+        generator = PDFGenerator()
         execution_id = uuid4()
         file_path, file_size = await generator.generate(template, data, execution_id)
 
-        assert file_path == f"/tmp/reports/{TENANT_ID}/{execution_id}.pdf"
+        assert file_path == f"/tmp/reports/{execution_id}.pdf"
         assert os.path.getsize(file_path) == file_size > 0
         with open(file_path, "rb") as f:
             assert f.read().startswith(b"%PDF")
@@ -204,11 +203,11 @@ class TestGenerateFileOutput:
             "period": _period(),
         }
 
-        generator = PDFGenerator(TENANT_ID)
+        generator = PDFGenerator()
         execution_id = uuid4()
         file_path, file_size = await generator.generate(template, data, execution_id)
 
-        assert file_path == f"/tmp/reports/{TENANT_ID}/{execution_id}.html"
+        assert file_path == f"/tmp/reports/{execution_id}.html"
         assert os.path.getsize(file_path) == file_size > 0
         with open(file_path, encoding="utf-8") as f:
             html = f.read()
@@ -226,7 +225,7 @@ class TestGenerateFileOutput:
         ``(ImportError, OSError)`` except now engages the HTML fallback
         instead of crashing generate()."""
         template = _template(ReportType.CUSTOM, name="OSError Repro")
-        generator = PDFGenerator(TENANT_ID)
+        generator = PDFGenerator()
 
         file_path, file_size = await generator.generate(
             template, {"period": _period()}, uuid4()
@@ -245,7 +244,7 @@ class TestGenerateFileOutput:
 
 class TestGenerateHtmlDispatch:
     def _html(self, report_type, data, **template_kwargs):
-        generator = PDFGenerator(TENANT_ID)
+        generator = PDFGenerator()
         return generator._generate_html(_template(report_type, **template_kwargs), data)
 
     @pytest.mark.parametrize(
@@ -336,7 +335,7 @@ class TestGenerateHtmlDispatch:
         assert '<div class="subtitle"></div>' in html
 
     def test_base_template_and_branding_color_applied(self):
-        generator = PDFGenerator(TENANT_ID)
+        generator = PDFGenerator()
         generator.primary_color = "#123456"
         html = generator._generate_html(_template(ReportType.CUSTOM), {})
         assert html.startswith(BASE_TEMPLATE[:30])
@@ -351,7 +350,7 @@ class TestGenerateHtmlDispatch:
 
 class TestRenderCampaignPerformance:
     def test_summary_platform_table_and_top10(self):
-        generator = PDFGenerator(TENANT_ID)
+        generator = PDFGenerator()
         html = generator._render_campaign_performance(_campaign_data())
 
         # summary cards
@@ -378,7 +377,7 @@ class TestRenderCampaignPerformance:
         assert html.index("Top Dog") < html.index("Filler 0")
 
     def test_bad_roas_class_when_in_top10(self):
-        generator = PDFGenerator(TENANT_ID)
+        generator = PDFGenerator()
         data = {
             "summary": {},
             "by_platform": {},
@@ -398,7 +397,7 @@ class TestRenderCampaignPerformance:
         assert "Loser" in html
 
     def test_defaults_with_empty_data(self):
-        generator = PDFGenerator(TENANT_ID)
+        generator = PDFGenerator()
         html = generator._render_campaign_performance({})
         assert "$0" in html
         assert "0.00x" in html
@@ -406,7 +405,7 @@ class TestRenderCampaignPerformance:
 
 class TestRenderAttributionSummary:
     def test_platforms_sorted_by_revenue_with_percentages(self):
-        generator = PDFGenerator(TENANT_ID)
+        generator = PDFGenerator()
         data = {
             "summary": {
                 "total_deals": 3,
@@ -427,7 +426,7 @@ class TestRenderAttributionSummary:
         assert html.index("META") < html.index("GOOGLE")  # revenue desc
 
     def test_zero_total_revenue_yields_zero_pct(self):
-        generator = PDFGenerator(TENANT_ID)
+        generator = PDFGenerator()
         data = {
             "summary": {"total_deals": 1, "total_revenue": 0, "avg_deal_size": 0},
             "by_platform": {"meta": {"deals": 1, "revenue": 0}},
@@ -438,7 +437,7 @@ class TestRenderAttributionSummary:
 
 class TestRenderPacingStatus:
     def test_progress_classes_and_alert_table_capped_at_five(self):
-        generator = PDFGenerator(TENANT_ID)
+        generator = PDFGenerator()
         targets = [
             {
                 "name": "Green",
@@ -495,7 +494,7 @@ class TestRenderPacingStatus:
         assert "2026-07-01" in html  # created_at sliced to date
 
     def test_alert_section_omitted_when_no_alerts(self):
-        generator = PDFGenerator(TENANT_ID)
+        generator = PDFGenerator()
         data = {"summary": {}, "targets": [], "recent_alerts": []}
         html = generator._render_pacing_status(data)
         assert "Recent Alerts" not in html
@@ -504,7 +503,7 @@ class TestRenderPacingStatus:
 
 class TestRenderProfitRoas:
     def test_summary_cards(self):
-        generator = PDFGenerator(TENANT_ID)
+        generator = PDFGenerator()
         data = {
             "summary": {
                 "total_revenue": 12345.0,
@@ -522,7 +521,7 @@ class TestRenderProfitRoas:
 
 class TestRenderPipelineMetrics:
     def test_summary_funnel_and_value_sections(self):
-        generator = PDFGenerator(TENANT_ID)
+        generator = PDFGenerator()
         data = {
             "summary": {
                 "total_leads": 100,
@@ -544,7 +543,7 @@ class TestRenderPipelineMetrics:
 
 class TestRenderExecutiveSummary:
     def test_highlights_with_nested_campaign_section(self):
-        generator = PDFGenerator(TENANT_ID)
+        generator = PDFGenerator()
         data = {
             "highlights": {
                 "total_spend": 1000.0,
@@ -562,7 +561,7 @@ class TestRenderExecutiveSummary:
         assert "Top Dog" in html
 
     def test_without_campaigns_key_skips_nested_section(self):
-        generator = PDFGenerator(TENANT_ID)
+        generator = PDFGenerator()
         html = generator._render_executive_summary({"highlights": {}})
         assert "Executive Highlights" in html
         assert "Performance Summary" not in html
@@ -570,7 +569,7 @@ class TestRenderExecutiveSummary:
 
 class TestRenderGeneric:
     def test_dumps_payload_as_json_pre_block(self):
-        generator = PDFGenerator(TENANT_ID)
+        generator = PDFGenerator()
         html = generator._render_generic({"nested": {"k": 1}, "when": TODAY})
         assert "Report Data" in html
         assert '"nested"' in html

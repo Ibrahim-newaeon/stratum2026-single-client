@@ -3,8 +3,8 @@
 # =============================================================================
 """Integration tests for ``POST /auth/logout`` — access-token blacklisting,
 optional refresh-token revocation, audit logging, and Redis-degradation
-tolerance. Uses the shared ``authenticated_client`` (bearer + tenant header)
-since the logout route sits behind TenantMiddleware.
+tolerance. Uses the shared ``authenticated_client`` (bearer token) since the
+logout route sits behind ``AuthContextMiddleware``.
 """
 
 import pytest

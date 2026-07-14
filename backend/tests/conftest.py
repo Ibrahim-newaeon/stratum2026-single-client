@@ -51,13 +51,12 @@ def sample_emq_metrics():
 
 
 @pytest.fixture
-def sample_tenant_data():
-    """Sample tenant data for unit testing."""
+def sample_organization_data():
+    """Sample organization data for unit testing."""
     return {
         "id": 1,
-        "name": "Test Tenant",
-        "slug": "test-tenant",
-        "plan": "professional",
+        "name": "Test Organization",
+        "slug": "test-organization",
         "is_active": True,
     }
 
@@ -70,5 +69,4 @@ def sample_user_data():
         "email": "test@example.com",
         "full_name": "Test User",
         "role": "admin",
-        "tenant_id": 1,
     }

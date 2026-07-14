@@ -2,9 +2,14 @@
 # Stratum AI - Owner Analytics Endpoint Integration Tests
 # =============================================================================
 """Integration tests for the platform-wide owner analytics under
-``/api/v1/console/analytics/console/...``: platform overview, tenant
-profitability, signal-health trends, and actions analytics. Every route is
-gated on ``request.state.is_superadmin``.
+``/api/v1/console/analytics/console/...``: platform overview, signal-health
+trends, and actions analytics. Every route is gated by
+``Depends(require_owner())`` (``app.auth.deps``).
+
+STRAT-SC-001 (Task C6): ``/tenant-profitability`` (+ its ``calculate_health_score``
+helper) was deleted in C3 — it enumerated tenants and grouped by the dropped
+``tenant_id`` column, which makes no sense for a single-org deployment.
+Removed from this suite's endpoint list accordingly.
 """
 
 import pytest
@@ -16,7 +21,6 @@ _BASE = "/api/v1/console/analytics/console"
 
 _ENDPOINTS = [
     "/platform-overview",
-    "/tenant-profitability",
     "/signal-health-trends",
     "/actions-analytics",
 ]
@@ -28,7 +32,7 @@ class TestOwnerGate:
         assert resp.status_code in {401, 403}
 
     async def test_non_owner_forbidden(self, authenticated_client: AsyncClient):
-        # authenticated_client is a regular ADMIN -> is_superadmin is False.
+        # authenticated_client is a regular ADMIN -> require_owner() 403s it.
         resp = await authenticated_client.get(f"{_BASE}/platform-overview")
         assert resp.status_code == 403
 

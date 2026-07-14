@@ -22,12 +22,11 @@ _NEW = "Newpassword456"
 
 
 @pytest_asyncio.fixture
-async def reset_user(db_session, test_tenant) -> dict:
+async def reset_user(db_session) -> dict:
     from app.base_models import User, UserRole
     from app.core.security import encrypt_pii, get_password_hash, hash_pii_for_lookup
 
     user = User(
-        tenant_id=test_tenant["id"],
         email=encrypt_pii(_EMAIL),
         email_hash=hash_pii_for_lookup(_EMAIL),
         password_hash=get_password_hash(_OLD),
@@ -105,14 +104,13 @@ class TestResetPassword:
 
 
 @pytest_asyncio.fixture
-async def nameless_user(db_session, test_tenant) -> dict:
+async def nameless_user(db_session) -> dict:
     """Reset-eligible user with no full_name (skips the display-name decrypt)."""
     from app.base_models import User, UserRole
     from app.core.security import encrypt_pii, get_password_hash, hash_pii_for_lookup
 
     email = "nameless-reset@example.com"
     user = User(
-        tenant_id=test_tenant["id"],
         email=encrypt_pii(email),
         email_hash=hash_pii_for_lookup(email),
         password_hash=get_password_hash(_OLD),
@@ -127,7 +125,7 @@ async def nameless_user(db_session, test_tenant) -> dict:
 
 
 @pytest_asyncio.fixture
-async def plain_name_user(db_session, test_tenant) -> dict:
+async def plain_name_user(db_session) -> dict:
     """User whose full_name is NOT Fernet-encrypted → decrypt_pii raises and
     the endpoint falls back to the 'there' display name."""
     from app.base_models import User, UserRole
@@ -135,7 +133,6 @@ async def plain_name_user(db_session, test_tenant) -> dict:
 
     email = "plain-name-reset@example.com"
     user = User(
-        tenant_id=test_tenant["id"],
         email=encrypt_pii(email),
         email_hash=hash_pii_for_lookup(email),
         password_hash=get_password_hash(_OLD),

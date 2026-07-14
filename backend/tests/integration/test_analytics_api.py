@@ -35,7 +35,6 @@ _ENDPOINTS = [
 
 async def _seed_metric(
     db: AsyncSession,
-    tenant_id: int,
     *,
     spend_cents: int,
     revenue_cents: int,
@@ -47,7 +46,6 @@ async def _seed_metric(
     from app.models import Campaign, CampaignMetric
 
     campaign = Campaign(
-        tenant_id=tenant_id,
         platform="meta",
         external_id="an_ext_1",
         account_id="acct_an",
@@ -58,7 +56,6 @@ async def _seed_metric(
     await db.flush()
 
     metric = CampaignMetric(
-        tenant_id=tenant_id,
         campaign_id=campaign.id,
         date=dt.date.today(),
         spend_cents=spend_cents,
@@ -82,8 +79,11 @@ class TestAuth:
 class TestSmoke:
     @pytest.mark.parametrize("path", _ENDPOINTS)
     async def test_empty_tenant_returns_200(
-        self, authenticated_client: AsyncClient, path
+        self, authenticated_client: AsyncClient, organization, path
     ):
+        # /tenant-overview calls get_organization(db) internally (STRAT-SC-001:
+        # residual name, now reads the Organization singleton) and raises if
+        # the row doesn't exist yet.
         resp = await authenticated_client.get(f"{_BASE}{path}")
         assert resp.status_code == 200, f"{path}: {resp.text}"
 
@@ -93,11 +93,9 @@ class TestKpis:
         self,
         authenticated_client: AsyncClient,
         db_session: AsyncSession,
-        test_tenant,
     ):
         await _seed_metric(
             db_session,
-            test_tenant["id"],
             spend_cents=10000,  # $100
             revenue_cents=40000,  # $400
             impressions=1000,

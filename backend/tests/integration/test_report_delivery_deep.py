@@ -152,7 +152,6 @@ def _execution(**overrides) -> ReportExecution:
     """Build an unsaved ReportExecution suitable for handler-level tests."""
     base = dict(
         id=uuid.uuid4(),
-        tenant_id=1,
         execution_type="manual",
         status=ExecutionStatus.COMPLETED,
         report_type=ReportType.CAMPAIGN_PERFORMANCE,
@@ -178,16 +177,15 @@ def _tmp_report_file(suffix=".pdf") -> str:
     return f.name
 
 
-async def _seed_execution(db_session, tenant_id, **overrides) -> ReportExecution:
-    execution = _execution(tenant_id=tenant_id, **overrides)
+async def _seed_execution(db_session, **overrides) -> ReportExecution:
+    execution = _execution(**overrides)
     db_session.add(execution)
     await db_session.flush()
     return execution
 
 
-async def _seed_template(db_session, tenant_id, name="Delivery Tmpl") -> ReportTemplate:
+async def _seed_template(db_session, name="Delivery Tmpl") -> ReportTemplate:
     template = ReportTemplate(
-        tenant_id=tenant_id,
         name=name,
         report_type=ReportType.CAMPAIGN_PERFORMANCE,
         config={"metrics": ["spend"]},
@@ -400,7 +398,6 @@ class TestWebhookDelivery:
         assert call["headers"]["Authorization"] == "Bearer tok123"
         payload = call["json"]
         assert payload["event"] == "report.generated"
-        assert payload["tenant_id"] == execution.tenant_id
         assert payload["report"]["execution_id"] == str(execution.id)
         assert payload["report"]["type"] == "campaign_performance"
         assert payload["report"]["date_range"] == {
@@ -596,28 +593,26 @@ class TestWhatsAppDelivery:
 
 
 class TestDeliverReport:
-    async def test_execution_not_found_raises(self, db_session, test_tenant):
-        service = DeliveryService(db_session, test_tenant["id"])
+    async def test_execution_not_found_raises(self, db_session):
+        service = DeliveryService(db_session)
         with pytest.raises(ValueError, match="Execution not found"):
             await service.deliver_report(uuid.uuid4(), ["email"], {})
 
-    async def test_wrong_tenant_raises(self, db_session, test_tenant):
-        execution = await _seed_execution(db_session, test_tenant["id"])
-        service = DeliveryService(db_session, test_tenant["id"] + 999)
-        with pytest.raises(ValueError, match="Execution not found"):
-            await service.deliver_report(execution.id, ["email"], {})
+    # STRAT-SC-001: cross-tenant isolation no longer exists (single org) —
+    # test_wrong_tenant_raises removed (DeliveryService no longer takes a
+    # tenant_id, and ReportExecution has no tenant scoping at all).
 
-    async def test_incomplete_execution_raises(self, db_session, test_tenant):
+    async def test_incomplete_execution_raises(self, db_session):
         execution = await _seed_execution(
-            db_session, test_tenant["id"], status=ExecutionStatus.RUNNING
+            db_session, status=ExecutionStatus.RUNNING
         )
-        service = DeliveryService(db_session, test_tenant["id"])
+        service = DeliveryService(db_session)
         with pytest.raises(ValueError, match="Cannot deliver report"):
             await service.deliver_report(execution.id, ["email"], {})
 
-    async def test_multi_channel_persists_delivery_rows(self, db_session, test_tenant):
-        execution = await _seed_execution(db_session, test_tenant["id"])
-        service = DeliveryService(db_session, test_tenant["id"])
+    async def test_multi_channel_persists_delivery_rows(self, db_session):
+        execution = await _seed_execution(db_session)
+        service = DeliveryService(db_session)
 
         email_results = [
             {"success": True, "message_id": "<msg-1@stratum>", "response": "ok"},
@@ -669,9 +664,9 @@ class TestDeliverReport:
         assert by_recipient["https://hooks.slack.com/x"]["channel"] == "slack"
         assert by_recipient["https://hooks.slack.com/x"]["status"] == "sent"
 
-    async def test_channel_without_handler_is_skipped(self, db_session, test_tenant):
-        execution = await _seed_execution(db_session, test_tenant["id"])
-        service = DeliveryService(db_session, test_tenant["id"])
+    async def test_channel_without_handler_is_skipped(self, db_session):
+        execution = await _seed_execution(db_session)
+        service = DeliveryService(db_session)
 
         with patch.dict(DeliveryService.CHANNEL_HANDLERS):
             del DeliveryService.CHANNEL_HANDLERS[DeliveryChannel.SLACK]
@@ -685,13 +680,13 @@ class TestDeliverReport:
         assert results["channels"] == {}
 
     async def test_whatsapp_channel_delivers_to_phone_numbers(
-        self, db_session, test_tenant
+        self, db_session
     ):
         # Regression for the fixed bug: _get_recipients now has a WHATSAPP
         # branch that reads phone numbers from ``phone_numbers``, so a
         # whatsapp-channel schedule resolves recipients and delivers.
-        execution = await _seed_execution(db_session, test_tenant["id"])
-        service = DeliveryService(db_session, test_tenant["id"])
+        execution = await _seed_execution(db_session)
+        service = DeliveryService(db_session)
 
         with patch.object(
             WhatsAppDelivery,
@@ -720,8 +715,8 @@ class TestDeliverReport:
         }
         assert all(c["success"] for c in wa_channel)
 
-    async def test_get_recipients_branches(self, db_session, test_tenant):
-        service = DeliveryService(db_session, test_tenant["id"])
+    async def test_get_recipients_branches(self, db_session):
+        service = DeliveryService(db_session)
         get = service._get_recipients
 
         assert get(
@@ -754,10 +749,9 @@ class TestDeliverReport:
 
 
 async def _seed_failed_delivery(
-    db_session, tenant_id, execution, channel=DeliveryChannel.SLACK
+    db_session, execution, channel=DeliveryChannel.SLACK
 ) -> ReportDelivery:
     delivery = ReportDelivery(
-        tenant_id=tenant_id,
         execution_id=execution.id,
         channel=channel,
         recipient="https://hooks.slack.com/original",
@@ -770,15 +764,14 @@ async def _seed_failed_delivery(
 
 
 class TestRetryDelivery:
-    async def test_not_found_raises(self, db_session, test_tenant):
-        service = DeliveryService(db_session, test_tenant["id"])
+    async def test_not_found_raises(self, db_session):
+        service = DeliveryService(db_session)
         with pytest.raises(ValueError, match="Delivery not found"):
             await service.retry_delivery(uuid.uuid4())
 
-    async def test_non_failed_status_raises(self, db_session, test_tenant):
-        execution = await _seed_execution(db_session, test_tenant["id"])
+    async def test_non_failed_status_raises(self, db_session):
+        execution = await _seed_execution(db_session)
         delivery = ReportDelivery(
-            tenant_id=test_tenant["id"],
             execution_id=execution.id,
             channel=DeliveryChannel.SLACK,
             recipient="#r",
@@ -787,14 +780,13 @@ class TestRetryDelivery:
         db_session.add(delivery)
         await db_session.flush()
 
-        service = DeliveryService(db_session, test_tenant["id"])
+        service = DeliveryService(db_session)
         with pytest.raises(ValueError, match="only retry failed"):
             await service.retry_delivery(delivery.id)
 
-    async def test_successful_retry_uses_schedule_config(self, db_session, test_tenant):
-        template = await _seed_template(db_session, test_tenant["id"], "Retry Tmpl")
+    async def test_successful_retry_uses_schedule_config(self, db_session):
+        template = await _seed_template(db_session, "Retry Tmpl")
         schedule = ScheduledReport(
-            tenant_id=test_tenant["id"],
             template_id=template.id,
             name="Retry Sched",
             frequency=ScheduleFrequency.DAILY,
@@ -808,11 +800,11 @@ class TestRetryDelivery:
         await db_session.flush()
 
         execution = await _seed_execution(
-            db_session, test_tenant["id"], schedule_id=schedule.id
+            db_session, schedule_id=schedule.id
         )
-        delivery = await _seed_failed_delivery(db_session, test_tenant["id"], execution)
+        delivery = await _seed_failed_delivery(db_session, execution)
 
-        service = DeliveryService(db_session, test_tenant["id"])
+        service = DeliveryService(db_session)
         with patch.object(
             SlackDelivery,
             "deliver",
@@ -835,11 +827,11 @@ class TestRetryDelivery:
         assert delivery.error_message is None
         assert delivery.last_retry_at is not None
 
-    async def test_failed_retry_records_error(self, db_session, test_tenant):
-        execution = await _seed_execution(db_session, test_tenant["id"])
-        delivery = await _seed_failed_delivery(db_session, test_tenant["id"], execution)
+    async def test_failed_retry_records_error(self, db_session):
+        execution = await _seed_execution(db_session)
+        delivery = await _seed_failed_delivery(db_session, execution)
 
-        service = DeliveryService(db_session, test_tenant["id"])
+        service = DeliveryService(db_session)
         with patch.object(
             SlackDelivery,
             "deliver",
@@ -852,11 +844,11 @@ class TestRetryDelivery:
         assert delivery.retry_count == 1
         assert delivery.error_message == "still down"
 
-    async def test_missing_handler_raises(self, db_session, test_tenant):
-        execution = await _seed_execution(db_session, test_tenant["id"])
-        delivery = await _seed_failed_delivery(db_session, test_tenant["id"], execution)
+    async def test_missing_handler_raises(self, db_session):
+        execution = await _seed_execution(db_session)
+        delivery = await _seed_failed_delivery(db_session, execution)
 
-        service = DeliveryService(db_session, test_tenant["id"])
+        service = DeliveryService(db_session)
         with patch.dict(DeliveryService.CHANNEL_HANDLERS):
             del DeliveryService.CHANNEL_HANDLERS[DeliveryChannel.SLACK]
             with pytest.raises(ValueError, match="No handler"):
@@ -869,16 +861,16 @@ class TestRetryDelivery:
 
 
 class TestGetDeliveryStatus:
-    async def test_empty_when_no_deliveries(self, db_session, test_tenant):
-        execution = await _seed_execution(db_session, test_tenant["id"])
-        service = DeliveryService(db_session, test_tenant["id"])
+    async def test_empty_when_no_deliveries(self, db_session):
+        execution = await _seed_execution(db_session)
+        service = DeliveryService(db_session)
         assert await service.get_delivery_status(execution.id) == []
 
-    async def test_returns_serialized_rows(self, db_session, test_tenant):
-        execution = await _seed_execution(db_session, test_tenant["id"])
-        delivery = await _seed_failed_delivery(db_session, test_tenant["id"], execution)
+    async def test_returns_serialized_rows(self, db_session):
+        execution = await _seed_execution(db_session)
+        delivery = await _seed_failed_delivery(db_session, execution)
 
-        service = DeliveryService(db_session, test_tenant["id"])
+        service = DeliveryService(db_session)
         rows = await service.get_delivery_status(execution.id)
 
         assert len(rows) == 1

@@ -21,11 +21,10 @@ pytestmark = [pytest.mark.integration, pytest.mark.asyncio]
 _BASE = "/api/v1/intelligence/analytics/insights"
 
 
-async def _seed_campaign_with_metrics(db: AsyncSession, tenant_id: int):
+async def _seed_campaign_with_metrics(db: AsyncSession):
     from app.models import Campaign, CampaignMetric
 
     campaign = Campaign(
-        tenant_id=tenant_id,
         platform="meta",
         external_id="intel_ext",
         account_id="acct_intel",
@@ -41,7 +40,6 @@ async def _seed_campaign_with_metrics(db: AsyncSession, tenant_id: int):
     for i in range(5):
         db.add(
             CampaignMetric(
-                tenant_id=tenant_id,
                 campaign_id=campaign.id,
                 date=today - dt.timedelta(days=i),
                 spend_cents=10000,
@@ -102,9 +100,8 @@ class TestPredict:
         self,
         authenticated_client: AsyncClient,
         db_session: AsyncSession,
-        test_tenant,
     ):
-        campaign = await _seed_campaign_with_metrics(db_session, test_tenant["id"])
+        campaign = await _seed_campaign_with_metrics(db_session)
         resp = await authenticated_client.post(
             f"{_BASE}/predict",
             json={"campaign_id": campaign.id, "days_ahead": 7},

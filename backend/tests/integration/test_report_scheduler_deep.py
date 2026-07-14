@@ -10,13 +10,13 @@ Covers the orchestration paths that the CronParser unit tests
   incl. last-day/-1 and invalid-day fallbacks, quarterly incl. year wrap,
   custom-cron, and the default branch) plus timezone conversion.
 - ``get_due_schedules`` against real schedule rows (due/paused/inactive/
-  future/foreign-tenant filtering and ordering).
+  future filtering and ordering).
 - ``execute_schedule`` / ``run_now`` dispatch with generation + delivery
   mocked at the service boundary, asserting schedule bookkeeping for both
   success and failure.
 - ``process_due_schedules`` batch accounting (and its logger bug, see
   TestProcessDueSchedules).
-- ``SchedulerWorker`` start/stop loop and per-tenant fan-out.
+- ``SchedulerWorker`` start/stop loop and its single background pass.
 """
 
 import uuid
@@ -67,9 +67,8 @@ def _sched(frequency, **overrides) -> ScheduledReport:
     return ScheduledReport(**base)
 
 
-async def _seed_template(db_session, tenant_id, name) -> ReportTemplate:
+async def _seed_template(db_session, name) -> ReportTemplate:
     template = ReportTemplate(
-        tenant_id=tenant_id,
         name=name,
         report_type=ReportType.CAMPAIGN_PERFORMANCE,
         config={"metrics": ["spend"], "sections": ["summary"]},
@@ -81,9 +80,8 @@ async def _seed_template(db_session, tenant_id, name) -> ReportTemplate:
     return template
 
 
-async def _seed_schedule(db_session, tenant_id, template, **overrides):
+async def _seed_schedule(db_session, template, **overrides):
     base = dict(
-        tenant_id=tenant_id,
         template_id=template.id,
         name=f"Sched {uuid.uuid4().hex[:8]}",
         frequency=ScheduleFrequency.DAILY,
@@ -106,8 +104,8 @@ async def _seed_schedule(db_session, tenant_id, template, **overrides):
 
 
 @pytest.fixture
-def scheduler(db_session, test_tenant) -> ReportScheduler:
-    return ReportScheduler(db_session, test_tenant["id"])
+def scheduler(db_session) -> ReportScheduler:
+    return ReportScheduler(db_session)
 
 
 # =============================================================================
@@ -263,54 +261,36 @@ class TestCalculateNextRunFrequencies:
 
 
 class TestGetDueSchedules:
-    async def test_filters_and_orders_due_schedules(
-        self, db_session, test_tenant, scheduler
-    ):
-        template = await _seed_template(db_session, test_tenant["id"], "Due Tmpl")
+    async def test_filters_and_orders_due_schedules(self, db_session, scheduler):
+        template = await _seed_template(db_session, "Due Tmpl")
         now = datetime.now(timezone.utc)
 
         due_recent = await _seed_schedule(
             db_session,
-            test_tenant["id"],
             template,
             next_run_at=now - timedelta(hours=1),
         )
         due_older = await _seed_schedule(
             db_session,
-            test_tenant["id"],
             template,
             next_run_at=now - timedelta(hours=2),
         )
         await _seed_schedule(  # paused
             db_session,
-            test_tenant["id"],
             template,
             next_run_at=now - timedelta(hours=1),
             is_paused=True,
         )
         await _seed_schedule(  # inactive
             db_session,
-            test_tenant["id"],
             template,
             next_run_at=now - timedelta(hours=1),
             is_active=False,
         )
         await _seed_schedule(  # not yet due
             db_session,
-            test_tenant["id"],
             template,
             next_run_at=now + timedelta(hours=1),
-        )
-
-        # Foreign tenant with a due schedule must not leak in.
-        from app.base_models import Tenant
-
-        other = Tenant(name="Other T", slug="other-t-sched", plan="starter")
-        db_session.add(other)
-        await db_session.flush()
-        other_template = await _seed_template(db_session, other.id, "Other Tmpl")
-        await _seed_schedule(
-            db_session, other.id, other_template, next_run_at=now - timedelta(hours=3)
         )
 
         due = await scheduler.get_due_schedules()
@@ -327,19 +307,15 @@ class TestGetDueSchedules:
 
 
 class TestExecuteSchedule:
-    async def test_success_updates_bookkeeping_and_delivers(
-        self, db_session, test_tenant, scheduler
-    ):
-        template = await _seed_template(db_session, test_tenant["id"], "Exec Tmpl")
+    async def test_success_updates_bookkeeping_and_delivers(self, db_session, scheduler):
+        template = await _seed_template(db_session, "Exec Tmpl")
         schedule = await _seed_schedule(
             db_session,
-            test_tenant["id"],
             template,
             format_override=ReportFormat.CSV,
             config_override={"metrics": ["roas"]},
         )
         execution = ReportExecution(
-            tenant_id=test_tenant["id"],
             template_id=template.id,
             schedule_id=schedule.id,
             execution_type="scheduled",
@@ -393,12 +369,11 @@ class TestExecuteSchedule:
         assert _naive_utc(schedule.next_run_at) > _naive_utc(datetime.now(timezone.utc))
 
     async def test_default_format_from_template_when_no_override(
-        self, db_session, test_tenant, scheduler
+        self, db_session, scheduler
     ):
-        template = await _seed_template(db_session, test_tenant["id"], "Fmt Tmpl")
-        schedule = await _seed_schedule(db_session, test_tenant["id"], template)
+        template = await _seed_template(db_session, "Fmt Tmpl")
+        schedule = await _seed_schedule(db_session, template)
         execution = ReportExecution(
-            tenant_id=test_tenant["id"],
             execution_type="scheduled",
             status=ExecutionStatus.COMPLETED,
             report_type=ReportType.CAMPAIGN_PERFORMANCE,
@@ -420,10 +395,10 @@ class TestExecuteSchedule:
         assert gen_kwargs["format"] == ReportFormat.PDF
 
     async def test_failure_records_failed_status_and_reraises(
-        self, db_session, test_tenant, scheduler
+        self, db_session, scheduler
     ):
-        template = await _seed_template(db_session, test_tenant["id"], "Fail Tmpl")
-        schedule = await _seed_schedule(db_session, test_tenant["id"], template)
+        template = await _seed_template(db_session, "Fail Tmpl")
+        schedule = await _seed_schedule(db_session, template)
 
         scheduler.report_generator.generate_report = AsyncMock(
             side_effect=ValueError("generation exploded")
@@ -446,25 +421,13 @@ class TestRunNow:
         with pytest.raises(ValueError, match="Schedule not found"):
             await scheduler.run_now(uuid.uuid4())
 
-    async def test_foreign_tenant_schedule_raises(
-        self, db_session, test_tenant, scheduler
-    ):
-        from app.base_models import Tenant
+    # STRAT-SC-001: cross-tenant isolation no longer exists (single org) —
+    # test_foreign_tenant_schedule_raises removed (ReportScheduler no longer
+    # takes a tenant_id, so there is no "foreign tenant" to scope against).
 
-        other = Tenant(name="Other RN", slug="other-run-now", plan="starter")
-        db_session.add(other)
-        await db_session.flush()
-        template = await _seed_template(db_session, other.id, "RN Tmpl")
-        schedule = await _seed_schedule(db_session, other.id, template)
-
-        with pytest.raises(ValueError, match="Schedule not found"):
-            await scheduler.run_now(schedule.id)
-
-    async def test_run_now_dispatches_execute_schedule(
-        self, db_session, test_tenant, scheduler
-    ):
-        template = await _seed_template(db_session, test_tenant["id"], "RN2 Tmpl")
-        schedule = await _seed_schedule(db_session, test_tenant["id"], template)
+    async def test_run_now_dispatches_execute_schedule(self, db_session, scheduler):
+        template = await _seed_template(db_session, "RN2 Tmpl")
+        schedule = await _seed_schedule(db_session, template)
 
         with patch.object(
             ReportScheduler, "execute_schedule", AsyncMock(return_value="EXECUTED")
@@ -487,9 +450,9 @@ class TestProcessDueSchedules:
         results = await scheduler.process_due_schedules()
         assert results == {"processed": 0, "succeeded": 0, "failed": 0, "errors": []}
 
-    async def test_success_accounting(self, db_session, test_tenant, scheduler):
-        template = await _seed_template(db_session, test_tenant["id"], "Batch Tmpl")
-        await _seed_schedule(db_session, test_tenant["id"], template)
+    async def test_success_accounting(self, db_session, scheduler):
+        template = await _seed_template(db_session, "Batch Tmpl")
+        await _seed_schedule(db_session, template)
 
         scheduler.execute_schedule = AsyncMock()
 
@@ -501,13 +464,13 @@ class TestProcessDueSchedules:
         scheduler.execute_schedule.assert_awaited_once()
 
     async def test_failure_accounting_with_logger_patched(
-        self, db_session, test_tenant, scheduler
+        self, db_session, scheduler
     ):
         # Patch the module logger so the failure-branch accounting lines are
         # exercised in isolation from real logging (see the logger-enabled
         # regression test below for the previously-crashing path).
-        template = await _seed_template(db_session, test_tenant["id"], "Batch Tmpl F")
-        schedule = await _seed_schedule(db_session, test_tenant["id"], template)
+        template = await _seed_template(db_session, "Batch Tmpl F")
+        schedule = await _seed_schedule(db_session, template)
 
         scheduler.execute_schedule = AsyncMock(side_effect=ValueError("kaboom"))
 
@@ -526,7 +489,7 @@ class TestProcessDueSchedules:
         ]
 
     async def test_failure_branch_records_failure_when_logger_enabled(
-        self, db_session, test_tenant, scheduler
+        self, db_session, scheduler
     ):
         # Regression for the fixed logging bug: the failure branch used to
         # call ``logger.error("schedule_execution_failed", schedule_id=...,
@@ -537,8 +500,8 @@ class TestProcessDueSchedules:
         # even with logging fully enabled.
         import logging
 
-        template = await _seed_template(db_session, test_tenant["id"], "Bug Tmpl")
-        schedule = await _seed_schedule(db_session, test_tenant["id"], template)
+        template = await _seed_template(db_session, "Bug Tmpl")
+        schedule = await _seed_schedule(db_session, template)
 
         scheduler.execute_schedule = AsyncMock(side_effect=ValueError("kaboom"))
 
@@ -572,9 +535,9 @@ class TestProcessDueSchedules:
 
 class TestScheduleManagement:
     async def test_create_schedule_persists_and_computes_next_run(
-        self, db_session, test_tenant, scheduler
+        self, db_session, scheduler
     ):
-        template = await _seed_template(db_session, test_tenant["id"], "Create Tmpl")
+        template = await _seed_template(db_session, "Create Tmpl")
 
         schedule = await scheduler.create_schedule(
             template_id=template.id,
@@ -588,7 +551,6 @@ class TestScheduleManagement:
         )
 
         assert schedule.id is not None
-        assert schedule.tenant_id == test_tenant["id"]
         assert schedule.name == "Nightly digest"
         assert schedule.delivery_channels == ["email"]  # default applied
         assert schedule.next_run_at is not None
@@ -604,29 +566,15 @@ class TestScheduleManagement:
                 delivery_config={},
             )
 
-    async def test_create_schedule_foreign_tenant_template_raises(
-        self, db_session, test_tenant, scheduler
-    ):
-        from app.base_models import Tenant
-
-        other = Tenant(name="Other CT", slug="other-create-t", plan="starter")
-        db_session.add(other)
-        await db_session.flush()
-        template = await _seed_template(db_session, other.id, "Foreign Tmpl")
-
-        with pytest.raises(ValueError, match="Template not found"):
-            await scheduler.create_schedule(
-                template_id=template.id,
-                name="Cross tenant",
-                frequency=ScheduleFrequency.DAILY,
-                delivery_config={},
-            )
+    # STRAT-SC-001: cross-tenant isolation no longer exists (single org) —
+    # test_create_schedule_foreign_tenant_template_raises removed (no more
+    # Tenant model / tenant-scoped template lookup to violate).
 
     async def test_update_non_timing_field_keeps_next_run(
-        self, db_session, test_tenant, scheduler
+        self, db_session, scheduler
     ):
-        template = await _seed_template(db_session, test_tenant["id"], "Upd Tmpl")
-        schedule = await _seed_schedule(db_session, test_tenant["id"], template)
+        template = await _seed_template(db_session, "Upd Tmpl")
+        schedule = await _seed_schedule(db_session, template)
         original_next_run = schedule.next_run_at
 
         updated = await scheduler.update_schedule(
@@ -638,12 +586,11 @@ class TestScheduleManagement:
         assert updated.next_run_at == original_next_run
 
     async def test_update_timing_field_recalculates_next_run(
-        self, db_session, test_tenant, scheduler
+        self, db_session, scheduler
     ):
-        template = await _seed_template(db_session, test_tenant["id"], "Upd2 Tmpl")
+        template = await _seed_template(db_session, "Upd2 Tmpl")
         schedule = await _seed_schedule(
             db_session,
-            test_tenant["id"],
             template,
             next_run_at=datetime.now(timezone.utc) - timedelta(hours=1),
         )
@@ -658,9 +605,9 @@ class TestScheduleManagement:
         with pytest.raises(ValueError, match="Schedule not found"):
             await scheduler.update_schedule(uuid.uuid4(), name="nope")
 
-    async def test_pause_and_resume_lifecycle(self, db_session, test_tenant, scheduler):
-        template = await _seed_template(db_session, test_tenant["id"], "PR Tmpl")
-        schedule = await _seed_schedule(db_session, test_tenant["id"], template)
+    async def test_pause_and_resume_lifecycle(self, db_session, scheduler):
+        template = await _seed_template(db_session, "PR Tmpl")
+        schedule = await _seed_schedule(db_session, template)
 
         paused = await scheduler.pause_schedule(schedule.id)
         assert paused.is_paused is True
@@ -673,9 +620,9 @@ class TestScheduleManagement:
         with pytest.raises(ValueError, match="Schedule not found"):
             await scheduler.resume_schedule(uuid.uuid4())
 
-    async def test_delete_schedule(self, db_session, test_tenant, scheduler):
-        template = await _seed_template(db_session, test_tenant["id"], "Del Tmpl")
-        schedule = await _seed_schedule(db_session, test_tenant["id"], template)
+    async def test_delete_schedule(self, db_session, scheduler):
+        template = await _seed_template(db_session, "Del Tmpl")
+        schedule = await _seed_schedule(db_session, template)
 
         assert await scheduler.delete_schedule(schedule.id) is True
         assert await scheduler.get_schedule(schedule.id) is None
@@ -689,26 +636,26 @@ class TestScheduleManagement:
 
 
 class TestQueryMethods:
-    async def test_get_schedule_scoping(self, db_session, test_tenant, scheduler):
-        template = await _seed_template(db_session, test_tenant["id"], "Get Tmpl")
-        schedule = await _seed_schedule(db_session, test_tenant["id"], template)
+    async def test_get_schedule_found_and_not_found(self, db_session, scheduler):
+        template = await _seed_template(db_session, "Get Tmpl")
+        schedule = await _seed_schedule(db_session, template)
 
         found = await scheduler.get_schedule(schedule.id)
         assert found is not None and found.id == schedule.id
 
         assert await scheduler.get_schedule(uuid.uuid4()) is None
 
-        foreign = ReportScheduler(db_session, test_tenant["id"] + 999)
-        assert await foreign.get_schedule(schedule.id) is None
-
     async def test_list_schedules_filters_and_total(
-        self, db_session, test_tenant, scheduler
+        self, db_session, scheduler
     ):
-        template_a = await _seed_template(db_session, test_tenant["id"], "List Tmpl A")
-        template_b = await _seed_template(db_session, test_tenant["id"], "List Tmpl B")
-        active = await _seed_schedule(db_session, test_tenant["id"], template_a)
+        template_a = await _seed_template(db_session, "List Tmpl A")
+        template_b = await _seed_template(db_session, "List Tmpl B")
+        active = await _seed_schedule(
+            db_session,
+            template_a)
         inactive = await _seed_schedule(
-            db_session, test_tenant["id"], template_b, is_active=False
+            db_session,
+            template_b, is_active=False
         )
 
         all_schedules, total = await scheduler.list_schedules()
@@ -730,13 +677,12 @@ class TestQueryMethods:
         assert len(paged) == 1
 
     async def test_get_execution_history_ordered_desc(
-        self, db_session, test_tenant, scheduler
+        self, db_session, scheduler
     ):
-        template = await _seed_template(db_session, test_tenant["id"], "Hist Tmpl")
-        schedule = await _seed_schedule(db_session, test_tenant["id"], template)
+        template = await _seed_template(db_session, "Hist Tmpl")
+        schedule = await _seed_schedule(db_session, template)
 
         older = ReportExecution(
-            tenant_id=test_tenant["id"],
             schedule_id=schedule.id,
             execution_type="scheduled",
             status=ExecutionStatus.COMPLETED,
@@ -747,7 +693,6 @@ class TestQueryMethods:
             started_at=datetime.now(timezone.utc) - timedelta(hours=2),
         )
         newer = ReportExecution(
-            tenant_id=test_tenant["id"],
             schedule_id=schedule.id,
             execution_type="scheduled",
             status=ExecutionStatus.FAILED,
@@ -823,18 +768,16 @@ class TestSchedulerWorker:
                 raise ValueError("transient")
             worker.stop()
 
-        worker._process_all_tenants = fake_process
+        worker._process_schedules = fake_process
 
         await worker.start()
 
         assert calls["n"] == 2
         assert worker._running is False
 
-    async def test_process_all_tenants_fans_out_per_tenant(
-        self, db_session, test_tenant
-    ):
-        template = await _seed_template(db_session, test_tenant["id"], "Worker Tmpl")
-        await _seed_schedule(db_session, test_tenant["id"], template)
+    async def test_process_schedules_dispatches_via_session_factory(self, db_session):
+        template = await _seed_template(db_session, "Worker Tmpl")
+        await _seed_schedule(db_session, template)
 
         @asynccontextmanager
         async def session_factory():
@@ -854,20 +797,13 @@ class TestSchedulerWorker:
                 }
             ),
         ) as process_mock:
-            await worker._process_all_tenants()
+            await worker._process_schedules()
 
         process_mock.assert_awaited_once()
 
-    async def test_process_all_tenants_noop_without_due_schedules(self, db_session):
-        @asynccontextmanager
-        async def session_factory():
-            yield db_session
-
-        worker = SchedulerWorker(db_session_factory=session_factory, check_interval=0)
-
-        with patch.object(
-            ReportScheduler, "process_due_schedules", AsyncMock()
-        ) as process_mock:
-            await worker._process_all_tenants()
-
-        process_mock.assert_not_awaited()
+    # STRAT-SC-001: test_process_all_tenants_noop_without_due_schedules removed
+    # — that test asserted the per-tenant fan-out skipped calling
+    # process_due_schedules() when no tenant had due work. There is no more
+    # per-tenant loop (single org): _process_schedules always builds one
+    # ReportScheduler and awaits process_due_schedules() exactly once, so the
+    # "noop" branch this test targeted no longer exists.

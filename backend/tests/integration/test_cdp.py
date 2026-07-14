@@ -30,9 +30,8 @@ pytestmark = pytest.mark.integration
 class MockCurrentUser:
     """Mock user for CDP tests."""
 
-    def __init__(self, user_id: int = 1, tenant_id: int = 1):
+    def __init__(self, user_id: int = 1):
         self.id = user_id
-        self.tenant_id = tenant_id
         self.email = "test@example.com"
         self.role = "admin"
         self.is_active = True
@@ -40,12 +39,13 @@ class MockCurrentUser:
 
 
 @pytest_asyncio.fixture(scope="function")
-async def cdp_client(app, db_session, test_tenant) -> AsyncClient:
+async def cdp_client(app, db_session) -> AsyncClient:
     """
     Create an async HTTP client for CDP API testing with mocked auth.
 
-    Adds a JWT token so TenantMiddleware can extract tenant context
-    before the request reaches endpoint-level auth dependencies.
+    STRAT-SC-001: no more tenant context to extract — there is exactly
+    one organization, so the JWT no longer carries a tenant claim and no
+    ``X-Tenant-ID`` header is needed.
     """
     from app.auth.deps import get_current_user
     from app.core.security import create_access_token
@@ -55,19 +55,17 @@ async def cdp_client(app, db_session, test_tenant) -> AsyncClient:
     async def get_test_session():
         yield db_session
 
-    # Mock auth to return a user with the test tenant
+    # Mock auth to return a plain test user
     async def mock_get_current_user():
-        return MockCurrentUser(user_id=1, tenant_id=test_tenant["id"])
+        return MockCurrentUser(user_id=1)
 
     app.dependency_overrides[get_async_session] = get_test_session
     app.dependency_overrides[get_current_user] = mock_get_current_user
 
-    # Create a JWT so TenantMiddleware can extract tenant_id
     token = create_access_token(
         subject=1,
         additional_claims={
             "email": "test@example.com",
-            "tenant_id": test_tenant["id"],
             "role": "admin",
         },
     )
@@ -77,7 +75,6 @@ async def cdp_client(app, db_session, test_tenant) -> AsyncClient:
         base_url="http://testserver",
         headers={
             "Authorization": f"Bearer {token}",
-            "X-Tenant-ID": str(test_tenant["id"]),
         },
     ) as ac:
         yield ac
@@ -381,7 +378,6 @@ class TestGDPRProfileErasure:
         # A merge record referencing this profile as the surviving party.
         db_session.add(
             CDPProfileMerge(
-                tenant_id=(await _tenant_of(db_session, profile_id)),
                 surviving_profile_id=profile_id,
                 merged_profile_id=uuid4(),
                 merge_reason="test",
@@ -397,17 +393,6 @@ class TestGDPRProfileErasure:
             )
         )
         assert (remaining.scalar() or 0) == 0
-
-
-async def _tenant_of(db_session, profile_id):
-    from sqlalchemy import select
-
-    from app.models.cdp import CDPProfile
-
-    row = await db_session.execute(
-        select(CDPProfile.tenant_id).where(CDPProfile.id == profile_id)
-    )
-    return row.scalar_one()
 
 
 # =============================================================================
@@ -511,47 +496,9 @@ class TestProfileLookup:
         assert response.status_code == 404
 
 
-# =============================================================================
-# Profile Tenant Isolation Tests
-# =============================================================================
-
-
-class TestProfileTenantIsolation:
-    """Tests for profile tenant isolation."""
-
-    @pytest.mark.asyncio
-    async def test_cannot_access_other_tenant_profile(
-        self,
-        cdp_client: AsyncClient,
-        test_tenant: dict,
-        db_session,
-    ):
-        """Test that a user cannot access another tenant's profile."""
-        # Create another tenant and profile
-        from app.base_models import Tenant
-        from app.models.cdp import CDPProfile
-
-        other_tenant = Tenant(
-            name="Other CDP Tenant",
-            slug="other-cdp-tenant",
-            plan="professional",
-        )
-        db_session.add(other_tenant)
-        await db_session.flush()
-
-        # Create a profile for the other tenant
-        other_profile = CDPProfile(
-            tenant_id=other_tenant.id,
-            lifecycle_stage="anonymous",
-        )
-        db_session.add(other_profile)
-        await db_session.flush()
-
-        # Try to access the other tenant's profile
-        response = await cdp_client.get(f"/api/v1/cdp/profiles/{other_profile.id}")
-
-        # Should be not found (tenant scoping hides it)
-        assert response.status_code == 404
+# STRAT-SC-001: cross-tenant isolation no longer exists (single org) — the
+# TestProfileTenantIsolation class (test_cannot_access_other_tenant_profile)
+# was removed entirely.
 
 
 # =============================================================================
@@ -1464,7 +1411,7 @@ class TestAnomalyDetection:
 
     @pytest.mark.asyncio
     async def test_anomalies_detects_spike(
-        self, authenticated_client: AsyncClient, db_session, test_tenant
+        self, authenticated_client: AsyncClient, db_session
     ):
         from app.models.cdp import CDPEvent
 
@@ -1476,7 +1423,6 @@ class TestAnomalyDetection:
             for _ in range(count):
                 db_session.add(
                     CDPEvent(
-                        tenant_id=test_tenant["id"],
                         event_name="SeededEvent",
                         event_time=when,
                         received_at=when,
@@ -1573,7 +1519,7 @@ class TestIdentityGraph:
 
     @pytest.mark.asyncio
     async def test_canonical_identity_found(
-        self, authenticated_client: AsyncClient, db_session, test_tenant
+        self, authenticated_client: AsyncClient, db_session
     ):
         from app.models.cdp import CDPCanonicalIdentity
 
@@ -1581,7 +1527,6 @@ class TestIdentityGraph:
 
         db_session.add(
             CDPCanonicalIdentity(
-                tenant_id=test_tenant["id"],
                 profile_id=profile_id,
                 canonical_type="email",
                 canonical_value_hash="a" * 64,

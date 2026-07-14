@@ -22,12 +22,11 @@ _EMAIL = "verify-me@example.com"
 
 
 @pytest_asyncio.fixture
-async def unverified_user(db_session, test_tenant) -> dict:
+async def unverified_user(db_session) -> dict:
     from app.base_models import User, UserRole
     from app.core.security import encrypt_pii, get_password_hash, hash_pii_for_lookup
 
     user = User(
-        tenant_id=test_tenant["id"],
         email=encrypt_pii(_EMAIL),
         email_hash=hash_pii_for_lookup(_EMAIL),
         password_hash=get_password_hash("Testpassword123"),
@@ -42,7 +41,7 @@ async def unverified_user(db_session, test_tenant) -> dict:
 
 
 @pytest_asyncio.fixture
-async def plain_name_user(db_session, test_tenant) -> dict:
+async def plain_name_user(db_session) -> dict:
     """Unverified user whose full_name is NOT encrypted → decrypt_pii fails
     and the endpoints fall back to the 'there' display name."""
     from app.base_models import User, UserRole
@@ -50,7 +49,6 @@ async def plain_name_user(db_session, test_tenant) -> dict:
 
     email = "plain-name@example.com"
     user = User(
-        tenant_id=test_tenant["id"],
         email=encrypt_pii(email),
         email_hash=hash_pii_for_lookup(email),
         password_hash=get_password_hash("Testpassword123"),

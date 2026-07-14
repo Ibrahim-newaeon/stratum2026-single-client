@@ -27,21 +27,19 @@ def _auth(user: dict) -> dict:
         additional_claims={
             "email": "mfa-user@example.com",
             "role": "admin",
-            "tenant_id": user["tenant_id"],
         },
     )
-    return {"Authorization": f"Bearer {token}", "X-Tenant-ID": str(user["tenant_id"])}
+    return {"Authorization": f"Bearer {token}"}
 
 
 @pytest_asyncio.fixture
-async def mfa_user(db_session, test_tenant) -> dict:
+async def mfa_user(db_session) -> dict:
     """A user with a stored-but-not-yet-enabled TOTP secret."""
     from app.base_models import User, UserRole
     from app.core.security import encrypt_pii, get_password_hash, hash_pii_for_lookup
 
     email = "mfa-user@example.com"
     user = User(
-        tenant_id=test_tenant["id"],
         email=encrypt_pii(email),
         email_hash=hash_pii_for_lookup(email),
         password_hash=get_password_hash("Testpassword123"),
@@ -54,7 +52,7 @@ async def mfa_user(db_session, test_tenant) -> dict:
     )
     db_session.add(user)
     await db_session.flush()
-    return {"id": user.id, "tenant_id": test_tenant["id"]}
+    return {"id": user.id}
 
 
 class TestStatus:

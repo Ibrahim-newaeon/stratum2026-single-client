@@ -15,6 +15,7 @@ from fastapi.responses import StreamingResponse
 from sqlalchemy import select, update
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from app.auth.deps import get_current_user
 from app.core.logging import get_logger
 from app.core.security import anonymize_pii, decrypt_pii
 from app.db.session import get_async_session
@@ -37,7 +38,14 @@ from app.schemas import (
 )
 
 logger = get_logger(__name__)
-router = APIRouter()
+
+# NOTE(STRAT-SC-001/C6): router-level auth. The old TenantMiddleware 401'd
+# every non-public request; its C2 replacement (AuthContextMiddleware) only
+# decodes the JWT, so routers must enforce auth explicitly. Without this,
+# unauthenticated callers reached the handlers and got a confusing 404
+# ("User not found", from the None request.state.user_id lookup) instead of
+# 401 — same fail-open class C3 closed on 11 sibling routers.
+router = APIRouter(dependencies=[Depends(get_current_user)])
 
 
 @router.post("/export")

@@ -19,6 +19,16 @@ from httpx import AsyncClient
 
 pytestmark = [pytest.mark.integration, pytest.mark.asyncio]
 
+
+@pytest_asyncio.fixture(autouse=True)
+async def _ensure_organization(organization):
+    """STRAT-SC-001: several dashboard endpoints (overview, metric-visibility,
+    goal-tracking) call ``get_organization(db)`` internally and raise if the
+    singleton row is missing. Applied file-wide (autouse) since most of this
+    module's ~30 GET routes touch it transitively."""
+    return organization
+
+
 _BASE = "/api/v1/dashboard"
 
 _GETS = [
@@ -48,7 +58,7 @@ _GETS = [
 
 
 @pytest_asyncio.fixture
-async def seeded_campaigns(db_session, test_tenant) -> list[dict]:
+async def seeded_campaigns(db_session) -> list[dict]:
     """Seed unified ``Campaign`` rows across the ROAS recommendation buckets.
 
     Buckets: scale (ROAS 4.0), fix (0.4), watch (1.2), stable/skip (2.0),
@@ -106,7 +116,6 @@ async def seeded_campaigns(db_session, test_tenant) -> list[dict]:
         specs
     ):
         campaign = Campaign(
-            tenant_id=test_tenant["id"],
             platform=platform,
             external_id=f"ext-dash-{i}",
             account_id="acct-dash-1",
@@ -135,7 +144,7 @@ async def seeded_campaigns(db_session, test_tenant) -> list[dict]:
 
 
 @pytest_asyncio.fixture
-async def seeded_metrics(db_session, test_tenant, seeded_campaigns) -> dict:
+async def seeded_metrics(db_session, seeded_campaigns) -> dict:
     """Seed CampaignMetric time-series rows (today + 2 days ago) for the first
     campaign, so period-scoped aggregations return non-zero values."""
     from app.models import CampaignMetric
@@ -144,7 +153,6 @@ async def seeded_metrics(db_session, test_tenant, seeded_campaigns) -> dict:
     today = date.today()
 
     m1 = CampaignMetric(
-        tenant_id=test_tenant["id"],
         campaign_id=campaign_id,
         date=today,
         spend_cents=15_000,
@@ -154,7 +162,6 @@ async def seeded_metrics(db_session, test_tenant, seeded_campaigns) -> dict:
         clicks=50,
     )
     m2 = CampaignMetric(
-        tenant_id=test_tenant["id"],
         campaign_id=campaign_id,
         date=today - timedelta(days=2),
         spend_cents=10_000,
@@ -177,7 +184,7 @@ async def seeded_metrics(db_session, test_tenant, seeded_campaigns) -> dict:
 
 
 @pytest_asyncio.fixture
-async def seeded_audit_logs(db_session, test_tenant, test_user) -> int:
+async def seeded_audit_logs(db_session, test_user) -> int:
     """Seed one AuditLog per action type to walk every activity-feed branch."""
     from app.base_models import AuditAction, AuditLog
 
@@ -192,7 +199,6 @@ async def seeded_audit_logs(db_session, test_tenant, test_user) -> int:
     for action, resource_type, resource_id in actions:
         db_session.add(
             AuditLog(
-                tenant_id=test_tenant["id"],
                 user_id=test_user["id"],
                 action=action,
                 resource_type=resource_type,
@@ -204,7 +210,7 @@ async def seeded_audit_logs(db_session, test_tenant, test_user) -> int:
 
 
 @pytest_asyncio.fixture
-async def seeded_cdp_profiles(db_session, test_tenant) -> int:
+async def seeded_cdp_profiles(db_session) -> int:
     """Seed CDP profiles across lifecycle stages for audience-lifecycle."""
     from datetime import datetime
     from datetime import timedelta as td
@@ -224,7 +230,6 @@ async def seeded_cdp_profiles(db_session, test_tenant) -> int:
     for stage, revenue, purchases, last_seen, prev in specs:
         db_session.add(
             CDPProfile(
-                tenant_id=test_tenant["id"],
                 lifecycle_stage=stage,
                 total_revenue=revenue,
                 total_events=10,
@@ -942,23 +947,23 @@ class TestGoalTracking:
         assert data["days_elapsed"] + data["days_remaining"] <= data["days_total"] + 1
         assert isinstance(data["goals"], list)
 
-    async def test_with_tenant_goal_targets(
+    async def test_with_org_goal_targets(
         self,
         authenticated_client: AsyncClient,
         db_session,
-        test_tenant,
+        organization,
         seeded_campaigns,
     ):
         from sqlalchemy import select
 
-        from app.base_models import Tenant
+        from app.base_models import Organization
 
-        tenant = (
+        org = (
             await db_session.execute(
-                select(Tenant).where(Tenant.id == test_tenant["id"])
+                select(Organization).where(Organization.id == organization["id"])
             )
         ).scalar_one()
-        tenant.settings = {"goals": {"revenue": 100_000.0, "spend": 50_000.0}}
+        org.settings = {"goals": {"revenue": 100_000.0, "spend": 50_000.0}}
         await db_session.flush()
 
         resp = await authenticated_client.get(f"{_BASE}/goal-tracking")

@@ -2,9 +2,11 @@
 # Stratum AI - Auth Registration Endpoint Integration Tests
 # =============================================================================
 """Integration tests for ``POST /auth/register`` — the verified-signup flow
-that auto-provisions a tenant + admin user + membership on a 14-day Starter
-trial. Registration consumes a one-time signup-verification token from
-Redis (seeded here to stand in for the prior email/WhatsApp OTP step).
+that provisions a single global admin ``User`` row (STRAT-SC-001: there is
+no ``Tenant``/membership to auto-provision anymore — exactly one
+organization exists). Registration consumes a one-time signup-verification
+token from Redis (seeded here to stand in for the prior email/WhatsApp OTP
+step).
 """
 
 import uuid
@@ -52,9 +54,7 @@ class TestRegister:
         resp = await client.post(_URL, json=_payload("does-not-exist"))
         assert resp.status_code == 400
 
-    async def test_register_provisions_user_and_tenant(
-        self, client, verification_token
-    ):
+    async def test_register_provisions_user(self, client, verification_token):
         payload = _payload(verification_token)
         resp = await client.post(_URL, json=payload)
         assert resp.status_code == 200, resp.text
@@ -62,7 +62,6 @@ class TestRegister:
         assert data["email"] == payload["email"]
         assert data["role"] == "admin"
         assert data["is_verified"] is True
-        assert data["tenant_id"]
 
     async def test_duplicate_email_rejected(self, client, verification_token):
         payload = _payload(verification_token)

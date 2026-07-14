@@ -3,7 +3,7 @@
 # =============================================================================
 """DB-backed integration tests for ``AudienceSyncService``.
 
-Seeds real Postgres rows (tenant, CDP segment, profiles with hashed PII
+Seeds real Postgres rows (CDP segment, profiles with hashed PII
 identifiers, memberships, encrypted sync credentials) and drives the sync
 orchestrator end-to-end with the Meta connector's HTTP respx-mocked at the
 Graph API boundary. The unit suite (``tests/unit/test_audience_sync.py``)
@@ -22,6 +22,15 @@ Behavior corrected in #540 and asserted here:
 - ``list_platform_audiences``: the count query now applies the ``platform``
   filter as well as ``segment_id``, so ``total`` matches the filtered rows.
   See ``test_list_by_platform_total_respects_platform_filter``.
+
+STRAT-SC-001: this suite used to seed a second ``Tenant`` row and assert
+cross-tenant data isolation (``PlatformAudience``/``AudienceSyncJob``/
+``CDPProfile`` rows scoped by ``tenant_id``). The ``Tenant`` model and every
+``tenant_id`` column were removed in the single-client conversion — there is
+now exactly one global organization, so that isolation semantics no longer
+exists. Cross-tenant tests were deleted outright (see inline notes below);
+everything else keeps its original assertions against the now-global
+tables.
 """
 
 import hashlib
@@ -63,24 +72,23 @@ def _sha(value: str) -> str:
 # =============================================================================
 
 
-async def _seed_segment(db, tenant_id, name="High Value") -> CDPSegment:
-    segment = CDPSegment(tenant_id=tenant_id, name=name, rules={}, tags=[])
+async def _seed_segment(db, name="High Value") -> CDPSegment:
+    segment = CDPSegment(name=name, rules={}, tags=[])
     db.add(segment)
     await db.flush()
     return segment
 
 
 async def _seed_profile(
-    db, tenant_id, segment, identifiers=(), membership_active=True
+    db, segment, identifiers=(), membership_active=True
 ) -> CDPProfile:
     """Create a profile with identifiers and a segment membership."""
-    profile = CDPProfile(tenant_id=tenant_id, profile_data={}, computed_traits={})
+    profile = CDPProfile(profile_data={}, computed_traits={})
     db.add(profile)
     await db.flush()
     for identifier_type, raw in identifiers:
         db.add(
             CDPProfileIdentifier(
-                tenant_id=tenant_id,
                 profile_id=profile.id,
                 identifier_type=identifier_type,
                 identifier_value=raw,
@@ -89,7 +97,6 @@ async def _seed_profile(
         )
     db.add(
         CDPSegmentMembership(
-            tenant_id=tenant_id,
             segment_id=segment.id,
             profile_id=profile.id,
             is_active=membership_active,
@@ -101,14 +108,12 @@ async def _seed_profile(
 
 async def _seed_credential(
     db,
-    tenant_id,
     platform="meta",
     ad_account_id="act_123",
     is_active=True,
     config=None,
 ) -> AudienceSyncCredential:
     cred = AudienceSyncCredential(
-        tenant_id=tenant_id,
         platform=platform,
         ad_account_id=ad_account_id,
         ad_account_name=f"{platform} account",
@@ -123,14 +128,12 @@ async def _seed_credential(
 
 async def _seed_audience(
     db,
-    tenant_id,
     segment,
     platform_audience_id="aud_ext_1",
     ad_account_id="act_123",
     **kwargs,
 ) -> PlatformAudience:
     audience = PlatformAudience(
-        tenant_id=tenant_id,
         segment_id=segment.id,
         platform="meta",
         platform_audience_id=platform_audience_id,
@@ -144,21 +147,6 @@ async def _seed_audience(
     return audience
 
 
-async def _seed_second_tenant(db):
-    from app.base_models import Tenant
-
-    tenant = Tenant(
-        name="Other Tenant",
-        slug=f"other-{uuid4().hex[:8]}",
-        plan="starter",
-        max_users=5,
-        max_campaigns=10,
-    )
-    db.add(tenant)
-    await db.flush()
-    return tenant
-
-
 async def _get_jobs(db, platform_audience_id) -> list[AudienceSyncJob]:
     result = await db.execute(
         select(AudienceSyncJob).where(
@@ -169,8 +157,8 @@ async def _get_jobs(db, platform_audience_id) -> list[AudienceSyncJob]:
 
 
 @pytest.fixture
-def svc(db_session, test_tenant) -> AudienceSyncService:
-    return AudienceSyncService(db_session, test_tenant["id"])
+def svc(db_session) -> AudienceSyncService:
+    return AudienceSyncService(db_session)
 
 
 # =============================================================================
@@ -180,24 +168,22 @@ def svc(db_session, test_tenant) -> AudienceSyncService:
 
 class TestCreatePlatformAudience:
     async def test_full_create_flow_persists_audience_and_job(
-        self, db_session, test_tenant, svc
+        self, db_session, svc
     ):
-        tenant_id = test_tenant["id"]
-        segment = await _seed_segment(db_session, tenant_id)
-        await _seed_credential(db_session, tenant_id)
+        segment = await _seed_segment(db_session)
+        await _seed_credential(db_session)
 
         # 3 syncable profiles + 1 unmapped identifier type + 1 inactive member
         await _seed_profile(
-            db_session, tenant_id, segment, [("email", "user1@example.com")]
+            db_session, segment, [("email", "user1@example.com")]
         )
-        await _seed_profile(db_session, tenant_id, segment, [("phone", "+15551230001")])
+        await _seed_profile(db_session, segment, [("phone", "+15551230001")])
         await _seed_profile(
-            db_session, tenant_id, segment, [("device_id", "gaid-abc-123")]
+            db_session, segment, [("device_id", "gaid-abc-123")]
         )
-        await _seed_profile(db_session, tenant_id, segment, [("address", "1 Main St")])
+        await _seed_profile(db_session, segment, [("address", "1 Main St")])
         await _seed_profile(
             db_session,
-            tenant_id,
             segment,
             [("email", "inactive@example.com")],
             membership_active=False,
@@ -269,11 +255,9 @@ class TestCreatePlatformAudience:
                 audience_name="X",
             )
 
-    async def test_create_inactive_credential_rejected(
-        self, db_session, test_tenant, svc
-    ):
-        segment = await _seed_segment(db_session, test_tenant["id"])
-        await _seed_credential(db_session, test_tenant["id"], is_active=False)
+    async def test_create_inactive_credential_rejected(self, db_session, svc):
+        segment = await _seed_segment(db_session)
+        await _seed_credential(db_session, is_active=False)
 
         with pytest.raises(ValueError, match="No credentials"):
             await svc.create_platform_audience(
@@ -284,15 +268,12 @@ class TestCreatePlatformAudience:
             )
 
     async def test_create_platform_failure_recorded_without_raise(
-        self, db_session, test_tenant, svc
+        self, db_session, svc
     ):
         """Connector-level failure (no id returned) marks job FAILED gracefully."""
-        tenant_id = test_tenant["id"]
-        segment = await _seed_segment(db_session, tenant_id)
-        await _seed_credential(db_session, tenant_id)
-        await _seed_profile(
-            db_session, tenant_id, segment, [("email", "f1@example.com")]
-        )
+        segment = await _seed_segment(db_session)
+        await _seed_credential(db_session)
+        await _seed_profile(db_session, segment, [("email", "f1@example.com")])
 
         with respx.mock:
             respx.post(f"{GRAPH}/act_123/customaudiences").mock(
@@ -312,15 +293,12 @@ class TestCreatePlatformAudience:
         assert audience.last_sync_status == SyncStatus.FAILED.value
 
     async def test_create_unexpected_exception_commits_failure_record(
-        self, db_session, test_tenant, svc
+        self, db_session, svc
     ):
         """Non-HTTP exceptions re-raise but the failure record is committed."""
-        tenant_id = test_tenant["id"]
-        segment = await _seed_segment(db_session, tenant_id)
-        await _seed_credential(db_session, tenant_id)
-        await _seed_profile(
-            db_session, tenant_id, segment, [("email", "boom@example.com")]
-        )
+        segment = await _seed_segment(db_session)
+        await _seed_credential(db_session)
+        await _seed_profile(db_session, segment, [("email", "boom@example.com")])
 
         with respx.mock:
             respx.post(f"{GRAPH}/act_123/customaudiences").mock(
@@ -337,7 +315,6 @@ class TestCreatePlatformAudience:
 
         result = await db_session.execute(
             select(PlatformAudience).where(
-                PlatformAudience.tenant_id == tenant_id,
                 PlatformAudience.platform_audience_name == "Boom",
             )
         )
@@ -356,18 +333,13 @@ class TestCreatePlatformAudience:
 
 
 class TestSyncPlatformAudience:
-    async def test_update_happy_path_schedules_next_sync(
-        self, db_session, test_tenant, svc
-    ):
-        tenant_id = test_tenant["id"]
-        segment = await _seed_segment(db_session, tenant_id)
-        await _seed_credential(db_session, tenant_id)
+    async def test_update_happy_path_schedules_next_sync(self, db_session, svc):
+        segment = await _seed_segment(db_session)
+        await _seed_credential(db_session)
         audience = await _seed_audience(
-            db_session, tenant_id, segment, auto_sync=True, sync_interval_hours=6
+            db_session, segment, auto_sync=True, sync_interval_hours=6
         )
-        await _seed_profile(
-            db_session, tenant_id, segment, [("email", "u-upd@example.com")]
-        )
+        await _seed_profile(db_session, segment, [("email", "u-upd@example.com")])
 
         with respx.mock:
             respx.post(f"{GRAPH}/aud_ext_1/users").mock(
@@ -394,18 +366,15 @@ class TestSyncPlatformAudience:
         assert abs((audience.next_sync_at - expected_next).total_seconds()) < 300
 
     async def test_update_partial_failure_accounting(
-        self, db_session, test_tenant, svc, monkeypatch
+        self, db_session, svc, monkeypatch
     ):
         """Mid-batch HTTP failure with prior invalids => PARTIAL status."""
         monkeypatch.setattr(MetaAudienceConnector, "BATCH_SIZE", 2)
-        tenant_id = test_tenant["id"]
-        segment = await _seed_segment(db_session, tenant_id)
-        await _seed_credential(db_session, tenant_id)
-        audience = await _seed_audience(db_session, tenant_id, segment)
+        segment = await _seed_segment(db_session)
+        await _seed_credential(db_session)
+        audience = await _seed_audience(db_session, segment)
         for i in range(4):
-            await _seed_profile(
-                db_session, tenant_id, segment, [("email", f"part{i}@example.com")]
-            )
+            await _seed_profile(db_session, segment, [("email", f"part{i}@example.com")])
 
         with respx.mock:
             respx.post(f"{GRAPH}/aud_ext_1/users").mock(
@@ -428,13 +397,12 @@ class TestSyncPlatformAudience:
         assert audience.last_sync_status == SyncStatus.PARTIAL.value
 
     async def test_update_without_platform_id_commits_failed_job(
-        self, db_session, test_tenant, svc
+        self, db_session, svc
     ):
-        tenant_id = test_tenant["id"]
-        segment = await _seed_segment(db_session, tenant_id)
-        await _seed_credential(db_session, tenant_id)
+        segment = await _seed_segment(db_session)
+        await _seed_credential(db_session)
         audience = await _seed_audience(
-            db_session, tenant_id, segment, platform_audience_id=None
+            db_session, segment, platform_audience_id=None
         )
 
         with pytest.raises(ValueError, match="No platform audience ID"):
@@ -447,15 +415,12 @@ class TestSyncPlatformAudience:
         assert audience.last_sync_status == SyncStatus.FAILED.value
         assert "No platform audience ID" in audience.last_sync_error
 
-    async def test_replace_operation(self, db_session, test_tenant, svc):
-        tenant_id = test_tenant["id"]
-        segment = await _seed_segment(db_session, tenant_id)
-        await _seed_credential(db_session, tenant_id)
-        audience = await _seed_audience(db_session, tenant_id, segment)
+    async def test_replace_operation(self, db_session, svc):
+        segment = await _seed_segment(db_session)
+        await _seed_credential(db_session)
+        audience = await _seed_audience(db_session, segment)
         for i in range(2):
-            await _seed_profile(
-                db_session, tenant_id, segment, [("email", f"rep{i}@example.com")]
-            )
+            await _seed_profile(db_session, segment, [("email", f"rep{i}@example.com")])
 
         with respx.mock:
             respx.post(f"{GRAPH}/aud_ext_1/usersreplace").mock(
@@ -474,11 +439,10 @@ class TestSyncPlatformAudience:
         assert job.profiles_sent == 2
         assert job.profiles_added == 2
 
-    async def test_delete_operation(self, db_session, test_tenant, svc):
-        tenant_id = test_tenant["id"]
-        segment = await _seed_segment(db_session, tenant_id)
-        await _seed_credential(db_session, tenant_id)
-        audience = await _seed_audience(db_session, tenant_id, segment)
+    async def test_delete_operation(self, db_session, svc):
+        segment = await _seed_segment(db_session)
+        await _seed_credential(db_session)
+        audience = await _seed_audience(db_session, segment)
 
         with respx.mock:
             respx.delete(f"{GRAPH}/aud_ext_1").mock(
@@ -492,13 +456,10 @@ class TestSyncPlatformAudience:
         assert job.status == SyncStatus.COMPLETED.value
         assert job.operation == "delete"
 
-    async def test_empty_segment_syncs_zero_profiles(
-        self, db_session, test_tenant, svc
-    ):
-        tenant_id = test_tenant["id"]
-        segment = await _seed_segment(db_session, tenant_id)
-        await _seed_credential(db_session, tenant_id)
-        audience = await _seed_audience(db_session, tenant_id, segment, auto_sync=False)
+    async def test_empty_segment_syncs_zero_profiles(self, db_session, svc):
+        segment = await _seed_segment(db_session)
+        await _seed_credential(db_session)
+        audience = await _seed_audience(db_session, segment, auto_sync=False)
 
         with respx.mock:
             # No user batches uploaded; only the audience-info lookup fires.
@@ -518,34 +479,26 @@ class TestSyncPlatformAudience:
         with pytest.raises(ValueError, match="not found"):
             await svc.sync_platform_audience(uuid4())
 
-    async def test_sync_segment_invisible_across_tenants(
-        self, db_session, test_tenant, svc
-    ):
-        """Audience pointing at another tenant's segment fails the segment guard."""
-        other = await _seed_second_tenant(db_session)
-        foreign_segment = await _seed_segment(db_session, other.id)
-        audience = await _seed_audience(db_session, test_tenant["id"], foreign_segment)
+    # STRAT-SC-001: cross-tenant isolation no longer exists (single org) —
+    # test removed. It seeded an audience pointing at a segment owned by a
+    # second Tenant and asserted the segment guard treated it as invisible;
+    # both the segment and the guard are now global.
 
-        with pytest.raises(ValueError, match=r"Segment .* not found"):
-            await svc.sync_platform_audience(audience.id)
-
-    async def test_sync_without_credentials(self, db_session, test_tenant, svc):
-        tenant_id = test_tenant["id"]
-        segment = await _seed_segment(db_session, tenant_id)
-        audience = await _seed_audience(db_session, tenant_id, segment)
+    async def test_sync_without_credentials(self, db_session, svc):
+        segment = await _seed_segment(db_session)
+        audience = await _seed_audience(db_session, segment)
 
         with pytest.raises(ValueError, match="No credentials"):
             await svc.sync_platform_audience(audience.id)
 
     @pytest.mark.parametrize("operation", [SyncOperation.REPLACE, SyncOperation.DELETE])
     async def test_replace_and_delete_require_platform_id(
-        self, db_session, test_tenant, svc, operation
+        self, db_session, svc, operation
     ):
-        tenant_id = test_tenant["id"]
-        segment = await _seed_segment(db_session, tenant_id)
-        await _seed_credential(db_session, tenant_id)
+        segment = await _seed_segment(db_session)
+        await _seed_credential(db_session)
         audience = await _seed_audience(
-            db_session, tenant_id, segment, platform_audience_id=None
+            db_session, segment, platform_audience_id=None
         )
 
         with pytest.raises(ValueError, match="No platform audience ID"):
@@ -556,15 +509,11 @@ class TestSyncPlatformAudience:
         assert jobs[0].status == SyncStatus.FAILED.value
         assert jobs[0].operation == operation.value
 
-    async def test_execute_sync_job_unknown_operation(
-        self, db_session, test_tenant, svc
-    ):
-        tenant_id = test_tenant["id"]
-        segment = await _seed_segment(db_session, tenant_id)
-        credential = await _seed_credential(db_session, tenant_id)
-        audience = await _seed_audience(db_session, tenant_id, segment)
+    async def test_execute_sync_job_unknown_operation(self, db_session, svc):
+        segment = await _seed_segment(db_session)
+        credential = await _seed_credential(db_session)
+        audience = await _seed_audience(db_session, segment)
         job = AudienceSyncJob(
-            tenant_id=tenant_id,
             platform_audience_id=audience.id,
             operation="bogus",
             status=SyncStatus.PENDING.value,
@@ -579,15 +528,10 @@ class TestSyncPlatformAudience:
                 job, audience, credential, segment, operation="bogus"
             )
 
-    async def test_sync_cross_tenant_audience_not_visible(
-        self, db_session, test_tenant, svc
-    ):
-        other = await _seed_second_tenant(db_session)
-        other_segment = await _seed_segment(db_session, other.id)
-        other_audience = await _seed_audience(db_session, other.id, other_segment)
-
-        with pytest.raises(ValueError, match="not found"):
-            await svc.sync_platform_audience(other_audience.id)
+    # STRAT-SC-001: cross-tenant isolation no longer exists (single org) —
+    # test removed. It seeded an audience under a second Tenant and asserted
+    # ``sync_platform_audience`` couldn't see it from the "wrong" tenant's
+    # service instance; there is no per-tenant service scoping anymore.
 
 
 # =============================================================================
@@ -596,11 +540,10 @@ class TestSyncPlatformAudience:
 
 
 class TestDeletePlatformAudience:
-    async def test_delete_with_platform_deletion(self, db_session, test_tenant, svc):
-        tenant_id = test_tenant["id"]
-        segment = await _seed_segment(db_session, tenant_id)
-        await _seed_credential(db_session, tenant_id)
-        audience = await _seed_audience(db_session, tenant_id, segment)
+    async def test_delete_with_platform_deletion(self, db_session, svc):
+        segment = await _seed_segment(db_session)
+        await _seed_credential(db_session)
+        audience = await _seed_audience(db_session, segment)
 
         with respx.mock:
             del_route = respx.delete(f"{GRAPH}/aud_ext_1").mock(
@@ -615,11 +558,10 @@ class TestDeletePlatformAudience:
         )
         assert result.scalar_one_or_none() is None
 
-    async def test_delete_tolerates_platform_error(self, db_session, test_tenant, svc):
-        tenant_id = test_tenant["id"]
-        segment = await _seed_segment(db_session, tenant_id)
-        await _seed_credential(db_session, tenant_id)
-        audience = await _seed_audience(db_session, tenant_id, segment)
+    async def test_delete_tolerates_platform_error(self, db_session, svc):
+        segment = await _seed_segment(db_session)
+        await _seed_credential(db_session)
+        audience = await _seed_audience(db_session, segment)
 
         with respx.mock:
             respx.delete(f"{GRAPH}/aud_ext_1").mock(
@@ -634,7 +576,7 @@ class TestDeletePlatformAudience:
         assert result.scalar_one_or_none() is None
 
     async def test_delete_tolerates_connector_level_exception(
-        self, db_session, test_tenant, svc, monkeypatch
+        self, db_session, svc, monkeypatch
     ):
         """A ConnectionError escaping the connector is swallowed by the service.
 
@@ -647,10 +589,9 @@ class TestDeletePlatformAudience:
             raise ConnectionError("connector meltdown")
 
         monkeypatch.setattr(MetaAudienceConnector, "delete_audience", _boom)
-        tenant_id = test_tenant["id"]
-        segment = await _seed_segment(db_session, tenant_id)
-        await _seed_credential(db_session, tenant_id)
-        audience = await _seed_audience(db_session, tenant_id, segment)
+        segment = await _seed_segment(db_session)
+        await _seed_credential(db_session)
+        audience = await _seed_audience(db_session, segment)
 
         assert await svc.delete_platform_audience(audience.id) is True
 
@@ -660,33 +601,30 @@ class TestDeletePlatformAudience:
         assert result.scalar_one_or_none() is None
 
     async def test_delete_without_credentials_skips_platform_call(
-        self, db_session, test_tenant, svc
+        self, db_session, svc
     ):
-        tenant_id = test_tenant["id"]
-        segment = await _seed_segment(db_session, tenant_id)
-        audience = await _seed_audience(db_session, tenant_id, segment)
+        segment = await _seed_segment(db_session)
+        audience = await _seed_audience(db_session, segment)
 
         # No respx routes: any HTTP attempt would raise under respx.mock
         with respx.mock:
             assert await svc.delete_platform_audience(audience.id) is True
 
     async def test_delete_without_platform_id_skips_platform_call(
-        self, db_session, test_tenant, svc
+        self, db_session, svc
     ):
-        tenant_id = test_tenant["id"]
-        segment = await _seed_segment(db_session, tenant_id)
-        await _seed_credential(db_session, tenant_id)
+        segment = await _seed_segment(db_session)
+        await _seed_credential(db_session)
         audience = await _seed_audience(
-            db_session, tenant_id, segment, platform_audience_id=None
+            db_session, segment, platform_audience_id=None
         )
 
         with respx.mock:
             assert await svc.delete_platform_audience(audience.id) is True
 
-    async def test_delete_local_only(self, db_session, test_tenant, svc):
-        tenant_id = test_tenant["id"]
-        segment = await _seed_segment(db_session, tenant_id)
-        audience = await _seed_audience(db_session, tenant_id, segment)
+    async def test_delete_local_only(self, db_session, svc):
+        segment = await _seed_segment(db_session)
+        audience = await _seed_audience(db_session, segment)
 
         assert (
             await svc.delete_platform_audience(audience.id, delete_from_platform=False)
@@ -703,14 +641,13 @@ class TestDeletePlatformAudience:
 
 
 class TestQuerySurfaces:
-    async def _seed_three_audiences(self, db, tenant_id):
-        seg_a = await _seed_segment(db, tenant_id, name="Seg A")
-        seg_b = await _seed_segment(db, tenant_id, name="Seg B")
-        seg_c = await _seed_segment(db, tenant_id, name="Seg C")
-        a1 = await _seed_audience(db, tenant_id, seg_a, platform_audience_id="m1")
-        a2 = await _seed_audience(db, tenant_id, seg_b, platform_audience_id="m2")
+    async def _seed_three_audiences(self, db):
+        seg_a = await _seed_segment(db, name="Seg A")
+        seg_b = await _seed_segment(db, name="Seg B")
+        seg_c = await _seed_segment(db, name="Seg C")
+        a1 = await _seed_audience(db, seg_a, platform_audience_id="m1")
+        a2 = await _seed_audience(db, seg_b, platform_audience_id="m2")
         a3 = PlatformAudience(
-            tenant_id=tenant_id,
             segment_id=seg_c.id,
             platform="google",
             platform_audience_name="G list",
@@ -721,9 +658,8 @@ class TestQuerySurfaces:
         await db.flush()
         return seg_a, a1, a2, a3
 
-    async def test_list_all_and_by_segment(self, db_session, test_tenant, svc):
-        tenant_id = test_tenant["id"]
-        seg_a, a1, _, _ = await self._seed_three_audiences(db_session, tenant_id)
+    async def test_list_all_and_by_segment(self, db_session, svc):
+        seg_a, a1, _, _ = await self._seed_three_audiences(db_session)
 
         audiences, total = await svc.list_platform_audiences()
         assert total == 3
@@ -739,40 +675,31 @@ class TestQuerySurfaces:
         assert len(page) == 1
 
     async def test_list_by_platform_total_respects_platform_filter(
-        self, db_session, test_tenant, svc
+        self, db_session, svc
     ):
         """The platform filter is now applied to the count query too, so
         ``total`` matches the filtered row set (service.py list_platform_audiences).
         Repro: seed 2 meta + 1 google, filter platform="meta" -> total 2.
         """
-        tenant_id = test_tenant["id"]
-        await self._seed_three_audiences(db_session, tenant_id)
+        await self._seed_three_audiences(db_session)
 
         audiences, total = await svc.list_platform_audiences(platform="meta")
         assert len(audiences) == 2
         assert {a.platform for a in audiences} == {"meta"}
         assert total == 2  # count query now respects the platform filter
 
-    async def test_list_excludes_other_tenants(self, db_session, test_tenant, svc):
-        other = await _seed_second_tenant(db_session)
-        other_seg = await _seed_segment(db_session, other.id)
-        await _seed_audience(db_session, other.id, other_seg)
+    # STRAT-SC-001: cross-tenant isolation no longer exists (single org) —
+    # test removed (``test_list_excludes_other_tenants``). It seeded an
+    # audience under a second Tenant and asserted ``list_platform_audiences``
+    # excluded it; the query is unscoped globally now.
 
-        audiences, total = await svc.list_platform_audiences()
-        assert total == 0
-        assert audiences == []
-
-    async def test_sync_history_ordering_limit_and_tenant_scope(
-        self, db_session, test_tenant, svc
-    ):
-        tenant_id = test_tenant["id"]
-        segment = await _seed_segment(db_session, tenant_id)
-        audience = await _seed_audience(db_session, tenant_id, segment)
+    async def test_sync_history_ordering_and_limit(self, db_session, svc):
+        segment = await _seed_segment(db_session)
+        audience = await _seed_audience(db_session, segment)
 
         now = datetime.now(UTC)
         for i, op in enumerate(["create", "update", "replace"]):
             job = AudienceSyncJob(
-                tenant_id=tenant_id,
                 platform_audience_id=audience.id,
                 operation=op,
                 status=SyncStatus.COMPLETED.value,
@@ -781,18 +708,6 @@ class TestQuerySurfaces:
             )
             job.created_at = now - timedelta(minutes=10 - i)
             db_session.add(job)
-
-        # Same audience id but a foreign tenant_id must be filtered out
-        other = await _seed_second_tenant(db_session)
-        foreign = AudienceSyncJob(
-            tenant_id=other.id,
-            platform_audience_id=audience.id,
-            operation="update",
-            status=SyncStatus.FAILED.value,
-            error_details={},
-            platform_response={},
-        )
-        db_session.add(foreign)
         await db_session.flush()
 
         jobs = await svc.get_sync_history(audience.id)
@@ -802,16 +717,11 @@ class TestQuerySurfaces:
         limited = await svc.get_sync_history(audience.id, limit=2)
         assert len(limited) == 2
 
-    async def test_connected_platforms_grouping(self, db_session, test_tenant, svc):
-        tenant_id = test_tenant["id"]
-        await _seed_credential(db_session, tenant_id, ad_account_id="act_1")
-        await _seed_credential(db_session, tenant_id, ad_account_id="act_2")
-        await _seed_credential(
-            db_session, tenant_id, platform="google", ad_account_id="goog_1"
-        )
-        await _seed_credential(
-            db_session, tenant_id, ad_account_id="act_dead", is_active=False
-        )
+    async def test_connected_platforms_grouping(self, db_session, svc):
+        await _seed_credential(db_session, ad_account_id="act_1")
+        await _seed_credential(db_session, ad_account_id="act_2")
+        await _seed_credential(db_session, platform="google", ad_account_id="goog_1")
+        await _seed_credential(db_session, ad_account_id="act_dead", is_active=False)
 
         platforms = await svc.get_connected_platforms()
         assert len(platforms) == 2
@@ -830,41 +740,20 @@ class TestQuerySurfaces:
 
 
 class TestHelpers:
-    async def test_get_segment_profiles_batched_ordered_and_scoped(
-        self, db_session, test_tenant, svc
-    ):
-        tenant_id = test_tenant["id"]
-        segment = await _seed_segment(db_session, tenant_id)
+    async def test_get_segment_profiles_batched_and_ordered(self, db_session, svc):
+        segment = await _seed_segment(db_session)
         profiles = []
         for i in range(5):
             profiles.append(
-                await _seed_profile(
-                    db_session, tenant_id, segment, [("email", f"b{i}@example.com")]
-                )
+                await _seed_profile(db_session, segment, [("email", f"b{i}@example.com")])
             )
         # Inactive membership excluded
         await _seed_profile(
             db_session,
-            tenant_id,
             segment,
             [("email", "off@example.com")],
             membership_active=False,
         )
-        # Cross-tenant profile attached to the same segment excluded
-        other = await _seed_second_tenant(db_session)
-        foreign_profile = CDPProfile(
-            tenant_id=other.id, profile_data={}, computed_traits={}
-        )
-        db_session.add(foreign_profile)
-        await db_session.flush()
-        db_session.add(
-            CDPSegmentMembership(
-                tenant_id=other.id,
-                segment_id=segment.id,
-                profile_id=foreign_profile.id,
-            )
-        )
-        await db_session.flush()
 
         fetched = await svc._get_segment_profiles(segment.id, batch_size=2)
         assert len(fetched) == 5
@@ -877,14 +766,10 @@ class TestHelpers:
         capped = await svc._get_segment_profiles(segment.id, limit=3, batch_size=2)
         assert len(capped) == 3
 
-    async def test_profiles_to_audience_users_maps_types(
-        self, db_session, test_tenant, svc
-    ):
-        tenant_id = test_tenant["id"]
-        segment = await _seed_segment(db_session, tenant_id)
+    async def test_profiles_to_audience_users_maps_types(self, db_session, svc):
+        segment = await _seed_segment(db_session)
         await _seed_profile(
             db_session,
-            tenant_id,
             segment,
             [
                 ("email", "multi@example.com"),
@@ -892,7 +777,7 @@ class TestHelpers:
                 ("address", "ignored"),
             ],
         )
-        await _seed_profile(db_session, tenant_id, segment, [])  # no identifiers
+        await _seed_profile(db_session, segment, [])  # no identifiers
 
         profiles = await svc._get_segment_profiles(segment.id)
         users = await svc._profiles_to_audience_users(profiles)
@@ -905,12 +790,12 @@ class TestHelpers:
         assert ("phone", _sha("+15551239999")) in hashed
         assert len(users[0].identifiers) == 2  # "address" type unmapped
 
-    async def test_get_connector_platform_kwargs(self, db_session, test_tenant, svc):
+    async def test_get_connector_platform_kwargs(self, db_session, svc):
         from app.services.cdp.audience_sync.google_connector import (
             GoogleAudienceConnector,
         )
 
-        meta_cred = await _seed_credential(db_session, test_tenant["id"])
+        meta_cred = await _seed_credential(db_session)
         meta_conn = svc._get_connector("meta", meta_cred)
         assert isinstance(meta_conn, MetaAudienceConnector)
         assert meta_conn.app_secret == "shh"
@@ -918,7 +803,6 @@ class TestHelpers:
 
         google_cred = await _seed_credential(
             db_session,
-            test_tenant["id"],
             platform="google",
             ad_account_id="goog_9",
             config={"developer_token": "dev-1", "login_customer_id": "cust-1"},
@@ -928,7 +812,7 @@ class TestHelpers:
 
         # Platforms without special kwargs take the plain constructor path
         tiktok_cred = await _seed_credential(
-            db_session, test_tenant["id"], platform="tiktok", ad_account_id="tt_1"
+            db_session, platform="tiktok", ad_account_id="tt_1"
         )
         tiktok_conn = svc._get_connector("tiktok", tiktok_cred)
         assert tiktok_conn.PLATFORM_NAME == "tiktok"

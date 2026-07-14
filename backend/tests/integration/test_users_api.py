@@ -4,7 +4,7 @@
 """Integration tests for the users API.
 
 Exercises the real ASGI app against Postgres + Redis: current-user profile
-read/update, tenant user listing (admin-gated), and invite validation
+read/update, user listing (admin-gated), and invite validation
 (duplicate / bad email). The invite happy path sends an invitation email,
 so it is left to service-level tests.
 """

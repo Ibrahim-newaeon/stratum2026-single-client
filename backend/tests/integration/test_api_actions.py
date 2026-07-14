@@ -27,12 +27,11 @@ class TestActionsQueue:
     async def test_get_pending_actions(
         self,
         authenticated_client: AsyncClient,
-        test_tenant: dict,
         test_action: dict,
     ):
         """Test retrieval of pending actions."""
         response = await authenticated_client.get(
-            f"/api/v1/tenants/{test_tenant['id']}/actions",
+            "/api/v1/autopilot/actions",
             params={"status": "queued"},
         )
 
@@ -44,12 +43,11 @@ class TestActionsQueue:
     async def test_approve_action(
         self,
         authenticated_client: AsyncClient,
-        test_tenant: dict,
         test_action: dict,
     ):
         """Test action approval."""
         response = await authenticated_client.post(
-            f"/api/v1/tenants/{test_tenant['id']}/actions/{test_action['id']}/approve"
+            f"/api/v1/autopilot/actions/{test_action['id']}/approve"
         )
 
         if response.status_code == 200:
@@ -60,7 +58,6 @@ class TestActionsQueue:
     async def test_dismiss_action(
         self,
         authenticated_client: AsyncClient,
-        test_tenant: dict,
         db_session,
     ):
         """Test action dismissal."""
@@ -70,7 +67,6 @@ class TestActionsQueue:
 
         # Create a new action to dismiss
         action = FactActionsQueue(
-            tenant_id=test_tenant["id"],
             date=date.today(),
             action_type="pause_campaign",
             entity_type="campaign",
@@ -84,7 +80,7 @@ class TestActionsQueue:
         await db_session.flush()
 
         response = await authenticated_client.post(
-            f"/api/v1/tenants/{test_tenant['id']}/actions/{action.id}/dismiss"
+            f"/api/v1/autopilot/actions/{action.id}/dismiss"
         )
 
         if response.status_code == 200:
@@ -95,7 +91,6 @@ class TestActionsQueue:
     async def test_bulk_approve_actions(
         self,
         authenticated_client: AsyncClient,
-        test_tenant: dict,
         db_session,
     ):
         """Test bulk action approval."""
@@ -107,7 +102,6 @@ class TestActionsQueue:
         action_ids = []
         for i in range(3):
             action = FactActionsQueue(
-                tenant_id=test_tenant["id"],
                 date=date.today(),
                 action_type="budget_increase",
                 entity_type="campaign",
@@ -122,7 +116,7 @@ class TestActionsQueue:
             action_ids.append(str(action.id))
 
         response = await authenticated_client.post(
-            f"/api/v1/tenants/{test_tenant['id']}/actions/approve-all",
+            "/api/v1/autopilot/actions/approve-all",
             json={"action_ids": action_ids},
         )
 
@@ -138,7 +132,6 @@ class TestActionValidation:
     async def test_action_respects_budget_caps(
         self,
         authenticated_client: AsyncClient,
-        test_tenant: dict,
         db_session,
     ):
         """Test that actions respect budget change caps."""
@@ -148,7 +141,6 @@ class TestActionValidation:
 
         # Create an action that exceeds caps
         large_action = FactActionsQueue(
-            tenant_id=test_tenant["id"],
             date=date.today(),
             action_type="budget_increase",
             entity_type="campaign",
@@ -163,7 +155,7 @@ class TestActionValidation:
 
         # Attempting to approve should validate caps
         response = await authenticated_client.post(
-            f"/api/v1/tenants/{test_tenant['id']}/actions/{large_action.id}/approve"
+            f"/api/v1/autopilot/actions/{large_action.id}/approve"
         )
 
         # Either rejected or needs additional confirmation
@@ -175,7 +167,6 @@ class TestActionValidation:
     async def test_action_blocked_when_signal_health_degraded(
         self,
         authenticated_client: AsyncClient,
-        test_tenant: dict,
         db_session,
     ):
         """Test that actions are blocked when signal health is degraded."""
@@ -189,7 +180,6 @@ class TestActionValidation:
 
         # Set signal health to degraded
         health = FactSignalHealthDaily(
-            tenant_id=test_tenant["id"],
             date=date.today(),
             platform="meta",
             emq_score=65.0,  # Below threshold
@@ -200,7 +190,6 @@ class TestActionValidation:
 
         # Create an action
         action = FactActionsQueue(
-            tenant_id=test_tenant["id"],
             date=date.today(),
             action_type="budget_increase",
             entity_type="campaign",
@@ -215,7 +204,7 @@ class TestActionValidation:
 
         # Check autopilot state - should be restricted
         response = await authenticated_client.get(
-            f"/api/v1/tenants/{test_tenant['id']}/emq/autopilot-state"
+            "/api/v1/emq/autopilot-state"
         )
 
         if response.status_code == 200:
@@ -232,12 +221,11 @@ class TestActionHistory:
     async def test_get_action_history(
         self,
         authenticated_client: AsyncClient,
-        test_tenant: dict,
         test_action: dict,
     ):
         """Test retrieval of action history."""
         response = await authenticated_client.get(
-            f"/api/v1/tenants/{test_tenant['id']}/actions/history",
+            "/api/v1/autopilot/actions/history",
             params={"limit": 10},
         )
 
@@ -249,18 +237,17 @@ class TestActionHistory:
     async def test_action_audit_log(
         self,
         authenticated_client: AsyncClient,
-        test_tenant: dict,
         test_action: dict,
     ):
         """Test that actions are properly logged in audit trail."""
         # Approve the action first
         await authenticated_client.post(
-            f"/api/v1/tenants/{test_tenant['id']}/actions/{test_action['id']}/approve"
+            f"/api/v1/autopilot/actions/{test_action['id']}/approve"
         )
 
         # Check audit log
         response = await authenticated_client.get(
-            f"/api/v1/tenants/{test_tenant['id']}/audit",
+            "/api/v1/console/audit",
             params={"action_type": "action_approved"},
         )
 
@@ -276,12 +263,11 @@ class TestActionSummary:
     async def test_get_actions_summary(
         self,
         authenticated_client: AsyncClient,
-        test_tenant: dict,
         test_action: dict,
     ):
         """Test retrieval of actions summary."""
         response = await authenticated_client.get(
-            f"/api/v1/tenants/{test_tenant['id']}/actions/summary"
+            "/api/v1/autopilot/actions/summary"
         )
 
         if response.status_code == 200:
@@ -293,12 +279,11 @@ class TestActionSummary:
     async def test_get_actions_by_platform(
         self,
         authenticated_client: AsyncClient,
-        test_tenant: dict,
         test_action: dict,
     ):
         """Test filtering actions by platform."""
         response = await authenticated_client.get(
-            f"/api/v1/tenants/{test_tenant['id']}/actions",
+            "/api/v1/autopilot/actions",
             params={"platform": "meta"},
         )
 

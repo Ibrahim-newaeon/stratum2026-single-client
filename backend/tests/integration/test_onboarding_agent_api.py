@@ -26,9 +26,17 @@ async def _start(client: AsyncClient) -> str:
 
 
 class TestStart:
-    async def test_requires_auth(self, client: AsyncClient):
+    async def test_start_works_without_auth(self, client: AsyncClient):
+        """STRAT-SC-001 (C6): replaces test_requires_auth. The endpoint uses
+        OptionalUserDep BY DESIGN (its docstring: "Can be used with or
+        without authentication") — pre-signup onboarding is an anonymous
+        flow. Under the old TenantMiddleware the anonymous path was
+        unreachable (the middleware 401'd everything not allowlisted), which
+        masked the endpoint's own contract; AuthContextMiddleware (C2)
+        honors it."""
         resp = await client.post(_BASE + "/start", json={"language": "en"})
-        assert resp.status_code in {401, 403}
+        assert resp.status_code == 200, resp.text
+        assert resp.json()["session_id"]
 
     async def test_start_returns_greeting(self, authenticated_client: AsyncClient):
         resp = await authenticated_client.post(
@@ -90,7 +98,7 @@ class TestSessionDelete:
         assert gone.status_code == 404
 
 
-async def _seed_completed_session(tenant_id: int) -> str:
+async def _seed_completed_session() -> str:
     """Persist a fully-walked (COMPLETED) onboarding session to Redis."""
     from uuid import uuid4
 
@@ -105,7 +113,7 @@ async def _seed_completed_session(tenant_id: int) -> str:
     session_id = str(uuid4())
     context = ConversationContext(
         session_id=session_id,
-        user_context=UserContext(tenant_id=str(tenant_id), is_new_user=False),
+        user_context=UserContext(is_new_user=False),
         state=ConversationState.COMPLETED,
         onboarding_data=OnboardingData(
             company_name="Acme Co",
@@ -137,25 +145,25 @@ class TestComplete:
         assert resp.status_code == 400, resp.text
 
     async def test_complete_persists_and_clears_session(
-        self, authenticated_client: AsyncClient, db_session, test_tenant
+        self, authenticated_client: AsyncClient, db_session, organization
     ):
-        session_id = await _seed_completed_session(test_tenant["id"])
+        session_id = await _seed_completed_session()
 
         resp = await authenticated_client.post(f"{_BASE}/complete/{session_id}")
         assert resp.status_code == 200, resp.text
         assert resp.json()["success"] is True
 
-        # Collected data was persisted to the tenant.
+        # Collected data was persisted to the Organization singleton.
         from sqlalchemy import select
 
-        from app.base_models import Tenant
+        from app.base_models import Organization
 
         row = await db_session.execute(
-            select(Tenant).where(Tenant.id == test_tenant["id"])
+            select(Organization).where(Organization.id == organization["id"])
         )
-        tenant = row.scalar_one()
-        assert tenant.settings.get("onboarding_completed") is True
-        assert tenant.settings.get("selected_platforms") == ["meta", "google"]
+        org = row.scalar_one()
+        assert org.settings.get("onboarding_completed") is True
+        assert org.settings.get("selected_platforms") == ["meta", "google"]
 
         # Session is cleared after completion.
         gone = await authenticated_client.get(f"{_BASE}/status/{session_id}")

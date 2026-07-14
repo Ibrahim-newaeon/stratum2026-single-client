@@ -18,7 +18,7 @@ _PASSWORD = "Testpassword123"
 
 
 @pytest_asyncio.fixture
-async def login_user(db_session, test_tenant) -> dict:
+async def login_user(db_session) -> dict:
     """Create an active, verified user that login's email-hash lookup resolves."""
     from app.base_models import User, UserRole
     from app.core.security import (
@@ -28,7 +28,6 @@ async def login_user(db_session, test_tenant) -> dict:
     )
 
     user = User(
-        tenant_id=test_tenant["id"],
         email=encrypt_pii(_EMAIL),
         email_hash=hash_pii_for_lookup(_EMAIL),
         password_hash=get_password_hash(_PASSWORD),
@@ -40,7 +39,7 @@ async def login_user(db_session, test_tenant) -> dict:
     )
     db_session.add(user)
     await db_session.flush()
-    return {"id": user.id, "tenant_id": test_tenant["id"]}
+    return {"id": user.id}
 
 
 class TestLogin:

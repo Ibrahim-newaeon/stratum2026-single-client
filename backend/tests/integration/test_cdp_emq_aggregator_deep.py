@@ -42,7 +42,6 @@ pytestmark = [pytest.mark.integration, pytest.mark.asyncio]
 
 
 def _event(
-    tenant_id: int,
     *,
     emq: float | None = 85.0,
     received_at: datetime | None = None,
@@ -52,7 +51,6 @@ def _event(
     now = datetime.now(UTC)
     received = received_at or now
     return CDPEvent(
-        tenant_id=tenant_id,
         profile_id=profile_id,
         event_name=name,
         event_time=received,
@@ -65,13 +63,11 @@ def _event(
 
 
 def _profile(
-    tenant_id: int,
     *,
     stage: str = "anonymous",
     total_events: int = 0,
 ) -> CDPProfile:
     return CDPProfile(
-        tenant_id=tenant_id,
         lifecycle_stage=stage,
         profile_data={},
         computed_traits={},
@@ -80,14 +76,12 @@ def _profile(
 
 
 def _consent(
-    tenant_id: int,
     profile_id,
     *,
     consent_type: str = "marketing",
     granted: bool = True,
 ) -> CDPConsent:
     return CDPConsent(
-        tenant_id=tenant_id,
         profile_id=profile_id,
         consent_type=consent_type,
         granted=granted,
@@ -108,9 +102,9 @@ async def aggregator(db_session) -> CDPEMQAggregator:
 
 class TestGetAggregateEmq:
     async def test_empty_tenant_returns_default_with_warning(
-        self, aggregator, test_tenant
+        self, aggregator
     ):
-        data = await aggregator.get_aggregate_emq(test_tenant["id"])
+        data = await aggregator.get_aggregate_emq()
 
         assert data["aggregate_score"] == 75.0
         assert data["event_count"] == 0
@@ -126,20 +120,19 @@ class TestGetAggregateEmq:
         assert "calculated_at" in data
 
     async def test_healthy_events_produce_no_issues(
-        self, aggregator, db_session, test_tenant
+        self, aggregator, db_session
     ):
-        tid = test_tenant["id"]
         db_session.add_all(
             [
-                _event(tid, emq=88.0),
-                _event(tid, emq=90.0),
-                _event(tid, emq=92.0),
+                _event(emq=88.0),
+                _event(emq=90.0),
+                _event(emq=92.0),
             ]
         )
-        db_session.add(_profile(tid))
+        db_session.add(_profile())
         await db_session.flush()
 
-        data = await aggregator.get_aggregate_emq(tid)
+        data = await aggregator.get_aggregate_emq()
 
         assert data["aggregate_score"] == 90.0
         assert data["event_count"] == 3
@@ -152,14 +145,13 @@ class TestGetAggregateEmq:
         assert data["issues"] == []
 
     async def test_issue_matrix_low_avg_low_min_high_variance(
-        self, aggregator, db_session, test_tenant
+        self, aggregator, db_session
     ):
         """Scores [30, 95]: avg 62.5 (<70), min 30 (<50), stddev ~46 (>20)."""
-        tid = test_tenant["id"]
-        db_session.add_all([_event(tid, emq=30.0), _event(tid, emq=95.0)])
+        db_session.add_all([_event(emq=30.0), _event(emq=95.0)])
         await db_session.flush()
 
-        data = await aggregator.get_aggregate_emq(tid)
+        data = await aggregator.get_aggregate_emq()
 
         assert data["aggregate_score"] == 62.5
         issues = data["issues"]
@@ -169,58 +161,55 @@ class TestGetAggregateEmq:
         assert any("High EMQ variance" in i for i in issues)
 
     async def test_stale_data_flagged_when_no_events_last_24h(
-        self, aggregator, db_session, test_tenant
+        self, aggregator, db_session
     ):
-        tid = test_tenant["id"]
         three_days_ago = datetime.now(UTC) - timedelta(days=3)
         db_session.add_all(
             [
-                _event(tid, emq=85.0, received_at=three_days_ago),
-                _event(tid, emq=87.0, received_at=three_days_ago),
+                _event(emq=85.0, received_at=three_days_ago),
+                _event(emq=87.0, received_at=three_days_ago),
             ]
         )
         await db_session.flush()
 
-        data = await aggregator.get_aggregate_emq(tid)
+        data = await aggregator.get_aggregate_emq()
 
         assert data["event_count"] == 2
         assert data["recent_event_count"] == 0
         assert data["issues"] == ["No CDP events in last 24 hours - data may be stale"]
 
     async def test_lookback_window_excludes_older_events(
-        self, aggregator, db_session, test_tenant
+        self, aggregator, db_session
     ):
-        tid = test_tenant["id"]
         db_session.add_all(
             [
                 _event(
-                    tid, emq=40.0, received_at=datetime.now(UTC) - timedelta(days=10)
+                    emq=40.0, received_at=datetime.now(UTC) - timedelta(days=10)
                 ),
-                _event(tid, emq=90.0),
+                _event(emq=90.0),
             ]
         )
         await db_session.flush()
 
-        default_window = await aggregator.get_aggregate_emq(tid)
+        default_window = await aggregator.get_aggregate_emq()
         assert default_window["event_count"] == 1
         assert default_window["avg_score"] == 90.0
 
-        wide_window = await aggregator.get_aggregate_emq(tid, lookback_days=15)
+        wide_window = await aggregator.get_aggregate_emq(lookback_days=15)
         assert wide_window["event_count"] == 2
         assert wide_window["avg_score"] == 65.0
         assert wide_window["lookback_days"] == 15
         assert any("min EMQ 40.0" in i for i in wide_window["issues"])
 
     async def test_null_emq_events_excluded_from_stats_but_counted_recent(
-        self, aggregator, db_session, test_tenant
+        self, aggregator, db_session
     ):
         """An event without an EMQ score contributes to recency but not stats,
         so the tenant falls back to the default aggregate."""
-        tid = test_tenant["id"]
-        db_session.add(_event(tid, emq=None))
+        db_session.add(_event(emq=None))
         await db_session.flush()
 
-        data = await aggregator.get_aggregate_emq(tid)
+        data = await aggregator.get_aggregate_emq()
 
         assert data["event_count"] == 0
         assert data["recent_event_count"] == 1
@@ -230,14 +219,13 @@ class TestGetAggregateEmq:
         ]
 
     async def test_explicit_target_date_in_past_excludes_todays_events(
-        self, aggregator, db_session, test_tenant
+        self, aggregator, db_session
     ):
-        tid = test_tenant["id"]
-        db_session.add(_event(tid, emq=90.0))  # received now
+        db_session.add(_event(emq=90.0))  # received now
         await db_session.flush()
 
         past = datetime.now(UTC).date() - timedelta(days=30)
-        data = await aggregator.get_aggregate_emq(tid, target_date=past)
+        data = await aggregator.get_aggregate_emq(target_date=past)
 
         assert data["event_count"] == 0
         assert data["aggregate_score"] == 75.0
@@ -250,25 +238,24 @@ class TestGetAggregateEmq:
 
 class TestGetEmqTrend:
     async def test_daily_grouping_and_ordering(
-        self, aggregator, db_session, test_tenant
+        self, aggregator, db_session
     ):
-        tid = test_tenant["id"]
         now = datetime.now(UTC)
         db_session.add_all(
             [
-                _event(tid, emq=90.0, received_at=now),
-                _event(tid, emq=80.0, received_at=now),
-                _event(tid, emq=70.0, received_at=now - timedelta(days=1)),
-                _event(tid, emq=60.0, received_at=now - timedelta(days=5)),
+                _event(emq=90.0, received_at=now),
+                _event(emq=80.0, received_at=now),
+                _event(emq=70.0, received_at=now - timedelta(days=1)),
+                _event(emq=60.0, received_at=now - timedelta(days=5)),
                 # null EMQ excluded from the trend entirely
-                _event(tid, emq=None, received_at=now),
+                _event(emq=None, received_at=now),
                 # outside the 30-day window
-                _event(tid, emq=10.0, received_at=now - timedelta(days=40)),
+                _event(emq=10.0, received_at=now - timedelta(days=40)),
             ]
         )
         await db_session.flush()
 
-        trend = await aggregator.get_emq_trend(tid, days=30)
+        trend = await aggregator.get_emq_trend(days=30)
 
         assert len(trend) == 3
         # Ascending by date: 5 days ago, yesterday, today
@@ -279,8 +266,8 @@ class TestGetEmqTrend:
         assert trend[2]["event_count"] == 2
         assert trend[0]["date"] == str((now - timedelta(days=5)).date())
 
-    async def test_empty_tenant_returns_empty_list(self, aggregator, test_tenant):
-        trend = await aggregator.get_emq_trend(test_tenant["id"])
+    async def test_empty_tenant_returns_empty_list(self, aggregator):
+        trend = await aggregator.get_emq_trend()
         assert trend == []
 
 
@@ -291,20 +278,19 @@ class TestGetEmqTrend:
 
 class TestProfileQualityBreakdown:
     async def test_stage_distribution_and_resolution_rate(
-        self, aggregator, db_session, test_tenant
+        self, aggregator, db_session
     ):
-        tid = test_tenant["id"]
         db_session.add_all(
             [
-                _profile(tid, stage="anonymous", total_events=2),
-                _profile(tid, stage="anonymous", total_events=4),
-                _profile(tid, stage="known", total_events=10),
-                _profile(tid, stage="customer", total_events=20),
+                _profile(stage="anonymous", total_events=2),
+                _profile(stage="anonymous", total_events=4),
+                _profile(stage="known", total_events=10),
+                _profile(stage="customer", total_events=20),
             ]
         )
         await db_session.flush()
 
-        data = await aggregator.get_profile_quality_breakdown(tid)
+        data = await aggregator.get_profile_quality_breakdown()
 
         assert data["total_profiles"] == 4
         assert data["stages"]["anonymous"]["count"] == 2
@@ -316,8 +302,8 @@ class TestProfileQualityBreakdown:
         # (known 1 + customer 1) / 4
         assert data["identity_resolution_rate"] == 50.0
 
-    async def test_empty_tenant(self, aggregator, test_tenant):
-        data = await aggregator.get_profile_quality_breakdown(test_tenant["id"])
+    async def test_empty_tenant(self, aggregator):
+        data = await aggregator.get_profile_quality_breakdown()
 
         assert data["total_profiles"] == 0
         assert data["stages"] == {}
@@ -330,8 +316,8 @@ class TestProfileQualityBreakdown:
 
 
 class TestConsentMetrics:
-    async def test_zero_profiles_short_circuits(self, aggregator, test_tenant):
-        data = await aggregator.get_consent_metrics(test_tenant["id"])
+    async def test_zero_profiles_short_circuits(self, aggregator):
+        data = await aggregator.get_consent_metrics()
 
         assert data == {
             "consent_rate": 0,
@@ -341,26 +327,25 @@ class TestConsentMetrics:
         }
 
     async def test_consent_rates_by_type_and_distinct_profiles(
-        self, aggregator, db_session, test_tenant
+        self, aggregator, db_session
     ):
-        tid = test_tenant["id"]
-        p1 = _profile(tid, stage="known")
-        p2 = _profile(tid, stage="customer")
-        p3 = _profile(tid, stage="anonymous")
+        p1 = _profile(stage="known")
+        p2 = _profile(stage="customer")
+        p3 = _profile(stage="anonymous")
         db_session.add_all([p1, p2, p3])
         await db_session.flush()
 
         db_session.add_all(
             [
-                _consent(tid, p1.id, consent_type="marketing", granted=True),
-                _consent(tid, p1.id, consent_type="analytics", granted=False),
-                _consent(tid, p2.id, consent_type="marketing", granted=False),
+                _consent(p1.id, consent_type="marketing", granted=True),
+                _consent(p1.id, consent_type="analytics", granted=False),
+                _consent(p2.id, consent_type="marketing", granted=False),
                 # p3 has no consent records at all
             ]
         )
         await db_session.flush()
 
-        data = await aggregator.get_consent_metrics(tid)
+        data = await aggregator.get_consent_metrics()
 
         assert data["total_profiles"] == 3
         assert data["profiles_with_consent"] == 1  # only p1 has a grant
@@ -376,21 +361,20 @@ class TestConsentMetrics:
             "rate": 0.0,
         }
 
-    async def test_all_profiles_consented(self, aggregator, db_session, test_tenant):
-        tid = test_tenant["id"]
-        p1 = _profile(tid, stage="known")
-        p2 = _profile(tid, stage="customer")
+    async def test_all_profiles_consented(self, aggregator, db_session):
+        p1 = _profile(stage="known")
+        p2 = _profile(stage="customer")
         db_session.add_all([p1, p2])
         await db_session.flush()
         db_session.add_all(
             [
-                _consent(tid, p1.id, granted=True),
-                _consent(tid, p2.id, granted=True),
+                _consent(p1.id, granted=True),
+                _consent(p2.id, granted=True),
             ]
         )
         await db_session.flush()
 
-        data = await aggregator.get_consent_metrics(tid)
+        data = await aggregator.get_consent_metrics()
 
         assert data["consent_rate"] == 100.0
         assert data["consent_by_type"]["marketing"]["rate"] == 100.0
@@ -487,8 +471,8 @@ class TestCalculateCdpContribution:
 
 
 class TestGetCdpEmqForSignalHealth:
-    async def test_empty_tenant_composition(self, db_session, test_tenant):
-        data = await get_cdp_emq_for_signal_health(db_session, test_tenant["id"])
+    async def test_empty_tenant_composition(self, db_session):
+        data = await get_cdp_emq_for_signal_health(db_session)
 
         # aggregate 75 -> 37.5; resolution 0 -> 0; recency 40 -> 6; consent 0 -> 0
         assert data["cdp_score"] == 43.5
@@ -505,26 +489,25 @@ class TestGetCdpEmqForSignalHealth:
             "No CDP events in analysis period - using default EMQ"
         )
 
-    async def test_populated_tenant_composition(self, db_session, test_tenant):
-        tid = test_tenant["id"]
-        p1 = _profile(tid, stage="known", total_events=3)
-        p2 = _profile(tid, stage="customer", total_events=5)
+    async def test_populated_tenant_composition(self, db_session):
+        p1 = _profile(stage="known", total_events=3)
+        p2 = _profile(stage="customer", total_events=5)
         db_session.add_all([p1, p2])
         await db_session.flush()
 
         db_session.add_all(
             [
-                _consent(tid, p1.id, granted=True),
-                _consent(tid, p2.id, granted=True),
+                _consent(p1.id, granted=True),
+                _consent(p2.id, granted=True),
             ]
         )
         for _ in range(3):
-            db_session.add(_event(tid, emq=88.0, profile_id=p1.id))
+            db_session.add(_event(emq=88.0, profile_id=p1.id))
         for _ in range(2):
-            db_session.add(_event(tid, emq=92.0, profile_id=p2.id))
+            db_session.add(_event(emq=92.0, profile_id=p2.id))
         await db_session.flush()
 
-        data = await get_cdp_emq_for_signal_health(db_session, tid)
+        data = await get_cdp_emq_for_signal_health(db_session)
 
         # aggregate = (88*3 + 92*2)/5 = 89.6 -> 44.8
         # resolution 100 -> 25; recency 70 + 5/100*30 = 71.5 -> 10.725

@@ -8,7 +8,6 @@ and service operations without requiring a live database.
 """
 
 from datetime import datetime, timezone
-from uuid import uuid4
 
 import pytest
 
@@ -32,14 +31,8 @@ from app.services.knowledge_graph.models import (
 
 
 @pytest.fixture
-def tenant_id():
-    return uuid4()
-
-
-@pytest.fixture
-def profile_node(tenant_id):
+def profile_node():
     return ProfileNode(
-        tenant_id=tenant_id,
         external_id="profile_001",
         lifecycle_stage=LifecycleStage.CUSTOMER,
         email_hash="abc123def456",
@@ -50,9 +43,8 @@ def profile_node(tenant_id):
 
 
 @pytest.fixture
-def account_node(tenant_id):
+def account_node():
     return AccountNode(
-        tenant_id=tenant_id,
         external_id="account_001",
         name="Acme Corp",
         industry="Technology",
@@ -62,12 +54,11 @@ def account_node(tenant_id):
 
 
 @pytest.fixture
-def sample_edge(tenant_id):
+def sample_edge():
     return GraphEdge(
         start_node_id="v_001",
         end_node_id="v_002",
         label=EdgeLabel.BELONGS_TO,
-        tenant_id=tenant_id,
         properties={"weight": 1.0},
     )
 
@@ -80,17 +71,16 @@ def sample_edge(tenant_id):
 class TestProfileNode:
     """Tests for ProfileNode creation and serialization."""
 
-    def test_profile_node_creation(self, profile_node, tenant_id):
+    def test_profile_node_creation(self, profile_node):
         """Profile node should have correct fields."""
-        assert profile_node.tenant_id == tenant_id
         assert profile_node.external_id == "profile_001"
         assert profile_node.lifecycle_stage == LifecycleStage.CUSTOMER
         assert profile_node.total_events == 50
         assert profile_node.total_purchases == 3
 
-    def test_profile_node_default_lifecycle(self, tenant_id):
+    def test_profile_node_default_lifecycle(self):
         """Default lifecycle stage should be ANONYMOUS."""
-        node = ProfileNode(tenant_id=tenant_id, external_id="test")
+        node = ProfileNode(external_id="test")
         assert node.lifecycle_stage == LifecycleStage.ANONYMOUS
 
     def test_profile_node_cypher_properties(self, profile_node):
@@ -100,7 +90,6 @@ class TestProfileNode:
         assert props["lifecycle_stage"] == "customer"
         assert props["total_events"] == 50
         assert props["total_revenue_cents"] == 15000
-        assert "tenant_id" in props
         assert "created_at" in props
 
     def test_profile_node_computed_label(self, profile_node):
@@ -145,18 +134,16 @@ class TestAccountNode:
 class TestGraphEdge:
     """Tests for GraphEdge creation and serialization."""
 
-    def test_edge_creation(self, sample_edge, tenant_id):
+    def test_edge_creation(self, sample_edge):
         """Edge should link two nodes with a label."""
         assert sample_edge.start_node_id == "v_001"
         assert sample_edge.end_node_id == "v_002"
         assert sample_edge.label == EdgeLabel.BELONGS_TO
-        assert sample_edge.tenant_id == tenant_id
 
     def test_edge_cypher_properties(self, sample_edge):
         """Edge cypher properties should include custom properties."""
         props = sample_edge.to_cypher_properties()
         assert props["weight"] == 1.0
-        assert "tenant_id" in props
         assert "created_at" in props
 
     def test_all_edge_labels_valid(self):
@@ -230,25 +217,23 @@ class TestKnowledgeGraphEnums:
 class TestNodeRelationships:
     """Tests for creating valid node-edge-node triples."""
 
-    def test_profile_belongs_to_account(self, tenant_id, profile_node, account_node):
+    def test_profile_belongs_to_account(self, profile_node, account_node):
         """Can create a BELONGS_TO edge between profile and account."""
         edge = GraphEdge(
             start_node_id=profile_node.external_id,
             end_node_id=account_node.external_id,
             label=EdgeLabel.BELONGS_TO,
-            tenant_id=tenant_id,
         )
         assert edge.label == EdgeLabel.BELONGS_TO
         assert edge.start_node_id == "profile_001"
         assert edge.end_node_id == "account_001"
 
-    def test_attributed_to_edge(self, tenant_id):
+    def test_attributed_to_edge(self):
         """Revenue attribution edge should carry properties."""
         edge = GraphEdge(
             start_node_id="revenue_001",
             end_node_id="channel_meta",
             label=EdgeLabel.ATTRIBUTED_TO,
-            tenant_id=tenant_id,
             properties={
                 "attribution_model": "data_driven",
                 "credit_pct": 0.35,
@@ -259,13 +244,12 @@ class TestNodeRelationships:
         assert props["attribution_model"] == "data_driven"
         assert props["credit_pct"] == 0.35
 
-    def test_trust_gate_evaluation_edge(self, tenant_id):
+    def test_trust_gate_evaluation_edge(self):
         """Trust gate edge should capture decision metadata."""
         edge = GraphEdge(
             start_node_id="signal_001",
             end_node_id="gate_001",
             label=EdgeLabel.EVALUATED_BY,
-            tenant_id=tenant_id,
             properties={
                 "health_score": 72.5,
                 "decision": "pass",

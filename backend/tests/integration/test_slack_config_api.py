@@ -59,7 +59,7 @@ class TestConfig:
 
     async def test_configure_upserts(self, authenticated_client):
         await authenticated_client.post(_BASE, json=_payload(channel_name="#first"))
-        # Second POST updates the same tenant row rather than creating a new one.
+        # Second POST updates the same (singleton) row rather than creating a new one.
         resp = await authenticated_client.post(
             _BASE, json=_payload(channel_name="#second")
         )
