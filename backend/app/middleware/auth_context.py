@@ -5,11 +5,11 @@
 Middleware that decodes the request's JWT (if any) and establishes the
 authenticated-user context for downstream handlers.
 
-STRAT-SC-001 (single-client conversion, Task C2): this replaces
-TenantMiddleware. All tenant extraction (JWT tenant_id claim, X-Tenant-ID
-header, subdomain lookup, request.state.tenant_id/is_superadmin) is gone —
+STRAT-SC-001 (single-client conversion, Task C2): this replaces the previous
+multi-tenant middleware. All tenant extraction (JWT claim, tenant header,
+subdomain lookup, per-request tenant/bypass state) is gone —
 there is exactly one organization now, so there is nothing to disambiguate.
-What's preserved verbatim from TenantMiddleware.dispatch(): the
+What's preserved verbatim from the predecessor's dispatch(): the
 PUBLIC_ENDPOINTS allowlist + _is_public_endpoint prefix rules, the JWT decode,
 and the AUTH-001 token-type/blacklist enforcement (failing OPEN if Redis is
 down, but still rejecting non-"access" token types regardless of Redis).
