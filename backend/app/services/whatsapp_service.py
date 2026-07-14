@@ -32,13 +32,12 @@ class WhatsAppService:
     @staticmethod
     async def get_contacts(
         db: AsyncSession,
-        tenant_id: int,
         skip: int = 0,
         limit: int = 100,
         opt_in_status: Optional[str] = None,
     ) -> List[WhatsAppContact]:
-        """Get tenant's WhatsApp contacts with optional filtering."""
-        query = select(WhatsAppContact).where(WhatsAppContact.tenant_id == tenant_id)
+        """Get WhatsApp contacts with optional filtering."""
+        query = select(WhatsAppContact)
         if opt_in_status:
             query = query.where(WhatsAppContact.opt_in_status == opt_in_status)
         query = query.offset(skip).limit(limit)
@@ -47,26 +46,24 @@ class WhatsAppService:
 
     @staticmethod
     async def get_contact_by_id(
-        db: AsyncSession, contact_id: int, tenant_id: int
+        db: AsyncSession, contact_id: int
     ) -> Optional[WhatsAppContact]:
         """Get a specific contact by ID."""
         result = await db.execute(
             select(WhatsAppContact).where(
                 WhatsAppContact.id == contact_id,
-                WhatsAppContact.tenant_id == tenant_id,
             )
         )
         return result.scalar_one_or_none()
 
     @staticmethod
     async def get_contact_by_phone(
-        db: AsyncSession, phone_number: str, tenant_id: int
+        db: AsyncSession, phone_number: str
     ) -> Optional[WhatsAppContact]:
         """Get a contact by phone number."""
         result = await db.execute(
             select(WhatsAppContact).where(
                 WhatsAppContact.phone_number == phone_number,
-                WhatsAppContact.tenant_id == tenant_id,
             )
         )
         return result.scalar_one_or_none()
@@ -82,9 +79,9 @@ class WhatsAppService:
         return contact
 
     @staticmethod
-    async def verify_contact(db: AsyncSession, contact_id: int, tenant_id: int) -> bool:
+    async def verify_contact(db: AsyncSession, contact_id: int) -> bool:
         """Mark contact as verified (phone number confirmed)."""
-        contact = await WhatsAppService.get_contact_by_id(db, contact_id, tenant_id)
+        contact = await WhatsAppService.get_contact_by_id(db, contact_id)
         if contact:
             contact.is_verified = True
             contact.verified_at = datetime.now(timezone.utc)
@@ -96,11 +93,10 @@ class WhatsAppService:
     async def opt_in_contact(
         db: AsyncSession,
         contact_id: int,
-        tenant_id: int,
         method: str = "web_form",
     ) -> bool:
         """Opt-in a contact for WhatsApp messages."""
-        contact = await WhatsAppService.get_contact_by_id(db, contact_id, tenant_id)
+        contact = await WhatsAppService.get_contact_by_id(db, contact_id)
         if contact:
             contact.opt_in_status = WhatsAppOptInStatus.OPTED_IN
             contact.opt_in_at = datetime.now(timezone.utc)
@@ -111,10 +107,10 @@ class WhatsAppService:
 
     @staticmethod
     async def opt_out_contact(
-        db: AsyncSession, contact_id: int, tenant_id: int
+        db: AsyncSession, contact_id: int
     ) -> bool:
         """Opt-out a contact from WhatsApp messages."""
-        contact = await WhatsAppService.get_contact_by_id(db, contact_id, tenant_id)
+        contact = await WhatsAppService.get_contact_by_id(db, contact_id)
         if contact:
             contact.opt_in_status = WhatsAppOptInStatus.OPTED_OUT
             contact.opt_out_at = datetime.now(timezone.utc)
@@ -129,12 +125,11 @@ class WhatsAppService:
     @staticmethod
     async def get_templates(
         db: AsyncSession,
-        tenant_id: int,
         status: Optional[str] = None,
         category: Optional[str] = None,
     ) -> List[WhatsAppTemplate]:
         """Get WhatsApp message templates with optional filtering."""
-        query = select(WhatsAppTemplate).where(WhatsAppTemplate.tenant_id == tenant_id)
+        query = select(WhatsAppTemplate)
         if status:
             query = query.where(WhatsAppTemplate.status == status)
         if category:
@@ -144,26 +139,24 @@ class WhatsAppService:
 
     @staticmethod
     async def get_template_by_id(
-        db: AsyncSession, template_id: int, tenant_id: int
+        db: AsyncSession, template_id: int
     ) -> Optional[WhatsAppTemplate]:
         """Get a specific template by ID."""
         result = await db.execute(
             select(WhatsAppTemplate).where(
                 WhatsAppTemplate.id == template_id,
-                WhatsAppTemplate.tenant_id == tenant_id,
             )
         )
         return result.scalar_one_or_none()
 
     @staticmethod
     async def get_template_by_name(
-        db: AsyncSession, name: str, tenant_id: int
+        db: AsyncSession, name: str
     ) -> Optional[WhatsAppTemplate]:
         """Get a template by name."""
         result = await db.execute(
             select(WhatsAppTemplate).where(
                 WhatsAppTemplate.name == name,
-                WhatsAppTemplate.tenant_id == tenant_id,
             )
         )
         return result.scalar_one_or_none()
@@ -182,12 +175,11 @@ class WhatsAppService:
     async def update_template_status(
         db: AsyncSession,
         template_id: int,
-        tenant_id: int,
         status: str,
         meta_template_id: Optional[str] = None,
     ) -> bool:
         """Update template status (after Meta approval/rejection)."""
-        template = await WhatsAppService.get_template_by_id(db, template_id, tenant_id)
+        template = await WhatsAppService.get_template_by_id(db, template_id)
         if template:
             template.status = status
             if meta_template_id:
@@ -214,14 +206,13 @@ class WhatsAppService:
     @staticmethod
     async def get_messages(
         db: AsyncSession,
-        tenant_id: int,
         contact_id: Optional[int] = None,
         conversation_id: Optional[int] = None,
         skip: int = 0,
         limit: int = 100,
     ) -> List[WhatsAppMessage]:
         """Get messages with optional filtering."""
-        query = select(WhatsAppMessage).where(WhatsAppMessage.tenant_id == tenant_id)
+        query = select(WhatsAppMessage)
         if contact_id:
             query = query.where(WhatsAppMessage.contact_id == contact_id)
         if conversation_id:
@@ -233,13 +224,12 @@ class WhatsAppService:
 
     @staticmethod
     async def get_message_by_id(
-        db: AsyncSession, message_id: int, tenant_id: int
+        db: AsyncSession, message_id: int
     ) -> Optional[WhatsAppMessage]:
         """Get a specific message by ID."""
         result = await db.execute(
             select(WhatsAppMessage).where(
                 WhatsAppMessage.id == message_id,
-                WhatsAppMessage.tenant_id == tenant_id,
             )
         )
         return result.scalar_one_or_none()
@@ -302,14 +292,12 @@ class WhatsAppService:
     @staticmethod
     async def get_or_create_conversation(
         db: AsyncSession,
-        tenant_id: int,
         contact_id: int,
     ) -> WhatsAppConversation:
         """Get active conversation or create a new one."""
         # Look for active conversation (within 24-hour window)
         result = await db.execute(
             select(WhatsAppConversation).where(
-                WhatsAppConversation.tenant_id == tenant_id,
                 WhatsAppConversation.contact_id == contact_id,
                 WhatsAppConversation.is_active == True,
             )
@@ -319,7 +307,6 @@ class WhatsAppService:
         if not conversation:
             # Create new conversation
             conversation = WhatsAppConversation(
-                tenant_id=tenant_id,
                 contact_id=contact_id,
                 started_at=datetime.now(timezone.utc),
                 is_active=True,
@@ -332,16 +319,13 @@ class WhatsAppService:
     @staticmethod
     async def get_conversations(
         db: AsyncSession,
-        tenant_id: int,
         contact_id: Optional[int] = None,
         is_active: Optional[bool] = None,
         skip: int = 0,
         limit: int = 100,
     ) -> List[WhatsAppConversation]:
         """Get conversations with optional filtering."""
-        query = select(WhatsAppConversation).where(
-            WhatsAppConversation.tenant_id == tenant_id
-        )
+        query = select(WhatsAppConversation)
         if contact_id:
             query = query.where(WhatsAppConversation.contact_id == contact_id)
         if is_active is not None:
@@ -353,13 +337,12 @@ class WhatsAppService:
 
     @staticmethod
     async def close_conversation(
-        db: AsyncSession, conversation_id: int, tenant_id: int
+        db: AsyncSession, conversation_id: int
     ) -> bool:
         """Close an active conversation."""
         result = await db.execute(
             select(WhatsAppConversation).where(
                 WhatsAppConversation.id == conversation_id,
-                WhatsAppConversation.tenant_id == tenant_id,
             )
         )
         conversation = result.scalar_one_or_none()

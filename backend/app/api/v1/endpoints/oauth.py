@@ -11,7 +11,7 @@ Handles the complete OAuth flow for Meta, Google, TikTok, and Snapchat:
 - Connect selected accounts
 - Refresh and revoke tokens
 
-All endpoints are tenant-scoped and require authentication.
+All endpoints require authentication (single-org deployment; no tenant scoping).
 """
 
 from datetime import UTC, datetime
@@ -186,7 +186,6 @@ async def start_oauth(
     # Create OAuth state for CSRF protection
     try:
         state = await oauth_service.create_state(
-            tenant_id=current_user.tenant_id,
             user_id=current_user.id,
             redirect_uri=request_data.frontend_callback_url or settings.frontend_url,
         )
@@ -216,7 +215,6 @@ async def start_oauth(
         "oauth_started",
         platform=platform.value,
         user_id=current_user.id,
-        tenant_id=current_user.tenant_id,
     )
 
     return APIResponse(
@@ -313,7 +311,6 @@ async def oauth_callback(
         result = await db.execute(
             select(TenantPlatformConnection).where(
                 and_(
-                    TenantPlatformConnection.tenant_id == oauth_state.tenant_id,
                     TenantPlatformConnection.platform == platform,
                 )
             )
@@ -342,7 +339,6 @@ async def oauth_callback(
         else:
             # Create new connection
             connection = TenantPlatformConnection(
-                tenant_id=oauth_state.tenant_id,
                 platform=platform,
                 status=ConnectionStatus.CONNECTED,
                 access_token_encrypted=oauth_service.encrypt_token(tokens.access_token),
@@ -364,7 +360,6 @@ async def oauth_callback(
         logger.info(
             "oauth_completed",
             platform=platform.value,
-            tenant_id=oauth_state.tenant_id,
             user_id=oauth_state.user_id,
         )
 
@@ -372,11 +367,10 @@ async def oauth_callback(
         try:
             import asyncio
 
-            asyncio.create_task(_auto_sync_after_oauth(oauth_state.tenant_id, platform))
+            asyncio.create_task(_auto_sync_after_oauth(platform))
             logger.info(
                 "auto_sync_triggered",
                 platform=platform.value,
-                tenant_id=oauth_state.tenant_id,
             )
         except (ConnectionError, TimeoutError, OSError, RuntimeError) as sync_err:
             # Non-blocking — don't fail the OAuth flow if sync scheduling fails
@@ -422,7 +416,6 @@ async def get_connection_status(
     result = await db.execute(
         select(TenantPlatformConnection).where(
             and_(
-                TenantPlatformConnection.tenant_id == current_user.tenant_id,
                 TenantPlatformConnection.platform == platform,
             )
         )
@@ -476,11 +469,7 @@ async def get_all_connection_statuses(
     """
     Get connection status for all platforms.
     """
-    result = await db.execute(
-        select(TenantPlatformConnection).where(
-            TenantPlatformConnection.tenant_id == current_user.tenant_id,
-        )
-    )
+    result = await db.execute(select(TenantPlatformConnection))
     connections = result.scalars().all()
 
     statuses = []
@@ -551,7 +540,6 @@ async def list_ad_accounts(
     result = await db.execute(
         select(TenantPlatformConnection).where(
             and_(
-                TenantPlatformConnection.tenant_id == current_user.tenant_id,
                 TenantPlatformConnection.platform == platform,
             )
         )
@@ -687,7 +675,6 @@ async def connect_ad_accounts(
     result = await db.execute(
         select(TenantPlatformConnection).where(
             and_(
-                TenantPlatformConnection.tenant_id == current_user.tenant_id,
                 TenantPlatformConnection.platform == platform,
             )
         )
@@ -737,7 +724,6 @@ async def connect_ad_accounts(
         result = await db.execute(
             select(TenantAdAccount).where(
                 and_(
-                    TenantAdAccount.tenant_id == current_user.tenant_id,
                     TenantAdAccount.platform == platform,
                     TenantAdAccount.platform_account_id == account_id,
                 )
@@ -758,7 +744,6 @@ async def connect_ad_accounts(
         else:
             # Create new
             account = TenantAdAccount(
-                tenant_id=current_user.tenant_id,
                 connection_id=connection.id,
                 platform=platform,
                 platform_account_id=account_id,
@@ -793,7 +778,6 @@ async def connect_ad_accounts(
     logger.info(
         "ad_accounts_connected",
         platform=platform.value,
-        tenant_id=current_user.tenant_id,
         count=len(connected_accounts),
     )
 
@@ -828,7 +812,6 @@ async def refresh_token(
     result = await db.execute(
         select(TenantPlatformConnection).where(
             and_(
-                TenantPlatformConnection.tenant_id == current_user.tenant_id,
                 TenantPlatformConnection.platform == platform,
             )
         )
@@ -871,7 +854,6 @@ async def refresh_token(
         logger.info(
             "token_refreshed",
             platform=platform.value,
-            tenant_id=current_user.tenant_id,
         )
 
         return APIResponse(
@@ -922,7 +904,6 @@ async def disconnect_platform(
     result = await db.execute(
         select(TenantPlatformConnection).where(
             and_(
-                TenantPlatformConnection.tenant_id == current_user.tenant_id,
                 TenantPlatformConnection.platform == platform,
             )
         )
@@ -975,7 +956,6 @@ async def disconnect_platform(
     logger.info(
         "platform_disconnected",
         platform=platform.value,
-        tenant_id=current_user.tenant_id,
     )
 
     return APIResponse(
@@ -989,7 +969,7 @@ async def disconnect_platform(
 # =============================================================================
 
 
-async def _auto_sync_after_oauth(tenant_id: int, platform: AdPlatform) -> None:
+async def _auto_sync_after_oauth(platform: AdPlatform) -> None:
     """Run a campaign sync right after OAuth succeeds. Non-blocking."""
     from app.db.session import AsyncSessionLocal
 
@@ -998,11 +978,10 @@ async def _auto_sync_after_oauth(tenant_id: int, platform: AdPlatform) -> None:
             from app.services.sync.orchestrator import PlatformSyncOrchestrator
 
             orchestrator = PlatformSyncOrchestrator(db)
-            result = await orchestrator.sync_platform(tenant_id, platform, days_back=30)
+            result = await orchestrator.sync_platform(platform, days_back=30)
             logger.info(
                 "auto_sync_completed",
                 platform=platform.value,
-                tenant=tenant_id,
                 campaigns=result.campaigns_synced,
                 metrics=result.metrics_upserted,
                 errors=len(result.errors),
@@ -1011,6 +990,5 @@ async def _auto_sync_after_oauth(tenant_id: int, platform: AdPlatform) -> None:
         logger.error(
             "auto_sync_failed",
             platform=platform.value,
-            tenant=tenant_id,
             error=str(e),
         )

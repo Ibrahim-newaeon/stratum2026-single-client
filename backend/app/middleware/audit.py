@@ -91,9 +91,8 @@ class AuditMiddleware(BaseHTTPMiddleware):
     ) -> None:
         """Create audit log entry for the request."""
         try:
-            # Extract user and tenant from request state (set by auth middleware)
+            # Extract user from request state (set by auth middleware)
             user_id = getattr(request.state, "user_id", None)
-            tenant_id = getattr(request.state, "tenant_id", None)
 
             # Parse resource type and ID from path
             resource_type, resource_id = self._parse_resource_from_path(
@@ -110,7 +109,6 @@ class AuditMiddleware(BaseHTTPMiddleware):
 
             # Create audit log entry
             audit_entry = {
-                "tenant_id": tenant_id,
                 "user_id": user_id,
                 "action": action.value,
                 "resource_type": resource_type,

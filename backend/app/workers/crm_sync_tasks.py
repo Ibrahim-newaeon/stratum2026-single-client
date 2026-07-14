@@ -81,7 +81,7 @@ async def sync_hubspot_data(
     logger.info(f"Starting HubSpot sync for tenant {tenant_id}")
 
     async with async_session_maker() as db:
-        sync_service = HubSpotSyncService(db, tenant_id)
+        sync_service = HubSpotSyncService(db)
 
         try:
             results = await sync_service.sync_all(full_sync=full_sync)
@@ -125,7 +125,7 @@ async def writeback_hubspot_attribution(
     logger.info(f"Starting HubSpot writeback for tenant {tenant_id}")
 
     async with async_session_maker() as db:
-        writeback_service = HubSpotWritebackService(db, tenant_id)
+        writeback_service = HubSpotWritebackService(db)
 
         # Get modified_since for incremental sync
         modified_since = None
@@ -183,7 +183,7 @@ async def sync_zoho_data(
     logger.info(f"Starting Zoho CRM sync for tenant {tenant_id}")
 
     async with async_session_maker() as db:
-        sync_service = ZohoSyncService(db, tenant_id, region)
+        sync_service = ZohoSyncService(db, region)
 
         try:
             results = await sync_service.sync_all(full_sync=full_sync)
@@ -229,7 +229,7 @@ async def writeback_zoho_attribution(
     logger.info(f"Starting Zoho writeback for tenant {tenant_id}")
 
     async with async_session_maker() as db:
-        writeback_service = ZohoWritebackService(db, tenant_id, region)
+        writeback_service = ZohoWritebackService(db, region)
 
         # Get modified_since for incremental sync
         modified_since = None
@@ -423,7 +423,7 @@ async def run_identity_matching(
     logger.info(f"Running identity matching for tenant {tenant_id}")
 
     async with async_session_maker() as db:
-        identity_matcher = IdentityMatcher(db, tenant_id)
+        identity_matcher = IdentityMatcher(db)
 
         try:
             results = await identity_matcher.match_contacts_to_touchpoints()

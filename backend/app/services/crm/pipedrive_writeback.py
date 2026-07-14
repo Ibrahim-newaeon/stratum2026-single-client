@@ -187,10 +187,9 @@ class PipedriveWritebackService:
     - Touchpoint data
     """
 
-    def __init__(self, db: AsyncSession, tenant_id: int):
+    def __init__(self, db: AsyncSession):
         self.db = db
-        self.tenant_id = tenant_id
-        self.client = PipedriveClient(db, tenant_id)
+        self.client = PipedriveClient(db)
         self._field_key_cache: dict[str, str] = {}
 
     async def setup_custom_fields(self) -> dict[str, Any]:
@@ -320,7 +319,6 @@ class PipedriveWritebackService:
 
         # Build query for contacts to sync
         conditions = [
-            CRMContact.tenant_id == self.tenant_id,
             CRMContact.provider_contact_id.isnot(None),
         ]
 
@@ -431,7 +429,6 @@ class PipedriveWritebackService:
 
         logger.info(
             "pipedrive_person_writeback_complete",
-            tenant_id=self.tenant_id,
             synced=synced,
             failed=failed,
         )
@@ -464,7 +461,6 @@ class PipedriveWritebackService:
 
         # Build query for deals to sync
         conditions = [
-            CRMDeal.tenant_id == self.tenant_id,
             CRMDeal.provider_deal_id.isnot(None),
         ]
 
@@ -575,7 +571,6 @@ class PipedriveWritebackService:
 
         logger.info(
             "pipedrive_deal_writeback_complete",
-            tenant_id=self.tenant_id,
             synced=synced,
             failed=failed,
         )
@@ -631,7 +626,6 @@ class PipedriveWritebackService:
         conn_result = await self.db.execute(
             select(CRMConnection).where(
                 and_(
-                    CRMConnection.tenant_id == self.tenant_id,
                     CRMConnection.provider == CRMProvider.PIPEDRIVE,
                     CRMConnection.status == CRMConnectionStatus.CONNECTED,
                 )
@@ -757,7 +751,6 @@ class PipedriveWritebackService:
         # Get connection
         result = await self.db.execute(
             select(CRMConnection).where(
-                CRMConnection.tenant_id == self.tenant_id,
                 CRMConnection.provider == CRMProvider.PIPEDRIVE,
             )
         )
@@ -772,14 +765,10 @@ class PipedriveWritebackService:
 
         # Count records to sync
         contacts_count = await self.db.execute(
-            select(func.count())
-            .select_from(CRMContact)
-            .where(CRMContact.tenant_id == self.tenant_id)
+            select(func.count()).select_from(CRMContact)
         )
         deals_count = await self.db.execute(
-            select(func.count())
-            .select_from(CRMDeal)
-            .where(CRMDeal.tenant_id == self.tenant_id)
+            select(func.count()).select_from(CRMDeal)
         )
 
         return {

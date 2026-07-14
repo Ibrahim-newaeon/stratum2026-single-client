@@ -144,8 +144,7 @@ class PDFGenerator:
     Generates PDF reports from HTML templates.
     """
 
-    def __init__(self, tenant_id: int):
-        self.tenant_id = tenant_id
+    def __init__(self):
         self.primary_color = "#2563eb"  # Default blue
 
     async def generate(
@@ -168,7 +167,7 @@ class PDFGenerator:
         html_content = self._generate_html(template, data)
 
         # Convert to PDF
-        file_path = f"/tmp/reports/{self.tenant_id}/{execution_id}.pdf"  # nosec B108
+        file_path = f"/tmp/reports/{execution_id}.pdf"  # nosec B108
         os.makedirs(os.path.dirname(file_path), exist_ok=True)
 
         # Try to use weasyprint for PDF generation

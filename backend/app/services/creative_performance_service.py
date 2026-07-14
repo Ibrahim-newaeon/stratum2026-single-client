@@ -120,7 +120,6 @@ class Creative:
     """Represents a creative asset."""
 
     creative_id: str
-    tenant_id: str
     platform: str
     campaign_id: str
     ad_set_id: Optional[str] = None
@@ -193,7 +192,6 @@ class CreativePerformanceService:
         # Record creative metrics
         service.record_metrics(
             creative_id="creative_123",
-            tenant_id="tenant_1",
             platform="meta",
             campaign_id="campaign_456",
             metrics=CreativeMetrics(
@@ -215,13 +213,11 @@ class CreativePerformanceService:
     def __init__(self):
         self._creatives: Dict[str, Creative] = {}
         self._by_campaign: Dict[str, List[str]] = defaultdict(list)
-        self._by_tenant: Dict[str, List[str]] = defaultdict(list)
         self._by_platform: Dict[str, List[str]] = defaultdict(list)
 
     def register_creative(
         self,
         creative_id: str,
-        tenant_id: str,
         platform: str,
         campaign_id: str,
         creative_type: CreativeType = CreativeType.IMAGE,
@@ -233,7 +229,6 @@ class CreativePerformanceService:
 
         Args:
             creative_id: Unique creative identifier
-            tenant_id: Tenant ID
             platform: Platform name
             campaign_id: Parent campaign ID
             creative_type: Type of creative
@@ -245,7 +240,6 @@ class CreativePerformanceService:
         """
         creative = Creative(
             creative_id=creative_id,
-            tenant_id=tenant_id,
             platform=platform,
             campaign_id=campaign_id,
             creative_type=creative_type,
@@ -255,7 +249,6 @@ class CreativePerformanceService:
 
         self._creatives[creative_id] = creative
         self._by_campaign[campaign_id].append(creative_id)
-        self._by_tenant[tenant_id].append(creative_id)
         self._by_platform[platform].append(creative_id)
 
         logger.info(f"Registered creative: {creative_id} ({name})")
@@ -265,7 +258,6 @@ class CreativePerformanceService:
     def record_metrics(
         self,
         creative_id: str,
-        tenant_id: str,
         platform: str,
         campaign_id: str,
         metrics: CreativeMetrics,
@@ -282,7 +274,6 @@ class CreativePerformanceService:
         if creative_id not in self._creatives:
             self.register_creative(
                 creative_id=creative_id,
-                tenant_id=tenant_id,
                 platform=platform,
                 campaign_id=campaign_id,
                 creative_type=creative_type,
@@ -604,7 +595,6 @@ class CreativePerformanceService:
 
     def get_top_creatives(
         self,
-        tenant_id: Optional[str] = None,
         platform: Optional[str] = None,
         campaign_id: Optional[str] = None,
         metric: str = "roas",
@@ -615,7 +605,6 @@ class CreativePerformanceService:
         Get top performing creatives.
 
         Args:
-            tenant_id: Filter by tenant
             platform: Filter by platform
             campaign_id: Filter by campaign
             metric: Ranking metric
@@ -630,8 +619,6 @@ class CreativePerformanceService:
         # Filter creatives
         creatives = list(self._creatives.values())
 
-        if tenant_id:
-            creatives = [c for c in creatives if c.tenant_id == tenant_id]
         if platform:
             creatives = [c for c in creatives if c.platform == platform]
         if campaign_id:
@@ -698,7 +685,6 @@ class CreativePerformanceService:
 
     def get_fatigued_creatives(
         self,
-        tenant_id: Optional[str] = None,
         min_fatigue_level: FatigueLevel = FatigueLevel.MEDIUM,
     ) -> List[Dict[str, Any]]:
         """Get creatives that need attention due to fatigue."""
@@ -712,8 +698,6 @@ class CreativePerformanceService:
         min_index = fatigue_order.index(min_fatigue_level)
 
         creatives = list(self._creatives.values())
-        if tenant_id:
-            creatives = [c for c in creatives if c.tenant_id == tenant_id]
 
         fatigued = []
         for creative in creatives:
@@ -740,7 +724,6 @@ class CreativePerformanceService:
 
     def get_creative_type_performance(
         self,
-        tenant_id: Optional[str] = None,
         platform: Optional[str] = None,
         period_days: int = 30,
     ) -> Dict[str, Dict[str, float]]:
@@ -752,8 +735,6 @@ class CreativePerformanceService:
         cutoff = datetime.now(timezone.utc) - timedelta(days=period_days)
 
         creatives = list(self._creatives.values())
-        if tenant_id:
-            creatives = [c for c in creatives if c.tenant_id == tenant_id]
         if platform:
             creatives = [c for c in creatives if c.platform == platform]
 
@@ -799,14 +780,9 @@ class CreativePerformanceService:
 
         return by_type
 
-    def get_summary(
-        self,
-        tenant_id: Optional[str] = None,
-    ) -> Dict[str, Any]:
+    def get_summary(self) -> Dict[str, Any]:
         """Get summary of creative performance."""
         creatives = list(self._creatives.values())
-        if tenant_id:
-            creatives = [c for c in creatives if c.tenant_id == tenant_id]
 
         by_status = defaultdict(int)
         by_fatigue = defaultdict(int)
@@ -843,7 +819,6 @@ creative_service = CreativePerformanceService()
 
 def record_creative_metrics(
     creative_id: str,
-    tenant_id: str,
     platform: str,
     campaign_id: str,
     impressions: int = 0,
@@ -859,7 +834,6 @@ def record_creative_metrics(
     Usage:
         record_creative_metrics(
             creative_id="creative_123",
-            tenant_id="tenant_1",
             platform="meta",
             campaign_id="campaign_456",
             impressions=10000,
@@ -880,26 +854,23 @@ def record_creative_metrics(
 
     creative_service.record_metrics(
         creative_id=creative_id,
-        tenant_id=tenant_id,
         platform=platform,
         campaign_id=campaign_id,
         metrics=metrics,
     )
 
 
-def get_fatigued_creatives_for_tenant(tenant_id: str) -> List[Dict[str, Any]]:
-    """Get fatigued creatives for a tenant."""
-    return creative_service.get_fatigued_creatives(tenant_id=tenant_id)
+def get_fatigued_creatives_for_tenant() -> List[Dict[str, Any]]:
+    """Get fatigued creatives."""
+    return creative_service.get_fatigued_creatives()
 
 
 def get_top_performing_creatives(
-    tenant_id: str,
     platform: Optional[str] = None,
     limit: int = 10,
 ) -> List[Dict[str, Any]]:
-    """Get top performing creatives for a tenant."""
+    """Get top performing creatives."""
     return creative_service.get_top_creatives(
-        tenant_id=tenant_id,
         platform=platform,
         limit=limit,
     )
@@ -1297,7 +1268,6 @@ class CrossPlatformCreativeAnalyzer:
     def analyze_creative_across_platforms(
         self,
         creative_name: str,
-        tenant_id: str,
     ) -> List[CrossPlatformCreativeInsight]:
         """Analyze a creative's performance across platforms."""
         insights = []
@@ -1306,9 +1276,6 @@ class CrossPlatformCreativeAnalyzer:
         platform_performance = {}
 
         for creative_id, record in self.service._creatives.items():
-            if record.tenant_id != tenant_id:
-                continue
-
             # Simple name matching (in production, use creative asset matching)
             if creative_id.startswith(creative_name) or creative_name in creative_id:
                 latest = (
@@ -1395,7 +1362,6 @@ class CrossPlatformCreativeAnalyzer:
 
     def get_platform_creative_recommendations(
         self,
-        tenant_id: str,
     ) -> Dict[str, List[str]]:
         """Get creative recommendations per platform."""
         recommendations = {}
@@ -1404,9 +1370,6 @@ class CrossPlatformCreativeAnalyzer:
         platforms_data: Dict[str, List[CreativeMetrics]] = {}
 
         for _creative_id, record in self.service._creatives.items():
-            if record.tenant_id != tenant_id:
-                continue
-
             if record.platform not in platforms_data:
                 platforms_data[record.platform] = []
 

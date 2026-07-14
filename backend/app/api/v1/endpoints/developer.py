@@ -18,12 +18,19 @@ from sqlalchemy.exc import SQLAlchemyError
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.config import settings
+from app.auth.deps import get_current_user
 from app.core.logging import get_logger
 from app.db.session import get_async_session
 from app.schemas.response import APIResponse
 
 logger = get_logger(__name__)
-router = APIRouter(prefix="/developer", tags=["Developer Portal"])
+router = APIRouter(
+    prefix="/developer",
+    tags=["Developer Portal"],
+    # SECURITY (STRAT-SC-001/C3): the old per-org guards this router relied
+    # on were deleted in the de-tenanting sweep; real auth now enforced here.
+    dependencies=[Depends(get_current_user)],
+)
 
 
 # =============================================================================
@@ -32,9 +39,8 @@ router = APIRouter(prefix="/developer", tags=["Developer Portal"])
 
 
 class DevPortalConfig(BaseModel):
-    """Developer portal configuration for a tenant."""
+    """Developer portal configuration."""
 
-    tenant_id: int
     api_keys: list[dict[str, Any]]
     total_requests_24h: int
     total_requests_30d: int
@@ -100,14 +106,8 @@ async def get_developer_portal(
     Get developer portal configuration and usage analytics.
 
     Returns API keys, request statistics, rate limit status, and
-    active integration count for the tenant.
+    active integration count.
     """
-    tenant_id = getattr(req.state, "tenant_id", None)
-    if not tenant_id:
-        raise HTTPException(
-            status_code=status.HTTP_401_UNAUTHORIZED, detail="Tenant required"
-        )
-
     # Count requests in last 24h and 30d
     requests_24h = 0
     requests_30d = 0
@@ -116,9 +116,8 @@ async def get_developer_portal(
         result = await db.execute(
             text("""
             SELECT COUNT(*) as c FROM api_request_logs
-            WHERE tenant_id = :t AND created_at >= NOW() - INTERVAL '24 hours'
+            WHERE created_at >= NOW() - INTERVAL '24 hours'
             """),
-            {"t": tenant_id},
         )
         requests_24h = result.mappings().first()["c"]
     except SQLAlchemyError as exc:
@@ -129,9 +128,8 @@ async def get_developer_portal(
         result = await db.execute(
             text("""
             SELECT COUNT(*) as c FROM api_request_logs
-            WHERE tenant_id = :t AND created_at >= NOW() - INTERVAL '30 days'
+            WHERE created_at >= NOW() - INTERVAL '30 days'
             """),
-            {"t": tenant_id},
         )
         requests_30d = result.mappings().first()["c"]
     except SQLAlchemyError as exc:
@@ -226,7 +224,6 @@ func main() {
     ]
 
     config = DevPortalConfig(
-        tenant_id=tenant_id,
         api_keys=[
             {
                 "id": "key_001",
@@ -262,16 +259,10 @@ async def get_usage_analytics(
     days: int = Query(30, ge=1, le=90),
 ):
     """
-    Get API usage analytics for the tenant.
+    Get API usage analytics.
 
     Returns daily request counts, endpoint breakdown, and error rates.
     """
-    tenant_id = getattr(req.state, "tenant_id", None)
-    if not tenant_id:
-        raise HTTPException(
-            status_code=status.HTTP_401_UNAUTHORIZED, detail="Tenant required"
-        )
-
     # Endpoint breakdown
     endpoint_stats = []
     try:
@@ -279,12 +270,12 @@ async def get_usage_analytics(
             text("""
             SELECT endpoint, COUNT(*) as requests, AVG(latency_ms) as avg_latency
             FROM api_request_logs
-            WHERE tenant_id = :t AND created_at >= NOW() - INTERVAL ':days days'
+            WHERE created_at >= NOW() - INTERVAL ':days days'
             GROUP BY endpoint
             ORDER BY requests DESC
             LIMIT 20
             """),
-            {"t": tenant_id, "days": days},
+            {"days": days},
         )
         endpoint_stats = [
             {
@@ -306,11 +297,11 @@ async def get_usage_analytics(
             SELECT DATE(created_at) as day, COUNT(*) as requests,
                    SUM(CASE WHEN status_code >= 400 THEN 1 ELSE 0 END) as errors
             FROM api_request_logs
-            WHERE tenant_id = :t AND created_at >= NOW() - INTERVAL ':days days'
+            WHERE created_at >= NOW() - INTERVAL ':days days'
             GROUP BY DATE(created_at)
             ORDER BY day
             """),
-            {"t": tenant_id, "days": days},
+            {"days": days},
         )
         daily_stats = [
             {"date": str(r["day"]), "requests": r["requests"], "errors": r["errors"]}
@@ -354,12 +345,6 @@ async def list_webhook_endpoints(
 
     Shows health status, delivery count, and recent activity.
     """
-    tenant_id = getattr(req.state, "tenant_id", None)
-    if not tenant_id:
-        raise HTTPException(
-            status_code=status.HTTP_401_UNAUTHORIZED, detail="Tenant required"
-        )
-
     # In production, query webhook_endpoints table
     webhooks = [
         WebhookEndpoint(
@@ -400,12 +385,6 @@ async def create_webhook_endpoint(
     db: AsyncSession = Depends(get_async_session),
 ):
     """Register a new developer-managed webhook endpoint."""
-    tenant_id = getattr(req.state, "tenant_id", None)
-    if not tenant_id:
-        raise HTTPException(
-            status_code=status.HTTP_401_UNAUTHORIZED, detail="Tenant required"
-        )
-
     import secrets as pysecrets
 
     webhook.created_at = datetime.now(UTC).isoformat()
@@ -417,7 +396,6 @@ async def create_webhook_endpoint(
 
     logger.info(
         "webhook_created",
-        tenant_id=tenant_id,
         webhook_id=webhook.id,
         url=webhook.url,
         events=webhook.events,
@@ -437,13 +415,7 @@ async def delete_webhook_endpoint(
     db: AsyncSession = Depends(get_async_session),
 ):
     """Delete a webhook endpoint."""
-    tenant_id = getattr(req.state, "tenant_id", None)
-    if not tenant_id:
-        raise HTTPException(
-            status_code=status.HTTP_401_UNAUTHORIZED, detail="Tenant required"
-        )
-
-    logger.info("webhook_deleted", tenant_id=tenant_id, webhook_id=webhook_id)
+    logger.info("webhook_deleted", webhook_id=webhook_id)
 
     return APIResponse(
         success=True,
@@ -464,12 +436,6 @@ async def list_webhook_deliveries(
     page_size: int = Query(20, ge=1, le=100),
 ):
     """List delivery logs for a specific webhook."""
-    tenant_id = getattr(req.state, "tenant_id", None)
-    if not tenant_id:
-        raise HTTPException(
-            status_code=status.HTTP_401_UNAUTHORIZED, detail="Tenant required"
-        )
-
     # In production, query webhook_delivery_logs table
     deliveries = [
         WebhookDeliveryLog(
@@ -501,12 +467,6 @@ async def test_webhook_endpoint(
 
     Useful for verifying connectivity and payload format.
     """
-    tenant_id = getattr(req.state, "tenant_id", None)
-    if not tenant_id:
-        raise HTTPException(
-            status_code=status.HTTP_401_UNAUTHORIZED, detail="Tenant required"
-        )
-
     import time
 
     import aiohttp
@@ -515,7 +475,6 @@ async def test_webhook_endpoint(
     test_payload = {
         "event": "webhook.test",
         "webhook_id": webhook_id,
-        "tenant_id": tenant_id,
         "timestamp": datetime.now(UTC).isoformat(),
         "data": {"message": "This is a test event from Stratum AI"},
     }

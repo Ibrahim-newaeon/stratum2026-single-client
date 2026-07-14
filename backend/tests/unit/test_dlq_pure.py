@@ -31,7 +31,6 @@ def _entry(**overrides) -> DLQEntry:
     now = datetime(2026, 6, 1, 12, 0, tzinfo=timezone.utc)
     base = dict(
         id="dlq_1",
-        tenant_id=7,
         platform="meta",
         event_name="Purchase",
         event_id="evt_1",
@@ -66,7 +65,6 @@ class TestDLQEntrySerialization:
         )
         restored = DLQEntry.from_dict(original.to_dict())
         assert restored.id == original.id
-        assert restored.tenant_id == original.tenant_id
         assert restored.status == DLQStatus.RECOVERED
         assert restored.failure_category == FailureReason.TIMEOUT
         assert restored.first_failure_at == original.first_failure_at

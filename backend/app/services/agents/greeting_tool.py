@@ -33,7 +33,7 @@ class UserContext(BaseModel):
     """Context information about the user."""
 
     user_id: Optional[str] = None
-    tenant_id: Optional[str] = None
+    is_new_org: bool = False
     name: Optional[str] = None
     email: Optional[str] = None
     company: Optional[str] = None
@@ -174,7 +174,7 @@ class GreetingTool:
 
     def _determine_greeting_type(self, context: UserContext) -> GreetingType:
         """Determine the appropriate greeting type based on context."""
-        if context.tenant_id and not context.user_id:
+        if context.is_new_org and not context.user_id:
             return GreetingType.NEW_TENANT
 
         if context.is_new_user:

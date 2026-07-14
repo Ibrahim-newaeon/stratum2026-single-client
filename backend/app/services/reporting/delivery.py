@@ -535,7 +535,6 @@ class WebhookDelivery(DeliveryChannelHandler):
                 "file_url": execution.file_url,
                 "metrics_summary": execution.metrics_summary,
             },
-            "tenant_id": execution.tenant_id,
         }
 
 
@@ -771,9 +770,8 @@ class DeliveryService:
         DeliveryChannel.S3: S3Delivery,
     }
 
-    def __init__(self, db: AsyncSession, tenant_id: int):
+    def __init__(self, db: AsyncSession):
         self.db = db
-        self.tenant_id = tenant_id
 
     async def deliver_report(
         self,
@@ -793,7 +791,7 @@ class DeliveryService:
             Dict with delivery results per channel
         """
         execution = await self.db.get(ReportExecution, execution_id)
-        if not execution or execution.tenant_id != self.tenant_id:
+        if not execution:
             raise ValueError(f"Execution not found: {execution_id}")
 
         if execution.status != ExecutionStatus.COMPLETED:
@@ -831,7 +829,6 @@ class DeliveryService:
             for recipient in recipients:
                 # Create delivery record
                 delivery = ReportDelivery(
-                    tenant_id=self.tenant_id,
                     execution_id=execution_id,
                     channel=channel,
                     recipient=recipient,
@@ -915,7 +912,7 @@ class DeliveryService:
     ) -> Dict[str, Any]:
         """Retry a failed delivery."""
         delivery = await self.db.get(ReportDelivery, delivery_id)
-        if not delivery or delivery.tenant_id != self.tenant_id:
+        if not delivery:
             raise ValueError(f"Delivery not found: {delivery_id}")
 
         if delivery.status != DeliveryStatus.FAILED:
@@ -964,12 +961,7 @@ class DeliveryService:
         """Get delivery status for an execution."""
         query = (
             select(ReportDelivery)
-            .where(
-                and_(
-                    ReportDelivery.tenant_id == self.tenant_id,
-                    ReportDelivery.execution_id == execution_id,
-                )
-            )
+            .where(ReportDelivery.execution_id == execution_id)
             .order_by(ReportDelivery.queued_at)
         )
 

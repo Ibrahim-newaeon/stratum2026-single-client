@@ -14,7 +14,6 @@ from dataclasses import dataclass, field
 from datetime import UTC, datetime
 from enum import Enum
 from typing import Any, Optional
-from uuid import UUID
 
 from sqlalchemy.ext.asyncio import AsyncSession
 
@@ -118,7 +117,7 @@ class KnowledgeGraphInsightsEngine:
 
     Usage:
         engine = KnowledgeGraphInsightsEngine(session)
-        problems = await engine.detect_all_problems(tenant_id)
+        problems = await engine.detect_all_problems()
 
         for problem in problems:
             print(f"{problem.severity}: {problem.title}")
@@ -136,14 +135,11 @@ class KnowledgeGraphInsightsEngine:
         self.session = session
         self.kg = KnowledgeGraphService(session)
 
-    async def detect_all_problems(
-        self, tenant_id: UUID, days: int = 7
-    ) -> list[Problem]:
+    async def detect_all_problems(self, days: int = 7) -> list[Problem]:
         """
         Run all problem detection algorithms and return sorted by severity.
 
         Args:
-            tenant_id: Tenant UUID
             days: Lookback period for analysis
 
         Returns:
@@ -163,7 +159,7 @@ class KnowledgeGraphInsightsEngine:
 
         for detector in detectors:
             try:
-                detected = await detector(tenant_id, days)
+                detected = await detector(days)
                 if detected:
                     problems.extend(
                         detected if isinstance(detected, list) else [detected]
@@ -182,14 +178,12 @@ class KnowledgeGraphInsightsEngine:
 
         return problems
 
-    async def _detect_revenue_decline(
-        self, tenant_id: UUID, days: int
-    ) -> Optional[Problem]:
+    async def _detect_revenue_decline(self, days: int) -> Optional[Problem]:
         """Detect significant revenue decline and trace the cause."""
 
         # Query revenue trends
         cypher = f"""
-            MATCH (r:Revenue {{tenant_id: '{tenant_id}'}})
+            MATCH (r:Revenue)
             WITH r.occurred_at AS date, sum(r.amount_cents) AS daily_revenue
             ORDER BY date DESC
             LIMIT {days * 2}
@@ -214,10 +208,10 @@ class KnowledgeGraphInsightsEngine:
 
             if change_pct < -self.REVENUE_DECLINE_THRESHOLD:
                 # Revenue declined - trace the cause
-                root_cause = await self._trace_revenue_decline_cause(tenant_id, days)
+                root_cause = await self._trace_revenue_decline_cause(days)
 
                 return Problem(
-                    id=f"rev_decline_{tenant_id}_{datetime.now(tz=UTC).strftime('%Y%m%d')}",
+                    id=f"rev_decline_{datetime.now(tz=UTC).strftime('%Y%m%d')}",
                     category=ProblemCategory.REVENUE_DECLINE,
                     severity=(
                         ProblemSeverity.CRITICAL
@@ -241,16 +235,14 @@ class KnowledgeGraphInsightsEngine:
 
         return None
 
-    async def _trace_revenue_decline_cause(
-        self, tenant_id: UUID, days: int
-    ) -> dict[str, Any]:
+    async def _trace_revenue_decline_cause(self, days: int) -> dict[str, Any]:
         """Trace through the graph to find why revenue declined."""
 
         causes = {"path": [], "affected": []}
 
         # Check if campaigns are underperforming
         campaign_query = f"""
-            MATCH (c:Campaign {{tenant_id: '{tenant_id}'}})-[:DROVE]->(r:Revenue)
+            MATCH (c:Campaign)-[:DROVE]->(r:Revenue)
             WHERE r.occurred_at >= datetime() - duration({{days: {days}}})
             WITH c, sum(r.amount_cents) AS revenue
             ORDER BY revenue DESC
@@ -263,7 +255,7 @@ class KnowledgeGraphInsightsEngine:
 
         # Check for blocked automations
         blocked_query = f"""
-            MATCH (tg:TrustGate {{tenant_id: '{tenant_id}', decision: 'block'}})-[:BLOCKED]->(a:Automation)
+            MATCH (tg:TrustGate {{decision: 'block'}})-[:BLOCKED]->(a:Automation)
             WHERE tg.evaluated_at >= datetime() - duration({{days: {days}}})
             RETURN count(a) AS blocked_count,
                    collect(DISTINCT a.action_type)[0..5] AS action_types,
@@ -273,7 +265,7 @@ class KnowledgeGraphInsightsEngine:
 
         # Check signal health
         signal_query = f"""
-            MATCH (s:Signal {{tenant_id: '{tenant_id}'}})
+            MATCH (s:Signal)
             WHERE s.measured_at >= datetime() - duration({{days: {days}}})
             RETURN s.source AS source, avg(s.score) AS avg_score,
                    collect(DISTINCT s.status) AS statuses
@@ -409,13 +401,11 @@ class KnowledgeGraphInsightsEngine:
 
         return solutions
 
-    async def _detect_blocked_automations(
-        self, tenant_id: UUID, days: int
-    ) -> Optional[Problem]:
+    async def _detect_blocked_automations(self, days: int) -> Optional[Problem]:
         """Detect high automation block rate."""
 
         cypher = f"""
-            MATCH (tg:TrustGate {{tenant_id: '{tenant_id}'}})
+            MATCH (tg:TrustGate)
             WHERE tg.evaluated_at >= datetime() - duration({{days: {days}}})
             WITH
                 count(CASE WHEN tg.decision = 'block' THEN 1 END) AS blocked,
@@ -436,7 +426,7 @@ class KnowledgeGraphInsightsEngine:
             if block_rate > self.BLOCK_RATE_THRESHOLD and data.get("total", 0) > 10:
                 # Get details on what's being blocked
                 detail_query = f"""
-                    MATCH (tg:TrustGate {{tenant_id: '{tenant_id}', decision: 'block'}})-[:BLOCKED]->(a:Automation)
+                    MATCH (tg:TrustGate {{decision: 'block'}})-[:BLOCKED]->(a:Automation)
                     WHERE tg.evaluated_at >= datetime() - duration({{days: {days}}})
                     RETURN a.action_type AS action_type, a.platform AS platform,
                            count(*) AS count, avg(tg.signal_health_score) AS avg_health
@@ -446,7 +436,7 @@ class KnowledgeGraphInsightsEngine:
                 details = await self.kg.execute_cypher(detail_query)
 
                 return Problem(
-                    id=f"block_rate_{tenant_id}_{datetime.now(tz=UTC).strftime('%Y%m%d')}",
+                    id=f"block_rate_{datetime.now(tz=UTC).strftime('%Y%m%d')}",
                     category=ProblemCategory.AUTOMATION_BLOCKED,
                     severity=(
                         ProblemSeverity.HIGH
@@ -498,15 +488,13 @@ class KnowledgeGraphInsightsEngine:
 
         return None
 
-    async def _detect_signal_degradation(
-        self, tenant_id: UUID, days: int
-    ) -> list[Problem]:
+    async def _detect_signal_degradation(self, days: int) -> list[Problem]:
         """Detect degraded signals and identify affected areas."""
 
         problems = []
 
         cypher = f"""
-            MATCH (s:Signal {{tenant_id: '{tenant_id}'}})
+            MATCH (s:Signal)
             WHERE s.measured_at >= datetime() - duration({{days: {days}}})
             WITH s.source AS source, s.platform AS platform,
                  avg(s.score) AS avg_score,
@@ -528,7 +516,7 @@ class KnowledgeGraphInsightsEngine:
 
                 problems.append(
                     Problem(
-                        id=f"signal_{signal.get('source')}_{tenant_id}",
+                        id=f"signal_{signal.get('source')}_{datetime.now(tz=UTC).strftime('%Y%m%d')}",
                         category=ProblemCategory.SIGNAL_DEGRADED,
                         severity=severity,
                         title=f"Signal Degraded: {signal.get('source', 'Unknown')}",
@@ -590,14 +578,14 @@ class KnowledgeGraphInsightsEngine:
                 "Contact support if issue persists",
             ]
 
-    async def _detect_segment_issues(self, tenant_id: UUID, days: int) -> list[Problem]:
+    async def _detect_segment_issues(self, days: int) -> list[Problem]:
         """Detect underperforming segments."""
 
         problems = []
 
         # Query segment performance
         cypher = f"""
-            MATCH (seg:Segment {{tenant_id: '{tenant_id}'}})<-[:BELONGS_TO]-(p:Profile)
+            MATCH (seg:Segment)<-[:BELONGS_TO]-(p:Profile)
                   -[:PERFORMED]->(e:Event)-[:GENERATED]->(r:Revenue)
             WHERE r.occurred_at >= datetime() - duration({{days: {days}}})
             WITH seg, count(DISTINCT p) AS converting_profiles,
@@ -626,7 +614,7 @@ class KnowledgeGraphInsightsEngine:
                     ):
                         problems.append(
                             Problem(
-                                id=f"segment_{segment.get('segment_id')}_{tenant_id}",
+                                id=f"segment_{segment.get('segment_id')}",
                                 category=ProblemCategory.SEGMENT_UNDERPERFORMING,
                                 severity=ProblemSeverity.MEDIUM,
                                 title=f"Segment Underperforming: {segment.get('segment', 'Unknown')}",
@@ -676,13 +664,11 @@ class KnowledgeGraphInsightsEngine:
 
         return problems
 
-    async def _detect_trust_gate_bottlenecks(
-        self, tenant_id: UUID, days: int
-    ) -> Optional[Problem]:
+    async def _detect_trust_gate_bottlenecks(self, days: int) -> Optional[Problem]:
         """Detect if Trust Gate is consistently blocking specific action types."""
 
         cypher = f"""
-            MATCH (tg:TrustGate {{tenant_id: '{tenant_id}'}})-[:BLOCKED]->(a:Automation)
+            MATCH (tg:TrustGate)-[:BLOCKED]->(a:Automation)
             WHERE tg.evaluated_at >= datetime() - duration({{days: {days}}})
             WITH a.action_type AS action_type, count(*) AS blocked_count,
                  avg(tg.signal_health_score) AS avg_health_at_block
@@ -699,7 +685,7 @@ class KnowledgeGraphInsightsEngine:
                 top_blocked = results[0]
 
                 return Problem(
-                    id=f"bottleneck_{top_blocked.get('action_type')}_{tenant_id}",
+                    id=f"bottleneck_{top_blocked.get('action_type')}",
                     category=ProblemCategory.TRUST_GATE_BOTTLENECK,
                     severity=ProblemSeverity.MEDIUM,
                     title=f"Trust Gate Bottleneck: {top_blocked.get('action_type', 'Unknown')}",
@@ -731,13 +717,11 @@ class KnowledgeGraphInsightsEngine:
 
         return None
 
-    async def _detect_channel_inefficiency(
-        self, tenant_id: UUID, days: int
-    ) -> Optional[Problem]:
+    async def _detect_channel_inefficiency(self, days: int) -> Optional[Problem]:
         """Detect channels with poor ROI."""
 
         cypher = f"""
-            MATCH (ch:Channel {{tenant_id: '{tenant_id}'}})<-[:ATTRIBUTED_TO]-(r:Revenue)
+            MATCH (ch:Channel)<-[:ATTRIBUTED_TO]-(r:Revenue)
             WHERE r.occurred_at >= datetime() - duration({{days: {days}}})
             WITH ch, sum(r.amount_cents) AS revenue, count(r) AS conversions
             RETURN ch.name AS channel, ch.channel_type AS type,
@@ -766,7 +750,7 @@ class KnowledgeGraphInsightsEngine:
 
                     if share > 0.2 and avg_order < overall_avg * 0.5:
                         return Problem(
-                            id=f"channel_{channel.get('channel')}_{tenant_id}",
+                            id=f"channel_{channel.get('channel')}",
                             category=ProblemCategory.CHANNEL_INEFFICIENCY,
                             severity=ProblemSeverity.MEDIUM,
                             title=f"Channel Inefficiency: {channel.get('channel', 'Unknown')}",
@@ -798,26 +782,24 @@ class KnowledgeGraphInsightsEngine:
 
         return None
 
-    async def get_problem_details(
-        self, tenant_id: UUID, problem_id: str
-    ) -> Optional[Problem]:
+    async def get_problem_details(self, problem_id: str) -> Optional[Problem]:
         """
         Get detailed information about a specific problem.
 
         Includes extended graph traversal for root cause analysis.
         """
         # Re-run detection to get fresh data
-        all_problems = await self.detect_all_problems(tenant_id)
+        all_problems = await self.detect_all_problems()
         return next((p for p in all_problems if p.id == problem_id), None)
 
-    async def get_health_summary(self, tenant_id: UUID) -> dict[str, Any]:
+    async def get_health_summary(self) -> dict[str, Any]:
         """
         Get overall health summary based on Knowledge Graph analysis.
 
         Returns:
             Health summary with score and problem counts
         """
-        problems = await self.detect_all_problems(tenant_id)
+        problems = await self.detect_all_problems()
 
         # Calculate health score (100 - penalty for problems)
         penalty = 0

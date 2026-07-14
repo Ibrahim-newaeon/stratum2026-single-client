@@ -80,7 +80,6 @@ class CopilotMessageResponse(BaseModel):
 async def _gather_context(
     *,
     db: AsyncSession,
-    tenant_id: int,
 ) -> Tuple[Optional[dict], dict, Optional[dict]]:
     """
     Fetch the live tenant signals the copilot needs: campaign rollup,
@@ -104,7 +103,6 @@ async def _gather_context(
                 func.coalesce(func.sum(Campaign.conversions), 0).label("conversions"),
             ).where(
                 and_(
-                    Campaign.tenant_id == tenant_id,
                     Campaign.is_deleted == False,
                 )
             )
@@ -133,12 +131,10 @@ async def _gather_context(
         emq_result = await db.execute(
             text(
                 "SELECT COUNT(*) as degraded_count "
-                "FROM fact_alerts WHERE tenant_id = :tenant_id "
-                "AND alert_type = 'emq_degraded' "
+                "FROM fact_alerts WHERE alert_type = 'emq_degraded' "
                 "AND (resolved = false OR resolved IS NULL) "
                 "AND date >= CURRENT_DATE - INTERVAL '7 days'"
             ),
-            {"tenant_id": tenant_id},
         )
         emq_row = emq_result.mappings().first()
         emq_degraded = emq_row["degraded_count"] if emq_row else 0
@@ -216,20 +212,12 @@ async def copilot_chat(
     The copilot analyzes the user's query, fetches relevant dashboard data,
     and generates a contextual response with suggestions and data cards.
     """
-    tenant_id = getattr(user, "tenant_id", None)
-    if tenant_id is None:
-        raise HTTPException(
-            status_code=status.HTTP_401_UNAUTHORIZED,
-            detail="Tenant context required",
-        )
     _, first_name = _resolve_user_name(user)
 
     session_id = request.session_id or str(uuid4())
 
     # ── Gather context data for the copilot ──────────────────────
-    metrics, health_data, anomaly_data = await _gather_context(
-        db=db, tenant_id=tenant_id
-    )
+    metrics, health_data, anomaly_data = await _gather_context(db=db)
 
     # ── Process message through copilot agent ────────────────────
     # The keyword classifier always runs first — it produces the intent,
@@ -270,7 +258,6 @@ async def copilot_chat(
 
     logger.info(
         "copilot_response_generated",
-        tenant_id=tenant_id,
         intent=response.intent,
         message_len=len(response.message),
         llm_used=llm_result.text is not None,
@@ -319,18 +306,10 @@ async def copilot_chat_stream(
     tokens), and renders citations + suggestions + data_cards from the
     `meta` payload once the stream completes.
     """
-    tenant_id = getattr(user, "tenant_id", None)
-    if tenant_id is None:
-        raise HTTPException(
-            status_code=status.HTTP_401_UNAUTHORIZED,
-            detail="Tenant context required",
-        )
     _, first_name = _resolve_user_name(user)
     session_id = request.session_id or str(uuid4())
 
-    metrics, health_data, anomaly_data = await _gather_context(
-        db=db, tenant_id=tenant_id
-    )
+    metrics, health_data, anomaly_data = await _gather_context(db=db)
     base_response = process_message(
         message=request.message,
         user_name=first_name,

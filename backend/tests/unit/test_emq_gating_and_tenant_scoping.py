@@ -1,17 +1,24 @@
 # =============================================================================
-# Stratum AI - EMQ Mode Gating & Tenant Scoping Tests
+# Stratum AI - EMQ Mode Gating Tests
 # =============================================================================
 """
-Unit tests for:
-- EMQ mode gating rules (autopilot mode restrictions based on EMQ score)
-- Tenant scoping enforcement on key endpoints
+Unit tests for EMQ mode gating rules (autopilot mode restrictions based on
+EMQ score). These tests verify critical business rules and safety
+constraints.
 
-These tests verify critical business rules and security constraints.
+NOTE(STRAT-SC-001/C3): the tenant-scoping test class this file used to carry
+(TestTenantScoping) has been removed — it exercised only local mock
+helpers (execute_query/verify_tenant_access/etc., all defined in this file,
+never imported from production code) that simulated multi-tenant
+isolation. Single-org deployment has no tenant dimension left to isolate,
+so those tests and their fictitious tenant/exception scaffolding
+(TenantScopingError, TenantAccessDeniedError, TenantMismatchError, etc.)
+were deleted outright rather than "re-scoped" — there is nothing real for
+them to re-scope to. The EMQ gating logic below is untouched and does not
+reference tenant_id at all.
 """
 
-from datetime import datetime, timedelta, timezone
-from typing import Any, Dict, Optional
-from unittest.mock import AsyncMock, MagicMock, patch
+from typing import Any, Dict
 
 import pytest
 
@@ -68,7 +75,7 @@ class TestEmqModeGating:
 
     def test_mode_downgrade_on_emq_drop(self):
         """Mode should be automatically downgraded when EMQ drops."""
-        # Tenant currently in full autopilot mode
+        # Currently in full autopilot mode
         current_mode = "full"
 
         # EMQ drops to 82
@@ -82,7 +89,7 @@ class TestEmqModeGating:
 
     def test_no_mode_upgrade_without_approval(self):
         """Mode should not auto-upgrade even if EMQ improves."""
-        # Tenant currently in supervised mode
+        # Currently in supervised mode
         current_mode = "supervised"
 
         # EMQ rises to 95
@@ -149,159 +156,6 @@ class TestEmqModeGating:
         assert result["max_mode"] == "full"
         assert result["override_active"] == True
         assert "override" in str(result["warnings"]).lower()
-
-
-# =============================================================================
-# Tenant Scoping Tests
-# =============================================================================
-
-
-class TestTenantScoping:
-    """
-    Tests for tenant isolation and scoping enforcement.
-
-    Rules:
-    - All data queries must include tenant_id filter
-    - Cross-tenant data access is forbidden
-    - Tenant ID in path must match auth token's tenant
-    """
-
-    def test_query_requires_tenant_id(self):
-        """Data queries must include tenant_id."""
-        # Mock query without tenant_id should raise error
-        with pytest.raises(TenantScopingError):
-            execute_query("SELECT * FROM campaigns")
-
-        # Query with tenant_id should succeed
-        result = execute_query(
-            "SELECT * FROM campaigns WHERE tenant_id = :tenant_id", tenant_id=1
-        )
-        assert result is not None
-
-    def test_cross_tenant_access_blocked(self):
-        """Access to another tenant's data is blocked."""
-        # User belongs to tenant 1
-        user_tenant_id = 1
-
-        # Trying to access tenant 2's data
-        requested_tenant_id = 2
-
-        with pytest.raises(TenantAccessDeniedError):
-            verify_tenant_access(user_tenant_id, requested_tenant_id)
-
-    def test_owner_cross_tenant_access(self):
-        """Owner can access any tenant."""
-        # Owner accessing tenant 2
-        result = verify_tenant_access(
-            user_tenant_id=None,  # Owner has no tenant
-            requested_tenant_id=2,
-            user_role="owner",
-        )
-
-        assert result["allowed"] == True
-        assert result["audit_logged"] == True
-
-    def test_path_tenant_id_must_match_token(self):
-        """Tenant ID in URL path must match JWT token."""
-        # Token has tenant_id=1
-        token_tenant_id = 1
-
-        # URL has tenant_id=1
-        path_tenant_id = 1
-
-        result = validate_path_tenant(token_tenant_id, path_tenant_id)
-        assert result["valid"] == True
-
-        # URL has tenant_id=2
-        path_tenant_id_wrong = 2
-
-        with pytest.raises(TenantMismatchError):
-            validate_path_tenant(token_tenant_id, path_tenant_id_wrong)
-
-    def test_tenant_isolation_in_campaigns(self):
-        """Campaigns endpoint enforces tenant isolation."""
-        # Create campaign for tenant 1
-        campaign = create_campaign_for_test(tenant_id=1)
-
-        # User from tenant 1 can access
-        result = get_campaign(campaign.id, user_tenant_id=1)
-        assert result["id"] == campaign.id
-
-        # User from tenant 2 cannot access
-        with pytest.raises(TenantAccessDeniedError):
-            get_campaign(campaign.id, user_tenant_id=2)
-
-    def test_tenant_isolation_in_actions(self):
-        """Actions queue enforces tenant isolation."""
-        # Create action for tenant 1
-        action = create_action_for_test(tenant_id=1)
-
-        # Approve from same tenant
-        result = approve_action(action.id, user_tenant_id=1)
-        assert result["success"] == True
-
-        # Approve from different tenant fails
-        action2 = create_action_for_test(tenant_id=1)
-        with pytest.raises(TenantAccessDeniedError):
-            approve_action(action2.id, user_tenant_id=2)
-
-    def test_tenant_id_in_all_writes(self):
-        """All write operations must set tenant_id."""
-        # Create without tenant_id should fail
-        with pytest.raises(TenantScopingError):
-            create_campaign(name="Test", platforms=["meta"])
-
-        # Create with tenant_id should succeed
-        result = create_campaign(name="Test", platforms=["meta"], tenant_id=1)
-        assert result["tenant_id"] == 1
-
-    def test_bulk_operations_scoped(self):
-        """Bulk operations respect tenant scoping."""
-        # Bulk update for tenant 1
-        campaign_ids = ["camp_1", "camp_2", "camp_3"]  # All belong to tenant 1
-
-        result = bulk_update_campaigns(
-            campaign_ids=campaign_ids, status="paused", user_tenant_id=1
-        )
-
-        assert result["updated_count"] == 3
-        assert all(c["tenant_id"] == 1 for c in result["campaigns"])
-
-    def test_account_manager_multi_tenant_access(self):
-        """Account managers can access assigned tenants."""
-        # AM assigned to tenants [1, 2, 3]
-        am_assigned_tenants = [1, 2, 3]
-
-        # Can access tenant 2
-        result = verify_tenant_access(
-            user_tenant_id=None,  # AM has no direct tenant
-            requested_tenant_id=2,
-            user_role="account_manager",
-            assigned_tenants=am_assigned_tenants,
-        )
-        assert result["allowed"] == True
-
-        # Cannot access tenant 4
-        with pytest.raises(TenantAccessDeniedError):
-            verify_tenant_access(
-                user_tenant_id=None,
-                requested_tenant_id=4,
-                user_role="account_manager",
-                assigned_tenants=am_assigned_tenants,
-            )
-
-    def test_audit_log_includes_tenant(self):
-        """All audit logs include tenant context."""
-        # Perform an action
-        action_result = perform_audited_action(
-            action="campaign_pause", entity_id="camp_123", user_id=1, tenant_id=1
-        )
-
-        # Check audit log was created with tenant
-        audit_log = get_latest_audit_log()
-        assert audit_log["tenant_id"] == 1
-        assert audit_log["action"] == "campaign_pause"
-        assert audit_log["user_id"] == 1
 
 
 # =============================================================================
@@ -410,169 +264,6 @@ def handle_emq_change(
         result["message"] = "Upgrade available but requires manual approval"
 
     return result
-
-
-# =============================================================================
-# Exception Classes for Testing
-# =============================================================================
-
-
-class TenantScopingError(Exception):
-    """Raised when tenant scoping is missing."""
-
-    pass
-
-
-class TenantAccessDeniedError(Exception):
-    """Raised when cross-tenant access is attempted."""
-
-    pass
-
-
-class TenantMismatchError(Exception):
-    """Raised when path tenant doesn't match token tenant."""
-
-    pass
-
-
-# =============================================================================
-# Mock Functions for Tenant Scoping Tests
-# =============================================================================
-
-
-def execute_query(query: str, tenant_id: int = None):
-    """Mock query execution with tenant scoping check."""
-    if "WHERE" not in query.upper() or "tenant_id" not in query.lower():
-        if tenant_id is None:
-            raise TenantScopingError("Query must include tenant_id filter")
-    return {"data": []}
-
-
-def verify_tenant_access(
-    user_tenant_id: Optional[int],
-    requested_tenant_id: int,
-    user_role: str = "tenant_user",
-    assigned_tenants: list = None,
-) -> Dict[str, Any]:
-    """Verify user can access requested tenant."""
-    # Owner can access all
-    if user_role == "owner":
-        return {"allowed": True, "audit_logged": True}
-
-    # Account manager can access assigned tenants
-    if user_role == "account_manager":
-        if assigned_tenants and requested_tenant_id in assigned_tenants:
-            return {"allowed": True, "audit_logged": True}
-        raise TenantAccessDeniedError("AM not assigned to this tenant")
-
-    # Regular user can only access their own tenant
-    if user_tenant_id != requested_tenant_id:
-        raise TenantAccessDeniedError(f"Access denied to tenant {requested_tenant_id}")
-
-    return {"allowed": True, "audit_logged": False}
-
-
-def validate_path_tenant(token_tenant_id: int, path_tenant_id: int) -> Dict[str, bool]:
-    """Validate path tenant matches token."""
-    if token_tenant_id != path_tenant_id:
-        raise TenantMismatchError("Path tenant ID doesn't match token")
-    return {"valid": True}
-
-
-# Mock data classes
-class MockCampaign:
-    def __init__(self, id, tenant_id):
-        self.id = id
-        self.tenant_id = tenant_id
-
-
-class MockAction:
-    def __init__(self, id, tenant_id):
-        self.id = id
-        self.tenant_id = tenant_id
-
-
-_test_campaigns = {}
-_test_actions = {}
-_audit_logs = []
-
-
-def create_campaign_for_test(tenant_id: int) -> MockCampaign:
-    """Create test campaign."""
-    import uuid
-
-    campaign = MockCampaign(str(uuid.uuid4()), tenant_id)
-    _test_campaigns[campaign.id] = campaign
-    return campaign
-
-
-def get_campaign(campaign_id: str, user_tenant_id: int) -> Dict[str, Any]:
-    """Get campaign with tenant check."""
-    campaign = _test_campaigns.get(campaign_id)
-    if not campaign:
-        raise ValueError("Campaign not found")
-    if campaign.tenant_id != user_tenant_id:
-        raise TenantAccessDeniedError("Access denied")
-    return {"id": campaign.id, "tenant_id": campaign.tenant_id}
-
-
-def create_action_for_test(tenant_id: int) -> MockAction:
-    """Create test action."""
-    import uuid
-
-    action = MockAction(str(uuid.uuid4()), tenant_id)
-    _test_actions[action.id] = action
-    return action
-
-
-def approve_action(action_id: str, user_tenant_id: int) -> Dict[str, bool]:
-    """Approve action with tenant check."""
-    action = _test_actions.get(action_id)
-    if not action:
-        raise ValueError("Action not found")
-    if action.tenant_id != user_tenant_id:
-        raise TenantAccessDeniedError("Access denied")
-    return {"success": True}
-
-
-def create_campaign(
-    name: str, platforms: list, tenant_id: int = None
-) -> Dict[str, Any]:
-    """Create campaign."""
-    if tenant_id is None:
-        raise TenantScopingError("tenant_id required")
-    return {"name": name, "platforms": platforms, "tenant_id": tenant_id}
-
-
-def bulk_update_campaigns(
-    campaign_ids: list, status: str, user_tenant_id: int
-) -> Dict[str, Any]:
-    """Bulk update campaigns."""
-    # In real implementation, would verify each campaign belongs to tenant
-    return {
-        "updated_count": len(campaign_ids),
-        "campaigns": [{"id": cid, "tenant_id": user_tenant_id} for cid in campaign_ids],
-    }
-
-
-def perform_audited_action(
-    action: str, entity_id: str, user_id: int, tenant_id: int
-) -> Dict[str, Any]:
-    """Perform action and create audit log."""
-    audit_entry = {
-        "action": action,
-        "entity_id": entity_id,
-        "user_id": user_id,
-        "tenant_id": tenant_id,
-        "timestamp": datetime.now(timezone.utc).isoformat(),
-    }
-    _audit_logs.append(audit_entry)
-    return {"success": True}
-
-
-def get_latest_audit_log() -> Dict[str, Any]:
-    """Get the most recent audit log."""
-    return _audit_logs[-1] if _audit_logs else None
 
 
 # =============================================================================

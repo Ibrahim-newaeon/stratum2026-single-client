@@ -9,14 +9,14 @@ Routes:
 - GET /meta-capi/health - Health check
 - POST /meta-capi/events - Send conversion events
 - POST /meta-capi/events/validate - Validate event payload
-- GET /meta-capi/quality/{tenant_id} - Get quality metrics
-- GET /meta-capi/quality/{tenant_id}/report - Full quality report
+- GET /meta-capi/quality - Get quality metrics
+- GET /meta-capi/quality/report - Full quality report
 """
 
 from datetime import datetime, timezone
 from typing import Any, Dict, List, Optional
 
-from fastapi import APIRouter, Depends, HTTPException, Query, Request, status
+from fastapi import APIRouter, Depends
 from pydantic import BaseModel, Field
 from sqlalchemy.ext.asyncio import AsyncSession
 
@@ -90,7 +90,6 @@ async def meta_capi_health():
 
 @router.post("/events", response_model=APIResponse[Dict[str, Any]])
 async def send_capi_events(
-    request: Request,
     batch: CAPIEventBatch,
     db: AsyncSession = Depends(get_async_session),
     current_user=Depends(get_current_user),
@@ -101,16 +100,9 @@ async def send_capi_events(
     Validates, hashes PII, and forwards events to Meta Conversions API.
     Returns quality metrics for each event processed.
     """
-    tenant_id = getattr(request.state, "tenant_id", None)
-    if not tenant_id:
-        raise HTTPException(status_code=403, detail="Tenant context required")
-
     from app.services.capi.capi_service import CAPIService
 
-    # tenant_id (not db) — CAPIService is session-less; passing the session here
-    # was a latent TypeError (old __init__ took no args). tenant_id also scopes
-    # delivery-log persistence.
-    capi_service = CAPIService(tenant_id)
+    capi_service = CAPIService()
 
     results = []
     quality_issues = []
@@ -141,7 +133,6 @@ async def send_capi_events(
     # Stream events through CAPI service
     try:
         stream_result = await capi_service.stream_events(
-            tenant_id=tenant_id,
             events=[
                 {
                     "event_name": e.event_name,
@@ -159,12 +150,11 @@ async def send_capi_events(
 
         logger.info(
             "capi_events_sent",
-            tenant_id=tenant_id,
             total_events=len(batch.events),
             platforms_sent=getattr(stream_result, "platforms_sent", 1),
         )
     except Exception as e:
-        logger.error("capi_events_failed", tenant_id=tenant_id, error=str(e))
+        logger.error("capi_events_failed", error=str(e))
         # Still return validation results even if send fails
         for r in results:
             r["status"] = "send_failed"
@@ -238,26 +228,22 @@ async def validate_capi_events(
 # =============================================================================
 
 
-@router.get("/quality/{tenant_id}", response_model=APIResponse[Dict[str, Any]])
+@router.get("/quality", response_model=APIResponse[Dict[str, Any]])
 async def get_quality_metrics(
-    request: Request,
-    tenant_id: int,
     db: AsyncSession = Depends(get_async_session),
+    current_user=Depends(get_current_user),
 ):
     """
-    Get CAPI data quality metrics for a tenant.
+    Get CAPI data quality metrics for the org.
 
     Returns EMQ-related quality scores and recommendations.
     """
-    if getattr(request.state, "tenant_id", None) != tenant_id:
-        raise HTTPException(status_code=403, detail="Access denied to this tenant")
-
-    # NOTE: the previous implementation called CAPIService(db).analyze_data_quality(
-    # tenant_id), but CAPIService takes no constructor args and exposes no such
-    # tenant-level coroutine — every call raised TypeError -> 500. There is no
-    # service that produces a tenant-level DataQualityReport yet, so this returns
-    # the documented "no data" envelope until per-tenant aggregation is wired up.
-    # The detailed gap analysis lives on the sibling /quality/{tenant_id}/report.
+    # NOTE: the previous implementation called CAPIService(db).analyze_data_quality(...)
+    # but CAPIService takes no constructor args and exposes no such
+    # coroutine — every call raised TypeError -> 500. There is no service that
+    # produces a DataQualityReport yet, so this returns the documented "no
+    # data" envelope until org-level aggregation is wired up. The detailed
+    # gap analysis lives on the sibling /quality/report.
     return APIResponse(
         success=True,
         data={
@@ -271,27 +257,26 @@ async def get_quality_metrics(
     )
 
 
-@router.get("/quality/{tenant_id}/report", response_model=APIResponse[Dict[str, Any]])
+@router.get("/quality/report", response_model=APIResponse[Dict[str, Any]])
 async def get_quality_report(
-    request: Request,
-    tenant_id: int,
     db: AsyncSession = Depends(get_async_session),
+    current_user=Depends(get_current_user),
 ):
     """
     Get detailed quality report with data gap analysis.
     """
-    if getattr(request.state, "tenant_id", None) != tenant_id:
-        raise HTTPException(status_code=403, detail="Access denied to this tenant")
-
     from app.services.capi.data_quality import DataQualityAnalyzer
 
     analyzer = DataQualityAnalyzer()
 
     try:
-        report = await analyzer.generate_report(db, tenant_id)
+        # NOTE: DataQualityAnalyzer has no generate_report method — this
+        # call was already broken pre-sweep (pre-existing bug, unrelated to
+        # the de-tenanting) and always falls through to the except below.
+        report = await analyzer.generate_report(db)
         return APIResponse(success=True, data=report)
     except Exception as e:
-        logger.warning("quality_report_failed", tenant_id=tenant_id, error=str(e))
+        logger.warning("quality_report_failed", error=str(e))
         return APIResponse(
             success=True,
             data={

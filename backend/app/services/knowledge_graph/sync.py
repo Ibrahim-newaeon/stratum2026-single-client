@@ -58,11 +58,11 @@ class KnowledgeGraphSyncService:
         async with get_db_session() as session:
             sync = KnowledgeGraphSyncService(session)
 
-            # Full sync for a tenant
-            await sync.full_sync(tenant_id)
+            # Full sync
+            await sync.full_sync()
 
             # Incremental sync since last run
-            await sync.incremental_sync(tenant_id, since=last_sync_at)
+            await sync.incremental_sync(since=last_sync_at)
 
             # Real-time event sync
             await sync.sync_event(event)
@@ -78,7 +78,6 @@ class KnowledgeGraphSyncService:
 
     async def sync_cdp_profiles(
         self,
-        tenant_id: UUID,
         since: Optional[datetime] = None,
         batch_size: int = SYNC_BATCH_SIZE,
     ) -> int:
@@ -86,7 +85,6 @@ class KnowledgeGraphSyncService:
         Sync CDP profiles to the knowledge graph.
 
         Args:
-            tenant_id: Tenant UUID
             since: Only sync profiles updated after this time
             batch_size: Batch size for memory efficiency
 
@@ -95,7 +93,7 @@ class KnowledgeGraphSyncService:
         """
         from app.models.cdp import CDPProfile
 
-        query = select(CDPProfile).where(CDPProfile.tenant_id == tenant_id)
+        query = select(CDPProfile)
         if since:
             query = query.where(CDPProfile.updated_at > since)
 
@@ -108,7 +106,6 @@ class KnowledgeGraphSyncService:
 
             for profile in batch:
                 node = ProfileNode(
-                    tenant_id=tenant_id,
                     external_id=str(profile.id),
                     lifecycle_stage=LifecycleStage(profile.lifecycle_stage.value),
                     first_seen_at=profile.first_seen_at,
@@ -131,15 +128,12 @@ class KnowledgeGraphSyncService:
                 await self.kg.merge_node(node)
                 synced += 1
 
-            logger.info(
-                f"Synced {synced}/{len(profiles)} profiles for tenant {tenant_id}"
-            )
+            logger.info(f"Synced {synced}/{len(profiles)} profiles")
 
         return synced
 
     async def sync_cdp_events(
         self,
-        tenant_id: UUID,
         since: Optional[datetime] = None,
         batch_size: int = SYNC_BATCH_SIZE,
     ) -> int:
@@ -147,7 +141,6 @@ class KnowledgeGraphSyncService:
         Sync CDP events to the knowledge graph.
 
         Args:
-            tenant_id: Tenant UUID
             since: Only sync events after this time
             batch_size: Batch size for memory efficiency
 
@@ -156,7 +149,7 @@ class KnowledgeGraphSyncService:
         """
         from app.models.cdp import CDPEvent
 
-        query = select(CDPEvent).where(CDPEvent.tenant_id == tenant_id)
+        query = select(CDPEvent)
         if since:
             query = query.where(CDPEvent.created_at > since)
         query = query.order_by(CDPEvent.event_time.asc())
@@ -171,7 +164,6 @@ class KnowledgeGraphSyncService:
             for event in batch:
                 # Create event node
                 node = EventNode(
-                    tenant_id=tenant_id,
                     external_id=str(event.id),
                     event_type=event.event_name,
                     event_time=event.event_time,
@@ -191,7 +183,6 @@ class KnowledgeGraphSyncService:
                     edge = PerformedEdge(
                         start_node_id="",  # Will be matched by external_id
                         end_node_id="",
-                        tenant_id=tenant_id,
                         session_id=(
                             event.context.get("session_id") if event.context else None
                         ),
@@ -207,7 +198,6 @@ class KnowledgeGraphSyncService:
                     # If revenue event, create Revenue node and GENERATED edge
                     if node.revenue_cents and node.revenue_cents > 0:
                         revenue_node = RevenueNode(
-                            tenant_id=tenant_id,
                             external_id=f"rev_{event.id}",
                             amount_cents=node.revenue_cents,
                             revenue_type="purchase",
@@ -218,7 +208,6 @@ class KnowledgeGraphSyncService:
                         gen_edge = GeneratedEdge(
                             start_node_id="",
                             end_node_id="",
-                            tenant_id=tenant_id,
                         )
                         await self.kg.create_edge(
                             gen_edge,
@@ -230,18 +219,15 @@ class KnowledgeGraphSyncService:
 
                 synced += 1
 
-            logger.info(f"Synced {synced}/{len(events)} events for tenant {tenant_id}")
+            logger.info(f"Synced {synced}/{len(events)} events")
 
         return synced
 
-    async def sync_cdp_segments(
-        self, tenant_id: UUID, since: Optional[datetime] = None
-    ) -> int:
+    async def sync_cdp_segments(self, since: Optional[datetime] = None) -> int:
         """
         Sync CDP segments and memberships to the knowledge graph.
 
         Args:
-            tenant_id: Tenant UUID
             since: Only sync segments updated after this time
 
         Returns:
@@ -249,7 +235,7 @@ class KnowledgeGraphSyncService:
         """
         from app.models.cdp import CDPSegment, CDPSegmentMembership
 
-        query = select(CDPSegment).where(CDPSegment.tenant_id == tenant_id)
+        query = select(CDPSegment)
         if since:
             query = query.where(CDPSegment.updated_at > since)
 
@@ -259,7 +245,6 @@ class KnowledgeGraphSyncService:
         synced = 0
         for segment in segments:
             node = SegmentNode(
-                tenant_id=tenant_id,
                 external_id=str(segment.id),
                 name=segment.name,
                 segment_type=(
@@ -287,7 +272,6 @@ class KnowledgeGraphSyncService:
                 edge = BelongsToEdge(
                     start_node_id="",
                     end_node_id="",
-                    tenant_id=tenant_id,
                     added_at=membership.added_at,
                     match_score=membership.match_score,
                 )
@@ -301,21 +285,18 @@ class KnowledgeGraphSyncService:
 
             synced += 1
 
-        logger.info(f"Synced {synced} segments for tenant {tenant_id}")
+        logger.info(f"Synced {synced} segments")
         return synced
 
     # =========================================================================
     # TRUST ENGINE SYNC
     # =========================================================================
 
-    async def sync_signal_health(
-        self, tenant_id: UUID, since: Optional[datetime] = None
-    ) -> int:
+    async def sync_signal_health(self, since: Optional[datetime] = None) -> int:
         """
         Sync signal health records to the knowledge graph.
 
         Args:
-            tenant_id: Tenant UUID
             since: Only sync signals after this time
 
         Returns:
@@ -323,9 +304,7 @@ class KnowledgeGraphSyncService:
         """
         from app.models.trust_layer import FactSignalHealthDaily
 
-        query = select(FactSignalHealthDaily).where(
-            FactSignalHealthDaily.tenant_id == tenant_id
-        )
+        query = select(FactSignalHealthDaily)
         if since:
             query = query.where(FactSignalHealthDaily.date >= since.date())
 
@@ -343,7 +322,6 @@ class KnowledgeGraphSyncService:
             }
 
             node = SignalNode(
-                tenant_id=tenant_id,
                 external_id=f"signal_{signal.platform}_{signal.date}",
                 signal_type="composite",
                 source=signal.platform,
@@ -360,17 +338,14 @@ class KnowledgeGraphSyncService:
             await self.kg.merge_node(node)
             synced += 1
 
-        logger.info(f"Synced {synced} signal health records for tenant {tenant_id}")
+        logger.info(f"Synced {synced} signal health records")
         return synced
 
-    async def sync_trust_gate_decisions(
-        self, tenant_id: UUID, since: Optional[datetime] = None
-    ) -> int:
+    async def sync_trust_gate_decisions(self, since: Optional[datetime] = None) -> int:
         """
         Sync trust gate audit log to the knowledge graph.
 
         Args:
-            tenant_id: Tenant UUID
             since: Only sync decisions after this time
 
         Returns:
@@ -378,9 +353,7 @@ class KnowledgeGraphSyncService:
         """
         from app.models.trust_layer import TrustGateAuditLog
 
-        query = select(TrustGateAuditLog).where(
-            TrustGateAuditLog.tenant_id == tenant_id
-        )
+        query = select(TrustGateAuditLog)
         if since:
             query = query.where(TrustGateAuditLog.created_at > since)
 
@@ -397,7 +370,6 @@ class KnowledgeGraphSyncService:
             }
 
             node = TrustGateNode(
-                tenant_id=tenant_id,
                 external_id=str(decision.id),
                 decision=decision_map.get(decision.decision, GateDecision.HOLD),
                 signal_health_score=decision.signal_health_score or 0,
@@ -411,17 +383,14 @@ class KnowledgeGraphSyncService:
             await self.kg.merge_node(node)
             synced += 1
 
-        logger.info(f"Synced {synced} trust gate decisions for tenant {tenant_id}")
+        logger.info(f"Synced {synced} trust gate decisions")
         return synced
 
-    async def sync_automation_actions(
-        self, tenant_id: UUID, since: Optional[datetime] = None
-    ) -> int:
+    async def sync_automation_actions(self, since: Optional[datetime] = None) -> int:
         """
         Sync automation actions to the knowledge graph.
 
         Args:
-            tenant_id: Tenant UUID
             since: Only sync actions after this time
 
         Returns:
@@ -429,7 +398,7 @@ class KnowledgeGraphSyncService:
         """
         from app.models.trust_layer import FactActionsQueue
 
-        query = select(FactActionsQueue).where(FactActionsQueue.tenant_id == tenant_id)
+        query = select(FactActionsQueue)
         if since:
             query = query.where(FactActionsQueue.created_at > since)
 
@@ -448,7 +417,6 @@ class KnowledgeGraphSyncService:
             }
 
             node = AutomationNode(
-                tenant_id=tenant_id,
                 external_id=str(action.id),
                 action_type=action.action_type or "unknown",
                 entity_type=action.entity_type or "campaign",
@@ -470,21 +438,18 @@ class KnowledgeGraphSyncService:
             await self.kg.merge_node(node)
             synced += 1
 
-        logger.info(f"Synced {synced} automation actions for tenant {tenant_id}")
+        logger.info(f"Synced {synced} automation actions")
         return synced
 
     # =========================================================================
     # CAMPAIGN SYNC
     # =========================================================================
 
-    async def sync_campaigns(
-        self, tenant_id: UUID, since: Optional[datetime] = None
-    ) -> int:
+    async def sync_campaigns(self, since: Optional[datetime] = None) -> int:
         """
         Sync campaigns to the knowledge graph.
 
         Args:
-            tenant_id: Tenant UUID
             since: Only sync campaigns updated after this time
 
         Returns:
@@ -492,7 +457,7 @@ class KnowledgeGraphSyncService:
         """
         from app.base_models import Campaign
 
-        query = select(Campaign).where(Campaign.tenant_id == tenant_id)
+        query = select(Campaign)
         if since:
             query = query.where(Campaign.updated_at > since)
 
@@ -509,7 +474,6 @@ class KnowledgeGraphSyncService:
             }
 
             node = CampaignNode(
-                tenant_id=tenant_id,
                 external_id=str(campaign.id),
                 name=campaign.name,
                 platform=(
@@ -531,71 +495,61 @@ class KnowledgeGraphSyncService:
             await self.kg.merge_node(node)
             synced += 1
 
-        logger.info(f"Synced {synced} campaigns for tenant {tenant_id}")
+        logger.info(f"Synced {synced} campaigns")
         return synced
 
     # =========================================================================
     # FULL & INCREMENTAL SYNC
     # =========================================================================
 
-    async def full_sync(self, tenant_id: UUID) -> dict[str, int]:
+    async def full_sync(self) -> dict[str, int]:
         """
-        Perform a full sync of all data for a tenant.
-
-        Args:
-            tenant_id: Tenant UUID
+        Perform a full sync of all data.
 
         Returns:
             Dict of entity type -> count synced
         """
-        logger.info(f"Starting full knowledge graph sync for tenant {tenant_id}")
+        logger.info("Starting full knowledge graph sync")
 
         results = {
-            "profiles": await self.sync_cdp_profiles(tenant_id),
-            "events": await self.sync_cdp_events(tenant_id),
-            "segments": await self.sync_cdp_segments(tenant_id),
-            "signals": await self.sync_signal_health(tenant_id),
-            "trust_gates": await self.sync_trust_gate_decisions(tenant_id),
-            "automations": await self.sync_automation_actions(tenant_id),
-            "campaigns": await self.sync_campaigns(tenant_id),
+            "profiles": await self.sync_cdp_profiles(),
+            "events": await self.sync_cdp_events(),
+            "segments": await self.sync_cdp_segments(),
+            "signals": await self.sync_signal_health(),
+            "trust_gates": await self.sync_trust_gate_decisions(),
+            "automations": await self.sync_automation_actions(),
+            "campaigns": await self.sync_campaigns(),
         }
 
         total = sum(results.values())
-        logger.info(
-            f"Full sync completed for tenant {tenant_id}: {total} total entities"
-        )
+        logger.info(f"Full sync completed: {total} total entities")
 
         return results
 
-    async def incremental_sync(
-        self, tenant_id: UUID, since: datetime
-    ) -> dict[str, int]:
+    async def incremental_sync(self, since: datetime) -> dict[str, int]:
         """
         Perform incremental sync of data changed since last sync.
 
         Args:
-            tenant_id: Tenant UUID
             since: Sync data updated after this time
 
         Returns:
             Dict of entity type -> count synced
         """
-        logger.info(f"Starting incremental sync for tenant {tenant_id} since {since}")
+        logger.info(f"Starting incremental sync since {since}")
 
         results = {
-            "profiles": await self.sync_cdp_profiles(tenant_id, since=since),
-            "events": await self.sync_cdp_events(tenant_id, since=since),
-            "segments": await self.sync_cdp_segments(tenant_id, since=since),
-            "signals": await self.sync_signal_health(tenant_id, since=since),
-            "trust_gates": await self.sync_trust_gate_decisions(tenant_id, since=since),
-            "automations": await self.sync_automation_actions(tenant_id, since=since),
-            "campaigns": await self.sync_campaigns(tenant_id, since=since),
+            "profiles": await self.sync_cdp_profiles(since=since),
+            "events": await self.sync_cdp_events(since=since),
+            "segments": await self.sync_cdp_segments(since=since),
+            "signals": await self.sync_signal_health(since=since),
+            "trust_gates": await self.sync_trust_gate_decisions(since=since),
+            "automations": await self.sync_automation_actions(since=since),
+            "campaigns": await self.sync_campaigns(since=since),
         }
 
         total = sum(results.values())
-        logger.info(
-            f"Incremental sync completed for tenant {tenant_id}: {total} entities updated"
-        )
+        logger.info(f"Incremental sync completed: {total} entities updated")
 
         return results
 
@@ -605,7 +559,6 @@ class KnowledgeGraphSyncService:
 
     async def on_event_ingested(
         self,
-        tenant_id: UUID,
         event_id: UUID,
         event_name: str,
         profile_id: Optional[UUID],
@@ -616,7 +569,6 @@ class KnowledgeGraphSyncService:
         Real-time hook called when a CDP event is ingested.
 
         Args:
-            tenant_id: Tenant UUID
             event_id: Event UUID
             event_name: Event type/name
             profile_id: Associated profile UUID (if known)
@@ -624,7 +576,6 @@ class KnowledgeGraphSyncService:
             event_time: When the event occurred
         """
         node = EventNode(
-            tenant_id=tenant_id,
             external_id=str(event_id),
             event_type=event_name,
             event_time=event_time,
@@ -640,7 +591,6 @@ class KnowledgeGraphSyncService:
             edge = PerformedEdge(
                 start_node_id="",
                 end_node_id="",
-                tenant_id=tenant_id,
             )
             await self.kg.create_edge(
                 edge,
@@ -652,7 +602,6 @@ class KnowledgeGraphSyncService:
 
     async def on_trust_gate_evaluated(
         self,
-        tenant_id: UUID,
         gate_id: UUID,
         decision: str,
         signal_health: float,
@@ -664,7 +613,6 @@ class KnowledgeGraphSyncService:
         Real-time hook called when a trust gate is evaluated.
 
         Args:
-            tenant_id: Tenant UUID
             gate_id: Gate evaluation UUID
             decision: pass/hold/block
             signal_health: Signal health score at evaluation
@@ -675,7 +623,6 @@ class KnowledgeGraphSyncService:
         decision_enum = GateDecision(decision.lower())
 
         node = TrustGateNode(
-            tenant_id=tenant_id,
             external_id=str(gate_id),
             decision=decision_enum,
             signal_health_score=signal_health,
@@ -692,14 +639,12 @@ class KnowledgeGraphSyncService:
                 edge = TriggeredEdge(
                     start_node_id="",
                     end_node_id="",
-                    tenant_id=tenant_id,
                     properties={"trigger_type": "trust_gate"},
                 )
             else:
                 edge = BlockedEdge(
                     start_node_id="",
                     end_node_id="",
-                    tenant_id=tenant_id,
                     reason=reason,
                     signal_health_at_block=signal_health,
                 )
@@ -713,7 +658,7 @@ class KnowledgeGraphSyncService:
             )
 
     async def on_profile_merged(
-        self, tenant_id: UUID, surviving_profile_id: UUID, merged_profile_id: UUID
+        self, surviving_profile_id: UUID, merged_profile_id: UUID
     ) -> None:
         """
         Real-time hook called when profiles are merged.
@@ -726,7 +671,6 @@ class KnowledgeGraphSyncService:
             start_node_id="",
             end_node_id="",
             label=EdgeLabel.MERGED_INTO,
-            tenant_id=tenant_id,
             properties={"merged_at": datetime.now(tz=UTC).isoformat()},
         )
         await self.kg.create_edge(

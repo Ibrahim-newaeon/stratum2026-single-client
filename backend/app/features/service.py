@@ -2,100 +2,84 @@
 # Stratum AI - Feature Flags Service
 # =============================================================================
 """
-Service layer for managing tenant feature flags.
+Service layer for managing the organization's feature flags.
 Handles fetching, updating, and caching of feature configurations.
 """
 
 from datetime import datetime, timezone
 from typing import Any, Dict, Optional
 
-from sqlalchemy import select, update
+from sqlalchemy import update
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from app.base_models import Organization, get_organization
 from app.features.flags import (
     FEATURE_CATEGORIES,
     FEATURE_DESCRIPTIONS,
+    PlanTier,
     FeatureFlags,
     FeatureFlagsUpdate,
     get_default_features,
     merge_features,
 )
-from app.models import Tenant
+
+# Single-org deployment: there is no subscription tier, so defaults are drawn
+# from the top plan tier rather than a per-org `plan` column (which no longer
+# exists post STRAT-SC-001).
+DEFAULT_PLAN_TIER = PlanTier.PROFESSIONAL.value
 
 
 class FeatureFlagsService:
-    """Service for managing tenant feature flags."""
+    """Service for managing the organization's feature flags."""
 
     def __init__(self, db: AsyncSession):
         self.db = db
 
-    async def get_tenant_features(self, tenant_id: int) -> Dict[str, Any]:
+    async def get_org_features(self) -> Dict[str, Any]:
         """
-        Get complete feature flags for a tenant.
-
-        Args:
-            tenant_id: Tenant ID
+        Get complete feature flags for the organization.
 
         Returns:
             Merged feature flags (defaults + overrides)
         """
-        result = await self.db.execute(
-            select(Tenant.plan, Tenant.feature_flags).where(Tenant.id == tenant_id)
-        )
-        row = result.first()
+        org = await get_organization(self.db)
+        defaults = get_default_features(DEFAULT_PLAN_TIER)
+        return merge_features(defaults, org.feature_flags)
 
-        if not row:
-            # Return starter defaults if tenant not found
-            return get_default_features("starter")
-
-        plan, overrides = row
-        defaults = get_default_features(plan or "starter")
-        return merge_features(defaults, overrides)
-
-    async def get_feature_flags_model(self, tenant_id: int) -> FeatureFlags:
+    async def get_feature_flags_model(self) -> FeatureFlags:
         """
         Get feature flags as a validated Pydantic model.
-
-        Args:
-            tenant_id: Tenant ID
 
         Returns:
             FeatureFlags model
         """
-        features = await self.get_tenant_features(tenant_id)
+        features = await self.get_org_features()
         return FeatureFlags(**features)
 
-    async def update_tenant_features(
+    async def update_org_features(
         self,
-        tenant_id: int,
         updates: FeatureFlagsUpdate,
         updated_by_user_id: Optional[int] = None,
     ) -> Dict[str, Any]:
         """
-        Update tenant feature flags (merge with existing overrides).
+        Update the organization's feature flags (merge with existing overrides).
 
         Args:
-            tenant_id: Tenant ID
             updates: Feature flag updates
             updated_by_user_id: ID of user making the update
 
         Returns:
             Updated feature flags
         """
-        # Get current overrides
-        result = await self.db.execute(
-            select(Tenant.feature_flags).where(Tenant.id == tenant_id)
-        )
-        current_overrides = result.scalar_one_or_none() or {}
+        org = await get_organization(self.db)
+        current_overrides = org.feature_flags or {}
 
-        # Merge updates
         update_dict = updates.model_dump(exclude_unset=True)
         new_overrides = {**current_overrides, **update_dict}
 
-        # Update tenant
         await self.db.execute(
-            update(Tenant)
-            .where(Tenant.id == tenant_id)
+            update(Organization)
+            .where(Organization.id == org.id)
             .values(
                 feature_flags=new_overrides,
                 updated_at=datetime.now(timezone.utc),
@@ -103,22 +87,19 @@ class FeatureFlagsService:
         )
         await self.db.commit()
 
-        # Return merged features
-        return await self.get_tenant_features(tenant_id)
+        return await self.get_org_features()
 
-    async def reset_tenant_features(self, tenant_id: int) -> Dict[str, Any]:
+    async def reset_org_features(self) -> Dict[str, Any]:
         """
-        Reset tenant features to plan defaults.
-
-        Args:
-            tenant_id: Tenant ID
+        Reset the organization's features to plan defaults.
 
         Returns:
-            Default feature flags for tenant's plan
+            Default feature flags
         """
+        org = await get_organization(self.db)
         await self.db.execute(
-            update(Tenant)
-            .where(Tenant.id == tenant_id)
+            update(Organization)
+            .where(Organization.id == org.id)
             .values(
                 feature_flags={},
                 updated_at=datetime.now(timezone.utc),
@@ -126,20 +107,19 @@ class FeatureFlagsService:
         )
         await self.db.commit()
 
-        return await self.get_tenant_features(tenant_id)
+        return await self.get_org_features()
 
-    async def can(self, tenant_id: int, feature_name: str) -> bool:
+    async def can(self, feature_name: str) -> bool:
         """
-        Check if a feature is enabled for a tenant.
+        Check if a feature is enabled for the organization.
 
         Args:
-            tenant_id: Tenant ID
             feature_name: Feature name to check
 
         Returns:
             True if feature is enabled
         """
-        features = await self.get_tenant_features(tenant_id)
+        features = await self.get_org_features()
         value = features.get(feature_name)
 
         if value is None:
@@ -159,32 +139,30 @@ class FeatureFlagsService:
         return FEATURE_DESCRIPTIONS
 
 
-async def get_tenant_features(db: AsyncSession, tenant_id: int) -> Dict[str, Any]:
+async def get_org_features(db: AsyncSession) -> Dict[str, Any]:
     """
-    Convenience function to get tenant features.
+    Convenience function to get the organization's features.
 
     Args:
         db: Database session
-        tenant_id: Tenant ID
 
     Returns:
         Feature flags dict
     """
     service = FeatureFlagsService(db)
-    return await service.get_tenant_features(tenant_id)
+    return await service.get_org_features()
 
 
-async def can_access_feature(db: AsyncSession, tenant_id: int, feature: str) -> bool:
+async def can_access_feature(db: AsyncSession, feature: str) -> bool:
     """
     Convenience function to check feature access.
 
     Args:
         db: Database session
-        tenant_id: Tenant ID
         feature: Feature name
 
     Returns:
         True if feature is enabled
     """
     service = FeatureFlagsService(db)
-    return await service.can(tenant_id, feature)
+    return await service.can(feature)

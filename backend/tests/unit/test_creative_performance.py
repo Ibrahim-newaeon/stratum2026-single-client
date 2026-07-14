@@ -76,7 +76,7 @@ class TestCalculateDerived:
 class TestRegisterAndRecord:
     def test_register_indexes_creative(self):
         svc = CreativePerformanceService()
-        svc.register_creative("c1", "t1", "meta", "camp1", name="Hero")
+        svc.register_creative("c1", "meta", "camp1", name="Hero")
         assert svc.get_creative("c1").name == "Hero"
         assert [c.creative_id for c in svc.get_creatives_for_campaign("camp1")] == [
             "c1"
@@ -84,15 +84,15 @@ class TestRegisterAndRecord:
 
     def test_record_auto_registers(self):
         svc = CreativePerformanceService()
-        svc.record_metrics("c1", "t1", "meta", "camp1", _metrics())
+        svc.record_metrics("c1", "meta", "camp1", _metrics())
         creative = svc.get_creative("c1")
         assert creative is not None
         assert creative.lifetime_metrics.impressions == 1000
 
     def test_lifetime_accumulates(self):
         svc = CreativePerformanceService()
-        svc.record_metrics("c1", "t1", "meta", "camp1", _metrics())
-        svc.record_metrics("c1", "t1", "meta", "camp1", _metrics())
+        svc.record_metrics("c1", "meta", "camp1", _metrics())
+        svc.record_metrics("c1", "meta", "camp1", _metrics())
         lifetime = svc.get_creative("c1").lifetime_metrics
         assert lifetime.impressions == 2000
         assert lifetime.spend == 200.0
@@ -101,8 +101,8 @@ class TestRegisterAndRecord:
     def test_days_active_from_first_impression(self):
         svc = CreativePerformanceService()
         first = _now() - timedelta(days=9)
-        svc.record_metrics("c1", "t1", "meta", "camp1", _metrics(), date=first)
-        svc.record_metrics("c1", "t1", "meta", "camp1", _metrics(), date=_now())
+        svc.record_metrics("c1", "meta", "camp1", _metrics(), date=first)
+        svc.record_metrics("c1", "meta", "camp1", _metrics(), date=_now())
         creative = svc.get_creative("c1")
         assert creative.first_impression_at == first
         assert creative.days_active == 10
@@ -122,7 +122,6 @@ def _record_decline(svc, creative_id, start, high_days=7, low_days=7):
     for _ in range(high_days):
         svc.record_metrics(
             creative_id,
-            "t1",
             "meta",
             "camp1",
             _metrics(clicks=50, revenue=500.0),
@@ -132,7 +131,6 @@ def _record_decline(svc, creative_id, start, high_days=7, low_days=7):
     for _ in range(low_days):
         svc.record_metrics(
             creative_id,
-            "t1",
             "meta",
             "camp1",
             _metrics(clicks=10, revenue=100.0),
@@ -147,7 +145,6 @@ class TestFatigue:
         for i in range(5):
             svc.record_metrics(
                 "c1",
-                "t1",
                 "meta",
                 "camp1",
                 _metrics(),
@@ -162,7 +159,6 @@ class TestFatigue:
         for i in range(14):
             svc.record_metrics(
                 "c1",
-                "t1",
                 "meta",
                 "camp1",
                 _metrics(),
@@ -186,7 +182,6 @@ class TestFatigue:
         for i in range(7):  # high weeks
             svc.record_metrics(
                 "c1",
-                "t1",
                 "meta",
                 "camp1",
                 _metrics(clicks=50, revenue=500.0),
@@ -195,7 +190,6 @@ class TestFatigue:
         for i in range(7):  # recent low week
             svc.record_metrics(
                 "c1",
-                "t1",
                 "meta",
                 "camp1",
                 _metrics(clicks=10, revenue=100.0),
@@ -219,7 +213,7 @@ class TestFatigue:
 
     def test_healthy_creative_no_action(self):
         svc = CreativePerformanceService()
-        svc.record_metrics("c1", "t1", "meta", "camp1", _metrics())
+        svc.record_metrics("c1", "meta", "camp1", _metrics())
         analysis = svc.analyze_fatigue("c1")
         assert analysis.recommendation == "No action needed"
 
@@ -234,7 +228,6 @@ class TestCompareCreatives:
             revenue = 100.0 * (base_roas + (i - 3) * 0.05)
             svc.record_metrics(
                 creative_id,
-                "t1",
                 "meta",
                 "camp1",
                 _metrics(spend=100.0, revenue=revenue),
@@ -243,7 +236,7 @@ class TestCompareCreatives:
 
     def test_requires_two_known_creatives(self):
         svc = CreativePerformanceService()
-        svc.record_metrics("c1", "t1", "meta", "camp1", _metrics())
+        svc.record_metrics("c1", "meta", "camp1", _metrics())
         assert svc.compare_creatives(["c1"]) is None
         assert svc.compare_creatives(["c1", "ghost"]) is None
 
@@ -261,10 +254,10 @@ class TestCompareCreatives:
         svc = CreativePerformanceService()
         # cheap: cpa 10; expensive: cpa 50
         svc.record_metrics(
-            "cheap", "t1", "meta", "camp1", _metrics(conversions=10, spend=100.0)
+            "cheap", "meta", "camp1", _metrics(conversions=10, spend=100.0)
         )
         svc.record_metrics(
-            "expensive", "t1", "meta", "camp1", _metrics(conversions=2, spend=100.0)
+            "expensive", "meta", "camp1", _metrics(conversions=2, spend=100.0)
         )
         comparison = svc.compare_creatives(["cheap", "expensive"], metric="cpa")
         assert comparison.winner_id == "cheap"
@@ -276,11 +269,10 @@ class TestCompareCreatives:
 class TestAggregations:
     def _two_creatives(self, svc):
         svc.record_metrics(
-            "hi", "t1", "meta", "camp1", _metrics(revenue=1000.0)
+            "hi", "meta", "camp1", _metrics(revenue=1000.0)
         )  # roas 10
         svc.record_metrics(
             "lo",
-            "t1",
             "google",
             "camp2",
             _metrics(revenue=200.0),
@@ -301,7 +293,6 @@ class TestAggregations:
         assert [t["creative_id"] for t in svc.get_top_creatives(platform="google")] == [
             "lo"
         ]
-        assert svc.get_top_creatives(tenant_id="other") == []
 
     def test_type_performance_grouped(self):
         svc = CreativePerformanceService()
@@ -322,7 +313,7 @@ class TestAggregations:
     def test_fatigued_creatives_filter_and_sort(self):
         svc = CreativePerformanceService()
         _record_decline(svc, "tired", _now() - timedelta(days=13))  # HIGH
-        svc.record_metrics("fresh", "t1", "meta", "camp1", _metrics())  # NONE
+        svc.record_metrics("fresh", "meta", "camp1", _metrics())  # NONE
         fatigued = svc.get_fatigued_creatives(min_fatigue_level=FatigueLevel.MEDIUM)
         assert [f["creative_id"] for f in fatigued] == ["tired"]
         # NONE-level threshold includes everything, highest score first
@@ -337,7 +328,6 @@ class TestConvenience:
     def test_record_creative_metrics_singleton(self):
         record_creative_metrics(
             creative_id="ut_cp_conv_1",
-            tenant_id="ut_cp_tenant",
             platform="meta",
             campaign_id="ut_cp_camp",
             impressions=1000,
@@ -469,7 +459,6 @@ class TestCrossPlatformAnalyzer:
     def _seed_platform(self, svc, creative_id, platform, roas, cvr_clicks=100):
         svc.record_metrics(
             creative_id,
-            "t1",
             platform,
             "camp1",
             _metrics(
@@ -481,7 +470,7 @@ class TestCrossPlatformAnalyzer:
         svc = CreativePerformanceService()
         self._seed_platform(svc, "promo_meta", "meta", roas=5.0)
         analyzer = CrossPlatformCreativeAnalyzer(svc)
-        insights = analyzer.analyze_creative_across_platforms("promo", "t1")
+        insights = analyzer.analyze_creative_across_platforms("promo")
         assert insights[0].insight_type == "insufficient_data"
 
     def test_performance_gap_detected(self):
@@ -490,7 +479,7 @@ class TestCrossPlatformAnalyzer:
         self._seed_platform(svc, "promo_meta", "meta", roas=10.0)
         self._seed_platform(svc, "promo_google", "google", roas=2.0)
         analyzer = CrossPlatformCreativeAnalyzer(svc)
-        insights = analyzer.analyze_creative_across_platforms("promo", "t1")
+        insights = analyzer.analyze_creative_across_platforms("promo")
         gap = next(i for i in insights if i.insight_type == "performance_gap")
         assert set(gap.platforms) == {"meta", "google"}
         assert "outperforms" in gap.description
@@ -500,16 +489,8 @@ class TestCrossPlatformAnalyzer:
         self._seed_platform(svc, "promo_meta", "meta", roas=5.0)
         self._seed_platform(svc, "promo_google", "google", roas=5.5)
         analyzer = CrossPlatformCreativeAnalyzer(svc)
-        insights = analyzer.analyze_creative_across_platforms("promo", "t1")
+        insights = analyzer.analyze_creative_across_platforms("promo")
         assert any(i.insight_type == "universal_performer" for i in insights)
-
-    def test_tenant_isolation(self):
-        svc = CreativePerformanceService()
-        self._seed_platform(svc, "promo_meta", "meta", roas=5.0)
-        analyzer = CrossPlatformCreativeAnalyzer(svc)
-        insights = analyzer.analyze_creative_across_platforms("promo", "other_tenant")
-        assert insights[0].insight_type == "insufficient_data"
-        assert insights[0].platforms == []
 
     def test_platform_recommendations(self):
         # Regression: used to crash on _creative_data / metrics_history
@@ -517,13 +498,12 @@ class TestCrossPlatformAnalyzer:
         # meta: ctr 0.5% (<1) and roas 1 (<2) -> both meta recommendations
         svc.record_metrics(
             "weak_meta",
-            "t1",
             "meta",
             "camp1",
             _metrics(impressions=10000, clicks=50, spend=100.0, revenue=100.0),
         )
         analyzer = CrossPlatformCreativeAnalyzer(svc)
-        recs = analyzer.get_platform_creative_recommendations("t1")
+        recs = analyzer.get_platform_creative_recommendations()
         assert len(recs["meta"]) == 2
         assert any("headlines" in r for r in recs["meta"])
 
@@ -531,5 +511,5 @@ class TestCrossPlatformAnalyzer:
         svc = CreativePerformanceService()
         self._seed_platform(svc, "strong_meta", "meta", roas=5.0, cvr_clicks=200)
         analyzer = CrossPlatformCreativeAnalyzer(svc)
-        recs = analyzer.get_platform_creative_recommendations("t1")
+        recs = analyzer.get_platform_creative_recommendations()
         assert recs["meta"] == ["Performance is strong - continue current strategy"]

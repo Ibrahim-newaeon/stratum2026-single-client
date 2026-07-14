@@ -35,9 +35,8 @@ class ProductCatalogService:
     Service for managing product catalog.
     """
 
-    def __init__(self, db: AsyncSession, tenant_id: int):
+    def __init__(self, db: AsyncSession):
         self.db = db
-        self.tenant_id = tenant_id
 
     async def create_product(
         self,
@@ -55,7 +54,6 @@ class ProductCatalogService:
     ) -> ProductCatalog:
         """Create a new product."""
         product = ProductCatalog(
-            tenant_id=self.tenant_id,
             sku=sku,
             name=name,
             description=description,
@@ -80,24 +78,14 @@ class ProductCatalogService:
     async def get_product(self, product_id: UUID) -> Optional[ProductCatalog]:
         """Get a product by ID."""
         result = await self.db.execute(
-            select(ProductCatalog).where(
-                and_(
-                    ProductCatalog.id == product_id,
-                    ProductCatalog.tenant_id == self.tenant_id,
-                )
-            )
+            select(ProductCatalog).where(ProductCatalog.id == product_id)
         )
         return result.scalar_one_or_none()
 
     async def get_product_by_sku(self, sku: str) -> Optional[ProductCatalog]:
         """Get a product by SKU."""
         result = await self.db.execute(
-            select(ProductCatalog).where(
-                and_(
-                    ProductCatalog.sku == sku,
-                    ProductCatalog.tenant_id == self.tenant_id,
-                )
-            )
+            select(ProductCatalog).where(ProductCatalog.sku == sku)
         )
         return result.scalar_one_or_none()
 
@@ -111,7 +99,7 @@ class ProductCatalogService:
         offset: int = 0,
     ) -> Dict[str, Any]:
         """List products with filters."""
-        conditions = [ProductCatalog.tenant_id == self.tenant_id]
+        conditions = []
 
         if status:
             conditions.append(ProductCatalog.status == status)
@@ -211,7 +199,6 @@ class ProductCatalogService:
             )
             .where(
                 and_(
-                    ProductCatalog.tenant_id == self.tenant_id,
                     ProductCatalog.status != ProductStatus.DISCONTINUED,
                     ProductCatalog.category.isnot(None),
                 )
@@ -232,7 +219,6 @@ class ProductCatalogService:
             )
             .where(
                 and_(
-                    ProductCatalog.tenant_id == self.tenant_id,
                     ProductCatalog.status != ProductStatus.DISCONTINUED,
                     ProductCatalog.brand.isnot(None),
                 )
@@ -409,7 +395,6 @@ class ProductCatalogService:
             select(ProductCatalog)
             .where(
                 and_(
-                    ProductCatalog.tenant_id == self.tenant_id,
                     ProductCatalog.status == ProductStatus.ACTIVE,
                     ~ProductCatalog.id.in_(products_with_margins),
                 )
@@ -425,12 +410,7 @@ class ProductCatalogService:
         total_result = await self.db.execute(
             select(func.count())
             .select_from(ProductCatalog)
-            .where(
-                and_(
-                    ProductCatalog.tenant_id == self.tenant_id,
-                    ProductCatalog.status == ProductStatus.ACTIVE,
-                )
-            )
+            .where(ProductCatalog.status == ProductStatus.ACTIVE)
         )
         total = total_result.scalar()
 
@@ -439,7 +419,6 @@ class ProductCatalogService:
         with_cogs_result = await self.db.execute(
             select(func.count(func.distinct(ProductMargin.product_id))).where(
                 and_(
-                    ProductMargin.tenant_id == self.tenant_id,
                     ProductMargin.effective_date <= today,
                     or_(
                         ProductMargin.end_date.is_(None),

@@ -34,7 +34,6 @@ _NOW = datetime(2026, 6, 1, 12, 0, tzinfo=timezone.utc)
 def _entry(**overrides) -> DeliveryLogEntry:
     base = dict(
         id="d1",
-        tenant_id=7,
         platform="meta",
         event_id="e1",
         event_name="Purchase",
@@ -69,7 +68,6 @@ def test_status_enum_values():
 def test_entry_to_dict_core_fields_and_pii_excluded():
     d = _entry().to_dict()
     assert d["id"] == "d1"
-    assert d["tenant_id"] == 7
     assert d["status"] == "success"  # enum -> value
     assert d["event_time"].endswith("+00:00")  # isoformat
     assert d["latency_ms"] == 12.5
@@ -100,7 +98,6 @@ async def test_log_delivery_buffers_without_flush():
 
     for _ in range(2):
         await logger.log_delivery(
-            tenant_id=1,
             platform="meta",
             event_name="Purchase",
             status=DeliveryStatus.SUCCESS,
@@ -118,7 +115,6 @@ async def test_log_delivery_flushes_when_buffer_full():
 
     for _ in range(2):
         await logger.log_delivery(
-            tenant_id=1,
             platform="meta",
             event_name="Purchase",
             status=DeliveryStatus.SUCCESS,
@@ -136,7 +132,6 @@ async def test_log_delivery_flushes_after_time_window():
     logger._last_flush = datetime.now(timezone.utc) - timedelta(seconds=60)
 
     await logger.log_delivery(
-        tenant_id=1,
         platform="meta",
         event_name="Purchase",
         status=DeliveryStatus.FAILED,

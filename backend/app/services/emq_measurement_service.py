@@ -358,7 +358,6 @@ class RealEMQService:
         self,
         platform: str,
         pixel_id: str,
-        tenant_id: str,
     ) -> "EMQMeasurementResult":
         """
         Measure EMQ for a specific pixel/dataset.
@@ -366,7 +365,6 @@ class RealEMQService:
         Args:
             platform: Platform name (meta, google, tiktok, etc.)
             pixel_id: Pixel or dataset ID
-            tenant_id: Tenant ID
 
         Returns:
             EMQMeasurementResult with measurement data
@@ -409,7 +407,6 @@ class RealEMQService:
         self,
         platform: str,
         pixel_id: str,
-        tenant_id: str,
         days: int = 30,
     ) -> List[Dict[str, Any]]:
         """
@@ -418,7 +415,6 @@ class RealEMQService:
         Args:
             platform: Platform name
             pixel_id: Pixel or dataset ID
-            tenant_id: Tenant ID
             days: Number of days of history to return
 
         Returns:
@@ -442,7 +438,7 @@ class RealEMQService:
                     "parameter_quality": round(
                         base_score + 5 + (hash(f"{pixel_id}{i}") % 10 - 5), 1
                     ),
-                    "event_coverage": round(85 + (hash(f"{tenant_id}{i}") % 15), 1),
+                    "event_coverage": round(85 + (hash(f"cov{pixel_id}{i}") % 15), 1),
                     "match_rate": round(
                         70 + (hash(f"{platform}{pixel_id}{i}") % 25), 1
                     ),

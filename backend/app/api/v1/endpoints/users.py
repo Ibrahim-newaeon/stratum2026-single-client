@@ -22,7 +22,7 @@ from app.core.security import (
     hash_pii_for_lookup,
 )
 from app.db.session import get_async_session
-from app.models import Tenant, User, UserRole
+from app.models import User, UserRole
 from app.schemas import APIResponse, UserProfileResponse, UserResponse, UserUpdate
 from app.services.email_service import get_email_service
 
@@ -88,7 +88,6 @@ async def get_current_user(
         success=True,
         data=UserProfileResponse(
             id=user.id,
-            tenant_id=user.tenant_id,
             email=_safe_decrypt(user.email) or "",
             full_name=_safe_decrypt(user.full_name),
             phone=_safe_decrypt(user.phone),
@@ -159,7 +158,6 @@ async def update_current_user(
         success=True,
         data=UserProfileResponse(
             id=user.id,
-            tenant_id=user.tenant_id,
             email=_safe_decrypt(user.email) or "",
             full_name=_safe_decrypt(user.full_name),
             phone=_safe_decrypt(user.phone),
@@ -190,10 +188,9 @@ async def list_users(
     limit: int = 50,
 ):
     """
-    List all users in the tenant.
+    List all users.
     Requires admin or manager role.
     """
-    tenant_id = getattr(request.state, "tenant_id", None)
     requester_role = getattr(request.state, "role", None)
 
     # Enforce role-based access control
@@ -205,7 +202,7 @@ async def list_users(
 
     result = await db.execute(
         select(User)
-        .where(User.tenant_id == tenant_id, User.is_deleted == False)
+        .where(User.is_deleted == False)
         .offset(skip)
         .limit(limit)
     )
@@ -216,7 +213,6 @@ async def list_users(
         data=[
             UserResponse(
                 id=u.id,
-                tenant_id=u.tenant_id,
                 email=_safe_decrypt(u.email) or "",
                 full_name=_safe_decrypt(u.full_name) if u.full_name else None,
                 role=u.role,
@@ -243,11 +239,10 @@ async def invite_user(
     db: AsyncSession = Depends(get_async_session),
 ):
     """
-    Invite a new user to the tenant.
+    Invite a new user.
     Requires admin role.
     Sends an invitation email with a link to set their password.
     """
-    tenant_id = getattr(request.state, "tenant_id", None)
     requester_role = getattr(request.state, "role", None)
     requester_id = getattr(request.state, "user_id", None)
 
@@ -262,7 +257,6 @@ async def invite_user(
     email_hash = hash_pii_for_lookup(invite_data.email.lower())
     result = await db.execute(
         select(User).where(
-            User.tenant_id == tenant_id,
             User.email_hash == email_hash,
         )
     )
@@ -297,7 +291,6 @@ async def invite_user(
             user.full_name = encrypt_pii(invite_data.full_name)
     else:
         user = User(
-            tenant_id=tenant_id,
             email=encrypt_pii(invite_data.email.lower()),
             email_hash=email_hash,
             password_hash=get_password_hash(temp_password),
@@ -345,9 +338,9 @@ async def invite_user(
 
     await db.commit()
 
-    # Get inviter name and tenant name for the email
+    # Get inviter name and org name for the email
     inviter_name = "An administrator"
-    tenant_name = "your organization"
+    org_name = "your organization"
 
     try:
         # Get inviter's name
@@ -359,16 +352,14 @@ async def invite_user(
             if inviter and inviter.full_name:
                 inviter_name = _safe_decrypt(inviter.full_name) or "An administrator"
 
-        # Get tenant name
-        if tenant_id:
-            tenant_result = await db.execute(
-                select(Tenant).where(Tenant.id == tenant_id)
-            )
-            tenant = tenant_result.scalar_one_or_none()
-            if tenant:
-                tenant_name = tenant.name
-    except (ValueError, TypeError, KeyError, OSError) as e:
-        logger.warning("fetch_inviter_tenant_details_failed", error=str(e))
+        # Get org name (single-org deployment)
+        from app.base_models import get_organization
+
+        org = await get_organization(db)
+        if org and org.name:
+            org_name = org.name
+    except (ValueError, TypeError, KeyError, OSError, RuntimeError) as e:
+        logger.warning("fetch_inviter_org_details_failed", error=str(e))
 
     # Send invite email in background
     def send_invite_email():
@@ -377,7 +368,7 @@ async def invite_user(
             email_service.send_user_invite_email(
                 to_email=invite_data.email,
                 inviter_name=inviter_name,
-                tenant_name=tenant_name,
+                tenant_name=org_name,
                 invite_token=invite_token,
                 role=invite_data.role,
             )
@@ -389,13 +380,12 @@ async def invite_user(
 
     background_tasks.add_task(send_invite_email)
 
-    logger.info(f"Invited user {user.id} to tenant {tenant_id}")
+    logger.info(f"Invited user {user.id}")
 
     return APIResponse(
         success=True,
         data=UserResponse(
             id=user.id,
-            tenant_id=user.tenant_id,
             email=invite_data.email,
             full_name=invite_data.full_name,
             role=user.role,
@@ -424,7 +414,6 @@ async def update_user(
     Update a user's details.
     Requires admin role.
     """
-    tenant_id = getattr(request.state, "tenant_id", None)
     requester_role = getattr(request.state, "role", None)
 
     # Only admins can update other users
@@ -437,7 +426,6 @@ async def update_user(
     result = await db.execute(
         select(User).where(
             User.id == user_id,
-            User.tenant_id == tenant_id,
             User.is_deleted == False,
         )
     )
@@ -474,13 +462,12 @@ async def update_user(
 
     await db.commit()
 
-    logger.info(f"Updated user {user_id} in tenant {tenant_id}")
+    logger.info(f"Updated user {user_id}")
 
     return APIResponse(
         success=True,
         data=UserResponse(
             id=user.id,
-            tenant_id=user.tenant_id,
             email=_safe_decrypt(user.email) or "",
             full_name=_safe_decrypt(user.full_name) if user.full_name else None,
             role=user.role,
@@ -505,10 +492,9 @@ async def delete_user(
     db: AsyncSession = Depends(get_async_session),
 ):
     """
-    Remove a user from the tenant (soft delete).
+    Remove a user (soft delete).
     Requires admin role.
     """
-    tenant_id = getattr(request.state, "tenant_id", None)
     requester_id = getattr(request.state, "user_id", None)
     requester_role = getattr(request.state, "role", None)
 
@@ -529,7 +515,6 @@ async def delete_user(
     result = await db.execute(
         select(User).where(
             User.id == user_id,
-            User.tenant_id == tenant_id,
             User.is_deleted == False,
         )
     )
@@ -548,7 +533,7 @@ async def delete_user(
 
     await db.commit()
 
-    logger.info(f"Deleted user {user_id} from tenant {tenant_id}")
+    logger.info(f"Deleted user {user_id}")
 
     return APIResponse(
         success=True,

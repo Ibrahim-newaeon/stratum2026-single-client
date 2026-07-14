@@ -15,7 +15,11 @@ from sqlalchemy import select
 
 from app.core.config import settings
 from app.db.session import SyncSessionLocal
-from app.models import CompetitorBenchmark, Tenant
+# NOTE(STRAT-SC-001/C3): dead `Tenant` import removed so `app.main` can
+# import (endpoints import worker task functions at module load). Task
+# bodies below still reference the old per-org fan-out and are rewritten
+# in Task C4 — they were already runtime-broken since the model deletion.
+from app.models import CompetitorBenchmark
 from app.services.competitor_scraper import scan_competitor
 from app.workers.tasks.helpers import publish_event
 

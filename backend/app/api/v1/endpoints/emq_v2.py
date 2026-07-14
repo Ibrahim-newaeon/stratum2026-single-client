@@ -16,10 +16,10 @@ Provides endpoints for:
 - Portfolio overview (owner)
 """
 
-from datetime import date, datetime, timedelta
+from datetime import date, datetime
 from typing import List, Optional
 
-from fastapi import APIRouter, Depends, HTTPException, Query, Request, status
+from fastapi import APIRouter, Depends, HTTPException, Query, status
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.auth.deps import get_current_user, require_owner
@@ -56,22 +56,6 @@ router = APIRouter(
 # =============================================================================
 # Helper Functions
 # =============================================================================
-def validate_tenant_access(request: Request, tenant_id: int) -> None:
-    """Validate that the request has access to the specified tenant."""
-    # Owners operate across all tenants (previously flagged via the
-    # request.state.is_superadmin attribute set by the now-deleted tenant
-    # middleware — STRAT-SC-001 Task C2 — so this always falls through to
-    # the tenant_id comparison below until C3's endpoint sweep removes it).
-    # They may still carry their own tenant_id, so check the role explicitly
-    # rather than relying on an absent tenant context.
-    if getattr(request.state, "is_superadmin", False):
-        return
-    request_tenant_id = getattr(request.state, "tenant_id", None)
-    # Allow access if no tenant context or matching tenant
-    if request_tenant_id is not None and request_tenant_id != tenant_id:
-        raise HTTPException(status_code=403, detail="Access denied to this tenant")
-
-
 def parse_date(date_str: Optional[str]) -> Optional[date]:
     """Parse date string to date object."""
     if not date_str:
@@ -85,17 +69,22 @@ def parse_date(date_str: Optional[str]) -> Optional[date]:
 
 
 # =============================================================================
-# Tenant-Scoped Endpoints
+# Org-Scoped Endpoints
 # =============================================================================
+# NOTE(STRAT-SC-001/C3 SECURITY FIX #3): these routes used to be guarded by
+# a per-request validate-access helper whose only real branch compared a
+# request-state identifier (always None post-C2 middleware swap) against
+# the path's identifier — a permanent no-op that let any caller through
+# regardless of that value (FAIL-OPEN). The helper has been deleted
+# entirely; every route below is still protected by the module-level
+# `Depends(get_current_user)` auth dependency declared on the router above.
 @router.get(
-    "/tenants/{tenant_id}/emq/score",
+    "/emq/score",
     response_model=APIResponse[EmqScoreResponse],
     summary="Get EMQ Score",
-    description="Get the current EMQ score and drivers for a tenant.",
+    description="Get the current EMQ score and drivers.",
 )
 async def get_emq_score(
-    request: Request,
-    tenant_id: int,
     date: Optional[str] = Query(
         default=None,
         description="Target date in YYYY-MM-DD format",
@@ -103,7 +92,7 @@ async def get_emq_score(
     db: AsyncSession = Depends(get_async_session),
 ):
     """
-    Get current EMQ score for a tenant.
+    Get current EMQ score.
 
     Returns:
     - score: Overall EMQ score (0-100)
@@ -112,11 +101,9 @@ async def get_emq_score(
     - drivers: Individual EMQ driver components
     - lastUpdated: Timestamp of last score calculation
     """
-    validate_tenant_access(request, tenant_id)
-
     target_date = parse_date(date)
     service = EmqService(db)
-    data = await service.get_emq_score(tenant_id, target_date)
+    data = await service.get_emq_score(target_date)
 
     # Convert to response schema
     drivers = [
@@ -143,19 +130,17 @@ async def get_emq_score(
 
 
 @router.get(
-    "/tenants/{tenant_id}/emq/confidence",
+    "/emq/confidence",
     response_model=APIResponse[ConfidenceDataResponse],
     summary="Get Confidence Band Details",
     description="Get detailed confidence band information and contributing factors.",
 )
 async def get_confidence(
-    request: Request,
-    tenant_id: int,
     date: Optional[str] = Query(default=None, description="Target date"),
     db: AsyncSession = Depends(get_async_session),
 ):
     """
-    Get confidence band details for a tenant.
+    Get confidence band details.
 
     Returns:
     - band: Current confidence band classification
@@ -163,11 +148,9 @@ async def get_confidence(
     - thresholds: Band threshold values
     - factors: Contributing factors with their status
     """
-    validate_tenant_access(request, tenant_id)
-
     target_date = parse_date(date)
     service = EmqService(db)
-    data = await service.get_confidence_data(tenant_id, target_date)
+    data = await service.get_confidence_data(target_date)
 
     response_data = ConfidenceDataResponse(
         band=data["band"],
@@ -253,27 +236,23 @@ def _build_playbook_item(
 
 
 @router.get(
-    "/tenants/{tenant_id}/emq/playbook",
+    "/emq/playbook",
     response_model=APIResponse[List[PlaybookItemResponse]],
     summary="Get Fix Playbook",
     description="Get prioritized list of recommended fixes to improve EMQ score.",
 )
 async def get_playbook(
-    request: Request,
-    tenant_id: int,
     db: AsyncSession = Depends(get_async_session),
 ):
     """
-    Get fix playbook items for a tenant.
+    Get fix playbook items.
 
     Returns a prioritized list of recommended actions to improve EMQ score,
     including estimated impact and implementation time.
     """
-    validate_tenant_access(request, tenant_id)
-
     # Get EMQ data to generate relevant playbook
     service = EmqService(db)
-    emq_data = await service.get_emq_score(tenant_id)
+    emq_data = await service.get_emq_score()
 
     # Select which fixes apply based on driver scores (stable item_keys).
     drivers = {d["name"]: d for d in emq_data["drivers"]}
@@ -293,9 +272,7 @@ async def get_playbook(
 
     from app.models.emq_playbook import EmqPlaybookItemState
 
-    state_rows = await db.execute(
-        select(EmqPlaybookItemState).where(EmqPlaybookItemState.tenant_id == tenant_id)
-    )
+    state_rows = await db.execute(select(EmqPlaybookItemState))
     state_by_key = {s.item_key: s for s in state_rows.scalars().all()}
 
     playbook_items = [
@@ -315,14 +292,12 @@ async def get_playbook(
 
 
 @router.patch(
-    "/tenants/{tenant_id}/emq/playbook/{item_id}",
+    "/emq/playbook/{item_id}",
     response_model=APIResponse[PlaybookItemResponse],
     summary="Update Playbook Item",
     description="Update the status or owner of a playbook item.",
 )
 async def update_playbook_item(
-    request: Request,
-    tenant_id: int,
     item_id: str,
     updates: PlaybookItemUpdate,
     db: AsyncSession = Depends(get_async_session),
@@ -332,8 +307,6 @@ async def update_playbook_item(
 
     Used to track progress on EMQ improvement tasks.
     """
-    validate_tenant_access(request, tenant_id)
-
     if item_id not in PLAYBOOK_CATALOG:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
@@ -346,15 +319,12 @@ async def update_playbook_item(
 
     result = await db.execute(
         select(EmqPlaybookItemState).where(
-            EmqPlaybookItemState.tenant_id == tenant_id,
             EmqPlaybookItemState.item_key == item_id,
         )
     )
     state = result.scalar_one_or_none()
     if state is None:
-        state = EmqPlaybookItemState(
-            tenant_id=tenant_id, item_key=item_id, status="pending"
-        )
+        state = EmqPlaybookItemState(item_key=item_id, status="pending")
         db.add(state)
 
     if updates.status is not None:
@@ -373,20 +343,18 @@ async def update_playbook_item(
 
 
 @router.get(
-    "/tenants/{tenant_id}/emq/incidents",
+    "/emq/incidents",
     response_model=APIResponse[List[EmqIncidentResponse]],
     summary="Get Incident Timeline",
     description="Get EMQ-related incidents and events within a date range.",
 )
 async def get_incidents(
-    request: Request,
-    tenant_id: int,
     start_date: str = Query(..., description="Start date (YYYY-MM-DD)"),
     end_date: str = Query(..., description="End date (YYYY-MM-DD)"),
     db: AsyncSession = Depends(get_async_session),
 ):
     """
-    Get incident timeline for a tenant.
+    Get incident timeline.
 
     Returns EMQ-related incidents including:
     - Signal degradations
@@ -394,8 +362,6 @@ async def get_incidents(
     - Platform outages
     - Configuration changes
     """
-    validate_tenant_access(request, tenant_id)
-
     start = parse_date(start_date)
     end = parse_date(end_date)
 
@@ -405,7 +371,7 @@ async def get_incidents(
         )
 
     service = EmqService(db)
-    incidents_data = await service.get_incidents(tenant_id, start, end)
+    incidents_data = await service.get_incidents(start, end)
 
     incidents = [EmqIncidentResponse(**i) for i in incidents_data]
 
@@ -413,26 +379,22 @@ async def get_incidents(
 
 
 @router.get(
-    "/tenants/{tenant_id}/emq/impact",
+    "/emq/impact",
     response_model=APIResponse[EmqImpactResponse],
     summary="Get ROAS Impact",
     description="Get estimated ROAS impact due to EMQ issues.",
 )
 async def get_impact(
-    request: Request,
-    tenant_id: int,
     start_date: str = Query(..., description="Start date (YYYY-MM-DD)"),
     end_date: str = Query(..., description="End date (YYYY-MM-DD)"),
     db: AsyncSession = Depends(get_async_session),
 ):
     """
-    Get ROAS impact estimate for a tenant.
+    Get ROAS impact estimate.
 
     Calculates the estimated revenue impact of EMQ issues by comparing
     actual ROAS to expected ROAS based on historical data quality.
     """
-    validate_tenant_access(request, tenant_id)
-
     start = parse_date(start_date)
     end = parse_date(end_date)
 
@@ -442,7 +404,7 @@ async def get_impact(
         )
 
     service = EmqService(db)
-    impact_data = await service.get_impact(tenant_id, start, end)
+    impact_data = await service.get_impact(start, end)
 
     response_data = EmqImpactResponse(
         totalImpact=impact_data["totalImpact"],
@@ -454,29 +416,25 @@ async def get_impact(
 
 
 @router.get(
-    "/tenants/{tenant_id}/emq/volatility",
+    "/emq/volatility",
     response_model=APIResponse[EmqVolatilityResponse],
     summary="Get Signal Volatility",
     description="Get signal volatility index and trend data.",
 )
 async def get_volatility(
-    request: Request,
-    tenant_id: int,
     weeks: int = Query(default=8, ge=1, le=52, description="Number of weeks of data"),
     db: AsyncSession = Depends(get_async_session),
 ):
     """
-    Get signal volatility data for a tenant.
+    Get signal volatility data.
 
     Returns:
     - svi: Signal Volatility Index (lower is better)
     - trend: Volatility trend direction
     - weeklyData: Historical volatility data points
     """
-    validate_tenant_access(request, tenant_id)
-
     service = EmqService(db)
-    volatility_data = await service.get_volatility(tenant_id, weeks)
+    volatility_data = await service.get_volatility(weeks)
 
     response_data = EmqVolatilityResponse(
         svi=volatility_data["svi"],
@@ -488,18 +446,16 @@ async def get_volatility(
 
 
 @router.get(
-    "/tenants/{tenant_id}/emq/autopilot-state",
+    "/emq/autopilot-state",
     response_model=APIResponse[AutopilotStateResponse],
     summary="Get Autopilot State",
     description="Get current autopilot mode and restrictions based on EMQ.",
 )
 async def get_autopilot_state(
-    request: Request,
-    tenant_id: int,
     db: AsyncSession = Depends(get_async_session),
 ):
     """
-    Get autopilot state for a tenant.
+    Get autopilot state.
 
     Autopilot mode is determined by EMQ score:
     - normal: Full automation allowed (EMQ >= 80)
@@ -507,10 +463,8 @@ async def get_autopilot_state(
     - cuts_only: Only budget cuts allowed (EMQ 40-59)
     - frozen: No automation allowed (EMQ < 40)
     """
-    validate_tenant_access(request, tenant_id)
-
     service = EmqService(db)
-    state_data = await service.get_autopilot_state(tenant_id)
+    state_data = await service.get_autopilot_state()
 
     response_data = AutopilotStateResponse(
         mode=state_data["mode"],
@@ -524,27 +478,23 @@ async def get_autopilot_state(
 
 
 @router.put(
-    "/tenants/{tenant_id}/emq/autopilot-mode",
+    "/emq/autopilot-mode",
     response_model=APIResponse[AutopilotStateResponse],
     summary="Update Autopilot Mode",
     description="Manually override autopilot mode (requires elevated permissions).",
 )
 async def update_autopilot_mode(
-    request: Request,
-    tenant_id: int,
     update: AutopilotModeUpdate,
     db: AsyncSession = Depends(get_async_session),
 ):
     """
-    Update autopilot mode for a tenant.
+    Update autopilot mode.
 
     Allows manual override of the autopilot mode. Useful when:
     - Temporarily disabling automation for testing
     - Emergency freezes during platform issues
     - Gradual rollback after EMQ improvements
     """
-    validate_tenant_access(request, tenant_id)
-
     # Map modes to allowed/restricted actions
     mode_config = {
         "normal": {
@@ -599,14 +549,13 @@ async def update_autopilot_mode(
     if config is None:
         raise HTTPException(status_code=400, detail=f"Invalid mode: {update.mode}")
 
-    # Query actual tenant spend for budget-at-risk calculation
+    # Query actual org spend for budget-at-risk calculation
     from sqlalchemy import func, select
 
     from app.models import Campaign
 
     spend_result = await db.execute(
         select(func.coalesce(func.sum(Campaign.total_spend_cents), 0)).where(
-            Campaign.tenant_id == tenant_id,
             Campaign.status == "active",
         )
     )
@@ -634,14 +583,13 @@ async def update_autopilot_mode(
     description="Get platform-wide EMQ benchmarks (owner only).",
 )
 async def get_benchmarks(
-    request: Request,
     date: Optional[str] = Query(default=None, description="Target date"),
     platform: Optional[str] = Query(default=None, description="Filter by platform"),
     db: AsyncSession = Depends(get_async_session),
     _owner=Depends(require_owner()),
 ):
     """
-    Get EMQ benchmarks across all tenants.
+    Get EMQ benchmarks across platforms.
 
     Returns percentile distributions (p25, p50, p75) for EMQ scores,
     optionally filtered by platform. Owner only.
@@ -659,22 +607,21 @@ async def get_benchmarks(
     "/emq/portfolio",
     response_model=APIResponse[EmqPortfolioResponse],
     summary="Get Portfolio Overview",
-    description="Get portfolio-wide EMQ overview (owner only).",
+    description="Get organization-wide EMQ overview (owner only).",
 )
 async def get_portfolio(
-    request: Request,
     date: Optional[str] = Query(default=None, description="Target date"),
     db: AsyncSession = Depends(get_async_session),
     _owner=Depends(require_owner()),
 ):
     """
-    Get portfolio overview for owner.
+    Get organization-wide EMQ overview for owner.
 
-    Returns aggregate EMQ metrics across all tenants including:
+    Returns aggregate EMQ metrics including:
     - Distribution by confidence band
     - Total at-risk budget
     - Average EMQ score
-    - Top issues affecting multiple tenants
+    - Top issues
     """
     target_date = parse_date(date)
     service = EmqAdminService(db)

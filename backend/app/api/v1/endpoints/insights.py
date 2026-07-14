@@ -12,7 +12,7 @@ from datetime import date, datetime, timedelta, timezone
 from typing import Any, Dict, List, Optional
 
 from fastapi import APIRouter, Depends, HTTPException, Query, Request
-from sqlalchemy import and_, func, select
+from sqlalchemy import func, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.analytics.logic.recommend import (
@@ -21,11 +21,11 @@ from app.analytics.logic.recommend import (
 )
 from app.analytics.logic.types import BaselineMetrics, EntityMetrics
 from app.db.session import get_async_session
-from app.features.service import can_access_feature, get_tenant_features
+from app.features.service import can_access_feature, get_org_features
 from app.quality.trust_layer_service import SignalHealthService
 from app.schemas.response import APIResponse
 
-router = APIRouter(prefix="/tenant/{tenant_id}", tags=["insights"])
+router = APIRouter(tags=["insights"])
 
 
 # =============================================================================
@@ -34,7 +34,7 @@ router = APIRouter(prefix="/tenant/{tenant_id}", tags=["insights"])
 
 
 async def get_entity_metrics(
-    db: AsyncSession, tenant_id: int, target_date: date
+    db: AsyncSession, target_date: date
 ) -> List[EntityMetrics]:
     """
     Fetch entity metrics for recommendations.
@@ -44,16 +44,14 @@ async def get_entity_metrics(
 
     # The recommendations engine needs per-campaign rows, but this must not scan
     # an unbounded number of them [API-002]. Cap at the 1000 highest-spend
-    # campaigns — the ones that actually drive recommendations — so a tenant with
-    # a very large campaign count can't load its whole table into memory. No
-    # effect for the vast majority of tenants (< 1000 campaigns).
+    # campaigns — the ones that actually drive recommendations — so an
+    # organization with a very large campaign count can't load its whole table
+    # into memory. No effect for the vast majority of deployments (< 1000
+    # campaigns).
     result = await db.execute(
         select(Campaign)
         .where(
-            and_(
-                Campaign.tenant_id == tenant_id,
-                Campaign.is_deleted == False,
-            )
+            Campaign.is_deleted == False,
         )
         .order_by(Campaign.total_spend_cents.desc().nullslast())
         .limit(1000)
@@ -89,7 +87,7 @@ async def get_entity_metrics(
 
 
 async def get_baseline_metrics(
-    db: AsyncSession, tenant_id: int
+    db: AsyncSession,
 ) -> Dict[str, BaselineMetrics]:
     """
     Fetch baseline metrics for entities.
@@ -97,14 +95,11 @@ async def get_baseline_metrics(
     """
     from app.models import Campaign
 
-    tenant_campaigns = and_(
-        Campaign.tenant_id == tenant_id,
-        Campaign.is_deleted == False,
-    )
+    active_campaigns = Campaign.is_deleted == False
 
-    # Portfolio-level baseline is a single set of aggregates over all the
-    # tenant's campaigns — compute it in SQL rather than loading every row to
-    # sum in Python [API-002].
+    # Portfolio-level baseline is a single set of aggregates over all
+    # campaigns — compute it in SQL rather than loading every row to sum in
+    # Python [API-002].
     agg = (
         await db.execute(
             select(
@@ -114,7 +109,7 @@ async def get_baseline_metrics(
                 func.coalesce(func.sum(Campaign.conversions), 0),
                 func.coalesce(func.sum(Campaign.impressions), 0),
                 func.coalesce(func.sum(Campaign.clicks), 0),
-            ).where(tenant_campaigns)
+            ).where(active_campaigns)
         )
     ).one()
 
@@ -140,7 +135,7 @@ async def get_baseline_metrics(
     # Every campaign shares the same portfolio baseline; fetch just the ids
     # (not full rows) to key the map.
     ids = (
-        (await db.execute(select(Campaign.id).where(tenant_campaigns))).scalars().all()
+        (await db.execute(select(Campaign.id).where(active_campaigns))).scalars().all()
     )
 
     return {
@@ -155,11 +150,11 @@ async def get_baseline_metrics(
 
 
 async def check_signal_health_for_autopilot(
-    db: AsyncSession, tenant_id: int, target_date: date
+    db: AsyncSession, target_date: date
 ) -> Dict[str, Any]:
     """Check if autopilot should be blocked due to signal health."""
     service = SignalHealthService(db)
-    health_data = await service.get_signal_health(tenant_id, target_date)
+    health_data = await service.get_signal_health(target_date)
 
     status = health_data.get("status", "unknown")
     blocked = status in ["degraded", "critical"]
@@ -177,27 +172,23 @@ async def check_signal_health_for_autopilot(
 
 async def detect_campaign_anomalies(
     db: AsyncSession,
-    tenant_id: int,
     target_date: date,
 ) -> List[Dict[str, Any]]:
     """
-    Detect anomalies for a tenant's campaigns. Pure function — no auth /
-    feature-gate / response wrapping. Reused by the tenant `/anomalies`
+    Detect anomalies across campaigns. Pure function — no auth /
+    feature-gate / response wrapping. Reused by the `/anomalies`
     endpoint and the `/console/anomalies-rollup` aggregator so the
     detection logic stays in one place.
     """
     from app.models import Campaign
 
     # Bounded scan [API-002]: check the 1000 highest-spend campaigns rather than
-    # the tenant's entire table. Anomalies on top-spend campaigns are the ones
-    # that matter; no effect for tenants with < 1000 campaigns.
+    # the entire table. Anomalies on top-spend campaigns are the ones that
+    # matter; no effect for deployments with < 1000 campaigns.
     result = await db.execute(
         select(Campaign)
         .where(
-            and_(
-                Campaign.tenant_id == tenant_id,
-                Campaign.is_deleted == False,
-            )
+            Campaign.is_deleted == False,
         )
         .order_by(Campaign.total_spend_cents.desc().nullslast())
         .limit(1000)
@@ -218,7 +209,7 @@ async def detect_campaign_anomalies(
             anomaly_idx += 1
             anomalies.append(
                 {
-                    "id": f"anomaly_{tenant_id}_{anomaly_idx}",
+                    "id": f"anomaly_{target_date.isoformat()}_{anomaly_idx}",
                     "detected_at": detected_at,
                     "metric": "roas",
                     "entity_type": "campaign",
@@ -246,7 +237,7 @@ async def detect_campaign_anomalies(
             anomaly_idx += 1
             anomalies.append(
                 {
-                    "id": f"anomaly_{tenant_id}_{anomaly_idx}",
+                    "id": f"anomaly_{target_date.isoformat()}_{anomaly_idx}",
                     "detected_at": detected_at,
                     "metric": "cpa",
                     "entity_type": "campaign",
@@ -281,12 +272,11 @@ async def detect_campaign_anomalies(
 @router.get("/insights", response_model=APIResponse[Dict[str, Any]])
 async def get_insights(
     request: Request,
-    tenant_id: int,
     target_date: Optional[date] = Query(default=None, alias="date"),
     db: AsyncSession = Depends(get_async_session),
 ):
     """
-    Get daily insights for a tenant.
+    Get daily insights.
 
     Returns aggregated view of:
     - KPIs and trends
@@ -296,30 +286,25 @@ async def get_insights(
 
     Requires feature flag: ai_recommendations
     """
-    if getattr(request.state, "tenant_id", None) != tenant_id:
-        raise HTTPException(status_code=403, detail="Access denied to this tenant")
-
-    if not await can_access_feature(db, tenant_id, "ai_recommendations"):
+    if not await can_access_feature(db, "ai_recommendations"):
         raise HTTPException(
             status_code=403,
-            detail="AI recommendations feature is not enabled for this tenant",
+            detail="AI recommendations feature is not enabled",
         )
 
     if target_date is None:
         target_date = date.today()
 
-    # Get tenant features for autopilot level
-    features = await get_tenant_features(db, tenant_id)
+    # Get org features for autopilot level
+    features = await get_org_features(db)
     autopilot_level = features.get("autopilot_level", 0)
 
     # Check signal health for autopilot blocking
-    autopilot_status = await check_signal_health_for_autopilot(
-        db, tenant_id, target_date
-    )
+    autopilot_status = await check_signal_health_for_autopilot(db, target_date)
 
     # Get metrics (placeholder data for now)
-    entities_today = await get_entity_metrics(db, tenant_id, target_date)
-    baselines = await get_baseline_metrics(db, tenant_id)
+    entities_today = await get_entity_metrics(db, target_date)
+    baselines = await get_baseline_metrics(db)
 
     # Generate recommendations if we have data
     if entities_today and baselines:
@@ -390,7 +375,6 @@ async def get_insights(
 @router.get("/recommendations", response_model=APIResponse[Dict[str, Any]])
 async def get_recommendations(
     request: Request,
-    tenant_id: int,
     target_date: Optional[date] = Query(default=None, alias="date"),
     entity_type: Optional[str] = Query(
         default=None, description="Filter by entity type: campaign, adset, creative"
@@ -402,7 +386,7 @@ async def get_recommendations(
     db: AsyncSession = Depends(get_async_session),
 ):
     """
-    Get detailed recommendations for a tenant.
+    Get detailed recommendations.
 
     Each recommendation includes:
     - type: budget_shift, creative_refresh, fix_campaign, etc.
@@ -413,21 +397,18 @@ async def get_recommendations(
     - risk: low/medium/high
     - guardrails: any caps or limits applied
     """
-    if getattr(request.state, "tenant_id", None) != tenant_id:
-        raise HTTPException(status_code=403, detail="Access denied to this tenant")
-
-    if not await can_access_feature(db, tenant_id, "ai_recommendations"):
+    if not await can_access_feature(db, "ai_recommendations"):
         raise HTTPException(
             status_code=403,
-            detail="AI recommendations feature is not enabled for this tenant",
+            detail="AI recommendations feature is not enabled",
         )
 
     if target_date is None:
         target_date = date.today()
 
     # Get metrics
-    entities_today = await get_entity_metrics(db, tenant_id, target_date)
-    baselines = await get_baseline_metrics(db, tenant_id)
+    entities_today = await get_entity_metrics(db, target_date)
+    baselines = await get_baseline_metrics(db)
 
     # Generate recommendations
     if entities_today and baselines:
@@ -486,7 +467,6 @@ async def get_recommendations(
 @router.get("/anomalies", response_model=APIResponse[Dict[str, Any]])
 async def get_anomalies(
     request: Request,
-    tenant_id: int,
     target_date: Optional[date] = Query(default=None, alias="date"),
     days: int = Query(
         default=7, ge=1, le=30, description="Days to look back for anomaly detection"
@@ -497,7 +477,7 @@ async def get_anomalies(
     db: AsyncSession = Depends(get_async_session),
 ):
     """
-    Get anomaly alerts for a tenant.
+    Get anomaly alerts.
 
     Detects unusual patterns in:
     - Spend spikes/drops
@@ -507,19 +487,16 @@ async def get_anomalies(
 
     Requires feature flag: anomaly_alerts
     """
-    if getattr(request.state, "tenant_id", None) != tenant_id:
-        raise HTTPException(status_code=403, detail="Access denied to this tenant")
-
-    if not await can_access_feature(db, tenant_id, "anomaly_alerts"):
+    if not await can_access_feature(db, "anomaly_alerts"):
         raise HTTPException(
             status_code=403,
-            detail="Anomaly alerts feature is not enabled for this tenant",
+            detail="Anomaly alerts feature is not enabled",
         )
 
     if target_date is None:
         target_date = date.today()
 
-    anomalies = await detect_campaign_anomalies(db, tenant_id, target_date)
+    anomalies = await detect_campaign_anomalies(db, target_date)
 
     if severity:
         anomalies = [a for a in anomalies if a.get("severity") == severity]
@@ -551,7 +528,6 @@ async def get_anomalies(
 @router.get("/kpis", response_model=APIResponse[Dict[str, Any]])
 async def get_kpis(
     request: Request,
-    tenant_id: int,
     target_date: Optional[date] = Query(default=None, alias="date"),
     comparison: str = Query(
         default="yesterday",
@@ -560,7 +536,7 @@ async def get_kpis(
     db: AsyncSession = Depends(get_async_session),
 ):
     """
-    Get key performance indicators for a tenant.
+    Get key performance indicators.
 
     Returns aggregated metrics with trends:
     - Total spend
@@ -570,9 +546,6 @@ async def get_kpis(
     - Conversions
     - CTR
     """
-    if getattr(request.state, "tenant_id", None) != tenant_id:
-        raise HTTPException(status_code=403, detail="Access denied to this tenant")
-
     if target_date is None:
         target_date = date.today()
 
@@ -589,10 +562,7 @@ async def get_kpis(
     # Query campaign data for KPIs
     from app.models import Campaign
 
-    tenant_campaigns = and_(
-        Campaign.tenant_id == tenant_id,
-        Campaign.is_deleted == False,
-    )
+    active_campaigns = Campaign.is_deleted == False
 
     # KPIs are pure aggregates — sum in SQL instead of loading every campaign
     # row into memory [API-002].
@@ -604,7 +574,7 @@ async def get_kpis(
                 func.coalesce(func.sum(Campaign.conversions), 0),
                 func.coalesce(func.sum(Campaign.impressions), 0),
                 func.coalesce(func.sum(Campaign.clicks), 0),
-            ).where(tenant_campaigns)
+            ).where(active_campaigns)
         )
     ).one()
 
@@ -637,7 +607,7 @@ async def get_kpis(
                 func.coalesce(func.sum(Campaign.revenue_cents), 0),
                 func.coalesce(func.sum(Campaign.conversions), 0),
             )
-            .where(tenant_campaigns)
+            .where(active_campaigns)
             .group_by(Campaign.platform)
         )
     ).all()

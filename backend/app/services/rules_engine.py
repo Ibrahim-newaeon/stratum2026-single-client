@@ -45,9 +45,8 @@ class RulesEngine:
     - Notify Slack
     """
 
-    def __init__(self, db: AsyncSession, tenant_id: int):
+    def __init__(self, db: AsyncSession):
         self.db = db
-        self.tenant_id = tenant_id
 
     async def evaluate_rule(
         self,
@@ -128,7 +127,6 @@ class RulesEngine:
     async def _get_applicable_campaigns(self, rule: Rule) -> List[Campaign]:
         """Get campaigns that this rule applies to."""
         query = select(Campaign).where(
-            Campaign.tenant_id == self.tenant_id,
             Campaign.is_deleted == False,
         )
 
@@ -379,7 +377,6 @@ class RulesEngine:
         result = await self.db.execute(
             select(WhatsAppContact).where(
                 WhatsAppContact.id.in_(contact_ids),
-                WhatsAppContact.tenant_id == self.tenant_id,
                 WhatsAppContact.opt_in_status == "opted_in",
             )
         )
@@ -410,7 +407,6 @@ class RulesEngine:
             try:
                 # Create message record
                 message = WhatsAppMessage(
-                    tenant_id=self.tenant_id,
                     contact_id=contact.id,
                     message_type="template" if template_name else "text",
                     template_name=template_name,
@@ -525,7 +521,6 @@ class RulesEngine:
     ):
         """Log the rule execution."""
         execution = RuleExecution(
-            tenant_id=self.tenant_id,
             rule_id=rule.id,
             campaign_id=campaign.id,
             executed_at=datetime.now(timezone.utc),
@@ -541,10 +536,8 @@ class RuleBuilder:
     Builder pattern for creating rules with validation.
     """
 
-    def __init__(self, tenant_id: int):
-        self.tenant_id = tenant_id
+    def __init__(self):
         self._rule_data = {
-            "tenant_id": tenant_id,
             "status": RuleStatus.DRAFT,
             "cooldown_hours": 24,
             "condition_duration_hours": 24,

@@ -16,8 +16,8 @@ pytestmark = pytest.mark.unit
 
 @pytest.fixture
 def service() -> ZohoSyncService:
-    # __init__ only stores db/tenant and constructs light helpers; no I/O.
-    return ZohoSyncService(db=None, tenant_id=1)
+    # __init__ only stores db and constructs light helpers; no I/O.
+    return ZohoSyncService(db=None)
 
 
 class TestConvertLeadToContact:

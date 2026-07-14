@@ -113,7 +113,6 @@ class GraphNode(BaseModel):
     """Base class for all graph nodes."""
 
     id: Optional[str] = Field(default=None, description="AGE vertex ID")
-    tenant_id: UUID = Field(..., description="Tenant isolation")
     external_id: str = Field(..., description="External system ID")
     created_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
     updated_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
@@ -128,7 +127,6 @@ class GraphNode(BaseModel):
     def to_cypher_properties(self) -> dict[str, Any]:
         """Convert to properties dict for Cypher CREATE/MERGE."""
         props = {
-            "tenant_id": str(self.tenant_id),
             "external_id": self.external_id,
             "created_at": self.created_at.isoformat(),
             "updated_at": self.updated_at.isoformat(),
@@ -138,7 +136,6 @@ class GraphNode(BaseModel):
         for field_name, field_info in self.model_fields.items():
             if field_name not in (
                 "id",
-                "tenant_id",
                 "external_id",
                 "created_at",
                 "updated_at",
@@ -166,14 +163,12 @@ class GraphEdge(BaseModel):
     start_node_id: str = Field(..., description="Source vertex ID")
     end_node_id: str = Field(..., description="Target vertex ID")
     label: EdgeLabel = Field(..., description="Relationship type")
-    tenant_id: UUID = Field(..., description="Tenant isolation")
     created_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
     properties: dict[str, Any] = Field(default_factory=dict)
 
     def to_cypher_properties(self) -> dict[str, Any]:
         """Convert to properties dict for Cypher CREATE."""
         return {
-            "tenant_id": str(self.tenant_id),
             "created_at": self.created_at.isoformat(),
             **self.properties,
         }

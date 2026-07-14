@@ -17,18 +17,22 @@ from fastapi import APIRouter, Body, Depends, HTTPException, Query, Request
 from pydantic import BaseModel, Field
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from app.auth.deps import get_current_user
 from app.autopilot.service import ActionStatus, ActionType, AutopilotService
 from app.db.session import get_async_session
-from app.features.service import can_access_feature, get_tenant_features
+from app.features.service import can_access_feature, get_org_features
 from app.schemas.response import APIResponse
 
 logger = logging.getLogger(__name__)
 
-# NOTE(STRAT-SC-001/C2): de-tenanted from "/tenant/{tenant_id}/autopilot" — see
-# task-C2-report.md. Route bodies still take/use tenant_id internally
-# (full removal is the C3 endpoint sweep); with no {tenant_id} path segment
-# left in the prefix, any such parameter binds as a query param instead.
-router = APIRouter(prefix="/autopilot", tags=["autopilot"])
+# SECURITY (STRAT-SC-001/C3): the old per-org request guards were the only
+# auth on these routes; deleted in the de-tenanting sweep, so real auth is
+# enforced router-wide here.
+router = APIRouter(
+    prefix="/autopilot",
+    tags=["autopilot"],
+    dependencies=[Depends(get_current_user)],
+)
 
 
 def _dispatch_single_action(action_id: str, user_id: Optional[int]) -> None:
@@ -66,23 +70,21 @@ def _dispatch_rollback(action_id: str, user_id: Optional[int]) -> None:
         logger.exception("Failed to dispatch rollback_action for action %s", action_id)
 
 
-def _dispatch_tenant_queue(tenant_id: int) -> None:
-    """Dispatch execution of all approved actions for a tenant (used by
-    approve-all). Same defensive contract as ``_dispatch_single_action``."""
+def _dispatch_tenant_queue() -> None:
+    """Dispatch execution of all approved actions (used by approve-all).
+    Same defensive contract as ``_dispatch_single_action``."""
     try:
         from app.tasks.apply_actions_queue import apply_actions_queue
 
-        apply_actions_queue.delay(tenant_id=tenant_id)
+        apply_actions_queue.delay()
     except Exception:  # pragma: no cover - defensive, backstop sweep recovers
         logger.exception(
-            "Failed to dispatch apply_actions_queue for tenant %s; "
-            "the scheduled sweep will retry",
-            tenant_id,
+            "Failed to dispatch apply_actions_queue; the scheduled sweep will retry"
         )
 
 
-async def _require_not_frozen(db: AsyncSession, tenant_id: int) -> None:
-    """Raise 409 when autopilot is frozen (emergency stop) for the tenant.
+async def _require_not_frozen(db: AsyncSession) -> None:
+    """Raise 409 when autopilot is frozen (emergency stop).
 
     Guards the execution-triggering endpoints (approve / confirm /
     approve-all) so an operator gets an explicit error instead of an action
@@ -92,7 +94,7 @@ async def _require_not_frozen(db: AsyncSession, tenant_id: int) -> None:
     """
     from app.autopilot.enforcer import AutopilotEnforcer
 
-    if await AutopilotEnforcer(db).is_frozen(tenant_id):
+    if await AutopilotEnforcer(db).is_frozen():
         raise HTTPException(
             status_code=409,
             detail=(
@@ -187,12 +189,6 @@ def _approver_info(action) -> Optional[ApproverInfo]:
     if approver is None:  # user row deleted (FK is SET NULL on hard delete)
         return None
 
-    # Cross-tenant approver (only reachable via the owner cross-tenant
-    # override): never serialize another tenant's user PII to this tenant.
-    # Label it as platform staff instead of exposing name/department.
-    if approver.tenant_id != action.tenant_id:
-        return ApproverInfo(id=approver.id, name="Platform staff", department=None)
-
     name: Optional[str] = None
     if approver.full_name:
         try:
@@ -244,7 +240,6 @@ def action_to_response(action) -> ActionResponse:
 @router.get("/status", response_model=APIResponse[Dict[str, Any]])
 async def get_autopilot_status(
     request: Request,
-    tenant_id: int,
     db: AsyncSession = Depends(get_async_session),
 ):
     """
@@ -256,13 +251,10 @@ async def get_autopilot_status(
     - caps: Budget/action caps for guarded mode
     - enabled: Whether autopilot is enabled
     """
-    if getattr(request.state, "tenant_id", None) != tenant_id:
-        raise HTTPException(status_code=403, detail="Access denied to this tenant")
-
-    features = await get_tenant_features(db, tenant_id)
+    features = await get_org_features(db)
 
     service = AutopilotService(db)
-    summary = await service.get_action_summary(tenant_id, days=1)
+    summary = await service.get_action_summary(days=1)
 
     from app.features.flags import get_autopilot_caps
 
@@ -287,7 +279,6 @@ async def get_autopilot_status(
 @router.get("/actions", response_model=APIResponse[Dict[str, Any]])
 async def get_actions(
     request: Request,
-    tenant_id: int,
     target_date: Optional[date] = Query(default=None, alias="date"),
     status: Optional[str] = Query(default=None),
     platform: Optional[str] = Query(default=None),
@@ -295,7 +286,7 @@ async def get_actions(
     db: AsyncSession = Depends(get_async_session),
 ):
     """
-    Get actions for a tenant.
+    Get actions.
 
     Query params:
     - date: Filter by date
@@ -303,12 +294,8 @@ async def get_actions(
     - platform: Filter by platform
     - limit: Max results (default 50)
     """
-    if getattr(request.state, "tenant_id", None) != tenant_id:
-        raise HTTPException(status_code=403, detail="Access denied to this tenant")
-
     service = AutopilotService(db)
     actions = await service.get_queued_actions(
-        tenant_id,
         target_date=target_date,
         status=status,
         platform=platform,
@@ -332,16 +319,12 @@ async def get_actions(
 @router.get("/actions/summary", response_model=APIResponse[Dict[str, Any]])
 async def get_actions_summary(
     request: Request,
-    tenant_id: int,
     days: int = Query(default=7, ge=1, le=30),
     db: AsyncSession = Depends(get_async_session),
 ):
     """Get summary of actions over the past N days."""
-    if getattr(request.state, "tenant_id", None) != tenant_id:
-        raise HTTPException(status_code=403, detail="Access denied to this tenant")
-
     service = AutopilotService(db)
-    summary = await service.get_action_summary(tenant_id, days=days)
+    summary = await service.get_action_summary(days=days)
 
     return APIResponse(success=True, data=summary)
 
@@ -349,32 +332,27 @@ async def get_actions_summary(
 @router.get("/outcomes/summary", response_model=APIResponse[Dict[str, Any]])
 async def get_outcomes_summary(
     request: Request,
-    tenant_id: int,
     period: str = Query(default="7d", pattern="^(24h|7d|30d)$"),
     db: AsyncSession = Depends(get_async_session),
 ):
     """
-    Aggregate the dollar value Stratum's autopilot has delivered for a
-    tenant over a period. Powers the outcome-triggered upgrade nudge
+    Aggregate the dollar value Stratum's autopilot has delivered
+    over a period. Powers the outcome-triggered upgrade nudge
     on the dashboard home (see frontend/src/components/billing/
     OutcomeNudge.tsx).
 
     Phase A: returns 0/0/0 for everyone because the estimator is a stub.
     Phase B: real counterfactual numbers with conservative_factor=0.5.
     """
-    if getattr(request.state, "tenant_id", None) != tenant_id:
-        raise HTTPException(status_code=403, detail="Access denied to this tenant")
-
     from app.services.autopilot import get_outcome_summary
 
-    summary = await get_outcome_summary(db, tenant_id, period=period)
+    summary = await get_outcome_summary(db, period=period)
     return APIResponse(success=True, data=summary.to_dict())
 
 
 @router.post("/actions", response_model=APIResponse[Dict[str, Any]])
 async def queue_action(
     request: Request,
-    tenant_id: int,
     body: QueueActionRequest,
     db: AsyncSession = Depends(get_async_session),
 ):
@@ -382,16 +360,13 @@ async def queue_action(
     Queue a new action.
     Actions will be auto-executed or require approval based on autopilot level.
     """
-    if getattr(request.state, "tenant_id", None) != tenant_id:
-        raise HTTPException(status_code=403, detail="Access denied to this tenant")
-
     # Get current user ID from request state if available
     user_id = getattr(request.state, "user_id", None)
 
     service = AutopilotService(db)
 
     # Get autopilot level
-    features = await get_tenant_features(db, tenant_id)
+    features = await get_org_features(db)
     autopilot_level = features.get("autopilot_level", 0)
 
     # Check if action can be auto-executed
@@ -402,7 +377,6 @@ async def queue_action(
     )
 
     action = await service.queue_action(
-        tenant_id=tenant_id,
         action_type=body.action_type,
         entity_type=body.entity_type,
         entity_id=body.entity_id,
@@ -415,7 +389,7 @@ async def queue_action(
 
     # Auto-approve if allowed
     if can_auto:
-        action = await service.approve_action(action.id, tenant_id, user_id or 0)
+        action = await service.approve_action(action.id, user_id or 0)
         # Auto-approved actions execute immediately (trust gate already passed).
         if action:
             _dispatch_single_action(str(action.id), user_id)
@@ -434,14 +408,10 @@ async def queue_action(
 @router.post("/actions/{action_id}/approve", response_model=APIResponse[Dict[str, Any]])
 async def approve_action(
     request: Request,
-    tenant_id: int,
     action_id: str,
     db: AsyncSession = Depends(get_async_session),
 ):
     """Approve a queued action for execution."""
-    if getattr(request.state, "tenant_id", None) != tenant_id:
-        raise HTTPException(status_code=403, detail="Access denied to this tenant")
-
     user_id = getattr(request.state, "user_id", None)
     if not user_id:
         raise HTTPException(status_code=401, detail="User authentication required")
@@ -452,10 +422,10 @@ async def approve_action(
         raise HTTPException(status_code=400, detail="Invalid action ID format")
 
     # Emergency stop — refuse to approve-for-execution while frozen.
-    await _require_not_frozen(db, tenant_id)
+    await _require_not_frozen(db)
 
     service = AutopilotService(db)
-    action = await service.approve_action(uuid_id, tenant_id, user_id)
+    action = await service.approve_action(uuid_id, user_id)
 
     if not action:
         raise HTTPException(
@@ -479,18 +449,14 @@ async def approve_action(
 )
 async def rollback_applied_action(
     request: Request,
-    tenant_id: int,
     action_id: str,
     db: AsyncSession = Depends(get_async_session),
 ):
     """Roll back a previously applied autopilot action (TRUST-006).
 
     Dispatches the inverse action (restoring the entity's before_value). Only an
-    applied, reversible action owned by the tenant can be rolled back.
+    applied, reversible action can be rolled back.
     """
-    if getattr(request.state, "tenant_id", None) != tenant_id:
-        raise HTTPException(status_code=403, detail="Access denied to this tenant")
-
     user_id = getattr(request.state, "user_id", None)
     if not user_id:
         raise HTTPException(status_code=401, detail="User authentication required")
@@ -500,10 +466,10 @@ async def rollback_applied_action(
     except ValueError:
         raise HTTPException(status_code=400, detail="Invalid action ID format")
 
-    await _require_not_frozen(db, tenant_id)
+    await _require_not_frozen(db)
 
     service = AutopilotService(db)
-    action = await service.get_action_by_id(uuid_id, tenant_id)
+    action = await service.get_action_by_id(uuid_id)
     if not action:
         raise HTTPException(status_code=404, detail="Action not found")
     if action.status != ActionStatus.APPLIED.value:
@@ -530,7 +496,6 @@ class ConfirmActionRequest(BaseModel):
 @router.post("/actions/{action_id}/confirm", response_model=APIResponse[Dict[str, Any]])
 async def confirm_soft_blocked_action(
     request: Request,
-    tenant_id: int,
     action_id: str,
     body: Optional[ConfirmActionRequest] = None,
     db: AsyncSession = Depends(get_async_session),
@@ -547,9 +512,6 @@ async def confirm_soft_blocked_action(
     If the stored token has expired, the action is re-dispatched so the
     gate re-evaluates and mints a fresh token.
     """
-    if getattr(request.state, "tenant_id", None) != tenant_id:
-        raise HTTPException(status_code=403, detail="Access denied to this tenant")
-
     user_id = getattr(request.state, "user_id", None)
     if not user_id:
         raise HTTPException(status_code=401, detail="User authentication required")
@@ -559,11 +521,11 @@ async def confirm_soft_blocked_action(
     except ValueError:
         raise HTTPException(status_code=400, detail="Invalid action ID format")
 
-    # Emergency stop — a frozen tenant cannot override soft-blocks either.
-    await _require_not_frozen(db, tenant_id)
+    # Emergency stop — frozen autopilot cannot override soft-blocks either.
+    await _require_not_frozen(db)
 
     service = AutopilotService(db)
-    action = await service.get_action_by_id(uuid_id, tenant_id)
+    action = await service.get_action_by_id(uuid_id)
     if not action:
         raise HTTPException(status_code=404, detail="Action not found")
 
@@ -584,7 +546,6 @@ async def confirm_soft_blocked_action(
 
     enforcer = AutopilotEnforcer(db)
     success, error = await enforcer.confirm_action(
-        tenant_id=tenant_id,
         confirmation_token=action.confirmation_token,
         user_id=user_id,
         override_reason=body.override_reason if body else None,
@@ -638,20 +599,16 @@ async def confirm_soft_blocked_action(
 @router.post("/actions/approve-all", response_model=APIResponse[Dict[str, Any]])
 async def approve_all_actions(
     request: Request,
-    tenant_id: int,
     body: Optional[ApproveActionsRequest] = None,
     db: AsyncSession = Depends(get_async_session),
 ):
     """Approve multiple queued actions at once."""
-    if getattr(request.state, "tenant_id", None) != tenant_id:
-        raise HTTPException(status_code=403, detail="Access denied to this tenant")
-
     user_id = getattr(request.state, "user_id", None)
     if not user_id:
         raise HTTPException(status_code=401, detail="User authentication required")
 
     # Emergency stop — refuse bulk approve-for-execution while frozen.
-    await _require_not_frozen(db, tenant_id)
+    await _require_not_frozen(db)
 
     service = AutopilotService(db)
 
@@ -662,11 +619,11 @@ async def approve_all_actions(
         except ValueError:
             raise HTTPException(status_code=400, detail="Invalid action ID format")
 
-    count = await service.approve_all_queued(tenant_id, user_id, action_ids)
+    count = await service.approve_all_queued(user_id, action_ids)
 
-    # Dispatch the tenant-wide apply sweep so the just-approved actions execute.
+    # Dispatch the apply sweep so the just-approved actions execute.
     if count:
-        _dispatch_tenant_queue(tenant_id)
+        _dispatch_tenant_queue()
 
     return APIResponse(
         success=True,
@@ -680,14 +637,10 @@ async def approve_all_actions(
 @router.post("/actions/{action_id}/dismiss", response_model=APIResponse[Dict[str, Any]])
 async def dismiss_action(
     request: Request,
-    tenant_id: int,
     action_id: str,
     db: AsyncSession = Depends(get_async_session),
 ):
     """Dismiss a queued action (won't be executed)."""
-    if getattr(request.state, "tenant_id", None) != tenant_id:
-        raise HTTPException(status_code=403, detail="Access denied to this tenant")
-
     user_id = getattr(request.state, "user_id", None)
     if not user_id:
         raise HTTPException(status_code=401, detail="User authentication required")
@@ -698,7 +651,7 @@ async def dismiss_action(
         raise HTTPException(status_code=400, detail="Invalid action ID format")
 
     service = AutopilotService(db)
-    action = await service.dismiss_action(uuid_id, tenant_id, user_id)
+    action = await service.dismiss_action(uuid_id, user_id)
 
     if not action:
         raise HTTPException(
@@ -717,21 +670,17 @@ async def dismiss_action(
 @router.get("/actions/{action_id}", response_model=APIResponse[Dict[str, Any]])
 async def get_action(
     request: Request,
-    tenant_id: int,
     action_id: str,
     db: AsyncSession = Depends(get_async_session),
 ):
     """Get details of a specific action."""
-    if getattr(request.state, "tenant_id", None) != tenant_id:
-        raise HTTPException(status_code=403, detail="Access denied to this tenant")
-
     try:
         uuid_id = UUID(action_id)
     except ValueError:
         raise HTTPException(status_code=400, detail="Invalid action ID format")
 
     service = AutopilotService(db)
-    action = await service.get_action_by_id(uuid_id, tenant_id)
+    action = await service.get_action_by_id(uuid_id)
 
     if not action:
         raise HTTPException(status_code=404, detail="Action not found")

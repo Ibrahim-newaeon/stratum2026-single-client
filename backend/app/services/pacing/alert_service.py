@@ -54,10 +54,9 @@ class PacingAlertService:
     - Sudden performance drops (pacing cliff)
     """
 
-    def __init__(self, db: AsyncSession, tenant_id: int):
+    def __init__(self, db: AsyncSession):
         self.db = db
-        self.tenant_id = tenant_id
-        self.pacing_service = PacingService(db, tenant_id)
+        self.pacing_service = PacingService(db)
 
     async def check_target_alerts(
         self,
@@ -195,7 +194,6 @@ class PacingAlertService:
         result = await self.db.execute(
             select(Target).where(
                 and_(
-                    Target.tenant_id == self.tenant_id,
                     Target.is_active == True,
                     Target.period_start <= as_of_date,
                     Target.period_end >= as_of_date,
@@ -245,12 +243,7 @@ class PacingAlertService:
 
         # Get target
         result = await self.db.execute(
-            select(Target).where(
-                and_(
-                    Target.id == target_id,
-                    Target.tenant_id == self.tenant_id,
-                )
-            )
+            select(Target).where(Target.id == target_id)
         )
         target = result.scalar_one_or_none()
 
@@ -259,7 +252,6 @@ class PacingAlertService:
 
         # Get recent daily values
         conditions = [
-            DailyKPI.tenant_id == self.tenant_id,
             DailyKPI.date >= as_of_date - timedelta(days=lookback_days),
             DailyKPI.date <= as_of_date,
         ]
@@ -335,7 +327,6 @@ class PacingAlertService:
             List of active alerts
         """
         conditions = [
-            PacingAlert.tenant_id == self.tenant_id,
             PacingAlert.status == AlertStatus.ACTIVE,
         ]
 
@@ -375,7 +366,6 @@ class PacingAlertService:
             List of alerts matching the status and filters
         """
         conditions = [
-            PacingAlert.tenant_id == self.tenant_id,
             PacingAlert.status == status,
         ]
 
@@ -402,12 +392,7 @@ class PacingAlertService:
     ) -> Optional[PacingAlert]:
         """Acknowledge an alert."""
         result = await self.db.execute(
-            select(PacingAlert).where(
-                and_(
-                    PacingAlert.id == alert_id,
-                    PacingAlert.tenant_id == self.tenant_id,
-                )
-            )
+            select(PacingAlert).where(PacingAlert.id == alert_id)
         )
         alert = result.scalar_one_or_none()
 
@@ -430,12 +415,7 @@ class PacingAlertService:
     ) -> Optional[PacingAlert]:
         """Resolve an alert."""
         result = await self.db.execute(
-            select(PacingAlert).where(
-                and_(
-                    PacingAlert.id == alert_id,
-                    PacingAlert.tenant_id == self.tenant_id,
-                )
-            )
+            select(PacingAlert).where(PacingAlert.id == alert_id)
         )
         alert = result.scalar_one_or_none()
 
@@ -462,12 +442,7 @@ class PacingAlertService:
     ) -> Optional[PacingAlert]:
         """Dismiss an alert (false positive or not actionable)."""
         result = await self.db.execute(
-            select(PacingAlert).where(
-                and_(
-                    PacingAlert.id == alert_id,
-                    PacingAlert.tenant_id == self.tenant_id,
-                )
-            )
+            select(PacingAlert).where(PacingAlert.id == alert_id)
         )
         alert = result.scalar_one_or_none()
 
@@ -510,7 +485,6 @@ class PacingAlertService:
         result = await self.db.execute(
             select(PacingAlert).where(
                 and_(
-                    PacingAlert.tenant_id == self.tenant_id,
                     PacingAlert.created_at
                     >= datetime.combine(
                         start_date, datetime.min.time(), tzinfo=timezone.utc
@@ -610,7 +584,6 @@ class PacingAlertService:
 
         # Create new alert
         alert = PacingAlert(
-            tenant_id=self.tenant_id,
             target_id=target_id,
             alert_type=alert_type,
             severity=severity,
@@ -640,7 +613,7 @@ class PacingAlertService:
         # Dispatch notifications (Slack, Email, WhatsApp) based on target settings.
         # Wrapped in try/except so a notification failure never prevents alert creation.
         try:
-            notification_service = AlertNotificationService(self.db, self.tenant_id)
+            notification_service = AlertNotificationService(self.db)
             await notification_service.notify_alert(alert)
         except (ConnectionError, TimeoutError, OSError, ValueError) as exc:
             logger.error(
@@ -751,9 +724,8 @@ class AlertNotificationService:
         "critical": ":rotating_light:",
     }
 
-    def __init__(self, db: AsyncSession, tenant_id: int) -> None:
+    def __init__(self, db: AsyncSession) -> None:
         self.db = db
-        self.tenant_id = tenant_id
 
     # -----------------------------------------------------------------
     # Slack
@@ -1135,10 +1107,7 @@ class AlertNotificationService:
         """
         # Get target to check notification settings
         result = await self.db.execute(
-            select(Target).where(
-                Target.id == alert.target_id,
-                Target.tenant_id == alert.tenant_id,
-            )
+            select(Target).where(Target.id == alert.target_id)
         )
         target = result.scalar_one_or_none()
 
@@ -1155,10 +1124,7 @@ class AlertNotificationService:
         if target.notify_slack:
             slack_result = await self.db.execute(
                 select(SlackIntegration).where(
-                    and_(
-                        SlackIntegration.tenant_id == self.tenant_id,
-                        SlackIntegration.is_active == True,
-                    )
+                    SlackIntegration.is_active == True,
                 )
             )
             slack_integration = slack_result.scalar_one_or_none()
@@ -1176,8 +1142,7 @@ class AlertNotificationService:
                     results["slack"] = False
             else:
                 logger.info(
-                    "Slack not configured for tenant, skipping",
-                    tenant_id=self.tenant_id,
+                    "Slack not configured, skipping",
                 )
 
         # -- Email --------------------------------------------------------

@@ -64,11 +64,10 @@ class HubSpotSyncService:
     - Pipeline metrics aggregation
     """
 
-    def __init__(self, db: AsyncSession, tenant_id: int):
+    def __init__(self, db: AsyncSession):
         self.db = db
-        self.tenant_id = tenant_id
-        self.client = HubSpotClient(db, tenant_id)
-        self.identity_matcher = IdentityMatcher(db, tenant_id)
+        self.client = HubSpotClient(db)
+        self.identity_matcher = IdentityMatcher(db)
 
     async def sync_all(self, full_sync: bool = False) -> Dict[str, Any]:
         """
@@ -143,13 +142,12 @@ class HubSpotSyncService:
             results["status"] = "success" if not results["errors"] else "partial"
             logger.info(
                 "hubspot_sync_complete",
-                tenant_id=self.tenant_id,
                 contacts=results["contacts_synced"],
                 deals=results["deals_synced"],
             )
 
         except (ConnectionError, TimeoutError, OSError, ValueError) as e:
-            logger.error("hubspot_sync_failed", tenant_id=self.tenant_id, error=str(e))
+            logger.error("hubspot_sync_failed", error=str(e))
             connection.last_sync_status = "failed"
             await self.db.commit()
             results["status"] = "error"
@@ -308,7 +306,6 @@ class HubSpotSyncService:
         else:
             # Create new contact
             contact = CRMContact(
-                tenant_id=self.tenant_id,
                 connection_id=connection_id,
                 crm_contact_id=crm_contact_id,
                 **contact_fields,
@@ -492,7 +489,6 @@ class HubSpotSyncService:
         else:
             # Create new deal
             deal = CRMDeal(
-                tenant_id=self.tenant_id,
                 connection_id=connection_id,
                 crm_deal_id=crm_deal_id,
                 **deal_fields,
@@ -619,13 +615,10 @@ class HubSpotSyncService:
         return result
 
     async def _get_connection(self) -> Optional[CRMConnection]:
-        """Get HubSpot connection for tenant."""
+        """Get HubSpot connection."""
         result = await self.db.execute(
             select(CRMConnection).where(
-                and_(
-                    CRMConnection.tenant_id == self.tenant_id,
-                    CRMConnection.provider == CRMProvider.HUBSPOT,
-                )
+                CRMConnection.provider == CRMProvider.HUBSPOT,
             )
         )
         return result.scalar_one_or_none()
@@ -649,7 +642,6 @@ class HubSpotSyncService:
             result = await self.db.execute(
                 select(CRMDeal).where(
                     and_(
-                        CRMDeal.tenant_id == self.tenant_id,
                         CRMDeal.stage_normalized == stage,
                         CRMDeal.is_closed == False,
                     )
@@ -662,10 +654,7 @@ class HubSpotSyncService:
         # Get won deals
         result = await self.db.execute(
             select(CRMDeal).where(
-                and_(
-                    CRMDeal.tenant_id == self.tenant_id,
-                    CRMDeal.is_won == True,
-                )
+                CRMDeal.is_won == True,
             )
         )
         won_deals = result.scalars().all()

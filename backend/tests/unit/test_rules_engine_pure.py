@@ -22,7 +22,7 @@ pytestmark = pytest.mark.unit
 @pytest.fixture
 def engine() -> RulesEngine:
     # The pure helpers never touch the session, so a None db is fine.
-    return RulesEngine(db=None, tenant_id=1)
+    return RulesEngine(db=None)
 
 
 # =============================================================================
@@ -31,7 +31,7 @@ def engine() -> RulesEngine:
 class TestRuleBuilder:
     def test_fluent_build(self):
         rule = (
-            RuleBuilder(tenant_id=7)
+            RuleBuilder()
             .name("Pause high CPA")
             .description("Pause when CPA too high")
             .when("cpa", RuleOperator.GREATER_THAN, 50, duration_hours=24)
@@ -47,7 +47,7 @@ class TestRuleBuilder:
         assert rule.cooldown_hours == 48
 
     def test_validate_reports_missing_fields(self):
-        errors = RuleBuilder(tenant_id=1).validate()
+        errors = RuleBuilder().validate()
         # Empty builder is missing name, condition, and action.
         assert any("name" in e.lower() for e in errors)
         assert any("condition field" in e.lower() for e in errors)
@@ -55,7 +55,7 @@ class TestRuleBuilder:
 
     def test_validate_passes_when_complete(self):
         errors = (
-            RuleBuilder(tenant_id=1)
+            RuleBuilder()
             .name("ok")
             .when("roas", RuleOperator.LESS_THAN, 1.0)
             .then(RuleAction.SEND_ALERT)

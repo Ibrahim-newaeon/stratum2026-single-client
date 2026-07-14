@@ -1,8 +1,8 @@
 """
 Cypher Query Builder for Apache AGE
 
-Provides a fluent API for building Cypher queries with tenant isolation
-and revenue-focused analytics patterns.
+Provides a fluent API for building Cypher queries and
+revenue-focused analytics patterns.
 """
 
 from __future__ import annotations
@@ -34,7 +34,7 @@ class CypherQueryBuilder:
 
     Example:
         query = (
-            CypherQueryBuilder(tenant_id)
+            CypherQueryBuilder()
             .match_node("p", NodeLabel.PROFILE)
             .where("p.lifecycle_stage", "=", "customer")
             .match_edge("p", EdgeLabel.PERFORMED, "e", NodeLabel.EVENT)
@@ -46,7 +46,6 @@ class CypherQueryBuilder:
         )
     """
 
-    tenant_id: UUID
     graph_name: str = "stratum_knowledge_graph"
     _match_clauses: list[str] = field(default_factory=list)
     _where_clauses: list[str] = field(default_factory=list)
@@ -79,8 +78,6 @@ class CypherQueryBuilder:
         """Add a MATCH clause for a node."""
         props = self._format_properties(properties) if properties else ""
         self._match_clauses.append(f"({alias}:{label.value}{props})")
-        # Always filter by tenant
-        self._where_clauses.append(f"{alias}.tenant_id = '{self.tenant_id}'")
         return self
 
     def match_edge(
@@ -372,10 +369,10 @@ class RevenueAnalyticsQueries:
     """Pre-built Cypher queries for revenue analytics."""
 
     @staticmethod
-    def revenue_by_channel(tenant_id: UUID, days: int = 30) -> tuple[str, dict]:
+    def revenue_by_channel(days: int = 30) -> tuple[str, dict]:
         """Get revenue breakdown by acquisition channel."""
         return (
-            CypherQueryBuilder(tenant_id)
+            CypherQueryBuilder()
             .match_node("r", NodeLabel.REVENUE)
             .match_edge(
                 "r", EdgeLabel.ATTRIBUTED_TO, "ch", NodeLabel.CHANNEL, direction="->"
@@ -396,11 +393,11 @@ class RevenueAnalyticsQueries:
 
     @staticmethod
     def revenue_by_campaign(
-        tenant_id: UUID, platform: Optional[str] = None, days: int = 30
+        platform: Optional[str] = None, days: int = 30
     ) -> tuple[str, dict]:
         """Get revenue breakdown by campaign."""
         builder = (
-            CypherQueryBuilder(tenant_id)
+            CypherQueryBuilder()
             .match_node("r", NodeLabel.REVENUE)
             .match_edge(
                 "r", EdgeLabel.ATTRIBUTED_TO, "c", NodeLabel.CAMPAIGN, direction="->"
@@ -427,10 +424,10 @@ class RevenueAnalyticsQueries:
         )
 
     @staticmethod
-    def customer_journey(tenant_id: UUID, profile_external_id: str) -> tuple[str, dict]:
+    def customer_journey(profile_external_id: str) -> tuple[str, dict]:
         """Get full customer journey for a profile."""
         return (
-            CypherQueryBuilder(tenant_id)
+            CypherQueryBuilder()
             .match_node("p", NodeLabel.PROFILE, {"external_id": profile_external_id})
             .match_edge("p", EdgeLabel.PERFORMED, "e", NodeLabel.EVENT)
             .optional_match_edge("e", EdgeLabel.GENERATED, "r", NodeLabel.REVENUE)
@@ -445,10 +442,10 @@ class RevenueAnalyticsQueries:
         )
 
     @staticmethod
-    def blocked_automations(tenant_id: UUID, days: int = 7) -> tuple[str, dict]:
+    def blocked_automations(days: int = 7) -> tuple[str, dict]:
         """Get automations that were blocked by trust gates."""
         return (
-            CypherQueryBuilder(tenant_id)
+            CypherQueryBuilder()
             .match_node(
                 "tg", NodeLabel.TRUST_GATE, {"decision": GateDecision.BLOCK.value}
             )
@@ -469,10 +466,10 @@ class RevenueAnalyticsQueries:
         )
 
     @staticmethod
-    def signal_health_impact(tenant_id: UUID, days: int = 30) -> tuple[str, dict]:
+    def signal_health_impact(days: int = 30) -> tuple[str, dict]:
         """Analyze correlation between signal health and revenue."""
         return (
-            CypherQueryBuilder(tenant_id)
+            CypherQueryBuilder()
             .match_node("s", NodeLabel.SIGNAL)
             .match_edge("s", EdgeLabel.EVALUATED_BY, "tg", NodeLabel.TRUST_GATE)
             .match_edge("tg", EdgeLabel.TRIGGERED, "a", NodeLabel.AUTOMATION)
@@ -491,12 +488,10 @@ class RevenueAnalyticsQueries:
         )
 
     @staticmethod
-    def segment_revenue_performance(
-        tenant_id: UUID, days: int = 30
-    ) -> tuple[str, dict]:
+    def segment_revenue_performance(days: int = 30) -> tuple[str, dict]:
         """Get revenue performance by customer segment."""
         return (
-            CypherQueryBuilder(tenant_id)
+            CypherQueryBuilder()
             .match_node("seg", NodeLabel.SEGMENT)
             .match_edge("p", EdgeLabel.BELONGS_TO, "seg", direction="<-")
             .match_edge("p", EdgeLabel.PERFORMED, "e", NodeLabel.EVENT)
@@ -518,12 +513,12 @@ class RevenueAnalyticsQueries:
 
     @staticmethod
     def multi_touch_attribution_paths(
-        tenant_id: UUID, min_touchpoints: int = 2, limit: int = 20
+        min_touchpoints: int = 2, limit: int = 20
     ) -> tuple[str, dict]:
         """Get multi-touch attribution paths to conversion."""
         # This is a more complex traversal query
         cypher = f"""
-            MATCH (p:Profile {{tenant_id: '{tenant_id}'}})-[:PERFORMED]->(e:Event)-[:GENERATED]->(r:Revenue)
+            MATCH (p:Profile)-[:PERFORMED]->(e:Event)-[:GENERATED]->(r:Revenue)
             MATCH path = (p)-[:RECEIVED*1..10]->(t:Touchpoint)
             WHERE t.timestamp < r.occurred_at
             WITH p, r, collect(t) AS touchpoints
@@ -544,10 +539,10 @@ class RevenueAnalyticsQueries:
         return sql, {}
 
     @staticmethod
-    def rfm_segment_trends(tenant_id: UUID) -> tuple[str, dict]:
+    def rfm_segment_trends() -> tuple[str, dict]:
         """Get RFM segment distribution and revenue contribution."""
         return (
-            CypherQueryBuilder(tenant_id)
+            CypherQueryBuilder()
             .match_node("p", NodeLabel.PROFILE)
             .where("p.rfm_segment", "IS NOT", None)
             .return_fields(

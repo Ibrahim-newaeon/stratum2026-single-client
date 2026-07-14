@@ -228,21 +228,11 @@ async def list_webhooks(
     db: AsyncSession = Depends(get_async_session),
 ) -> APIResponse[list[WebhookResponse]]:
     """
-    List all webhooks for the current tenant.
+    List all webhooks.
     """
-    tenant_id = getattr(request.state, "tenant_id", None)
-
-    if not tenant_id:
-        raise HTTPException(
-            status_code=status.HTTP_401_UNAUTHORIZED,
-            detail="Not authenticated",
-        )
-
     result = await db.execute(
         select(Webhook)
-        .where(Webhook.tenant_id == tenant_id)
         .order_by(Webhook.created_at.desc())
-        .limit(1000)
         .limit(1000)
     )
     webhooks = result.scalars().all()
@@ -279,18 +269,8 @@ async def get_webhook(
     """
     Get a specific webhook.
     """
-    tenant_id = getattr(request.state, "tenant_id", None)
-
-    if not tenant_id:
-        raise HTTPException(
-            status_code=status.HTTP_401_UNAUTHORIZED,
-            detail="Not authenticated",
-        )
-
     result = await db.execute(
-        select(Webhook).where(
-            and_(Webhook.id == webhook_id, Webhook.tenant_id == tenant_id)
-        )
+        select(Webhook).where(Webhook.id == webhook_id)
     )
     webhook = result.scalar_one_or_none()
 
@@ -331,27 +311,18 @@ async def create_webhook(
     """
     Create a new webhook endpoint.
     """
-    tenant_id = getattr(request.state, "tenant_id", None)
-
-    if not tenant_id:
-        raise HTTPException(
-            status_code=status.HTTP_401_UNAUTHORIZED,
-            detail="Not authenticated",
-        )
-
-    # Check webhook limit (max 20 per tenant)
-    result = await db.execute(select(Webhook).where(Webhook.tenant_id == tenant_id))
+    # Check webhook limit (max 20)
+    result = await db.execute(select(Webhook))
     if len(result.scalars().all()) >= 20:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
-            detail="Maximum of 20 webhooks allowed per tenant",
+            detail="Maximum of 20 webhooks allowed",
         )
 
     # Generate signing secret
     signing_secret = secrets.token_urlsafe(32)
 
     webhook = Webhook(
-        tenant_id=tenant_id,
         name=body.name,
         url=body.url,
         events=body.events,
@@ -363,7 +334,7 @@ async def create_webhook(
     db.add(webhook)
     await db.commit()
 
-    logger.info(f"Webhook created: {webhook.id} for tenant {tenant_id}")
+    logger.info(f"Webhook created: {webhook.id}")
 
     return APIResponse(
         success=True,
@@ -396,18 +367,8 @@ async def update_webhook(
     """
     Update a webhook.
     """
-    tenant_id = getattr(request.state, "tenant_id", None)
-
-    if not tenant_id:
-        raise HTTPException(
-            status_code=status.HTTP_401_UNAUTHORIZED,
-            detail="Not authenticated",
-        )
-
     result = await db.execute(
-        select(Webhook).where(
-            and_(Webhook.id == webhook_id, Webhook.tenant_id == tenant_id)
-        )
+        select(Webhook).where(Webhook.id == webhook_id)
     )
     webhook = result.scalar_one_or_none()
 
@@ -463,18 +424,8 @@ async def delete_webhook(
     """
     Delete a webhook.
     """
-    tenant_id = getattr(request.state, "tenant_id", None)
-
-    if not tenant_id:
-        raise HTTPException(
-            status_code=status.HTTP_401_UNAUTHORIZED,
-            detail="Not authenticated",
-        )
-
     result = await db.execute(
-        select(Webhook).where(
-            and_(Webhook.id == webhook_id, Webhook.tenant_id == tenant_id)
-        )
+        select(Webhook).where(Webhook.id == webhook_id)
     )
     webhook = result.scalar_one_or_none()
 
@@ -499,18 +450,8 @@ async def test_webhook(
     """
     Send a test event to a webhook endpoint.
     """
-    tenant_id = getattr(request.state, "tenant_id", None)
-
-    if not tenant_id:
-        raise HTTPException(
-            status_code=status.HTTP_401_UNAUTHORIZED,
-            detail="Not authenticated",
-        )
-
     result = await db.execute(
-        select(Webhook).where(
-            and_(Webhook.id == webhook_id, Webhook.tenant_id == tenant_id)
-        )
+        select(Webhook).where(Webhook.id == webhook_id)
     )
     webhook = result.scalar_one_or_none()
 
@@ -600,19 +541,9 @@ async def get_webhook_deliveries(
     """
     Get delivery history for a webhook.
     """
-    tenant_id = getattr(request.state, "tenant_id", None)
-
-    if not tenant_id:
-        raise HTTPException(
-            status_code=status.HTTP_401_UNAUTHORIZED,
-            detail="Not authenticated",
-        )
-
-    # Verify webhook belongs to tenant
+    # Verify webhook exists
     result = await db.execute(
-        select(Webhook).where(
-            and_(Webhook.id == webhook_id, Webhook.tenant_id == tenant_id)
-        )
+        select(Webhook).where(Webhook.id == webhook_id)
     )
     if not result.scalar_one_or_none():
         raise HTTPException(

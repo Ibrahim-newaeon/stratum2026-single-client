@@ -34,9 +34,8 @@ class ComputedTraitsService:
     Service for computing and managing profile traits.
     """
 
-    def __init__(self, db: AsyncSession, tenant_id: int):
+    def __init__(self, db: AsyncSession):
         self.db = db
-        self.tenant_id = tenant_id
 
     # =========================================================================
     # Trait Definition CRUD
@@ -54,7 +53,6 @@ class ComputedTraitsService:
     ) -> CDPComputedTrait:
         """Create a new computed trait definition."""
         trait = CDPComputedTrait(
-            tenant_id=self.tenant_id,
             name=name,
             display_name=display_name,
             description=description,
@@ -68,7 +66,6 @@ class ComputedTraitsService:
 
         logger.info(
             "cdp_computed_trait_created",
-            tenant_id=self.tenant_id,
             trait_name=name,
             trait_type=trait_type,
         )
@@ -80,7 +77,6 @@ class ComputedTraitsService:
         result = await self.db.execute(
             select(CDPComputedTrait).where(
                 CDPComputedTrait.id == trait_id,
-                CDPComputedTrait.tenant_id == self.tenant_id,
             )
         )
         return result.scalar_one_or_none()
@@ -90,7 +86,6 @@ class ComputedTraitsService:
         result = await self.db.execute(
             select(CDPComputedTrait).where(
                 CDPComputedTrait.name == name,
-                CDPComputedTrait.tenant_id == self.tenant_id,
             )
         )
         return result.scalar_one_or_none()
@@ -102,19 +97,13 @@ class ComputedTraitsService:
         offset: int = 0,
     ) -> tuple[list[CDPComputedTrait], int]:
         """List computed traits."""
-        query = select(CDPComputedTrait).where(
-            CDPComputedTrait.tenant_id == self.tenant_id
-        )
+        query = select(CDPComputedTrait)
 
         if active_only:
             query = query.where(CDPComputedTrait.is_active == True)
 
         # Get count
-        count_result = await self.db.execute(
-            select(func.count(CDPComputedTrait.id)).where(
-                CDPComputedTrait.tenant_id == self.tenant_id
-            )
-        )
+        count_result = await self.db.execute(select(func.count(CDPComputedTrait.id)))
         total = count_result.scalar() or 0
 
         # Get traits
@@ -136,7 +125,6 @@ class ComputedTraitsService:
 
         logger.info(
             "cdp_computed_trait_deleted",
-            tenant_id=self.tenant_id,
             trait_id=str(trait_id),
         )
 
@@ -163,7 +151,6 @@ class ComputedTraitsService:
 
         # Build event query
         query = select(CDPEvent).where(
-            CDPEvent.tenant_id == self.tenant_id,
             CDPEvent.profile_id == profile.id,
         )
 
@@ -307,7 +294,6 @@ class ComputedTraitsService:
         while True:
             result = await self.db.execute(
                 select(CDPProfile)
-                .where(CDPProfile.tenant_id == self.tenant_id)
                 .offset(offset)
                 .limit(batch_size)
             )
@@ -339,7 +325,6 @@ class ComputedTraitsService:
 
         logger.info(
             "cdp_traits_batch_computed",
-            tenant_id=self.tenant_id,
             profiles_processed=processed,
             errors=errors,
         )
@@ -357,9 +342,8 @@ class RFMAnalysisService:
     - Monetary: How much do they spend?
     """
 
-    def __init__(self, db: AsyncSession, tenant_id: int):
+    def __init__(self, db: AsyncSession):
         self.db = db
-        self.tenant_id = tenant_id
 
     async def calculate_rfm_for_profile(
         self,
@@ -389,7 +373,6 @@ class RFMAnalysisService:
         result = await self.db.execute(
             select(CDPEvent)
             .where(
-                CDPEvent.tenant_id == self.tenant_id,
                 CDPEvent.profile_id == profile.id,
                 CDPEvent.event_name == purchase_event_name,
                 CDPEvent.event_time >= cutoff,
@@ -551,7 +534,6 @@ class RFMAnalysisService:
         while True:
             result = await self.db.execute(
                 select(CDPProfile)
-                .where(CDPProfile.tenant_id == self.tenant_id)
                 .offset(offset)
                 .limit(batch_size)
             )
@@ -596,7 +578,6 @@ class RFMAnalysisService:
 
         logger.info(
             "cdp_rfm_batch_completed",
-            tenant_id=self.tenant_id,
             profiles_processed=processed,
             segment_counts=segment_counts,
         )
@@ -610,11 +591,9 @@ class RFMAnalysisService:
 
     async def get_rfm_summary(self) -> dict[str, Any]:
         """
-        Get RFM distribution summary for the tenant.
+        Get RFM distribution summary.
         """
-        result = await self.db.execute(
-            select(CDPProfile).where(CDPProfile.tenant_id == self.tenant_id).limit(1000)
-        )
+        result = await self.db.execute(select(CDPProfile).limit(1000))
         profiles = result.scalars().all()
 
         segment_counts: dict[str, int] = {}

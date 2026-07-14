@@ -20,8 +20,9 @@ from pydantic import BaseModel, Field
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from app.auth.deps import CurrentUser, get_current_user
 from app.core.logging import get_logger
-from app.models import User
+from app.db.session import get_async_session as get_db
 from app.models.attribution import (
     ModelStatus,
     ModelTrainingRun,
@@ -33,7 +34,6 @@ from app.services.attribution import (
     ModelTrainingService,
     ShapleyAttributionService,
 )
-from app.tenancy.deps import get_current_user, get_db, get_tenant_id
 
 logger = get_logger(__name__)
 router = APIRouter(prefix="/attribution/data-driven", tags=["data-driven-attribution"])
@@ -155,8 +155,7 @@ class ModelRecommendationResponse(BaseModel):
 async def train_model(
     request: TrainModelRequest,
     db: AsyncSession = Depends(get_db),
-    tenant_id: int = Depends(get_tenant_id),
-    current_user: User = Depends(get_current_user),
+    current_user: CurrentUser = Depends(get_current_user),
 ):
     """
     Train a data-driven attribution model.
@@ -176,7 +175,7 @@ async def train_model(
             detail=f"Invalid model_type. Must be 'markov_chain' or 'shapley_value'",
         )
 
-    service = ModelTrainingService(db, tenant_id)
+    service = ModelTrainingService(db)
     result = await service.train_model(
         model_type=request.model_type,
         start_date=request.start_date,
@@ -195,8 +194,7 @@ async def train_model(
 async def train_all_models(
     request: TrainAllModelsRequest,
     db: AsyncSession = Depends(get_db),
-    tenant_id: int = Depends(get_tenant_id),
-    current_user: User = Depends(get_current_user),
+    current_user: CurrentUser = Depends(get_current_user),
 ):
     """
     Train all available model types and compare results.
@@ -204,7 +202,7 @@ async def train_all_models(
     Returns attribution weights from both Markov Chain and Shapley Value models,
     along with a consensus (averaged) weight distribution.
     """
-    service = ModelTrainingService(db, tenant_id)
+    service = ModelTrainingService(db)
     result = await service.train_all_models(
         start_date=request.start_date,
         end_date=request.end_date,
@@ -222,8 +220,7 @@ async def get_model_recommendation(
     end_date: datetime = Query(..., description="Analysis period end"),
     channel_type: str = Query("platform", description="Channel type"),
     db: AsyncSession = Depends(get_db),
-    tenant_id: int = Depends(get_tenant_id),
-    current_user: User = Depends(get_current_user),
+    current_user: CurrentUser = Depends(get_current_user),
 ):
     """
     Get a recommendation for which attribution model to use.
@@ -231,7 +228,7 @@ async def get_model_recommendation(
     Analyzes journey characteristics (length, channel diversity, data volume)
     to recommend the most appropriate model type.
     """
-    service = ModelTrainingService(db, tenant_id)
+    service = ModelTrainingService(db)
     result = await service.get_recommended_model(
         start_date=start_date,
         end_date=end_date,
@@ -250,8 +247,7 @@ async def get_model_recommendation(
 async def attribute_with_model(
     request: AttributeWithModelRequest,
     db: AsyncSession = Depends(get_db),
-    tenant_id: int = Depends(get_tenant_id),
-    current_user: User = Depends(get_current_user),
+    current_user: CurrentUser = Depends(get_current_user),
 ):
     """
     Attribute a deal using a trained data-driven model.
@@ -259,9 +255,9 @@ async def attribute_with_model(
     Pass the model_data from a previous training response.
     """
     if request.model_type == DataDrivenModelType.MARKOV_CHAIN:
-        service = MarkovAttributionService(db, tenant_id)
+        service = MarkovAttributionService(db)
     elif request.model_type == DataDrivenModelType.SHAPLEY_VALUE:
-        service = ShapleyAttributionService(db, tenant_id)
+        service = ShapleyAttributionService(db)
     else:
         raise HTTPException(status_code=400, detail="Invalid model_type")
 
@@ -277,16 +273,15 @@ async def attribute_with_model(
 async def batch_attribute_with_model(
     request: BatchAttributeRequest,
     db: AsyncSession = Depends(get_db),
-    tenant_id: int = Depends(get_tenant_id),
-    current_user: User = Depends(get_current_user),
+    current_user: CurrentUser = Depends(get_current_user),
 ):
     """
     Batch attribute multiple deals using a trained model.
     """
     if request.model_type == DataDrivenModelType.MARKOV_CHAIN:
-        service = MarkovAttributionService(db, tenant_id)
+        service = MarkovAttributionService(db)
     elif request.model_type == DataDrivenModelType.SHAPLEY_VALUE:
-        service = ShapleyAttributionService(db, tenant_id)
+        service = ShapleyAttributionService(db)
     else:
         raise HTTPException(status_code=400, detail="Invalid model_type")
 
@@ -314,15 +309,14 @@ async def batch_attribute_with_model(
 async def validate_model(
     request: ValidateModelRequest,
     db: AsyncSession = Depends(get_db),
-    tenant_id: int = Depends(get_tenant_id),
-    current_user: User = Depends(get_current_user),
+    current_user: CurrentUser = Depends(get_current_user),
 ):
     """
     Validate a trained model on holdout data.
 
     Tests the model's attribution accuracy on data not used for training.
     """
-    service = ModelTrainingService(db, tenant_id)
+    service = ModelTrainingService(db)
     result = await service.validate_model(
         model_data=request.model_data,
         model_type=request.model_type,
@@ -337,8 +331,7 @@ async def validate_model(
 async def compare_with_rule_based(
     request: CompareWithRuleBasedRequest,
     db: AsyncSession = Depends(get_db),
-    tenant_id: int = Depends(get_tenant_id),
-    current_user: User = Depends(get_current_user),
+    current_user: CurrentUser = Depends(get_current_user),
 ):
     """
     Compare data-driven weights with rule-based attribution models.
@@ -346,7 +339,7 @@ async def compare_with_rule_based(
     Shows correlation between data-driven results and traditional models
     (first touch, last touch, linear, position-based, time decay).
     """
-    service = ModelTrainingService(db, tenant_id)
+    service = ModelTrainingService(db)
     result = await service.compare_with_rule_based(
         data_driven_weights=request.data_driven_weights,
         start_date=request.start_date,
@@ -363,7 +356,7 @@ async def compare_with_rule_based(
 
 @router.get("/model-types")
 async def list_model_types(
-    current_user: User = Depends(get_current_user),
+    current_user: CurrentUser = Depends(get_current_user),
 ):
     """
     List available data-driven model types with descriptions.
@@ -395,8 +388,7 @@ async def get_training_requirements(
     start_date: datetime = Query(..., description="Proposed training start"),
     end_date: datetime = Query(..., description="Proposed training end"),
     db: AsyncSession = Depends(get_db),
-    tenant_id: int = Depends(get_tenant_id),
-    current_user: User = Depends(get_current_user),
+    current_user: CurrentUser = Depends(get_current_user),
 ):
     """
     Check if there's sufficient data for model training.
@@ -411,7 +403,6 @@ async def get_training_requirements(
     deal_count = await db.scalar(
         select(func.count(CRMDeal.id)).where(
             and_(
-                CRMDeal.tenant_id == tenant_id,
                 CRMDeal.is_won == True,
                 CRMDeal.won_at >= start_date,
                 CRMDeal.won_at <= end_date,
@@ -424,7 +415,6 @@ async def get_training_requirements(
     touchpoint_count = await db.scalar(
         select(func.count(Touchpoint.id)).where(
             and_(
-                Touchpoint.tenant_id == tenant_id,
                 Touchpoint.event_ts >= start_date,
                 Touchpoint.event_ts <= end_date,
             )
@@ -435,7 +425,6 @@ async def get_training_requirements(
     channel_result = await db.execute(
         select(func.count(func.distinct(Touchpoint.source))).where(
             and_(
-                Touchpoint.tenant_id == tenant_id,
                 Touchpoint.event_ts >= start_date,
                 Touchpoint.event_ts <= end_date,
             )
@@ -516,12 +505,11 @@ def _serialize_model(m: TrainedAttributionModel, *, full: bool = False) -> dict:
 
 
 async def _get_owned_model(
-    db: AsyncSession, tenant_id: int, model_id: UUID
+    db: AsyncSession, model_id: UUID
 ) -> TrainedAttributionModel:
     result = await db.execute(
         select(TrainedAttributionModel).where(
             TrainedAttributionModel.id == model_id,
-            TrainedAttributionModel.tenant_id == tenant_id,
         )
     )
     model = result.scalar_one_or_none()
@@ -536,12 +524,9 @@ async def list_trained_models(
     is_active: Optional[bool] = Query(None),
     status: Optional[str] = Query(None),
     db: AsyncSession = Depends(get_db),
-    tenant_id: int = Depends(get_tenant_id),
 ):
-    """List trained attribution models for the tenant (newest first)."""
-    query = select(TrainedAttributionModel).where(
-        TrainedAttributionModel.tenant_id == tenant_id
-    )
+    """List trained attribution models (newest first)."""
+    query = select(TrainedAttributionModel)
     if model_type:
         query = query.where(TrainedAttributionModel.model_type == model_type)
     if is_active is not None:
@@ -563,10 +548,9 @@ async def list_trained_models(
 async def get_trained_model(
     model_id: UUID,
     db: AsyncSession = Depends(get_db),
-    tenant_id: int = Depends(get_tenant_id),
 ):
     """Get a trained model with its full weights/effects (its 'results')."""
-    model = await _get_owned_model(db, tenant_id, model_id)
+    model = await _get_owned_model(db, model_id)
     return {"status": "success", "model": _serialize_model(model, full=True)}
 
 
@@ -574,15 +558,13 @@ async def get_trained_model(
 async def activate_trained_model(
     model_id: UUID,
     db: AsyncSession = Depends(get_db),
-    tenant_id: int = Depends(get_tenant_id),
 ):
     """Mark a model as the active one for its (model_type, channel_type)."""
-    model = await _get_owned_model(db, tenant_id, model_id)
+    model = await _get_owned_model(db, model_id)
 
     # Only one active model per (model_type, channel_type) — deactivate siblings.
     siblings = await db.execute(
         select(TrainedAttributionModel).where(
-            TrainedAttributionModel.tenant_id == tenant_id,
             TrainedAttributionModel.model_type == model.model_type,
             TrainedAttributionModel.channel_type == model.channel_type,
             TrainedAttributionModel.is_active.is_(True),
@@ -602,10 +584,9 @@ async def activate_trained_model(
 async def archive_trained_model(
     model_id: UUID,
     db: AsyncSession = Depends(get_db),
-    tenant_id: int = Depends(get_tenant_id),
 ):
     """Archive a model, removing it from active use."""
-    model = await _get_owned_model(db, tenant_id, model_id)
+    model = await _get_owned_model(db, model_id)
     model.is_active = False
     model.status = ModelStatus.ARCHIVED
     await db.commit()
@@ -617,12 +598,10 @@ async def archive_trained_model(
 async def list_training_runs(
     limit: int = Query(50, ge=1, le=200),
     db: AsyncSession = Depends(get_db),
-    tenant_id: int = Depends(get_tenant_id),
 ):
-    """List model training-run history for the tenant (newest first)."""
+    """List model training-run history (newest first)."""
     result = await db.execute(
         select(ModelTrainingRun)
-        .where(ModelTrainingRun.tenant_id == tenant_id)
         .order_by(ModelTrainingRun.started_at.desc())
         .limit(limit)
     )

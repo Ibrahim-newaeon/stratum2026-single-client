@@ -6,9 +6,9 @@ Tests for wiring CAPI delivery persistence (Tier 3).
 
 `CAPIService.stream_events` sent events but never recorded a delivery — the
 persistence code (`delivery_logger` -> `capi_delivery_logs`) was dead (zero
-importers). The service is now tenant-aware and logs one delivery per
-(event, platform) result via the shared DeliveryLogger, best-effort so audit
-logging can never fail the actual send.
+importers). The service now logs one delivery per (event, platform) result
+via the shared DeliveryLogger, best-effort so audit logging can never fail
+the actual send.
 
 Pure/mock tests — no DB, no network.
 """
@@ -46,18 +46,11 @@ _EVENT = {
 }
 
 
-# --- tenant awareness ---
-def test_service_stores_tenant_id():
-    assert CAPIService(tenant_id=5).tenant_id == 5
-    assert CAPIService().tenant_id is None
-
-
 # --- pure mapping ---
 def test_build_delivery_kwargs_success():
     kw = _build_delivery_kwargs(
-        tenant_id=7, platform="meta", event=_EVENT, result=_ok_result(), latency_ms=12.5
+        platform="meta", event=_EVENT, result=_ok_result(), latency_ms=12.5
     )
-    assert kw["tenant_id"] == 7
     assert kw["platform"] == "meta"
     assert kw["event_name"] == "Purchase"
     assert kw["status"] == DeliveryStatus.SUCCESS
@@ -71,7 +64,6 @@ def test_build_delivery_kwargs_success():
 
 def test_build_delivery_kwargs_failure_maps_error():
     kw = _build_delivery_kwargs(
-        tenant_id=1,
         platform="meta",
         event=_EVENT,
         result=_fail_result(),
@@ -92,7 +84,7 @@ async def test_log_deliveries_records_each(monkeypatch):
     monkeypatch.setattr(
         "app.services.capi.capi_service.get_delivery_logger", lambda: FakeDL()
     )
-    svc = CAPIService(tenant_id=5)
+    svc = CAPIService()
     results = [
         ("meta", _ok_result("meta"), 10.0),
         ("google", _fail_result("google"), 20.0),
@@ -101,7 +93,6 @@ async def test_log_deliveries_records_each(monkeypatch):
 
     assert len(calls) == 2  # one per (event, platform)
     assert {c["platform"] for c in calls} == {"meta", "google"}
-    assert all(c["tenant_id"] == 5 for c in calls)
 
 
 async def test_log_deliveries_never_raises(monkeypatch):
@@ -112,6 +103,6 @@ async def test_log_deliveries_never_raises(monkeypatch):
     monkeypatch.setattr(
         "app.services.capi.capi_service.get_delivery_logger", lambda: BoomDL()
     )
-    svc = CAPIService(tenant_id=1)
+    svc = CAPIService()
     # Must not raise — audit logging is best-effort.
     await svc._log_deliveries([_EVENT], [("meta", _ok_result(), 1.0)])

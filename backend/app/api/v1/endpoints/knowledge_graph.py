@@ -11,15 +11,15 @@ from fastapi import APIRouter, Depends, HTTPException, Query, status
 from pydantic import BaseModel, Field
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from app.base_models import User
+from app.auth.deps import CurrentUser, get_current_user
 from app.core.config import settings
+from app.db.session import get_async_session as get_db
 from app.services.knowledge_graph import (
     KnowledgeGraphInsightsEngine,
     KnowledgeGraphService,
     ProblemCategory,
     ProblemSeverity,
 )
-from app.tenancy.deps import get_current_user, get_db
 
 
 async def require_knowledge_graph_enabled() -> None:
@@ -144,7 +144,7 @@ class GraphStatsResponse(BaseModel):
 @router.get("/insights/health", response_model=HealthSummaryResponse)
 async def get_health_summary(
     db: AsyncSession = Depends(get_db),
-    current_user: User = Depends(get_current_user),
+    current_user: CurrentUser = Depends(get_current_user),
 ) -> HealthSummaryResponse:
     """
     Get overall health summary based on Knowledge Graph analysis.
@@ -152,7 +152,7 @@ async def get_health_summary(
     Returns health score, status, and top problem if any.
     """
     engine = KnowledgeGraphInsightsEngine(db)
-    summary = await engine.get_health_summary(current_user.tenant_id)
+    summary = await engine.get_health_summary()
 
     return HealthSummaryResponse(
         health_score=summary["health_score"],
@@ -169,7 +169,7 @@ async def get_detected_problems(
     severity: Optional[str] = Query(default=None, description="Filter by severity"),
     category: Optional[str] = Query(default=None, description="Filter by category"),
     db: AsyncSession = Depends(get_db),
-    current_user: User = Depends(get_current_user),
+    current_user: CurrentUser = Depends(get_current_user),
 ) -> ProblemsListResponse:
     """
     Get all detected problems with solutions.
@@ -178,7 +178,7 @@ async def get_detected_problems(
     Each problem includes root cause analysis and suggested solutions.
     """
     engine = KnowledgeGraphInsightsEngine(db)
-    problems = await engine.detect_all_problems(current_user.tenant_id, days=days)
+    problems = await engine.detect_all_problems(days=days)
 
     # Apply filters
     if severity:
@@ -216,7 +216,7 @@ async def get_detected_problems(
 async def get_problem_details(
     problem_id: str,
     db: AsyncSession = Depends(get_db),
-    current_user: User = Depends(get_current_user),
+    current_user: CurrentUser = Depends(get_current_user),
 ) -> ProblemResponse:
     """
     Get detailed information about a specific problem.
@@ -224,7 +224,7 @@ async def get_problem_details(
     Includes extended root cause analysis and all suggested solutions.
     """
     engine = KnowledgeGraphInsightsEngine(db)
-    problem = await engine.get_problem_details(current_user.tenant_id, problem_id)
+    problem = await engine.get_problem_details(problem_id)
 
     if not problem:
         raise HTTPException(status_code=404, detail="Problem not found")
@@ -243,7 +243,7 @@ async def get_problem_details(
 async def get_revenue_by_channel(
     days: int = Query(default=30, ge=1, le=365, description="Lookback period in days"),
     db: AsyncSession = Depends(get_db),
-    current_user: User = Depends(get_current_user),
+    current_user: CurrentUser = Depends(get_current_user),
 ) -> list[RevenueByChannelResponse]:
     """
     Get revenue breakdown by acquisition channel.
@@ -251,7 +251,7 @@ async def get_revenue_by_channel(
     Uses Knowledge Graph to trace revenue attribution through touchpoints.
     """
     kg = KnowledgeGraphService(db)
-    results = await kg.get_revenue_by_channel(current_user.tenant_id, days=days)
+    results = await kg.get_revenue_by_channel(days=days)
 
     return [
         RevenueByChannelResponse(
@@ -270,7 +270,7 @@ async def get_revenue_by_channel(
 async def get_revenue_by_segment(
     days: int = Query(default=30, ge=1, le=365, description="Lookback period in days"),
     db: AsyncSession = Depends(get_db),
-    current_user: User = Depends(get_current_user),
+    current_user: CurrentUser = Depends(get_current_user),
 ) -> list[RevenueBySegmentResponse]:
     """
     Get revenue breakdown by customer segment.
@@ -278,9 +278,7 @@ async def get_revenue_by_segment(
     Shows which CDP segments are driving the most revenue.
     """
     kg = KnowledgeGraphService(db)
-    results = await kg.get_segment_revenue_performance(
-        current_user.tenant_id, days=days
-    )
+    results = await kg.get_segment_revenue_performance(days=days)
 
     return [
         RevenueBySegmentResponse(
@@ -298,7 +296,7 @@ async def get_revenue_by_segment(
 async def get_customer_journey(
     profile_id: str,
     db: AsyncSession = Depends(get_db),
-    current_user: User = Depends(get_current_user),
+    current_user: CurrentUser = Depends(get_current_user),
 ) -> CustomerJourneyResponse:
     """
     Get complete customer journey for a profile.
@@ -306,7 +304,7 @@ async def get_customer_journey(
     Traces all events, touchpoints, and revenue through the Knowledge Graph.
     """
     kg = KnowledgeGraphService(db)
-    journey = await kg.get_customer_journey(current_user.tenant_id, profile_id)
+    journey = await kg.get_customer_journey(profile_id)
 
     if not journey:
         raise HTTPException(status_code=404, detail="Profile not found")
@@ -328,7 +326,7 @@ async def get_customer_journey(
 async def get_blocked_automations(
     days: int = Query(default=7, ge=1, le=90, description="Lookback period in days"),
     db: AsyncSession = Depends(get_db),
-    current_user: User = Depends(get_current_user),
+    current_user: CurrentUser = Depends(get_current_user),
 ) -> list[dict[str, Any]]:
     """
     Get automations that were blocked by Trust Gate.
@@ -336,14 +334,14 @@ async def get_blocked_automations(
     Includes block reason and signal health at time of block.
     """
     kg = KnowledgeGraphService(db)
-    return await kg.get_blocked_automations(current_user.tenant_id, days=days)
+    return await kg.get_blocked_automations(days=days)
 
 
 @router.get("/analytics/automation/{automation_id}/trace")
 async def trace_automation_decision(
     automation_id: str,
     db: AsyncSession = Depends(get_db),
-    current_user: User = Depends(get_current_user),
+    current_user: CurrentUser = Depends(get_current_user),
 ) -> dict[str, Any]:
     """
     Trace the full decision path for an automation.
@@ -351,7 +349,7 @@ async def trace_automation_decision(
     Shows: Signal -> TrustGate -> Automation -> Outcome
     """
     kg = KnowledgeGraphService(db)
-    trace = await kg.trace_automation_decision(current_user.tenant_id, automation_id)
+    trace = await kg.trace_automation_decision(automation_id)
 
     if not trace:
         raise HTTPException(status_code=404, detail="Automation not found")
@@ -367,15 +365,15 @@ async def trace_automation_decision(
 @router.get("/stats", response_model=GraphStatsResponse)
 async def get_graph_stats(
     db: AsyncSession = Depends(get_db),
-    current_user: User = Depends(get_current_user),
+    current_user: CurrentUser = Depends(get_current_user),
 ) -> GraphStatsResponse:
     """
-    Get Knowledge Graph statistics for the tenant.
+    Get Knowledge Graph statistics.
 
     Returns counts of all node and edge types.
     """
     kg = KnowledgeGraphService(db)
-    stats = await kg.get_graph_stats(current_user.tenant_id)
+    stats = await kg.get_graph_stats()
 
     # Separate node and edge counts
     node_counts = {

@@ -135,9 +135,8 @@ class FunnelService:
     Service for managing CDP funnels and computing conversion analytics.
     """
 
-    def __init__(self, db: AsyncSession, tenant_id: int):
+    def __init__(self, db: AsyncSession):
         self.db = db
-        self.tenant_id = tenant_id
         self.evaluator = FunnelStepEvaluator()
 
     # -------------------------------------------------------------------------
@@ -163,7 +162,6 @@ class FunnelService:
         # Ensure slug is unique
         existing = await self.db.execute(
             select(CDPFunnel).where(
-                CDPFunnel.tenant_id == self.tenant_id,
                 CDPFunnel.slug == slug,
             )
         )
@@ -171,7 +169,6 @@ class FunnelService:
             slug = f"{slug}-{int(time.time())}"
 
         funnel = CDPFunnel(
-            tenant_id=self.tenant_id,
             name=name,
             description=description,
             slug=slug,
@@ -193,7 +190,6 @@ class FunnelService:
             funnel_id=str(funnel.id),
             name=name,
             steps_count=len(steps),
-            tenant_id=self.tenant_id,
         )
 
         return funnel
@@ -203,7 +199,6 @@ class FunnelService:
         result = await self.db.execute(
             select(CDPFunnel).where(
                 CDPFunnel.id == funnel_id,
-                CDPFunnel.tenant_id == self.tenant_id,
             )
         )
         return result.scalar_one_or_none()
@@ -214,18 +209,14 @@ class FunnelService:
         limit: int = 50,
         offset: int = 0,
     ) -> tuple[list[CDPFunnel], int]:
-        """List all funnels for tenant."""
-        query = select(CDPFunnel).where(CDPFunnel.tenant_id == self.tenant_id)
+        """List all funnels."""
+        query = select(CDPFunnel)
 
         if status:
             query = query.where(CDPFunnel.status == status)
 
         # Get total count
-        count_result = await self.db.execute(
-            select(func.count(CDPFunnel.id)).where(
-                CDPFunnel.tenant_id == self.tenant_id
-            )
-        )
+        count_result = await self.db.execute(select(func.count(CDPFunnel.id)))
         total = count_result.scalar() or 0
 
         # Get paginated results
@@ -276,7 +267,6 @@ class FunnelService:
         await self.db.execute(
             delete(CDPFunnelEntry).where(
                 CDPFunnelEntry.funnel_id == funnel_id,
-                CDPFunnelEntry.tenant_id == self.tenant_id,
             )
         )
 
@@ -287,7 +277,6 @@ class FunnelService:
         logger.info(
             "cdp_funnel_deleted",
             funnel_id=str(funnel_id),
-            tenant_id=self.tenant_id,
         )
 
         return True
@@ -328,7 +317,6 @@ class FunnelService:
         await self.db.execute(
             delete(CDPFunnelEntry).where(
                 CDPFunnelEntry.funnel_id == funnel_id,
-                CDPFunnelEntry.tenant_id == self.tenant_id,
             )
         )
 
@@ -342,7 +330,6 @@ class FunnelService:
         while True:
             result = await self.db.execute(
                 select(CDPProfile)
-                .where(CDPProfile.tenant_id == self.tenant_id)
                 .limit(batch_size)
                 .offset(offset)
             )
@@ -358,7 +345,6 @@ class FunnelService:
             events_result = await self.db.execute(
                 select(CDPEvent)
                 .where(
-                    CDPEvent.tenant_id == self.tenant_id,
                     CDPEvent.profile_id.in_(profile_ids),
                 )
                 .order_by(CDPEvent.event_time.asc())
@@ -438,7 +424,6 @@ class FunnelService:
             total_converted=total_converted,
             overall_conversion_rate=overall_rate,
             duration_ms=funnel.computation_duration_ms,
-            tenant_id=self.tenant_id,
         )
 
         return {
@@ -469,7 +454,6 @@ class FunnelService:
             result = await self.db.execute(
                 select(CDPEvent)
                 .where(
-                    CDPEvent.tenant_id == self.tenant_id,
                     CDPEvent.profile_id == profile.id,
                 )
                 .order_by(CDPEvent.event_time.asc())
@@ -490,7 +474,6 @@ class FunnelService:
 
         # Create funnel entry
         entry = CDPFunnelEntry(
-            tenant_id=self.tenant_id,
             funnel_id=funnel.id,
             profile_id=profile.id,
             entered_at=step1_time,
@@ -561,7 +544,6 @@ class FunnelService:
         # Build query for entries
         query = select(CDPFunnelEntry).where(
             CDPFunnelEntry.funnel_id == funnel_id,
-            CDPFunnelEntry.tenant_id == self.tenant_id,
         )
 
         if start_date:
@@ -645,7 +627,6 @@ class FunnelService:
         """
         query = select(CDPFunnelEntry).where(
             CDPFunnelEntry.profile_id == profile_id,
-            CDPFunnelEntry.tenant_id == self.tenant_id,
         )
 
         if funnel_id:
@@ -690,7 +671,6 @@ class FunnelService:
         # Get entries that stopped at this step
         query = select(CDPFunnelEntry).where(
             CDPFunnelEntry.funnel_id == funnel_id,
-            CDPFunnelEntry.tenant_id == self.tenant_id,
             CDPFunnelEntry.completed_steps == at_step,
             CDPFunnelEntry.is_converted == False,
         )
@@ -699,7 +679,6 @@ class FunnelService:
         count_result = await self.db.execute(
             select(func.count(CDPFunnelEntry.id)).where(
                 CDPFunnelEntry.funnel_id == funnel_id,
-                CDPFunnelEntry.tenant_id == self.tenant_id,
                 CDPFunnelEntry.completed_steps == at_step,
                 CDPFunnelEntry.is_converted == False,
             )

@@ -218,7 +218,7 @@ class TestRealEMQService:
         # one pixel event with no CAPI match -> 0% match, 0% delivery
         record_pixel_event(_pixel(platform, "lonely"))
         svc = RealEMQService()
-        measurement = svc.measure_emq(platform, "pixel_1", "t1")
+        measurement = svc.measure_emq(platform, "pixel_1")
         joined = " ".join(measurement.recommendations)
         assert "Low match rate" in joined
         assert "CAPI delivery issues" in joined
@@ -229,7 +229,7 @@ class TestRealEMQService:
             record_pixel_event(_pixel(platform, f"h{i}"))
             log_event_delivery(_capi_log(platform, f"h{i}", latency_ms=100.0))
         svc = RealEMQService()
-        measurement = svc.measure_emq(platform, "pixel_1", "t1")
+        measurement = svc.measure_emq(platform, "pixel_1")
         assert measurement.match_rate == 100.0
         assert measurement.event_coverage == 100.0
         assert measurement.recommendations == [
@@ -238,7 +238,7 @@ class TestRealEMQService:
 
     def test_history_shape(self):
         svc = RealEMQService()
-        history = svc.get_history("meta", "px", "t1", days=7)
+        history = svc.get_history("meta", "px", days=7)
         assert len(history) == 7
         assert set(history[0]) == {
             "date",

@@ -76,7 +76,7 @@ def _change(campaign_id="c1", current=100.0, new=110.0, percent=10.0):
 class TestCreatePlan:
     def test_basic_plan(self):
         svc = BudgetReallocationService()
-        plan = svc.create_plan("t1", [_campaign("a"), _campaign("b")])
+        plan = svc.create_plan([_campaign("a"), _campaign("b")])
         assert plan.status == ReallocationStatus.PROPOSED
         assert plan.total_current_budget == 200.0
         assert plan.total_new_budget == 200.0
@@ -87,7 +87,6 @@ class TestCreatePlan:
     def test_low_quality_campaigns_excluded(self):
         svc = BudgetReallocationService()
         plan = svc.create_plan(
-            "t1",
             [_campaign("good", quality=0.9), _campaign("bad", quality=0.3)],
         )
         assert [c.campaign_id for c in plan.changes] == ["good"]
@@ -95,7 +94,6 @@ class TestCreatePlan:
     def test_all_low_quality_falls_back_to_all(self):
         svc = BudgetReallocationService()
         plan = svc.create_plan(
-            "t1",
             [_campaign("a", quality=0.1), _campaign("b", quality=0.2)],
         )
         assert len(plan.changes) == 2
@@ -103,14 +101,13 @@ class TestCreatePlan:
     def test_explicit_total_budget(self):
         svc = BudgetReallocationService()
         config = ReallocationConfig(total_budget=500.0)
-        plan = svc.create_plan("t1", [_campaign("a"), _campaign("b")], config)
+        plan = svc.create_plan([_campaign("a"), _campaign("b")], config)
         assert plan.total_new_budget == 500.0
 
     def test_changes_respect_max_change_percent(self):
         svc = BudgetReallocationService()
         config = ReallocationConfig(max_change_percent=30.0)
         plan = svc.create_plan(
-            "t1",
             [_campaign("hot", roas=10.0), _campaign("cold", roas=0.5)],
             config,
         )
@@ -226,7 +223,7 @@ class TestGuardrails:
 # =============================================================================
 class TestLifecycle:
     def _approved_plan(self, svc):
-        plan = svc.create_plan("t1", [_campaign("a", roas=3.0), _campaign("b")])
+        plan = svc.create_plan([_campaign("a", roas=3.0), _campaign("b")])
         assert svc.approve(plan.plan_id, approved_by="alice") is True
         return plan
 
@@ -247,13 +244,13 @@ class TestLifecycle:
 
     def test_approve_blocked_by_guardrails(self):
         svc = BudgetReallocationService()
-        plan = svc.create_plan("t1", [_campaign("a")])
+        plan = svc.create_plan([_campaign("a")])
         plan.guardrail_check.passed = False
         assert svc.approve(plan.plan_id, "alice") is False
 
     def test_execute_requires_approval(self):
         svc = BudgetReallocationService()
-        plan = svc.create_plan("t1", [_campaign("a")])
+        plan = svc.create_plan([_campaign("a")])
         result = svc.execute(plan.plan_id)
         assert result.success is False
         assert result.changes_failed[0][1] == "Plan not approved"
@@ -289,7 +286,7 @@ class TestLifecycle:
 
     def test_rollback_without_rollback_data(self):
         svc = BudgetReallocationService()
-        plan = svc.create_plan("t1", [_campaign("a")])
+        plan = svc.create_plan([_campaign("a")])
         plan.rollback_plan = None
         result = svc.rollback(plan.plan_id)
         assert result.success is False
@@ -303,7 +300,7 @@ class TestLifecycle:
     def test_simulate_summarizes_plan(self):
         svc = BudgetReallocationService()
         plan = svc.create_plan(
-            "t1", [_campaign("hot", roas=8.0), _campaign("cold", roas=0.5)]
+            [_campaign("hot", roas=8.0), _campaign("cold", roas=0.5)]
         )
         sim = svc.simulate(plan.plan_id)
         assert sim["plan_id"] == plan.plan_id
@@ -315,11 +312,10 @@ class TestLifecycle:
 
     def test_list_plans_filters(self):
         svc = BudgetReallocationService()
-        plan1 = svc.create_plan("t1", [_campaign("a")])
-        svc.create_plan("t2", [_campaign("b")])
+        plan1 = svc.create_plan([_campaign("a")])
+        svc.create_plan([_campaign("b")])
         svc.approve(plan1.plan_id, "alice")
         assert len(svc.list_plans()) == 2
-        assert len(svc.list_plans(tenant_id="t1")) == 1
         approved = svc.list_plans(status=ReallocationStatus.APPROVED)
         assert [p.plan_id for p in approved] == [plan1.plan_id]
 
@@ -330,7 +326,6 @@ class TestLifecycle:
 class TestConvenience:
     def test_create_reallocation_plan_dict_api(self):
         result = create_reallocation_plan(
-            tenant_id="ut_realloc_t1",
             campaigns=[
                 {"campaign_id": "x", "daily_budget": 100.0, "roas": 3.0},
                 {"campaign_id": "y", "daily_budget": 100.0, "roas": 1.0},

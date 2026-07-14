@@ -39,11 +39,10 @@ class PipedriveSyncService:
     - Sync status logging
     """
 
-    def __init__(self, db: AsyncSession, tenant_id: int):
+    def __init__(self, db: AsyncSession):
         self.db = db
-        self.tenant_id = tenant_id
-        self.client = PipedriveClient(db, tenant_id)
-        self.identity_service = IdentityResolutionService(db, tenant_id)
+        self.client = PipedriveClient(db)
+        self.identity_service = IdentityResolutionService(db)
 
     async def sync_all(self, full_sync: bool = False) -> dict[str, Any]:
         """
@@ -93,7 +92,6 @@ class PipedriveSyncService:
 
             logger.info(
                 "pipedrive_sync_complete",
-                tenant_id=self.tenant_id,
                 results=results,
             )
 
@@ -102,7 +100,6 @@ class PipedriveSyncService:
             await self._log_sync(results, start_time, "failed", str(e))
             logger.error(
                 "pipedrive_sync_failed",
-                tenant_id=self.tenant_id,
                 error=str(e),
             )
 
@@ -314,7 +311,6 @@ class PipedriveSyncService:
 
         # Create deal event
         event = CDPEvent(
-            tenant_id=self.tenant_id,
             profile_id=profile.id,
             event_name="PipedriveDeal",
             event_time=datetime.now(UTC),
@@ -356,7 +352,6 @@ class PipedriveSyncService:
         # Look for external ID identifier
         result = await self.db.execute(
             select(CDPProfileIdentifier).where(
-                CDPProfileIdentifier.tenant_id == self.tenant_id,
                 CDPProfileIdentifier.identifier_type
                 == IdentifierType.EXTERNAL_ID.value,
                 CDPProfileIdentifier.identifier_hash == f"pipedrive:{person_id}",
@@ -383,7 +378,6 @@ class PipedriveSyncService:
         duration_ms = int((datetime.now(UTC) - start_time).total_seconds() * 1000)
 
         log = CRMSyncLog(
-            tenant_id=self.tenant_id,
             provider=CRMProvider.PIPEDRIVE,
             sync_type="full",
             status=status,

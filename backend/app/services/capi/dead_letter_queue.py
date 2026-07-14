@@ -80,7 +80,6 @@ class DLQEntry:
     """
 
     id: str
-    tenant_id: int
     platform: str
     event_name: str
     event_id: Optional[str]
@@ -257,7 +256,6 @@ class DeadLetterQueue:
 
     async def add_failed_event(
         self,
-        tenant_id: int,
         platform: str,
         event_name: str,
         event_data: Dict[str, Any],
@@ -271,7 +269,6 @@ class DeadLetterQueue:
         Add a failed event to the Dead Letter Queue.
 
         Args:
-            tenant_id: Tenant ID
             platform: Platform name (meta, google, etc.)
             event_name: Event name (Purchase, Lead, etc.)
             event_data: Full event data
@@ -288,7 +285,6 @@ class DeadLetterQueue:
 
         entry = DLQEntry(
             id=str(uuid4()),
-            tenant_id=tenant_id,
             platform=platform,
             event_name=event_name,
             event_id=event_data.get("event_id"),
@@ -372,7 +368,6 @@ class DeadLetterQueue:
                 await db.merge(
                     CAPIDeadLetterEntry(
                         id=entry.id,
-                        tenant_id=entry.tenant_id,
                         platform=entry.platform,
                         event_id=entry.event_id,
                         event_name=entry.event_name,
@@ -429,7 +424,6 @@ class DeadLetterQueue:
     async def get_pending_entries(
         self,
         platform: Optional[str] = None,
-        tenant_id: Optional[int] = None,
         limit: int = 100,
         offset: int = 0,
     ) -> List[DLQEntry]:
@@ -438,7 +432,6 @@ class DeadLetterQueue:
 
         Args:
             platform: Filter by platform
-            tenant_id: Filter by tenant
             limit: Maximum entries to return
             offset: Offset for pagination
 
@@ -461,8 +454,6 @@ class DeadLetterQueue:
                     if entry and entry.status == DLQStatus.PENDING:
                         if platform and entry.platform != platform:
                             continue
-                        if tenant_id and entry.tenant_id != tenant_id:
-                            continue
                         entries.append(entry)
 
                 return entries
@@ -475,7 +466,6 @@ class DeadLetterQueue:
             for e in self._memory_queue
             if e.status == DLQStatus.PENDING
             and (platform is None or e.platform == platform)
-            and (tenant_id is None or e.tenant_id == tenant_id)
         ]
         return filtered[offset : offset + limit]
 
@@ -675,7 +665,6 @@ class DeadLetterQueue:
 
         return {
             "dlq_entry_id": entry.id,
-            "tenant_id": entry.tenant_id,
             "platform": entry.platform,
             "event_data": entry.event_data,
             "original_retry_count": entry.retry_count,

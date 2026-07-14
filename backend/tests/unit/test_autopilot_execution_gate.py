@@ -27,7 +27,6 @@ pytestmark = pytest.mark.unit
 class _FakeAction:
     """Minimal stand-in for a FactActionsQueue row."""
 
-    tenant_id = 7
     action_type = "budget_increase"
     entity_type = "campaign"
     entity_id = "camp-123"
@@ -126,7 +125,6 @@ class TestEnforceBeforeExecute:
         out = await mod.enforce_before_execute("SESSION", _FakeAction(), action_details)
 
         assert out.allowed is True
-        assert captured["tenant_id"] == 7
         assert captured["action_type"] == "budget_increase"
         assert captured["entity_id"] == "camp-123"
         # proposed_value is the parsed action_json

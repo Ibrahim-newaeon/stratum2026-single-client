@@ -103,7 +103,6 @@ def test_evaluate_condition_unknown_field():
 # --- RuleExecution is built with the real columns ---
 def test_rule_execution_accepts_new_columns():
     ex = RuleExecution(
-        tenant_id=1,
         rule_id=1,
         campaign_id=1,
         triggered=True,
@@ -118,7 +117,6 @@ def test_rule_execution_rejects_old_columns():
     # The pre-fix kwargs must no longer be accepted (guards against regressions).
     with pytest.raises(TypeError):
         RuleExecution(
-            tenant_id=1,
             rule_id=1,
             triggered_at="now",
             condition_values={},

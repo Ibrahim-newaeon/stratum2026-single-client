@@ -39,7 +39,16 @@ from app.services.whatsapp_client import (
 )
 
 logger = get_logger(__name__)
-router = APIRouter()
+
+# SECURITY (STRAT-SC-001/C3): the old per-org request guards were this
+# router's only auth; they were deleted in the de-tenanting sweep, so real
+# auth is enforced router-wide here. Webhook routes live on a separate,
+# un-authed router below — they self-authenticate via Meta's HMAC signature
+# / hub verify token and are on the middleware's public allowlist.
+from app.auth.deps import get_current_user  # noqa: E402
+
+router = APIRouter(dependencies=[Depends(get_current_user)])
+webhook_router = APIRouter()
 
 
 # =============================================================================
@@ -190,12 +199,7 @@ async def list_contacts(
     search: Optional[str] = None,
 ):
     """List WhatsApp contacts with filtering and pagination."""
-    tenant_id = getattr(request.state, "tenant_id", None)
-
-    query = select(WhatsAppContact).where(
-        WhatsAppContact.tenant_id == tenant_id,
-        WhatsAppContact.is_active == True,
-    )
+    query = select(WhatsAppContact).where(WhatsAppContact.is_active == True)
 
     if opt_in_status:
         query = query.where(WhatsAppContact.opt_in_status == opt_in_status)
@@ -240,13 +244,11 @@ async def create_contact(
     db: AsyncSession = Depends(get_async_session),
 ):
     """Add a new WhatsApp contact."""
-    tenant_id = getattr(request.state, "tenant_id", None)
     user_id = getattr(request.state, "user_id", None)
 
     # Check for duplicate phone number
     existing = await db.execute(
         select(WhatsAppContact).where(
-            WhatsAppContact.tenant_id == tenant_id,
             WhatsAppContact.phone_number == contact_data.phone_number,
         )
     )
@@ -257,7 +259,6 @@ async def create_contact(
         )
 
     contact = WhatsAppContact(
-        tenant_id=tenant_id,
         user_id=user_id,
         phone_number=contact_data.phone_number,
         country_code=contact_data.country_code,
@@ -269,7 +270,7 @@ async def create_contact(
     await db.commit()
     await db.refresh(contact)
 
-    logger.info(f"Created WhatsApp contact {contact.id} for tenant {tenant_id}")
+    logger.info(f"Created WhatsApp contact {contact.id}")
 
     return APIResponse(
         success=True,
@@ -306,7 +307,6 @@ async def bulk_import_contacts(
     Imports multiple contacts in a single request.
     Skips duplicates and returns success/failure counts.
     """
-    tenant_id = getattr(request.state, "tenant_id", None)
     user_id = getattr(request.state, "user_id", None)
 
     success_count = 0
@@ -319,7 +319,6 @@ async def bulk_import_contacts(
             # Check for duplicate phone number
             existing = await db.execute(
                 select(WhatsAppContact).where(
-                    WhatsAppContact.tenant_id == tenant_id,
                     WhatsAppContact.phone_number == contact_data.phone_number,
                 )
             )
@@ -335,7 +334,6 @@ async def bulk_import_contacts(
                 continue
 
             contact = WhatsAppContact(
-                tenant_id=tenant_id,
                 user_id=user_id,
                 phone_number=contact_data.phone_number,
                 country_code=contact_data.country_code,
@@ -358,9 +356,7 @@ async def bulk_import_contacts(
     # Commit all successful inserts
     await db.commit()
 
-    logger.info(
-        f"Bulk imported {success_count} contacts for tenant {tenant_id}, {failed_count} failed"
-    )
+    logger.info(f"Bulk imported {success_count} contacts, {failed_count} failed")
 
     return APIResponse(
         success=True,
@@ -392,13 +388,8 @@ async def update_contact(
     db: AsyncSession = Depends(get_async_session),
 ):
     """Update a WhatsApp contact's details."""
-    tenant_id = getattr(request.state, "tenant_id", None)
-
     result = await db.execute(
-        select(WhatsAppContact).where(
-            WhatsAppContact.id == contact_id,
-            WhatsAppContact.tenant_id == tenant_id,
-        )
+        select(WhatsAppContact).where(WhatsAppContact.id == contact_id)
     )
     contact = result.scalar_one_or_none()
 
@@ -429,13 +420,8 @@ async def delete_contact(
     db: AsyncSession = Depends(get_async_session),
 ):
     """Delete a WhatsApp contact (soft delete)."""
-    tenant_id = getattr(request.state, "tenant_id", None)
-
     result = await db.execute(
-        select(WhatsAppContact).where(
-            WhatsAppContact.id == contact_id,
-            WhatsAppContact.tenant_id == tenant_id,
-        )
+        select(WhatsAppContact).where(WhatsAppContact.id == contact_id)
     )
     contact = result.scalar_one_or_none()
 
@@ -462,13 +448,8 @@ async def verify_contact(
     db: AsyncSession = Depends(get_async_session),
 ):
     """Send verification code to contact."""
-    tenant_id = getattr(request.state, "tenant_id", None)
-
     result = await db.execute(
-        select(WhatsAppContact).where(
-            WhatsAppContact.id == contact_id,
-            WhatsAppContact.tenant_id == tenant_id,
-        )
+        select(WhatsAppContact).where(WhatsAppContact.id == contact_id)
     )
     contact = result.scalar_one_or_none()
 
@@ -531,13 +512,8 @@ async def opt_in_contact(
     db: AsyncSession = Depends(get_async_session),
 ):
     """Opt-in a contact for WhatsApp messages."""
-    tenant_id = getattr(request.state, "tenant_id", None)
-
     result = await db.execute(
-        select(WhatsAppContact).where(
-            WhatsAppContact.id == contact_id,
-            WhatsAppContact.tenant_id == tenant_id,
-        )
+        select(WhatsAppContact).where(WhatsAppContact.id == contact_id)
     )
     contact = result.scalar_one_or_none()
 
@@ -566,13 +542,8 @@ async def opt_out_contact(
     db: AsyncSession = Depends(get_async_session),
 ):
     """Opt-out a contact from WhatsApp messages."""
-    tenant_id = getattr(request.state, "tenant_id", None)
-
     result = await db.execute(
-        select(WhatsAppContact).where(
-            WhatsAppContact.id == contact_id,
-            WhatsAppContact.tenant_id == tenant_id,
-        )
+        select(WhatsAppContact).where(WhatsAppContact.id == contact_id)
     )
     contact = result.scalar_one_or_none()
 
@@ -605,9 +576,7 @@ async def list_templates(
     category: Optional[WhatsAppTemplateCategory] = None,
 ):
     """List WhatsApp message templates."""
-    tenant_id = getattr(request.state, "tenant_id", None)
-
-    query = select(WhatsAppTemplate).where(WhatsAppTemplate.tenant_id == tenant_id)
+    query = select(WhatsAppTemplate)
 
     if status:
         query = query.where(WhatsAppTemplate.status == status)
@@ -649,10 +618,7 @@ async def create_template(
     db: AsyncSession = Depends(get_async_session),
 ):
     """Create a new message template (will be submitted to Meta for approval)."""
-    tenant_id = getattr(request.state, "tenant_id", None)
-
     template = WhatsAppTemplate(
-        tenant_id=tenant_id,
         name=template_data.name,
         language=template_data.language,
         category=template_data.category,
@@ -744,7 +710,7 @@ async def create_template(
 
     await db.refresh(template)
 
-    logger.info(f"Created WhatsApp template {template.id} for tenant {tenant_id}")
+    logger.info(f"Created WhatsApp template {template.id}")
 
     return APIResponse(
         success=True,
@@ -762,13 +728,8 @@ async def get_template(
     db: AsyncSession = Depends(get_async_session),
 ):
     """Get a specific template by ID."""
-    tenant_id = getattr(request.state, "tenant_id", None)
-
     result = await db.execute(
-        select(WhatsAppTemplate).where(
-            WhatsAppTemplate.id == template_id,
-            WhatsAppTemplate.tenant_id == tenant_id,
-        )
+        select(WhatsAppTemplate).where(WhatsAppTemplate.id == template_id)
     )
     template = result.scalar_one_or_none()
 
@@ -788,13 +749,8 @@ async def delete_template(
     db: AsyncSession = Depends(get_async_session),
 ):
     """Delete a template."""
-    tenant_id = getattr(request.state, "tenant_id", None)
-
     result = await db.execute(
-        select(WhatsAppTemplate).where(
-            WhatsAppTemplate.id == template_id,
-            WhatsAppTemplate.tenant_id == tenant_id,
-        )
+        select(WhatsAppTemplate).where(WhatsAppTemplate.id == template_id)
     )
     template = result.scalar_one_or_none()
 
@@ -805,7 +761,7 @@ async def delete_template(
     await db.delete(template)
     await db.commit()
 
-    logger.info(f"Deleted WhatsApp template {template_id} for tenant {tenant_id}")
+    logger.info(f"Deleted WhatsApp template {template_id}")
 
     return APIResponse(
         success=True,
@@ -823,13 +779,10 @@ async def send_message(
     db: AsyncSession = Depends(get_async_session),
 ):
     """Queue a WhatsApp message for sending."""
-    tenant_id = getattr(request.state, "tenant_id", None)
-
     # Verify contact exists and is opted in
     contact_result = await db.execute(
         select(WhatsAppContact).where(
             WhatsAppContact.id == message_data.contact_id,
-            WhatsAppContact.tenant_id == tenant_id,
         )
     )
     contact = contact_result.scalar_one_or_none()
@@ -845,7 +798,6 @@ async def send_message(
 
     # Create message record
     message = WhatsAppMessage(
-        tenant_id=tenant_id,
         contact_id=message_data.contact_id,
         message_type=message_data.message_type,
         template_name=message_data.template_name,
@@ -869,7 +821,6 @@ async def send_message(
     from app.workers.tasks import send_whatsapp_message
 
     send_whatsapp_message.delay(
-        tenant_id=tenant_id,
         message_id=message.id,
         contact_phone=contact.phone_number,
         message_type=message_data.message_type,
@@ -897,12 +848,9 @@ async def send_broadcast(
     db: AsyncSession = Depends(get_async_session),
 ):
     """Send a broadcast message to multiple contacts using a template."""
-    tenant_id = getattr(request.state, "tenant_id", None)
-
     # Verify template exists and is approved
     template_result = await db.execute(
         select(WhatsAppTemplate).where(
-            WhatsAppTemplate.tenant_id == tenant_id,
             WhatsAppTemplate.name == broadcast_data.template_name,
             WhatsAppTemplate.status == WhatsAppTemplateStatus.APPROVED,
         )
@@ -918,7 +866,6 @@ async def send_broadcast(
     # Fetch all contacts
     contacts_result = await db.execute(
         select(WhatsAppContact).where(
-            WhatsAppContact.tenant_id == tenant_id,
             WhatsAppContact.id.in_(broadcast_data.contact_ids),
         )
     )
@@ -935,7 +882,6 @@ async def send_broadcast(
 
         # Create message record
         message = WhatsAppMessage(
-            tenant_id=tenant_id,
             contact_id=contact.id,
             message_type="template",
             template_name=broadcast_data.template_name,
@@ -957,7 +903,6 @@ async def send_broadcast(
         from app.workers.tasks import send_whatsapp_broadcast
 
         send_whatsapp_broadcast.delay(
-            tenant_id=tenant_id,
             template_name=broadcast_data.template_name,
             template_variables=broadcast_data.template_variables,
             contact_ids=[
@@ -1000,9 +945,7 @@ async def list_messages(
     page_size: int = Query(20, ge=1, le=100),
 ):
     """List WhatsApp messages with filtering."""
-    tenant_id = getattr(request.state, "tenant_id", None)
-
-    query = select(WhatsAppMessage).where(WhatsAppMessage.tenant_id == tenant_id)
+    query = select(WhatsAppMessage)
 
     if contact_id:
         query = query.where(WhatsAppMessage.contact_id == contact_id)
@@ -1046,13 +989,8 @@ async def get_message(
     db: AsyncSession = Depends(get_async_session),
 ):
     """Get message details and delivery status."""
-    tenant_id = getattr(request.state, "tenant_id", None)
-
     result = await db.execute(
-        select(WhatsAppMessage).where(
-            WhatsAppMessage.id == message_id,
-            WhatsAppMessage.tenant_id == tenant_id,
-        )
+        select(WhatsAppMessage).where(WhatsAppMessage.id == message_id)
     )
     message = result.scalar_one_or_none()
 
@@ -1068,8 +1006,8 @@ async def get_message(
 # =============================================================================
 # Webhook Endpoint
 # =============================================================================
-@router.post("/webhooks/status")
-@router.post("/webhooks/verify")
+@webhook_router.post("/webhooks/status")
+@webhook_router.post("/webhooks/verify")
 async def whatsapp_webhook(
     request: Request,
     db: AsyncSession = Depends(get_async_session),
@@ -1146,7 +1084,7 @@ async def whatsapp_webhook(
     return {"status": "received"}
 
 
-@router.get("/webhooks/verify")
+@webhook_router.get("/webhooks/verify")
 async def verify_webhook(
     mode: str = Query(alias="hub.mode"),
     token: str = Query(alias="hub.verify_token"),
@@ -1178,11 +1116,7 @@ async def list_conversations(
     page_size: int = Query(20, ge=1, le=100),
 ):
     """List WhatsApp conversations (24-hour windows)."""
-    tenant_id = getattr(request.state, "tenant_id", None)
-
-    query = select(WhatsAppConversation).where(
-        WhatsAppConversation.tenant_id == tenant_id
-    )
+    query = select(WhatsAppConversation)
 
     if contact_id:
         query = query.where(WhatsAppConversation.contact_id == contact_id)

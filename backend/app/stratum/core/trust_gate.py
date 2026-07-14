@@ -77,16 +77,16 @@ class TrustGateConfig:
     )
 
     @classmethod
-    def from_tenant_settings(cls, settings: Optional[dict] = None) -> "TrustGateConfig":
-        """Build a config from a tenant's settings JSONB (TRUST-007).
+    def from_org_settings(cls, settings: Optional[dict] = None) -> "TrustGateConfig":
+        """Build a config from the organization's settings JSONB (TRUST-007).
 
-        Onboarding collects per-tenant trust thresholds
+        Onboarding collects org-level trust thresholds
         (``trust_threshold_autopilot`` = the signal-health score required to
         auto-execute, ``trust_threshold_alert`` = the hold/alert floor) and
-        stores them on ``tenant.settings`` — but the trust gate ignored them and
-        always used the global defaults. This maps them onto the config,
-        clamping to [0, 100] and guaranteeing hold <= pass; missing/invalid
-        values fall back to the class defaults.
+        stores them on ``organization.settings`` — but the trust gate ignored
+        them and always used the global defaults. This maps them onto the
+        config, clamping to [0, 100] and guaranteeing hold <= pass;
+        missing/invalid values fall back to the class defaults.
         """
         config = cls()
         if not settings:

@@ -126,9 +126,8 @@ async def list_api_keys(
     List all API keys for the current user (masked).
     """
     user_id = getattr(request.state, "user_id", None)
-    tenant_id = getattr(request.state, "tenant_id", None)
 
-    if not user_id or not tenant_id:
+    if not user_id:
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
             detail="Not authenticated",
@@ -139,7 +138,6 @@ async def list_api_keys(
         .where(
             and_(
                 APIKey.user_id == user_id,
-                APIKey.tenant_id == tenant_id,
             )
         )
         .order_by(APIKey.created_at.desc())
@@ -182,9 +180,8 @@ async def create_api_key(
     IMPORTANT: The full key is only returned once. Store it securely.
     """
     user_id = getattr(request.state, "user_id", None)
-    tenant_id = getattr(request.state, "tenant_id", None)
 
-    if not user_id or not tenant_id:
+    if not user_id:
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
             detail="Not authenticated",
@@ -195,7 +192,6 @@ async def create_api_key(
         select(APIKey).where(
             and_(
                 APIKey.user_id == user_id,
-                APIKey.tenant_id == tenant_id,
                 APIKey.is_active == True,
             )
         )
@@ -220,7 +216,6 @@ async def create_api_key(
     # Create database record
     api_key = APIKey(
         user_id=user_id,
-        tenant_id=tenant_id,
         name=body.name,
         key_hash=key_hash,
         key_prefix=key_prefix,
@@ -261,9 +256,8 @@ async def regenerate_api_key(
     Regenerate an API key. The old key will be invalidated immediately.
     """
     user_id = getattr(request.state, "user_id", None)
-    tenant_id = getattr(request.state, "tenant_id", None)
 
-    if not user_id or not tenant_id:
+    if not user_id:
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
             detail="Not authenticated",
@@ -275,7 +269,6 @@ async def regenerate_api_key(
             and_(
                 APIKey.id == key_id,
                 APIKey.user_id == user_id,
-                APIKey.tenant_id == tenant_id,
             )
         )
     )
@@ -321,9 +314,8 @@ async def delete_api_key(
     Delete (revoke) an API key.
     """
     user_id = getattr(request.state, "user_id", None)
-    tenant_id = getattr(request.state, "tenant_id", None)
 
-    if not user_id or not tenant_id:
+    if not user_id:
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
             detail="Not authenticated",
@@ -335,7 +327,6 @@ async def delete_api_key(
             and_(
                 APIKey.id == key_id,
                 APIKey.user_id == user_id,
-                APIKey.tenant_id == tenant_id,
             )
         )
     )
@@ -363,9 +354,8 @@ async def deactivate_api_key(
     Deactivate an API key without deleting it.
     """
     user_id = getattr(request.state, "user_id", None)
-    tenant_id = getattr(request.state, "tenant_id", None)
 
-    if not user_id or not tenant_id:
+    if not user_id:
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
             detail="Not authenticated",
@@ -376,7 +366,6 @@ async def deactivate_api_key(
             and_(
                 APIKey.id == key_id,
                 APIKey.user_id == user_id,
-                APIKey.tenant_id == tenant_id,
             )
         )
     )

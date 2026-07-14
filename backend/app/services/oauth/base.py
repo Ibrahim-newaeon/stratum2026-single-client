@@ -39,7 +39,6 @@ class OAuthState:
     """OAuth state for CSRF protection and session tracking."""
 
     state_token: str
-    tenant_id: int
     user_id: int
     platform: str
     redirect_uri: str
@@ -50,7 +49,6 @@ class OAuthState:
         return json.dumps(
             {
                 "state_token": self.state_token,
-                "tenant_id": self.tenant_id,
                 "user_id": self.user_id,
                 "platform": self.platform,
                 "redirect_uri": self.redirect_uri,
@@ -64,7 +62,6 @@ class OAuthState:
         parsed = json.loads(data)
         return cls(
             state_token=parsed["state_token"],
-            tenant_id=parsed["tenant_id"],
             user_id=parsed["user_id"],
             platform=parsed["platform"],
             redirect_uri=parsed["redirect_uri"],
@@ -134,7 +131,6 @@ class OAuthService(ABC):
 
     async def create_state(
         self,
-        tenant_id: int,
         user_id: int,
         redirect_uri: str,
     ) -> OAuthState:
@@ -142,7 +138,6 @@ class OAuthService(ABC):
         Create and store OAuth state for CSRF protection.
 
         Args:
-            tenant_id: Tenant initiating OAuth
             user_id: User initiating OAuth
             redirect_uri: Where to redirect after OAuth
 
@@ -153,7 +148,6 @@ class OAuthService(ABC):
 
         state = OAuthState(
             state_token=state_token,
-            tenant_id=tenant_id,
             user_id=user_id,
             platform=self.platform,
             redirect_uri=redirect_uri,

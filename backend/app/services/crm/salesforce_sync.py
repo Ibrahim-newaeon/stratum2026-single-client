@@ -54,11 +54,10 @@ class SalesforceSyncService:
     - Sync status logging
     """
 
-    def __init__(self, db: AsyncSession, tenant_id: int, is_sandbox: bool = False):
+    def __init__(self, db: AsyncSession, is_sandbox: bool = False):
         self.db = db
-        self.tenant_id = tenant_id
-        self.client = SalesforceClient(db, tenant_id, is_sandbox)
-        self.identity_service = IdentityResolutionService(db, tenant_id)
+        self.client = SalesforceClient(db, is_sandbox)
+        self.identity_service = IdentityResolutionService(db)
 
     async def sync_all(self, full_sync: bool = False) -> dict[str, Any]:
         """
@@ -122,7 +121,6 @@ class SalesforceSyncService:
 
             logger.info(
                 "salesforce_sync_complete",
-                tenant_id=self.tenant_id,
                 results=results,
             )
 
@@ -131,7 +129,6 @@ class SalesforceSyncService:
             await self._log_sync(results, start_time, "failed", str(e))
             logger.error(
                 "salesforce_sync_failed",
-                tenant_id=self.tenant_id,
                 error=str(e),
             )
 
@@ -459,7 +456,6 @@ class SalesforceSyncService:
 
         # Create opportunity event
         event = CDPEvent(
-            tenant_id=self.tenant_id,
             profile_id=profile.id,
             event_name="SalesforceOpportunity",
             event_time=datetime.now(UTC),
@@ -505,7 +501,6 @@ class SalesforceSyncService:
         """Find CDP profile by Salesforce external ID."""
         result = await self.db.execute(
             select(CDPProfileIdentifier).where(
-                CDPProfileIdentifier.tenant_id == self.tenant_id,
                 CDPProfileIdentifier.identifier_type
                 == IdentifierType.EXTERNAL_ID.value,
                 CDPProfileIdentifier.identifier_hash == external_id,
@@ -528,7 +523,6 @@ class SalesforceSyncService:
         # Search for any profile with this account_id in profile_data
         result = await self.db.execute(
             select(CDPProfile).where(
-                CDPProfile.tenant_id == self.tenant_id,
                 CDPProfile.profile_data["account_id"].astext == account_id,
             )
         )
@@ -545,7 +539,6 @@ class SalesforceSyncService:
         duration_ms = int((datetime.now(UTC) - start_time).total_seconds() * 1000)
 
         log = CRMSyncLog(
-            tenant_id=self.tenant_id,
             provider=CRMProvider.SALESFORCE,
             sync_type="full",
             status=status,

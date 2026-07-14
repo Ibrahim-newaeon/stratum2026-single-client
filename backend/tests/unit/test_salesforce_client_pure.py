@@ -50,17 +50,17 @@ class TestHashing:
 # =============================================================================
 class TestOAuthUrls:
     def test_production_urls(self):
-        client = SalesforceClient(db=None, tenant_id=1, is_sandbox=False)
+        client = SalesforceClient(db=None, is_sandbox=False)
         assert client.auth_url == SALESFORCE_AUTH_URL
         assert client.token_url == SALESFORCE_TOKEN_URL
 
     def test_sandbox_urls(self):
-        client = SalesforceClient(db=None, tenant_id=1, is_sandbox=True)
+        client = SalesforceClient(db=None, is_sandbox=True)
         assert client.auth_url == SANDBOX_AUTH_URL
         assert client.token_url == SANDBOX_TOKEN_URL
 
     def test_sandbox_differs_from_production(self):
-        prod = SalesforceClient(db=None, tenant_id=1, is_sandbox=False)
-        sandbox = SalesforceClient(db=None, tenant_id=1, is_sandbox=True)
+        prod = SalesforceClient(db=None, is_sandbox=False)
+        sandbox = SalesforceClient(db=None, is_sandbox=True)
         assert prod.auth_url != sandbox.auth_url
         assert "test.salesforce.com" in sandbox.token_url

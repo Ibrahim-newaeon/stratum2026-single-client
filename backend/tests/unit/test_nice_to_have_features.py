@@ -134,7 +134,6 @@ class TestCompetitorBenchmarking:
         service = CompetitorBenchmarkingService()
 
         benchmark = service.get_benchmark(
-            tenant_id="tenant_123",
             industry=Industry.ECOMMERCE,
             region=Region.GLOBAL,
             platform="meta",
@@ -142,7 +141,6 @@ class TestCompetitorBenchmarking:
         )
 
         assert benchmark is not None
-        assert benchmark.tenant_id == "tenant_123"
         assert benchmark.industry == Industry.ECOMMERCE
         assert len(benchmark.metrics) == 3
 
@@ -158,7 +156,6 @@ class TestCompetitorBenchmarking:
 
         # Test with above-average metrics
         benchmark = service.get_benchmark(
-            tenant_id="tenant_123",
             industry=Industry.ECOMMERCE,
             region=Region.GLOBAL,
             platform="meta",
@@ -183,7 +180,6 @@ class TestCompetitorBenchmarking:
 
         # Test performance level assignment
         benchmark = service.get_benchmark(
-            tenant_id="tenant_123",
             industry=Industry.ECOMMERCE,
             region=Region.GLOBAL,
             platform="google",
@@ -211,7 +207,6 @@ class TestCompetitorBenchmarking:
         service = CompetitorBenchmarkingService()
 
         benchmark = service.get_benchmark(
-            tenant_id="tenant_123",
             industry=Industry.ECOMMERCE,
             region=Region.GLOBAL,
             platform="meta",
@@ -250,7 +245,6 @@ class TestCompetitorBenchmarking:
         service = CompetitorBenchmarkingService()
 
         comparison = service.compare_platforms(
-            tenant_id="tenant_123",
             industry=Industry.ECOMMERCE,
             platform_metrics={
                 "meta": {"ctr": 0.02, "roas": 3.0},
@@ -307,12 +301,10 @@ class TestBudgetReallocation:
             max_change_percent=50,
         )
 
-        plan = service.create_plan(
-            tenant_id="tenant_123", campaigns=campaigns, config=config
+        plan = service.create_plan( campaigns=campaigns, config=config
         )
 
         assert plan is not None
-        assert plan.tenant_id == "tenant_123"
         assert len(plan.changes) > 0
 
     def test_roas_maximization_strategy(self):
@@ -348,7 +340,7 @@ class TestBudgetReallocation:
         ]
 
         config = ReallocationConfig(strategy=ReallocationStrategy.ROAS_MAXIMIZATION)
-        plan = service.create_plan("tenant_123", campaigns, config)
+        plan = service.create_plan(campaigns, config)
 
         # High ROAS campaign should get budget increase
         high_roas_change = next(c for c in plan.changes if c.campaign_id == "high_roas")
@@ -391,7 +383,7 @@ class TestBudgetReallocation:
             max_change_percent=30,  # Max 30% change
         )
 
-        plan = service.create_plan("tenant_123", campaigns, config)
+        plan = service.create_plan(campaigns, config)
 
         # No campaign should change by more than 30%
         for change in plan.changes:
@@ -425,7 +417,7 @@ class TestBudgetReallocation:
             strategy=ReallocationStrategy.ROAS_MAXIMIZATION, min_campaign_budget=100
         )
 
-        plan = service.create_plan("tenant_123", campaigns, config)
+        plan = service.create_plan(campaigns, config)
 
         # Budget should not go below minimum
         for change in plan.changes:
@@ -455,7 +447,7 @@ class TestBudgetReallocation:
         ]
 
         config = ReallocationConfig(strategy=ReallocationStrategy.ROAS_MAXIMIZATION)
-        plan = service.create_plan("tenant_123", campaigns, config)
+        plan = service.create_plan(campaigns, config)
 
         simulation = service.simulate(plan.plan_id)
 
@@ -487,7 +479,7 @@ class TestBudgetReallocation:
             ),
         ]
         config = ReallocationConfig(strategy=ReallocationStrategy.BALANCED)
-        plan = service.create_plan("tenant_123", campaigns, config)
+        plan = service.create_plan(campaigns, config)
 
         assert plan.status == ReallocationStatus.PROPOSED
 
@@ -531,7 +523,7 @@ class TestBudgetReallocation:
         ]
 
         config = ReallocationConfig(strategy=ReallocationStrategy.ROAS_MAXIMIZATION)
-        plan = service.create_plan("tenant_123", campaigns, config)
+        plan = service.create_plan(campaigns, config)
         service.approve(plan.plan_id, approved_by="admin")
 
         result = service.execute(plan.plan_id)
@@ -565,7 +557,7 @@ class TestBudgetReallocation:
         ]
         config = ReallocationConfig(strategy=ReallocationStrategy.BALANCED)
 
-        plan = service.create_plan("tenant_123", campaigns, config)
+        plan = service.create_plan(campaigns, config)
         service.approve(plan.plan_id, approved_by="admin")
         service.execute(plan.plan_id)
 
@@ -620,7 +612,6 @@ class TestAudienceInsights:
         # Register an audience
         audience = service.register_audience(
             audience_id="aud_123",
-            tenant_id="tenant_123",
             platform="meta",
             name="High Value Customers",
             audience_type=AudienceType.CUSTOM,
@@ -656,7 +647,6 @@ class TestAudienceInsights:
 
         audience = service.register_audience(
             audience_id="aud_expansion",
-            tenant_id="tenant_123",
             platform="meta",
             name="Purchasers",
             audience_type=AudienceType.CUSTOM,
@@ -692,7 +682,6 @@ class TestAudienceInsights:
         # Create overlapping audiences
         service.register_audience(
             audience_id="aud_1",
-            tenant_id="tenant_123",
             platform="meta",
             name="Website Visitors",
             audience_type=AudienceType.RETARGETING,
@@ -700,7 +689,6 @@ class TestAudienceInsights:
         )
         service.register_audience(
             audience_id="aud_2",
-            tenant_id="tenant_123",
             platform="meta",
             name="Email Subscribers",
             audience_type=AudienceType.CUSTOM,
@@ -725,7 +713,6 @@ class TestAudienceInsights:
 
         audience = service.register_audience(
             audience_id="aud_fatigue",
-            tenant_id="tenant_123",
             platform="meta",
             name="Retargeting",
             audience_type=AudienceType.RETARGETING,
@@ -751,7 +738,7 @@ class TestAudienceInsights:
         assert len(saturation_insights) > 0
 
     def test_get_audience_recommendations(self):
-        """Test getting audience recommendations for tenant"""
+        """Test getting audience recommendations"""
         from app.services.audience_insights_service import (
             AudienceInsightsService,
             AudienceType,
@@ -762,7 +749,6 @@ class TestAudienceInsights:
         # Create some audiences
         service.register_audience(
             audience_id="aud_rec_1",
-            tenant_id="tenant_rec",
             platform="meta",
             name="Audience 1",
             audience_type=AudienceType.LOOKALIKE,
@@ -770,14 +756,13 @@ class TestAudienceInsights:
         )
         service.register_audience(
             audience_id="aud_rec_2",
-            tenant_id="tenant_rec",
             platform="meta",
             name="Audience 2",
             audience_type=AudienceType.CUSTOM,
             size=5000,
         )
 
-        recommendations = service.get_recommendations(tenant_id="tenant_rec", limit=5)
+        recommendations = service.get_recommendations(limit=5)
 
         assert recommendations is not None
         assert isinstance(recommendations, list)
@@ -1100,7 +1085,7 @@ class TestNiceToHaveIntegration:
             ),
         ]
         config = ReallocationConfig(strategy=ReallocationStrategy.ROAS_MAXIMIZATION)
-        plan = service.create_plan("tenant_123", campaigns, config)
+        plan = service.create_plan(campaigns, config)
 
         # Both should work together
         assert explanation is not None
@@ -1119,7 +1104,6 @@ class TestNiceToHaveIntegration:
         audience_service = AudienceInsightsService()
         audience = audience_service.register_audience(
             audience_id="vip_audience_integ",
-            tenant_id="tenant_123",
             platform="meta",
             name="VIP Customers",
             audience_type=AudienceType.CUSTOM,
@@ -1177,7 +1161,6 @@ class TestNiceToHaveIntegration:
         # Get benchmark
         benchmark_service = CompetitorBenchmarkingService()
         benchmark = benchmark_service.get_benchmark(
-            tenant_id="tenant_123",
             industry=Industry.ECOMMERCE,
             region=Region.GLOBAL,
             platform="meta",
@@ -1208,7 +1191,7 @@ class TestNiceToHaveIntegration:
         ]
 
         config = ReallocationConfig(strategy=ReallocationStrategy.ROAS_MAXIMIZATION)
-        plan = budget_service.create_plan("tenant_123", campaigns, config)
+        plan = budget_service.create_plan(campaigns, config)
 
         assert benchmark is not None
         assert plan is not None

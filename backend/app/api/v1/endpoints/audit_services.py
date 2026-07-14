@@ -64,9 +64,10 @@ from app.services.conversion_latency_service import ConversionLatencyTracker
 from app.services.creative_performance_service import CreativePerformanceService
 
 # Import services
+from app.auth.deps import get_current_user
+from app.db.session import get_db
 from app.services.emq_measurement_service import RealEMQService as EMQMeasurementService
 from app.services.offline_conversion_service import OfflineConversionService
-from app.tenancy.deps import get_current_user, get_db, get_tenant_id
 
 logger = get_logger(__name__)
 router = APIRouter(prefix="/audit-services", tags=["audit-services"])
@@ -110,14 +111,13 @@ _batch_limiter = RateLimiter(requests_per_minute=10)  # Batch ops: 10/min
 async def check_rate_limit(
     limiter: RateLimiter,
     current_user: User = Depends(get_current_user),
-    tenant_id: int = Depends(get_tenant_id),
 ):
     """Dependency to check rate limits."""
-    key = f"{tenant_id}:{current_user.id}"
+    key = str(current_user.id)
     if not limiter.is_allowed(key):
         logger.warning(
             "Rate limit exceeded",
-            extra={"user_id": str(current_user.id), "tenant_id": tenant_id},
+            extra={"user_id": str(current_user.id)},
         )
         raise HTTPException(
             status_code=status.HTTP_429_TOO_MANY_REQUESTS,
@@ -127,18 +127,16 @@ async def check_rate_limit(
 
 async def check_write_rate_limit(
     current_user: User = Depends(get_current_user),
-    tenant_id: int = Depends(get_tenant_id),
 ):
     """Rate limit for write operations."""
-    await check_rate_limit(_write_limiter, current_user, tenant_id)
+    await check_rate_limit(_write_limiter, current_user)
 
 
 async def check_batch_rate_limit(
     current_user: User = Depends(get_current_user),
-    tenant_id: int = Depends(get_tenant_id),
 ):
     """Rate limit for batch operations."""
-    await check_rate_limit(_batch_limiter, current_user, tenant_id)
+    await check_rate_limit(_batch_limiter, current_user)
 
 
 # =============================================================================
@@ -194,7 +192,6 @@ class AuditLogger:
     def log_operation(
         operation: str,
         user_id: str,
-        tenant_id: int,
         resource_type: str,
         resource_id: Optional[str] = None,
         details: Optional[Dict[str, Any]] = None,
@@ -205,7 +202,6 @@ class AuditLogger:
             "audit_event": True,
             "operation": operation,
             "user_id": user_id,
-            "tenant_id": tenant_id,
             "resource_type": resource_type,
             "resource_id": resource_id,
             "details": details or {},
@@ -492,7 +488,6 @@ class ExplanationResponse(BaseModel):
 async def measure_emq(
     request: EMQMeasurementRequest,
     db: AsyncSession = Depends(get_db),
-    tenant_id: int = Depends(get_tenant_id),
     current_user: User = Depends(get_current_user),
 ):
     """
@@ -503,7 +498,6 @@ async def measure_emq(
         result = service.measure_emq(
             platform=request.platform,
             pixel_id=request.pixel_id,
-            tenant_id=str(tenant_id),
         )
 
         return EMQMeasurementResponse(
@@ -532,7 +526,6 @@ async def get_emq_history(
     pixel_id: str = Query(...),
     days: int = Query(default=30, ge=1, le=90),
     db: AsyncSession = Depends(get_db),
-    tenant_id: int = Depends(get_tenant_id),
     current_user: User = Depends(get_current_user),
 ):
     """
@@ -542,7 +535,6 @@ async def get_emq_history(
     history = service.get_history(
         platform=platform,
         pixel_id=pixel_id,
-        tenant_id=str(tenant_id),
         days=days,
     )
 
@@ -561,7 +553,6 @@ async def upload_offline_conversions(
     request: OfflineConversionUploadRequest,
     background_tasks: BackgroundTasks,
     db: AsyncSession = Depends(get_db),
-    tenant_id: int = Depends(get_tenant_id),
     current_user: User = Depends(get_current_user),
 ):
     """
@@ -579,7 +570,7 @@ async def upload_offline_conversions(
         for i, conv in enumerate(request.conversions):
             conversions.append(
                 OfflineConversion(
-                    conversion_id=f"{request.batch_name or 'batch'}_{tenant_id}_{i}_{uuid.uuid4().hex[:8]}",
+                    conversion_id=f"{request.batch_name or 'batch'}_{i}_{uuid.uuid4().hex[:8]}",
                     platform=request.platform,
                     event_name=conv.event_name,
                     event_time=conv.event_time,
@@ -624,7 +615,6 @@ async def list_conversion_batches(
     status: Optional[str] = None,
     limit: int = Query(default=50, ge=1, le=200),
     db: AsyncSession = Depends(get_db),
-    tenant_id: int = Depends(get_tenant_id),
     current_user: User = Depends(get_current_user),
 ):
     """
@@ -632,7 +622,6 @@ async def list_conversion_batches(
     """
     service = OfflineConversionService()
     batches = service.list_batches(
-        tenant_id=str(tenant_id),
         platform=platform,
         status=status,
         limit=limit,
@@ -650,7 +639,6 @@ async def list_conversion_batches(
 async def create_experiment(
     request: CreateExperimentRequest,
     db: AsyncSession = Depends(get_db),
-    tenant_id: int = Depends(get_tenant_id),
     current_user: User = Depends(get_current_user),
 ):
     """
@@ -682,7 +670,6 @@ async def list_experiments(
     model_name: Optional[str] = None,
     status: Optional[str] = None,
     db: AsyncSession = Depends(get_db),
-    tenant_id: int = Depends(get_tenant_id),
     current_user: User = Depends(get_current_user),
 ):
     """
@@ -717,7 +704,6 @@ async def list_experiments(
 async def start_experiment(
     experiment_id: str,
     db: AsyncSession = Depends(get_db),
-    tenant_id: int = Depends(get_tenant_id),
     current_user: User = Depends(get_current_user),
 ):
     """
@@ -736,7 +722,6 @@ async def start_experiment(
 async def stop_experiment(
     experiment_id: str,
     db: AsyncSession = Depends(get_db),
-    tenant_id: int = Depends(get_tenant_id),
     current_user: User = Depends(get_current_user),
 ):
     """
@@ -759,7 +744,6 @@ async def get_latency_stats(
     event_type: Optional[str] = None,
     period_hours: int = Query(default=24, ge=1, le=168),
     db: AsyncSession = Depends(get_db),
-    tenant_id: int = Depends(get_tenant_id),
     current_user: User = Depends(get_current_user),
 ):
     """
@@ -797,7 +781,6 @@ async def get_latency_timeline(
     period_hours: int = Query(default=24, ge=1, le=168),
     bucket_minutes: int = Query(default=60, ge=5, le=360),
     db: AsyncSession = Depends(get_db),
-    tenant_id: int = Depends(get_tenant_id),
     current_user: User = Depends(get_current_user),
 ):
     """
@@ -823,7 +806,6 @@ async def get_latency_timeline(
 async def record_creative_metrics(
     request: CreativeMetricsRequest,
     db: AsyncSession = Depends(get_db),
-    tenant_id: int = Depends(get_tenant_id),
     current_user: User = Depends(get_current_user),
 ):
     """
@@ -833,7 +815,6 @@ async def record_creative_metrics(
 
     service.record_metrics(
         creative_id=request.creative_id,
-        tenant_id=str(tenant_id),
         platform=request.platform,
         campaign_id=request.campaign_id,
         metrics={
@@ -852,7 +833,6 @@ async def record_creative_metrics(
 async def analyze_creative_fatigue(
     creative_id: str,
     db: AsyncSession = Depends(get_db),
-    tenant_id: int = Depends(get_tenant_id),
     current_user: User = Depends(get_current_user),
 ):
     """
@@ -882,7 +862,6 @@ async def get_top_creatives(
     metric: str = Query(default="roas", description="Metric to rank by"),
     limit: int = Query(default=10, ge=1, le=50),
     db: AsyncSession = Depends(get_db),
-    tenant_id: int = Depends(get_tenant_id),
     current_user: User = Depends(get_current_user),
 ):
     """
@@ -890,7 +869,6 @@ async def get_top_creatives(
     """
     service = CreativePerformanceService()
     top_creatives = service.get_top_creatives(
-        tenant_id=str(tenant_id),
         platform=platform,
         metric=metric,
         limit=limit,
@@ -908,7 +886,6 @@ async def get_top_creatives(
 async def compare_to_benchmarks(
     request: BenchmarkRequest,
     db: AsyncSession = Depends(get_db),
-    tenant_id: int = Depends(get_tenant_id),
     current_user: User = Depends(get_current_user),
 ):
     """
@@ -927,7 +904,6 @@ async def compare_to_benchmarks(
         region_enum = Region.GLOBAL
 
     benchmark = service.get_benchmark(
-        tenant_id=str(tenant_id),
         industry=industry_enum,
         region=region_enum,
         platform=request.platform,
@@ -957,7 +933,6 @@ async def get_industry_report(
     platform: str = Query(...),
     region: str = Query(default="GLOBAL"),
     db: AsyncSession = Depends(get_db),
-    tenant_id: int = Depends(get_tenant_id),
     current_user: User = Depends(get_current_user),
 ):
     """
@@ -993,7 +968,6 @@ async def get_industry_report(
 async def create_reallocation_plan(
     request: ReallocationPlanRequest,
     db: AsyncSession = Depends(get_db),
-    tenant_id: int = Depends(get_tenant_id),
     current_user: User = Depends(get_current_user),
 ):
     """
@@ -1027,7 +1001,6 @@ async def create_reallocation_plan(
     )
 
     plan = service.create_plan(
-        tenant_id=str(tenant_id),
         campaigns=campaigns,
         config=config,
     )
@@ -1063,7 +1036,6 @@ async def create_reallocation_plan(
 async def approve_reallocation_plan(
     plan_id: str,
     db: AsyncSession = Depends(get_db),
-    tenant_id: int = Depends(get_tenant_id),
     current_user: User = Depends(get_current_user),
 ):
     """
@@ -1082,7 +1054,6 @@ async def approve_reallocation_plan(
 async def execute_reallocation_plan(
     plan_id: str,
     db: AsyncSession = Depends(get_db),
-    tenant_id: int = Depends(get_tenant_id),
     current_user: User = Depends(get_current_user),
 ):
     """
@@ -1105,7 +1076,6 @@ async def execute_reallocation_plan(
 async def rollback_reallocation_plan(
     plan_id: str,
     db: AsyncSession = Depends(get_db),
-    tenant_id: int = Depends(get_tenant_id),
     current_user: User = Depends(get_current_user),
 ):
     """
@@ -1129,7 +1099,6 @@ async def rollback_reallocation_plan(
 async def predict_audience_performance(
     request: AudiencePerformanceRequest,
     db: AsyncSession = Depends(get_db),
-    tenant_id: int = Depends(get_tenant_id),
     current_user: User = Depends(get_current_user),
 ):
     """
@@ -1162,7 +1131,6 @@ async def predict_audience_performance(
 async def get_audience_insights(
     audience_id: str,
     db: AsyncSession = Depends(get_db),
-    tenant_id: int = Depends(get_tenant_id),
     current_user: User = Depends(get_current_user),
 ):
     """
@@ -1189,7 +1157,6 @@ async def get_audience_insights(
 async def get_audience_recommendations(
     limit: int = Query(default=10, ge=1, le=50),
     db: AsyncSession = Depends(get_db),
-    tenant_id: int = Depends(get_tenant_id),
     current_user: User = Depends(get_current_user),
 ):
     """
@@ -1197,7 +1164,6 @@ async def get_audience_recommendations(
     """
     service = AudienceInsightsService()
     recommendations = service.get_recommendations(
-        tenant_id=str(tenant_id),
         limit=limit,
     )
 
@@ -1225,7 +1191,6 @@ async def get_audience_recommendations(
 async def predict_customer_ltv(
     request: CustomerBehaviorInput,
     db: AsyncSession = Depends(get_db),
-    tenant_id: int = Depends(get_tenant_id),
     current_user: User = Depends(get_current_user),
 ):
     """
@@ -1266,7 +1231,6 @@ async def predict_customer_ltv(
 async def batch_predict_ltv(
     customers: List[CustomerBehaviorInput],
     db: AsyncSession = Depends(get_db),
-    tenant_id: int = Depends(get_tenant_id),
     current_user: User = Depends(get_current_user),
 ):
     """
@@ -1305,7 +1269,6 @@ async def batch_predict_ltv(
 @router.get("/ltv/segments")
 async def get_ltv_segments(
     db: AsyncSession = Depends(get_db),
-    tenant_id: int = Depends(get_tenant_id),
     current_user: User = Depends(get_current_user),
 ):
     """
@@ -1356,7 +1319,6 @@ async def get_ltv_segments(
 async def explain_prediction(
     request: ExplainPredictionRequest,
     db: AsyncSession = Depends(get_db),
-    tenant_id: int = Depends(get_tenant_id),
     current_user: User = Depends(get_current_user),
 ):
     """
@@ -1397,7 +1359,6 @@ async def trigger_model_retraining(
     reason: str = Query(default="manual"),
     background_tasks: BackgroundTasks = None,
     db: AsyncSession = Depends(get_db),
-    tenant_id: int = Depends(get_tenant_id),
     current_user: User = Depends(get_current_user),
 ):
     """
@@ -1408,7 +1369,6 @@ async def trigger_model_retraining(
     # Queue retraining job
     job_id = pipeline.schedule_retraining(
         model_name=model_name,
-        tenant_id=str(tenant_id) if tenant_id else None,
         trigger_reason=reason,
     )
 
@@ -1424,7 +1384,6 @@ async def get_retraining_status(
     model_name: Optional[str] = None,
     limit: int = Query(default=10, ge=1, le=50),
     db: AsyncSession = Depends(get_db),
-    tenant_id: int = Depends(get_tenant_id),
     current_user: User = Depends(get_current_user),
 ):
     """
@@ -1530,7 +1489,6 @@ async def audit_services_health():
 @router.get("/metrics")
 async def get_audit_services_metrics(
     db: AsyncSession = Depends(get_db),
-    tenant_id: int = Depends(get_tenant_id),
     current_user: User = Depends(get_current_user),
 ):
     """
@@ -1575,7 +1533,6 @@ class ServiceConfigUpdate(BaseModel):
 @router.get("/admin/config")
 async def get_all_service_config(
     admin_user: User = Depends(require_admin),
-    tenant_id: int = Depends(get_tenant_id),
 ):
     """
     Get all service configurations (admin only).
@@ -1583,7 +1540,6 @@ async def get_all_service_config(
     audit_log.log_operation(
         operation="read_config",
         user_id=str(admin_user.id),
-        tenant_id=tenant_id,
         resource_type="service_config",
         details={"scope": "all"},
     )
@@ -1597,7 +1553,6 @@ async def get_all_service_config(
 async def get_service_config(
     service_name: str,
     admin_user: User = Depends(require_admin),
-    tenant_id: int = Depends(get_tenant_id),
 ):
     """
     Get configuration for a specific service (admin only).
@@ -1611,7 +1566,6 @@ async def get_service_config(
     audit_log.log_operation(
         operation="read_config",
         user_id=str(admin_user.id),
-        tenant_id=tenant_id,
         resource_type="service_config",
         resource_id=service_name,
     )
@@ -1627,7 +1581,6 @@ async def update_service_config(
     service_name: str,
     update: ServiceConfigUpdate,
     admin_user: User = Depends(require_admin),
-    tenant_id: int = Depends(get_tenant_id),
     _: None = Depends(check_write_rate_limit),
 ):
     """
@@ -1649,7 +1602,6 @@ async def update_service_config(
     audit_log.log_operation(
         operation="update_config",
         user_id=str(admin_user.id),
-        tenant_id=tenant_id,
         resource_type="service_config",
         resource_id=service_name,
         details={
@@ -1669,7 +1621,6 @@ async def update_service_config(
 async def enable_service(
     service_name: str,
     admin_user: User = Depends(require_admin),
-    tenant_id: int = Depends(get_tenant_id),
     _: None = Depends(check_write_rate_limit),
 ):
     """
@@ -1686,7 +1637,6 @@ async def enable_service(
     audit_log.log_operation(
         operation="enable_service",
         user_id=str(admin_user.id),
-        tenant_id=tenant_id,
         resource_type="service",
         resource_id=service_name,
     )
@@ -1698,7 +1648,6 @@ async def enable_service(
 async def disable_service(
     service_name: str,
     admin_user: User = Depends(require_admin),
-    tenant_id: int = Depends(get_tenant_id),
     _: None = Depends(check_write_rate_limit),
 ):
     """
@@ -1715,7 +1664,6 @@ async def disable_service(
     audit_log.log_operation(
         operation="disable_service",
         user_id=str(admin_user.id),
-        tenant_id=tenant_id,
         resource_type="service",
         resource_id=service_name,
     )
@@ -1726,7 +1674,6 @@ async def disable_service(
 @router.get("/admin/services/status")
 async def get_services_status(
     admin_user: User = Depends(require_admin),
-    tenant_id: int = Depends(get_tenant_id),
 ):
     """
     Get enabled/disabled status of all services (admin only).
@@ -1747,7 +1694,6 @@ async def get_audit_log(
     resource_type: Optional[str] = None,
     limit: int = Query(default=100, ge=1, le=1000),
     admin_user: User = Depends(require_admin),
-    tenant_id: int = Depends(get_tenant_id),
 ):
     """
     Get audit log entries (admin only).
@@ -1771,7 +1717,6 @@ async def get_audit_log(
 async def clear_service_cache(
     service_name: Optional[str] = None,
     admin_user: User = Depends(require_admin),
-    tenant_id: int = Depends(get_tenant_id),
     _: None = Depends(check_write_rate_limit),
 ):
     """
@@ -1790,7 +1735,6 @@ async def clear_service_cache(
     audit_log.log_operation(
         operation="clear_cache",
         user_id=str(admin_user.id),
-        tenant_id=tenant_id,
         resource_type="cache",
         details={"services_cleared": cleared},
     )

@@ -215,10 +215,9 @@ class SalesforceWritebackService:
     - Touchpoint data
     """
 
-    def __init__(self, db: AsyncSession, tenant_id: int, is_sandbox: bool = False):
+    def __init__(self, db: AsyncSession, is_sandbox: bool = False):
         self.db = db
-        self.tenant_id = tenant_id
-        self.client = SalesforceClient(db, tenant_id, is_sandbox)
+        self.client = SalesforceClient(db, is_sandbox)
         self._existing_fields: dict[str, list[str]] = {}
 
     async def setup_custom_fields(self) -> dict[str, Any]:
@@ -324,7 +323,6 @@ class SalesforceWritebackService:
         """
         # Build query for contacts to sync
         conditions = [
-            CRMContact.tenant_id == self.tenant_id,
             CRMContact.provider_contact_id.isnot(None),
         ]
 
@@ -429,7 +427,6 @@ class SalesforceWritebackService:
 
         logger.info(
             "salesforce_contact_writeback_complete",
-            tenant_id=self.tenant_id,
             synced=synced,
             failed=failed,
         )
@@ -460,7 +457,6 @@ class SalesforceWritebackService:
         """
         # Build query for deals to sync
         conditions = [
-            CRMDeal.tenant_id == self.tenant_id,
             CRMDeal.provider_deal_id.isnot(None),
         ]
 
@@ -564,7 +560,6 @@ class SalesforceWritebackService:
 
         logger.info(
             "salesforce_opportunity_writeback_complete",
-            tenant_id=self.tenant_id,
             synced=synced,
             failed=failed,
         )
@@ -620,7 +615,6 @@ class SalesforceWritebackService:
         conn_result = await self.db.execute(
             select(CRMConnection).where(
                 and_(
-                    CRMConnection.tenant_id == self.tenant_id,
                     CRMConnection.provider == CRMProvider.SALESFORCE,
                     CRMConnection.status == CRMConnectionStatus.CONNECTED,
                 )
@@ -728,7 +722,6 @@ class SalesforceWritebackService:
         """Get current writeback configuration and status."""
         result = await self.db.execute(
             select(CRMConnection).where(
-                CRMConnection.tenant_id == self.tenant_id,
                 CRMConnection.provider == CRMProvider.SALESFORCE,
             )
         )
@@ -742,14 +735,10 @@ class SalesforceWritebackService:
             }
 
         contacts_count = await self.db.execute(
-            select(func.count())
-            .select_from(CRMContact)
-            .where(CRMContact.tenant_id == self.tenant_id)
+            select(func.count()).select_from(CRMContact)
         )
         deals_count = await self.db.execute(
-            select(func.count())
-            .select_from(CRMDeal)
-            .where(CRMDeal.tenant_id == self.tenant_id)
+            select(func.count()).select_from(CRMDeal)
         )
 
         return {

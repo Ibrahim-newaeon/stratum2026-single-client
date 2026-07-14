@@ -97,7 +97,6 @@ class ClientResponse(BaseModel):
     """Schema for client detail response."""
 
     id: int
-    tenant_id: int
     name: str
     slug: str
     logo_url: Optional[str] = None
@@ -132,7 +131,6 @@ class ClientListResponse(BaseModel):
     """Lightweight schema for client list items."""
 
     id: int
-    tenant_id: int
     name: str
     slug: str
     industry: Optional[str] = None

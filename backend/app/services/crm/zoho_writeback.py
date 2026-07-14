@@ -226,17 +226,15 @@ class ZohoWritebackService:
     - Touchpoint data
     """
 
-    def __init__(self, db: AsyncSession, tenant_id: int, region: str = "com"):
+    def __init__(self, db: AsyncSession, region: str = "com"):
         """
         Initialize Zoho writeback service.
 
         Args:
             db: Database session
-            tenant_id: Tenant ID
             region: Zoho region (com, eu, in, com.au, jp, com.cn)
         """
         self.db = db
-        self.tenant_id = tenant_id
         self.region = region
 
     async def get_required_fields_info(self) -> dict[str, Any]:
@@ -281,7 +279,7 @@ class ZohoWritebackService:
         Returns:
             Summary of created/existing fields
         """
-        async with ZohoClient(self.db, self.tenant_id, self.region) as client:
+        async with ZohoClient(self.db, self.region) as client:
             results = {
                 "contact_fields": {"created": 0, "failed": 0, "errors": []},
                 "deal_fields": {"created": 0, "failed": 0, "errors": []},
@@ -364,7 +362,6 @@ class ZohoWritebackService:
         """
         # Build query for contacts to sync
         conditions = [
-            CRMContact.tenant_id == self.tenant_id,
             CRMContact.crm_contact_id.isnot(None),
         ]
 
@@ -428,7 +425,7 @@ class ZohoWritebackService:
             }
 
         # Batch update in Zoho
-        async with ZohoClient(self.db, self.tenant_id, self.region) as client:
+        async with ZohoClient(self.db, self.region) as client:
             response = await client.batch_update_contacts(updates)
 
         synced = len(response.get("data", [])) if response else 0
@@ -436,7 +433,6 @@ class ZohoWritebackService:
 
         logger.info(
             "zoho_contact_writeback_complete",
-            tenant_id=self.tenant_id,
             synced=synced,
             failed=failed,
         )
@@ -467,7 +463,6 @@ class ZohoWritebackService:
         """
         # Build query for deals to sync
         conditions = [
-            CRMDeal.tenant_id == self.tenant_id,
             CRMDeal.crm_deal_id.isnot(None),
         ]
 
@@ -528,7 +523,7 @@ class ZohoWritebackService:
             }
 
         # Batch update in Zoho
-        async with ZohoClient(self.db, self.tenant_id, self.region) as client:
+        async with ZohoClient(self.db, self.region) as client:
             response = await client.batch_update_deals(updates)
 
         synced = len(response.get("data", [])) if response else 0
@@ -536,7 +531,6 @@ class ZohoWritebackService:
 
         logger.info(
             "zoho_deal_writeback_complete",
-            tenant_id=self.tenant_id,
             synced=synced,
             failed=failed,
         )
@@ -593,7 +587,6 @@ class ZohoWritebackService:
         conn_result = await self.db.execute(
             select(CRMConnection).where(
                 and_(
-                    CRMConnection.tenant_id == self.tenant_id,
                     CRMConnection.provider == CRMProvider.ZOHO,
                     CRMConnection.status == CRMConnectionStatus.CONNECTED,
                 )
@@ -722,7 +715,6 @@ class ZohoWritebackService:
         result = await self.db.execute(
             select(CRMConnection).where(
                 and_(
-                    CRMConnection.tenant_id == self.tenant_id,
                     CRMConnection.provider == CRMProvider.ZOHO,
                 )
             )
@@ -739,15 +731,9 @@ class ZohoWritebackService:
 
         # Count records to sync
         contacts_count = await self.db.execute(
-            select(func.count())
-            .select_from(CRMContact)
-            .where(CRMContact.tenant_id == self.tenant_id)
+            select(func.count()).select_from(CRMContact)
         )
-        deals_count = await self.db.execute(
-            select(func.count())
-            .select_from(CRMDeal)
-            .where(CRMDeal.tenant_id == self.tenant_id)
-        )
+        deals_count = await self.db.execute(select(func.count()).select_from(CRMDeal))
 
         return {
             "enabled": True,
@@ -782,7 +768,7 @@ class ZohoWritebackService:
         Returns:
             Update result
         """
-        async with ZohoClient(self.db, self.tenant_id, self.region) as client:
+        async with ZohoClient(self.db, self.region) as client:
             update_data = {
                 "Stratum_Segments": ", ".join(segments[:10]),  # Limit to 10 segments
                 "Stratum_Last_Sync": datetime.now(UTC).strftime(

@@ -35,7 +35,6 @@ router = APIRouter()
 
 @router.get("", response_model=APIResponse[PaginatedResponse[CampaignListResponse]])
 async def list_campaigns(
-    request: Request,
     db: AsyncSession = Depends(get_async_session),
     page: int = Query(1, ge=1),
     page_size: int = Query(20, ge=1, le=100),
@@ -56,11 +55,9 @@ async def list_campaigns(
         search: Search by name
         labels: Filter by labels
     """
-    tenant_id = getattr(request.state, "tenant_id", None)
 
-    # Build query with tenant isolation — use only indexed columns for WHERE
+    # Use only indexed columns for WHERE
     query = select(Campaign).where(
-        Campaign.tenant_id == tenant_id,
         Campaign.is_deleted == False,
     )
 
@@ -138,17 +135,14 @@ async def list_campaigns(
 
 @router.get("/{campaign_id}", response_model=APIResponse[CampaignDetailResponse])
 async def get_campaign(
-    request: Request,
     campaign_id: int,
     db: AsyncSession = Depends(get_async_session),
 ):
     """Get detailed campaign information."""
-    tenant_id = getattr(request.state, "tenant_id", None)
 
     result = await db.execute(
         select(Campaign).where(
             Campaign.id == campaign_id,
-            Campaign.tenant_id == tenant_id,
             Campaign.is_deleted == False,
         )
     )
@@ -164,7 +158,6 @@ async def get_campaign(
         success=True,
         data=CampaignDetailResponse(
             id=campaign.id,
-            tenant_id=campaign.tenant_id,
             name=campaign.name,
             platform=campaign.platform,
             external_id=campaign.external_id,
@@ -207,17 +200,14 @@ async def get_campaign(
     status_code=status.HTTP_201_CREATED,
 )
 async def create_campaign(
-    request: Request,
     campaign_data: CampaignCreate,
     db: AsyncSession = Depends(get_async_session),
 ):
     """Create a new campaign."""
-    tenant_id = getattr(request.state, "tenant_id", None)
 
     # Check for duplicate
     existing = await db.execute(
         select(Campaign).where(
-            Campaign.tenant_id == tenant_id,
             Campaign.platform == campaign_data.platform,
             Campaign.external_id == campaign_data.external_id,
         )
@@ -229,14 +219,13 @@ async def create_campaign(
         )
 
     campaign = Campaign(
-        tenant_id=tenant_id,
         **campaign_data.model_dump(),
     )
 
     db.add(campaign)
     await db.commit()
 
-    logger.info("campaign_created", campaign_id=campaign.id, tenant_id=tenant_id)
+    logger.info("campaign_created", campaign_id=campaign.id)
 
     return APIResponse(
         success=True,
@@ -247,18 +236,15 @@ async def create_campaign(
 
 @router.patch("/{campaign_id}", response_model=APIResponse[CampaignResponse])
 async def update_campaign(
-    request: Request,
     campaign_id: int,
     update_data: CampaignUpdate,
     db: AsyncSession = Depends(get_async_session),
 ):
     """Update a campaign."""
-    tenant_id = getattr(request.state, "tenant_id", None)
 
     result = await db.execute(
         select(Campaign).where(
             Campaign.id == campaign_id,
-            Campaign.tenant_id == tenant_id,
             Campaign.is_deleted == False,
         )
     )
@@ -287,17 +273,14 @@ async def update_campaign(
 
 @router.delete("/{campaign_id}", status_code=status.HTTP_204_NO_CONTENT)
 async def delete_campaign(
-    request: Request,
     campaign_id: int,
     db: AsyncSession = Depends(get_async_session),
 ):
     """Soft delete a campaign."""
-    tenant_id = getattr(request.state, "tenant_id", None)
 
     result = await db.execute(
         select(Campaign).where(
             Campaign.id == campaign_id,
-            Campaign.tenant_id == tenant_id,
             Campaign.is_deleted == False,
         )
     )
@@ -320,7 +303,6 @@ async def delete_campaign(
     response_model=APIResponse[CampaignMetricsTimeSeriesResponse],
 )
 async def get_campaign_metrics(
-    request: Request,
     campaign_id: int,
     db: AsyncSession = Depends(get_async_session),
     start_date: Optional[date] = None,
@@ -334,13 +316,11 @@ async def get_campaign_metrics(
         start_date: Start date (default: 30 days ago)
         end_date: End date (default: today)
     """
-    tenant_id = getattr(request.state, "tenant_id", None)
 
-    # Verify campaign exists and belongs to tenant
+    # Verify campaign exists
     campaign_result = await db.execute(
         select(Campaign).where(
             Campaign.id == campaign_id,
-            Campaign.tenant_id == tenant_id,
         )
     )
     if not campaign_result.scalar_one_or_none():
@@ -360,7 +340,6 @@ async def get_campaign_metrics(
         select(CampaignMetric)
         .where(
             CampaignMetric.campaign_id == campaign_id,
-            CampaignMetric.tenant_id == tenant_id,
             CampaignMetric.date >= start_date,
             CampaignMetric.date <= end_date,
         )
@@ -430,7 +409,6 @@ async def trigger_sync_all_campaigns(
 
 @router.post("/sync-platform/{platform}")
 async def trigger_platform_sync(
-    request: Request,
     platform: str,
     db: AsyncSession = Depends(get_async_session),
 ) -> APIResponse:
@@ -440,14 +418,16 @@ async def trigger_platform_sync(
     This calls the orchestrator to fetch campaigns directly from the
     platform API (Meta, TikTok, Snapchat) and upsert them into the DB.
     Use this to force-discover new campaigns that haven't been seen before.
+
+    NOTE(C3): this endpoint (and every other endpoint in this router) has no
+    per-request auth dependency — it previously relied solely on the removed
+    tenant-scoping middleware to reject requests (a check that would now
+    always 401, since that middleware no longer sets any such context). That
+    dead guard was deleted here per the sweep, but nothing replaces it; this
+    whole router should get a real `CurrentUserDep`/role gate in a follow-up,
+    not a piecemeal fix on this one endpoint.
     """
     from app.services.sync.orchestrator import PlatformSyncOrchestrator
-
-    tenant_id = getattr(request.state, "tenant_id", None)
-    if tenant_id is None:
-        raise HTTPException(
-            status_code=status.HTTP_401_UNAUTHORIZED, detail="Tenant not identified"
-        )
 
     try:
         ad_platform = AdPlatform(platform.lower())
@@ -458,7 +438,7 @@ async def trigger_platform_sync(
         )
 
     orchestrator = PlatformSyncOrchestrator(db)
-    result = await orchestrator.sync_platform(tenant_id, ad_platform, days_back=30)
+    result = await orchestrator.sync_platform(ad_platform, days_back=30)
 
     return APIResponse(
         success=len(result.errors) == 0,
@@ -479,7 +459,6 @@ async def trigger_platform_sync(
 
 @router.post("/{campaign_id}/sync")
 async def trigger_campaign_sync(
-    request: Request,
     campaign_id: int,
     db: AsyncSession = Depends(get_async_session),
 ):
@@ -487,13 +466,11 @@ async def trigger_campaign_sync(
     Trigger a manual sync for a campaign.
     Queues a Celery task to fetch latest data from the ad platform.
     """
-    tenant_id = getattr(request.state, "tenant_id", None)
 
     # Verify campaign exists
     result = await db.execute(
         select(Campaign).where(
             Campaign.id == campaign_id,
-            Campaign.tenant_id == tenant_id,
         )
     )
     campaign = result.scalar_one_or_none()
@@ -505,9 +482,12 @@ async def trigger_campaign_sync(
         )
 
     # Queue sync task
+    # TODO(C3): app/workers/tasks/sync.py sync_campaign_data still declares a
+    # required tenant-scoping positional param — dropped here assuming that
+    # task gets de-tenanted separately; verify before relying on this queue.
     from app.workers.tasks import sync_campaign_data
 
-    task = sync_campaign_data.delay(tenant_id, campaign_id)
+    task = sync_campaign_data.delay(campaign_id)
 
     return APIResponse(
         success=True,

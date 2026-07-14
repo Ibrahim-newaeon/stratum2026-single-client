@@ -16,6 +16,7 @@ from pydantic import BaseModel, Field
 from sqlalchemy import func, select, text
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from app.auth.deps import CurrentUserDep
 from app.core.config import settings
 from app.core.logging import get_logger
 from app.db.session import get_async_session
@@ -113,7 +114,7 @@ class PredictionResult(BaseModel):
 # =============================================================================
 
 
-def _build_nlq_sql(question: str, tenant_id: int) -> tuple[str, str]:
+def _build_nlq_sql(question: str) -> tuple[str, str]:
     """
     Map natural language patterns to SQL queries.
 
@@ -131,7 +132,7 @@ def _build_nlq_sql(question: str, tenant_id: int) -> tuple[str, str]:
         SELECT id, name, platform, roas, total_spend_cents/100.0 as spend_usd,
                revenue_cents/100.0 as revenue_usd, conversions
         FROM campaigns
-        WHERE tenant_id = {tenant_id} AND is_deleted = FALSE AND status = 'ACTIVE'
+        WHERE is_deleted = FALSE AND status = 'ACTIVE'
         ORDER BY roas DESC NULLS LAST
         LIMIT 10
         """
@@ -149,7 +150,7 @@ def _build_nlq_sql(question: str, tenant_id: int) -> tuple[str, str]:
             AVG(roas) as avg_roas,
             COUNT(*) as campaign_count
         FROM campaigns
-        WHERE tenant_id = {tenant_id} AND is_deleted = FALSE
+        WHERE is_deleted = FALSE
         AND updated_at >= DATE_TRUNC('month', CURRENT_DATE)
         """
         return (
@@ -176,7 +177,7 @@ def _build_nlq_sql(question: str, tenant_id: int) -> tuple[str, str]:
             AVG(roas) as avg_roas,
             SUM(conversions) as total_conversions
         FROM campaigns
-        WHERE tenant_id = {tenant_id} AND is_deleted = FALSE
+        WHERE is_deleted = FALSE
         GROUP BY platform
         ORDER BY avg_roas DESC NULLS LAST
         """
@@ -194,7 +195,7 @@ def _build_nlq_sql(question: str, tenant_id: int) -> tuple[str, str]:
         SELECT id, name, platform, roas, total_spend_cents/100.0 as spend_usd,
                revenue_cents/100.0 as revenue_usd, conversions, status
         FROM campaigns
-        WHERE tenant_id = {tenant_id} AND is_deleted = FALSE
+        WHERE is_deleted = FALSE
         AND (roas < 2.0 OR roas IS NULL)
         AND status = 'ACTIVE'
         ORDER BY roas ASC NULLS LAST
@@ -226,8 +227,7 @@ def _build_nlq_sql(question: str, tenant_id: int) -> tuple[str, str]:
             SUM(clicks) as daily_clicks,
             SUM(impressions) as daily_impressions
         FROM campaign_metrics
-        WHERE tenant_id = {tenant_id}
-        AND date >= CURRENT_DATE - INTERVAL '30 days'
+        WHERE date >= CURRENT_DATE - INTERVAL '30 days'
         GROUP BY date
         ORDER BY date DESC
         """
@@ -244,7 +244,7 @@ def _build_nlq_sql(question: str, tenant_id: int) -> tuple[str, str]:
             c.clicks, c.impressions,
             CASE WHEN c.impressions > 0 THEN (c.clicks::FLOAT / c.impressions) * 100 ELSE 0 END as ctr_pct
         FROM campaigns c
-        WHERE c.tenant_id = {tenant_id} AND c.is_deleted = FALSE
+        WHERE c.is_deleted = FALSE
         AND c.impressions > 0
         ORDER BY ctr_pct DESC
         LIMIT 20
@@ -259,7 +259,7 @@ def _build_nlq_sql(question: str, tenant_id: int) -> tuple[str, str]:
     SELECT id, name, platform, status, roas, total_spend_cents/100.0 as spend_usd,
            revenue_cents/100.0 as revenue_usd, conversions, updated_at
     FROM campaigns
-    WHERE tenant_id = {tenant_id} AND is_deleted = FALSE
+    WHERE is_deleted = FALSE
     ORDER BY updated_at DESC
     LIMIT 50
     """
@@ -560,7 +560,7 @@ def _predict_campaign(
 @router.post("/nlq", response_model=APIResponse[NLQResponse])
 async def natural_language_query(
     request: NLQRequest,
-    req: Request,
+    current_user: CurrentUserDep,
     db: AsyncSession = Depends(get_async_session),
 ):
     """
@@ -576,13 +576,7 @@ async def natural_language_query(
 
     start = time.perf_counter()
 
-    tenant_id = getattr(req.state, "tenant_id", None)
-    if not tenant_id:
-        raise HTTPException(
-            status_code=status.HTTP_401_UNAUTHORIZED, detail="Tenant required"
-        )
-
-    sql, explanation = _build_nlq_sql(request.question, tenant_id)
+    sql, explanation = _build_nlq_sql(request.question)
 
     # Execute generated SQL safely (read-only)
     try:
@@ -622,7 +616,7 @@ async def natural_language_query(
 @router.post("/anomalies/explain", response_model=APIResponse[AnomalyExplanation])
 async def explain_anomaly(
     request: AnomalyExplainRequest,
-    req: Request,
+    current_user: CurrentUserDep,
     db: AsyncSession = Depends(get_async_session),
 ):
     """
@@ -631,19 +625,12 @@ async def explain_anomaly(
     Provides actionable recommendations based on the metric type and
     historical campaign performance patterns.
     """
-    tenant_id = getattr(req.state, "tenant_id", None)
-    if not tenant_id:
-        raise HTTPException(
-            status_code=status.HTTP_401_UNAUTHORIZED, detail="Tenant required"
-        )
-
     # Fetch campaign data
     campaign_data = {}
     if request.campaign_id:
         result = await db.execute(
             select(Campaign).where(
                 Campaign.id == request.campaign_id,
-                Campaign.tenant_id == tenant_id,
             )
         )
         campaign = result.scalar_one_or_none()
@@ -670,7 +657,6 @@ async def explain_anomaly(
             select(CampaignMetric)
             .where(
                 CampaignMetric.campaign_id == request.campaign_id,
-                CampaignMetric.tenant_id == tenant_id,
                 CampaignMetric.date >= datetime.now(UTC).date() - timedelta(days=30),
             )
             .order_by(CampaignMetric.date)
@@ -702,7 +688,7 @@ async def explain_anomaly(
 @router.post("/predict", response_model=APIResponse[PredictionResult])
 async def predict_campaign_performance(
     request: PredictionRequest,
-    req: Request,
+    current_user: CurrentUserDep,
     db: AsyncSession = Depends(get_async_session),
 ):
     """
@@ -711,16 +697,9 @@ async def predict_campaign_performance(
     Uses historical daily metrics to project spend, revenue, ROAS, and conversions.
     Optionally test a hypothetical budget scenario.
     """
-    tenant_id = getattr(req.state, "tenant_id", None)
-    if not tenant_id:
-        raise HTTPException(
-            status_code=status.HTTP_401_UNAUTHORIZED, detail="Tenant required"
-        )
-
     result = await db.execute(
         select(Campaign).where(
             Campaign.id == request.campaign_id,
-            Campaign.tenant_id == tenant_id,
             Campaign.is_deleted == False,
         )
     )
@@ -735,7 +714,6 @@ async def predict_campaign_performance(
         select(CampaignMetric)
         .where(
             CampaignMetric.campaign_id == request.campaign_id,
-            CampaignMetric.tenant_id == tenant_id,
             CampaignMetric.date >= datetime.now(UTC).date() - timedelta(days=30),
         )
         .order_by(CampaignMetric.date)

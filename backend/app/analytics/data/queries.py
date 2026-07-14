@@ -38,10 +38,8 @@ BLENDED_ROAS_BY_DAY = """
     FROM fact_platform_daily fpd
     LEFT JOIN fact_ga4_daily fg ON
         fpd.date = fg.date
-        AND fpd.tenant_id = fg.tenant_id
         AND fpd.campaign_id = fg.utm_campaign
-    WHERE fpd.tenant_id = :tenant_id
-        AND fpd.date BETWEEN :start_date AND :end_date
+    WHERE fpd.date BETWEEN :start_date AND :end_date
     GROUP BY fpd.date, fpd.platform
     ORDER BY fpd.date DESC
 """
@@ -61,8 +59,7 @@ CAMPAIGN_PERFORMANCE = """
             SUM(conversions) as total_conversions,
             AVG(frequency) as avg_frequency
         FROM fact_platform_daily
-        WHERE tenant_id = :tenant_id
-            AND date BETWEEN :start_date AND :end_date
+        WHERE date BETWEEN :start_date AND :end_date
             AND campaign_id IS NOT NULL
         GROUP BY campaign_id
     ),
@@ -72,8 +69,7 @@ CAMPAIGN_PERFORMANCE = """
             AVG(score) as avg_score,
             MAX(action) as last_action
         FROM fact_scaling_scores
-        WHERE tenant_id = :tenant_id
-            AND date BETWEEN :start_date AND :end_date
+        WHERE date BETWEEN :start_date AND :end_date
             AND entity_level = 'campaign'
         GROUP BY entity_id
     )
@@ -95,8 +91,7 @@ CAMPAIGN_PERFORMANCE = """
     FROM campaigns c
     LEFT JOIN campaign_metrics cm ON c.id::text = cm.campaign_id
     LEFT JOIN campaign_scoring cs ON c.id::text = cs.campaign_id
-    WHERE c.tenant_id = :tenant_id
-        AND c.is_deleted = false
+    WHERE c.is_deleted = false
     ORDER BY cm.total_spend DESC NULLS LAST
 """
 
@@ -133,9 +128,7 @@ CREATIVE_FATIGUE_DASHBOARD = """
     LEFT JOIN dim_creative dc ON
         fcd.creative_id = dc.creative_id
         AND fcd.platform = dc.platform
-        AND fcd.tenant_id = dc.tenant_id
-    WHERE fcd.tenant_id = :tenant_id
-        AND fcd.date BETWEEN :start_date AND :end_date
+    WHERE fcd.date BETWEEN :start_date AND :end_date
     ORDER BY fcd.fatigue_score DESC, fcd.date DESC
 """
 
@@ -158,8 +151,7 @@ ANOMALY_HISTORY = """
         resolved,
         resolved_time
     FROM fact_alerts
-    WHERE tenant_id = :tenant_id
-        AND date BETWEEN :start_date AND :end_date
+    WHERE date BETWEEN :start_date AND :end_date
         AND alert_type = 'anomaly'
     ORDER BY
         CASE severity
@@ -185,8 +177,7 @@ SIGNAL_HEALTH_HISTORY = """
         resolved_time,
         acknowledged
     FROM fact_alerts
-    WHERE tenant_id = :tenant_id
-        AND alert_type = 'emq_degraded'
+    WHERE alert_type = 'emq_degraded'
         AND date BETWEEN :start_date AND :end_date
     ORDER BY event_time DESC
 """
@@ -204,8 +195,7 @@ BUDGET_ACTIONS_SUMMARY = """
         AVG(scaling_score) as avg_score,
         SUM(CASE WHEN status = 'executed' THEN 1 ELSE 0 END) as executed_count
     FROM fact_budget_actions
-    WHERE tenant_id = :tenant_id
-        AND date BETWEEN :start_date AND :end_date
+    WHERE date BETWEEN :start_date AND :end_date
     GROUP BY date, action
     ORDER BY date DESC
 """
@@ -216,69 +206,64 @@ BUDGET_ACTIONS_SUMMARY = """
 # =============================================================================
 async def get_blended_roas(
     db: AsyncSession,
-    tenant_id: int,
     start_date: date,
     end_date: date,
 ) -> List[dict]:
     """Get blended ROAS by day."""
     result = await db.execute(
         text(BLENDED_ROAS_BY_DAY),
-        {"tenant_id": tenant_id, "start_date": start_date, "end_date": end_date},
+        {"start_date": start_date, "end_date": end_date},
     )
     return [dict(row._mapping) for row in result.fetchall()]
 
 
 async def get_campaign_performance(
     db: AsyncSession,
-    tenant_id: int,
     start_date: date,
     end_date: date,
 ) -> List[dict]:
     """Get campaign performance table."""
     result = await db.execute(
         text(CAMPAIGN_PERFORMANCE),
-        {"tenant_id": tenant_id, "start_date": start_date, "end_date": end_date},
+        {"start_date": start_date, "end_date": end_date},
     )
     return [dict(row._mapping) for row in result.fetchall()]
 
 
 async def get_creative_fatigue(
     db: AsyncSession,
-    tenant_id: int,
     start_date: date,
     end_date: date,
 ) -> List[dict]:
     """Get creative fatigue dashboard data."""
     result = await db.execute(
         text(CREATIVE_FATIGUE_DASHBOARD),
-        {"tenant_id": tenant_id, "start_date": start_date, "end_date": end_date},
+        {"start_date": start_date, "end_date": end_date},
     )
     return [dict(row._mapping) for row in result.fetchall()]
 
 
 async def get_anomaly_history(
     db: AsyncSession,
-    tenant_id: int,
     start_date: date,
     end_date: date,
 ) -> List[dict]:
     """Get anomaly detection history."""
     result = await db.execute(
         text(ANOMALY_HISTORY),
-        {"tenant_id": tenant_id, "start_date": start_date, "end_date": end_date},
+        {"start_date": start_date, "end_date": end_date},
     )
     return [dict(row._mapping) for row in result.fetchall()]
 
 
 async def get_budget_actions(
     db: AsyncSession,
-    tenant_id: int,
     start_date: date,
     end_date: date,
 ) -> List[dict]:
     """Get budget actions summary."""
     result = await db.execute(
         text(BUDGET_ACTIONS_SUMMARY),
-        {"tenant_id": tenant_id, "start_date": start_date, "end_date": end_date},
+        {"start_date": start_date, "end_date": end_date},
     )
     return [dict(row._mapping) for row in result.fetchall()]

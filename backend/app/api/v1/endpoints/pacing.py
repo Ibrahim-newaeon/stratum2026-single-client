@@ -19,8 +19,9 @@ from fastapi import APIRouter, Depends, HTTPException, Query
 from pydantic import BaseModel, ConfigDict, Field
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from app.auth.deps import CurrentUser, get_current_user
 from app.core.logging import get_logger
-from app.models import User
+from app.db.session import get_async_session as get_db
 from app.models.pacing import (
     AlertSeverity,
     AlertStatus,
@@ -34,7 +35,6 @@ from app.services.pacing import (
     PacingService,
     TargetService,
 )
-from app.tenancy.deps import get_current_user, get_db
 
 logger = get_logger(__name__)
 router = APIRouter()
@@ -151,7 +151,7 @@ class AlertDismiss(BaseModel):
 async def create_target(
     target_data: TargetCreate,
     db: AsyncSession = Depends(get_db),
-    current_user: User = Depends(get_current_user),
+    current_user: CurrentUser = Depends(get_current_user),
 ) -> Dict[str, Any]:
     """
     Create a new target.
@@ -159,7 +159,7 @@ async def create_target(
     Targets define goals for metrics like spend, revenue, or ROAS
     over a specific period (monthly, quarterly, etc.).
     """
-    service = TargetService(db, current_user.tenant_id)
+    service = TargetService(db)
 
     target = await service.create_target(
         name=target_data.name,
@@ -205,10 +205,10 @@ async def list_targets(
         None, description="Filter by period type"
     ),
     db: AsyncSession = Depends(get_db),
-    current_user: User = Depends(get_current_user),
+    current_user: CurrentUser = Depends(get_current_user),
 ) -> Dict[str, Any]:
     """List all targets with optional filters."""
-    service = TargetService(db, current_user.tenant_id)
+    service = TargetService(db)
 
     targets = await service.list_targets(
         active_only=active_only,
@@ -244,10 +244,10 @@ async def list_targets(
 async def get_target(
     target_id: UUID,
     db: AsyncSession = Depends(get_db),
-    current_user: User = Depends(get_current_user),
+    current_user: CurrentUser = Depends(get_current_user),
 ) -> Dict[str, Any]:
     """Get a specific target by ID."""
-    service = TargetService(db, current_user.tenant_id)
+    service = TargetService(db)
     target = await service.get_target(target_id)
 
     if not target:
@@ -288,10 +288,10 @@ async def update_target(
     target_id: UUID,
     target_data: TargetUpdate,
     db: AsyncSession = Depends(get_db),
-    current_user: User = Depends(get_current_user),
+    current_user: CurrentUser = Depends(get_current_user),
 ) -> Dict[str, Any]:
     """Update a target."""
-    service = TargetService(db, current_user.tenant_id)
+    service = TargetService(db)
 
     target = await service.update_target(
         target_id,
@@ -317,10 +317,10 @@ async def update_target(
 async def delete_target(
     target_id: UUID,
     db: AsyncSession = Depends(get_db),
-    current_user: User = Depends(get_current_user),
+    current_user: CurrentUser = Depends(get_current_user),
 ) -> Dict[str, Any]:
     """Delete (deactivate) a target."""
-    service = TargetService(db, current_user.tenant_id)
+    service = TargetService(db)
     success = await service.delete_target(target_id)
 
     if not success:
@@ -346,7 +346,7 @@ async def get_target_pacing(
         None, description="Date to calculate pacing for"
     ),
     db: AsyncSession = Depends(get_db),
-    current_user: User = Depends(get_current_user),
+    current_user: CurrentUser = Depends(get_current_user),
 ) -> Dict[str, Any]:
     """
     Get pacing metrics for a specific target.
@@ -354,7 +354,7 @@ async def get_target_pacing(
     Returns MTD actual vs expected, pacing percentage, EOM projections,
     and status flags (on_track, at_risk, will_miss).
     """
-    service = PacingService(db, current_user.tenant_id)
+    service = PacingService(db)
     pacing = await service.get_target_pacing(target_id, as_of_date)
 
     if pacing.get("status") == "error":
@@ -378,7 +378,7 @@ async def get_all_pacing(
     platform: Optional[str] = Query(None, description="Filter by platform"),
     account_id: Optional[str] = Query(None, description="Filter by ad account ID"),
     db: AsyncSession = Depends(get_db),
-    current_user: User = Depends(get_current_user),
+    current_user: CurrentUser = Depends(get_current_user),
 ) -> Dict[str, Any]:
     """
     Get pacing for all active targets.
@@ -386,7 +386,7 @@ async def get_all_pacing(
     Returns a summary of targets on track, at risk, and will miss,
     along with individual pacing details for each target.
     """
-    service = PacingService(db, current_user.tenant_id)
+    service = PacingService(db)
     return await service.get_all_targets_pacing(
         as_of_date=as_of_date,
         metric_type=metric_type,
@@ -401,14 +401,14 @@ async def get_pacing_history(
     start_date: Optional[date] = Query(None, description="Start of date range"),
     end_date: Optional[date] = Query(None, description="End of date range"),
     db: AsyncSession = Depends(get_db),
-    current_user: User = Depends(get_current_user),
+    current_user: CurrentUser = Depends(get_current_user),
 ) -> Dict[str, Any]:
     """
     Get historical pacing snapshots for a target.
 
     Returns daily pacing snapshots for trend analysis.
     """
-    service = PacingService(db, current_user.tenant_id)
+    service = PacingService(db)
     history = await service.get_pacing_history(target_id, start_date, end_date)
 
     return {
@@ -423,14 +423,14 @@ async def get_pacing_history(
 async def create_pacing_snapshots(
     as_of_date: Optional[date] = Query(None, description="Date for snapshots"),
     db: AsyncSession = Depends(get_db),
-    current_user: User = Depends(get_current_user),
+    current_user: CurrentUser = Depends(get_current_user),
 ) -> Dict[str, Any]:
     """
     Create pacing snapshots for all active targets.
 
     Used for historical trend tracking. Should be run daily via cron.
     """
-    service = PacingService(db, current_user.tenant_id)
+    service = PacingService(db)
     return await service.create_all_snapshots(as_of_date)
 
 
@@ -443,7 +443,7 @@ async def create_pacing_snapshots(
 async def create_forecast(
     request: ForecastRequest,
     db: AsyncSession = Depends(get_db),
-    current_user: User = Depends(get_current_user),
+    current_user: CurrentUser = Depends(get_current_user),
 ) -> Dict[str, Any]:
     """
     Generate a forecast for a metric.
@@ -452,7 +452,7 @@ async def create_forecast(
     seasonality adjustment. Returns daily point forecasts with confidence
     intervals.
     """
-    service = ForecastingService(db, current_user.tenant_id)
+    service = ForecastingService(db)
 
     forecast = await service.forecast_metric(
         metric=request.metric_type,
@@ -474,7 +474,7 @@ async def get_eom_forecast(
         None, description="Month to forecast (default: current)"
     ),
     db: AsyncSession = Depends(get_db),
-    current_user: User = Depends(get_current_user),
+    current_user: CurrentUser = Depends(get_current_user),
 ) -> Dict[str, Any]:
     """
     Get end-of-month forecast for a metric.
@@ -482,7 +482,7 @@ async def get_eom_forecast(
     Returns MTD actual, remaining forecast, and projected EOM value
     with confidence intervals.
     """
-    service = ForecastingService(db, current_user.tenant_id)
+    service = ForecastingService(db)
 
     return await service.forecast_eom(
         metric=metric_type,
@@ -504,10 +504,10 @@ async def get_alerts(
     alert_type: Optional[AlertType] = Query(None, description="Filter by type"),
     target_id: Optional[UUID] = Query(None, description="Filter by target"),
     db: AsyncSession = Depends(get_db),
-    current_user: User = Depends(get_current_user),
+    current_user: CurrentUser = Depends(get_current_user),
 ) -> Dict[str, Any]:
     """Get alerts with optional filters."""
-    service = PacingAlertService(db, current_user.tenant_id)
+    service = PacingAlertService(db)
 
     # Filter alerts by status (default: ACTIVE)
     if status is None or status == AlertStatus.ACTIVE:
@@ -559,10 +559,10 @@ async def get_alert_summary(
     start_date: Optional[date] = Query(None, description="Start of period"),
     end_date: Optional[date] = Query(None, description="End of period"),
     db: AsyncSession = Depends(get_db),
-    current_user: User = Depends(get_current_user),
+    current_user: CurrentUser = Depends(get_current_user),
 ) -> Dict[str, Any]:
     """Get alert summary statistics for a time period."""
-    service = PacingAlertService(db, current_user.tenant_id)
+    service = PacingAlertService(db)
     return await service.get_alert_summary(start_date, end_date)
 
 
@@ -570,7 +570,7 @@ async def get_alert_summary(
 async def check_all_alerts(
     as_of_date: Optional[date] = Query(None, description="Date to check"),
     db: AsyncSession = Depends(get_db),
-    current_user: User = Depends(get_current_user),
+    current_user: CurrentUser = Depends(get_current_user),
 ) -> Dict[str, Any]:
     """
     Check all targets for alert conditions.
@@ -578,7 +578,7 @@ async def check_all_alerts(
     Creates new alerts for any targets that are underpacing, overpacing,
     or at risk of missing their targets.
     """
-    service = PacingAlertService(db, current_user.tenant_id)
+    service = PacingAlertService(db)
     return await service.check_all_targets(as_of_date)
 
 
@@ -586,10 +586,10 @@ async def check_all_alerts(
 async def acknowledge_alert(
     alert_id: UUID,
     db: AsyncSession = Depends(get_db),
-    current_user: User = Depends(get_current_user),
+    current_user: CurrentUser = Depends(get_current_user),
 ) -> Dict[str, Any]:
     """Acknowledge an alert."""
-    service = PacingAlertService(db, current_user.tenant_id)
+    service = PacingAlertService(db)
     alert = await service.acknowledge_alert(alert_id, current_user.id)
 
     if not alert:
@@ -607,10 +607,10 @@ async def resolve_alert(
     alert_id: UUID,
     request: AlertResolve,
     db: AsyncSession = Depends(get_db),
-    current_user: User = Depends(get_current_user),
+    current_user: CurrentUser = Depends(get_current_user),
 ) -> Dict[str, Any]:
     """Resolve an alert."""
-    service = PacingAlertService(db, current_user.tenant_id)
+    service = PacingAlertService(db)
     alert = await service.resolve_alert(
         alert_id,
         current_user.id,
@@ -632,10 +632,10 @@ async def dismiss_alert(
     alert_id: UUID,
     request: AlertDismiss,
     db: AsyncSession = Depends(get_db),
-    current_user: User = Depends(get_current_user),
+    current_user: CurrentUser = Depends(get_current_user),
 ) -> Dict[str, Any]:
     """Dismiss an alert (false positive or not actionable)."""
-    service = PacingAlertService(db, current_user.tenant_id)
+    service = PacingAlertService(db)
     alert = await service.dismiss_alert(
         alert_id,
         current_user.id,
@@ -660,7 +660,7 @@ async def check_pacing_cliff(
         30.0, ge=10, le=90, description="Drop threshold %"
     ),
     db: AsyncSession = Depends(get_db),
-    current_user: User = Depends(get_current_user),
+    current_user: CurrentUser = Depends(get_current_user),
 ) -> Dict[str, Any]:
     """
     Check for sudden performance drops (pacing cliff).
@@ -668,7 +668,7 @@ async def check_pacing_cliff(
     Compares recent day to lookback average and creates alert if
     drop exceeds threshold.
     """
-    service = PacingAlertService(db, current_user.tenant_id)
+    service = PacingAlertService(db)
     alert = await service.check_pacing_cliff(
         target_id,
         lookback_days=lookback_days,

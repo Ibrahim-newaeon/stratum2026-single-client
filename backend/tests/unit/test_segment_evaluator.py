@@ -27,12 +27,12 @@ pytestmark = pytest.mark.unit
 
 @pytest.fixture
 def evaluator() -> SegmentEvaluator:
-    return SegmentEvaluator(db=None, tenant_id=1)
+    return SegmentEvaluator(db=None)
 
 
 @pytest.fixture
 def service() -> SegmentService:
-    return SegmentService(db=None, tenant_id=1)
+    return SegmentService(db=None)
 
 
 # =============================================================================

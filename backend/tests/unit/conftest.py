@@ -5,7 +5,7 @@
 Fixtures for deep endpoint testing without a real database.
 
 Provides:
-- Lightweight FastAPI test app with TenantMiddleware
+- Lightweight FastAPI test app with AuthContextMiddleware
 - httpx.AsyncClient for full request/response cycle testing
 - Mock DB session with configurable returns
 - JWT token generation for various roles
@@ -70,17 +70,17 @@ async def test_app():
     """
     Build a lightweight FastAPI app for deep endpoint testing.
 
-    Includes TenantMiddleware (for real JWT decode / tenant extraction)
+    Includes AuthContextMiddleware (for real JWT decode)
     but skips heavy I/O middleware (rate limiter, audit, prometheus).
     """
     from fastapi import FastAPI
 
     from app.api.v1 import api_router
     from app.core.config import settings
-    from app.middleware.tenant import TenantMiddleware
+    from app.middleware.auth_context import AuthContextMiddleware
 
     application = FastAPI(title="Stratum AI (deep-test)")
-    application.add_middleware(TenantMiddleware)
+    application.add_middleware(AuthContextMiddleware)
     application.include_router(api_router, prefix=settings.api_v1_prefix)
 
     @application.get("/health")
@@ -156,9 +156,8 @@ async def api_client(test_app, mock_db) -> AsyncGenerator[AsyncClient, None]:
         `get_current_user` is a router-level dependency on many endpoints and
         normally loads the user from the database; with the mocked session that
         lookup returns None → 401. Rebuild a CurrentUser from the verified token
-        so identity/tenant flow through, while still 401-ing missing or invalid
-        tokens. Tenant-mismatch (403) is enforced downstream via the tenant
-        context set by TenantMiddleware.
+        so identity flows through, while still 401-ing missing or invalid
+        tokens.
         """
         unauthorized = HTTPException(
             status_code=401, detail="Could not validate credentials"
@@ -179,7 +178,6 @@ async def api_client(test_app, mock_db) -> AsyncGenerator[AsyncClient, None]:
             raise unauthorized
         fake_user = SimpleNamespace(
             id=user_id,
-            tenant_id=payload.get("tenant_id"),
             role=role,
             is_active=True,
             is_verified=True,
@@ -209,7 +207,6 @@ async def api_client(test_app, mock_db) -> AsyncGenerator[AsyncClient, None]:
 
 def _make_token(
     subject: int = 1,
-    tenant_id: int = 1,
     role: str = "admin",
     email: str = "test@example.com",
     cms_role: str = "admin",
@@ -220,7 +217,6 @@ def _make_token(
 
     claims = {
         "email": email,
-        "tenant_id": tenant_id,
         "role": role,
         "cms_role": cms_role,
         **extra_claims,
@@ -230,39 +226,28 @@ def _make_token(
 
 @pytest.fixture
 def admin_headers() -> dict:
-    """Auth headers for a tenant admin (tenant_id=1, user_id=1)."""
-    token = _make_token(subject=1, tenant_id=1, role="admin")
+    """Auth headers for an admin (user_id=1)."""
+    token = _make_token(subject=1, role="admin")
     return {"Authorization": f"Bearer {token}"}
 
 
 @pytest.fixture
 def viewer_headers() -> dict:
-    """Auth headers for a tenant viewer (tenant_id=1, user_id=2)."""
-    token = _make_token(subject=2, tenant_id=1, role="viewer")
+    """Auth headers for a viewer (user_id=2)."""
+    token = _make_token(subject=2, role="viewer")
     return {"Authorization": f"Bearer {token}"}
 
 
 @pytest.fixture
 def owner_headers() -> dict:
-    """Auth headers for an owner (no tenant binding)."""
-    token = _make_token(
-        subject=99, role="owner", email="admin@stratum.ai", tenant_id=0
-    )
+    """Auth headers for an owner."""
+    token = _make_token(subject=99, role="owner", email="admin@stratum.ai")
     return {"Authorization": f"Bearer {token}"}
 
 
-@pytest.fixture
-def tenant2_headers() -> dict:
-    """Auth headers for a user on a DIFFERENT tenant (tenant_id=2)."""
-    token = _make_token(subject=10, tenant_id=2, role="admin")
-    return {"Authorization": f"Bearer {token}"}
-
-
-def make_auth_headers(
-    subject: int = 1, tenant_id: int = 1, role: str = "admin", **kw
-) -> dict:
+def make_auth_headers(subject: int = 1, role: str = "admin", **kw) -> dict:
     """Helper to build auth headers with custom claims (usable in test body)."""
-    token = _make_token(subject=subject, tenant_id=tenant_id, role=role, **kw)
+    token = _make_token(subject=subject, role=role, **kw)
     return {"Authorization": f"Bearer {token}"}
 
 

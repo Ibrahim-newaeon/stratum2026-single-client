@@ -46,9 +46,8 @@ class ProfitCalculationService:
     - Margin percentages
     """
 
-    def __init__(self, db: AsyncSession, tenant_id: int):
+    def __init__(self, db: AsyncSession):
         self.db = db
-        self.tenant_id = tenant_id
 
     async def calculate_profit_roas(
         self,
@@ -73,7 +72,6 @@ class ProfitCalculationService:
         """
         # Build query conditions
         conditions = [
-            DailyProfitMetrics.tenant_id == self.tenant_id,
             DailyProfitMetrics.date >= start_date,
             DailyProfitMetrics.date <= end_date,
         ]
@@ -278,7 +276,6 @@ class ProfitCalculationService:
             Time series of profit metrics
         """
         conditions = [
-            DailyProfitMetrics.tenant_id == self.tenant_id,
             DailyProfitMetrics.date >= start_date,
             DailyProfitMetrics.date <= end_date,
         ]
@@ -373,7 +370,6 @@ class ProfitCalculationService:
             Product-level profitability breakdown
         """
         conditions = [
-            DailyProfitMetrics.tenant_id == self.tenant_id,
             DailyProfitMetrics.date >= start_date,
             DailyProfitMetrics.date <= end_date,
             DailyProfitMetrics.product_id.isnot(None),
@@ -469,7 +465,6 @@ class ProfitCalculationService:
             Campaign-level profitability breakdown
         """
         conditions = [
-            DailyProfitMetrics.tenant_id == self.tenant_id,
             DailyProfitMetrics.date >= start_date,
             DailyProfitMetrics.date <= end_date,
             DailyProfitMetrics.campaign_id.isnot(None),
@@ -584,7 +579,6 @@ class ProfitCalculationService:
         if profit_data.get("status") != "success":
             # Create empty report
             report = ProfitROASReport(
-                tenant_id=self.tenant_id,
                 report_type=report_type,
                 period_start=start_date,
                 period_end=end_date,
@@ -600,7 +594,6 @@ class ProfitCalculationService:
             breakeven = profit_data["breakeven"]
 
             report = ProfitROASReport(
-                tenant_id=self.tenant_id,
                 report_type=report_type,
                 period_start=start_date,
                 period_end=end_date,
@@ -725,7 +718,6 @@ class ProfitCalculationService:
     ) -> Optional[MarginRule]:
         """Find the most specific applicable margin rule."""
         conditions = [
-            MarginRule.tenant_id == self.tenant_id,
             MarginRule.is_active == True,
         ]
 

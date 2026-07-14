@@ -37,7 +37,6 @@ def test_build_trained_model_maps_markov_result():
         "baseline": 0.12,
     }
     m = _build_trained_model(
-        tenant_id=7,
         model_type="markov_chain",
         channel_type="platform",
         start_date=datetime(2026, 1, 1),
@@ -46,7 +45,6 @@ def test_build_trained_model_maps_markov_result():
         created_by_user_id=99,
     )
     assert isinstance(m, TrainedAttributionModel)
-    assert m.tenant_id == 7
     assert m.model_type == DataDrivenModelType.MARKOV_CHAIN
     assert m.status == ModelStatus.ACTIVE  # trained & available
     assert m.is_active is False  # selection is separate (activate endpoint)
@@ -70,7 +68,6 @@ def test_build_trained_model_shapley():
         "shapley_values": {"a": 0.9},
     }
     m = _build_trained_model(
-        tenant_id=1,
         model_type="shapley_value",
         channel_type="campaign",
         start_date=datetime(2026, 1, 1),

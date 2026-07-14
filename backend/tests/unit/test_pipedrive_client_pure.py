@@ -31,7 +31,7 @@ def _sha(value: str) -> str:
 
 @pytest.fixture
 def client() -> PipedriveClient:
-    return PipedriveClient(db=None, tenant_id=1)
+    return PipedriveClient(db=None)
 
 
 # =============================================================================

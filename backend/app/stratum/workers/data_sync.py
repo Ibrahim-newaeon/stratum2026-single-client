@@ -399,7 +399,6 @@ async def update_metrics_all() -> dict[str, Any]:
             for conn in connections:
                 logger.info(
                     "dispatching_metrics_update",
-                    tenant_id=conn.tenant_id,
                     platform=conn.platform,
                 )
                 results["platforms_synced"] += 1

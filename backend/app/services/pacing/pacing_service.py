@@ -54,10 +54,9 @@ class PacingService:
     AT_RISK_MIN = 0.75  # Between 75-90% or 110-125%
     AT_RISK_MAX = 1.25
 
-    def __init__(self, db: AsyncSession, tenant_id: int):
+    def __init__(self, db: AsyncSession):
         self.db = db
-        self.tenant_id = tenant_id
-        self.forecasting = ForecastingService(db, tenant_id)
+        self.forecasting = ForecastingService(db)
 
     async def get_target_pacing(
         self,
@@ -79,12 +78,7 @@ class PacingService:
 
         # Load target
         result = await self.db.execute(
-            select(Target).where(
-                and_(
-                    Target.id == target_id,
-                    Target.tenant_id == self.tenant_id,
-                )
-            )
+            select(Target).where(Target.id == target_id)
         )
         target = result.scalar_one_or_none()
 
@@ -283,7 +277,7 @@ class PacingService:
             as_of_date = date.today()
 
         # Build query
-        conditions = [Target.tenant_id == self.tenant_id]
+        conditions = []
 
         if active_only:
             conditions.append(Target.is_active == True)
@@ -400,7 +394,6 @@ class PacingService:
 
         # Create new snapshot
         summary = PacingSummary(
-            tenant_id=self.tenant_id,
             target_id=target_id,
             snapshot_date=as_of_date,
             period_start=date.fromisoformat(pacing["period"]["start"]),
@@ -451,7 +444,6 @@ class PacingService:
         result = await self.db.execute(
             select(Target).where(
                 and_(
-                    Target.tenant_id == self.tenant_id,
                     Target.is_active == True,
                     Target.period_start <= as_of_date,
                     Target.period_end >= as_of_date,
@@ -540,7 +532,6 @@ class PacingService:
     ) -> float:
         """Get month-to-date actual for a metric."""
         conditions = [
-            DailyKPI.tenant_id == self.tenant_id,
             DailyKPI.date >= period_start,
             DailyKPI.date <= as_of_date,
         ]
@@ -604,9 +595,8 @@ class PacingService:
 class TargetService:
     """Service for managing targets (CRUD operations)."""
 
-    def __init__(self, db: AsyncSession, tenant_id: int):
+    def __init__(self, db: AsyncSession):
         self.db = db
-        self.tenant_id = tenant_id
 
     async def create_target(
         self,
@@ -638,7 +628,6 @@ class TargetService:
             target_value_cents = int(target_value * 100)
 
         target = Target(
-            tenant_id=self.tenant_id,
             name=name,
             description=description,
             period_type=period_type,
@@ -667,12 +656,7 @@ class TargetService:
     async def get_target(self, target_id: UUID) -> Optional[Target]:
         """Get a target by ID."""
         result = await self.db.execute(
-            select(Target).where(
-                and_(
-                    Target.id == target_id,
-                    Target.tenant_id == self.tenant_id,
-                )
-            )
+            select(Target).where(Target.id == target_id)
         )
         return result.scalar_one_or_none()
 
@@ -685,7 +669,7 @@ class TargetService:
         period_type: Optional[TargetPeriod] = None,
     ) -> List[Target]:
         """List targets with optional filters."""
-        conditions = [Target.tenant_id == self.tenant_id]
+        conditions = []
 
         if active_only:
             conditions.append(Target.is_active == True)
@@ -774,7 +758,6 @@ class TargetService:
         today = date.today()
 
         conditions = [
-            Target.tenant_id == self.tenant_id,
             Target.is_active == True,
             Target.period_start <= today,
             Target.period_end >= today,

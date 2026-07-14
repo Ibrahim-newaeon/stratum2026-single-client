@@ -258,15 +258,13 @@ def estimate_outcome(
 
 async def get_outcome_summary(
     db: AsyncSession,
-    tenant_id: int,
     period: str = "7d",
 ) -> OutcomeSummary:
     """
-    Aggregate autopilot outcomes for a tenant over a period.
+    Aggregate autopilot outcomes over a period.
 
     Args:
         db: Async DB session
-        tenant_id: Tenant to aggregate for
         period: '24h' | '7d' | '30d' (defaults to 7d — the granularity
                 that matches the weekly nudge cadence)
 
@@ -305,7 +303,6 @@ async def get_outcome_summary(
             0,
         ).label("prevented"),
     ).where(
-        EnforcementAuditLog.tenant_id == tenant_id,
         EnforcementAuditLog.timestamp >= period_start,
         EnforcementAuditLog.timestamp <= period_end,
     )
@@ -321,7 +318,6 @@ async def get_outcome_summary(
             func.count(EnforcementAuditLog.id),
         )
         .where(
-            EnforcementAuditLog.tenant_id == tenant_id,
             EnforcementAuditLog.timestamp >= period_start,
             EnforcementAuditLog.timestamp <= period_end,
             EnforcementAuditLog.outcome_confidence.is_not(None),

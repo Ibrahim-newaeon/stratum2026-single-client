@@ -42,7 +42,6 @@ logger = get_logger(__name__)
 
 def _build_delivery_kwargs(
     *,
-    tenant_id: int,
     platform: str,
     event: Dict[str, Any],
     result: "CAPIResponse",
@@ -67,7 +66,6 @@ def _build_delivery_kwargs(
     )
 
     return {
-        "tenant_id": tenant_id,
         "platform": platform,
         "event_name": event.get("event_name", "unknown"),
         "status": DeliveryStatus.SUCCESS if result.success else DeliveryStatus.FAILED,
@@ -112,14 +110,11 @@ class CAPIService:
         "whatsapp": WhatsAppCAPIConnector,
     }
 
-    def __init__(self, tenant_id: Optional[int] = None):
+    def __init__(self):
         """Initialize the CAPI service.
 
-        ``tenant_id`` scopes delivery-log persistence; when set, every send is
-        recorded to ``capi_delivery_logs`` for the audit trail. The endpoint
-        caches one service per tenant, so it passes the tenant here.
+        Every send is recorded to ``capi_delivery_logs`` for the audit trail.
         """
-        self.tenant_id = tenant_id
         self.connectors: Dict[str, BaseCAPIConnector] = {}
         self.hasher = PIIHasher()
         self.mapper = AIEventMapper()
@@ -337,12 +332,11 @@ class CAPIService:
 
         # Persist a delivery-log record per (event, platform) for the audit
         # trail. Best-effort: audit logging must never fail the actual send.
-        if self.tenant_id is not None:
-            await self._log_deliveries(events, results)
-            # Capture any platform failures in the Dead Letter Queue so they are
-            # durably retained for investigation and replay (CAPI-001).
-            if failed_platforms:
-                await self._dlq_failed_events(events, results)
+        await self._log_deliveries(events, results)
+        # Capture any platform failures in the Dead Letter Queue so they are
+        # durably retained for investigation and replay (CAPI-001).
+        if failed_platforms:
+            await self._dlq_failed_events(events, results)
 
         # Add to event buffer for analysis
         self._event_buffer.extend(events)
@@ -371,7 +365,6 @@ class CAPIService:
                 for event in events:
                     await dl.log_delivery(
                         **_build_delivery_kwargs(
-                            tenant_id=self.tenant_id,
                             platform=platform,
                             event=event,
                             result=result,
@@ -403,7 +396,6 @@ class CAPIService:
                 platform_response = {"errors": errors} if errors else None
                 for event in events:
                     await dlq.add_failed_event(
-                        tenant_id=self.tenant_id,
                         platform=platform,
                         event_name=event.get("event_name", "unknown"),
                         event_data=event,

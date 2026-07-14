@@ -70,7 +70,6 @@ class AuditLogEntry(BaseModel):
 
     id: int
     timestamp: str
-    tenant_id: int
     user_id: Optional[int]
     user_email: Optional[str]
     action: str
@@ -141,7 +140,6 @@ class RBACUserAssignment(BaseModel):
     user_email: str
     role_id: str
     role_name: str
-    tenant_id: int
     assigned_at: str
     assigned_by: str
 
@@ -149,7 +147,6 @@ class RBACUserAssignment(BaseModel):
 class GDPRRetentionPolicy(BaseModel):
     """Data retention policy configuration."""
 
-    tenant_id: int
     profile_retention_days: int = Field(365, ge=30, le=2555)
     event_retention_days: int = Field(180, ge=7, le=1095)
     audit_log_retention_days: int = Field(2555, ge=365, le=3650)
@@ -189,16 +186,9 @@ async def search_audit_log(
     Supports filtering by date range, action type, resource type, severity,
     and free-text search across user emails and details.
     """
-    tenant_id = getattr(req.state, "tenant_id", None)
-    if not tenant_id:
-        raise HTTPException(
-            status_code=status.HTTP_401_UNAUTHORIZED, detail="Tenant required"
-        )
-
     # Build dynamic SQL query
-    conditions = ["tenant_id = :tenant_id"]
+    conditions = ["1=1"]
     params: dict[str, Any] = {
-        "tenant_id": tenant_id,
         "limit": page_size,
         "offset": (page - 1) * page_size,
     }
@@ -242,7 +232,7 @@ async def search_audit_log(
     # user_email is not stored on the table; details is composed from the
     # old/new/changed change columns and severity is derived from the action.
     data_sql = f"""
-    SELECT id, created_at, tenant_id, user_id, action,
+    SELECT id, created_at, user_id, action,
            resource_type, resource_id, old_value, new_value, changed_fields,
            ip_address, user_agent
     FROM audit_logs
@@ -258,7 +248,6 @@ async def search_audit_log(
         AuditLogEntry(
             id=r["id"],
             timestamp=r["created_at"].isoformat() if r["created_at"] else "",
-            tenant_id=r["tenant_id"],
             user_id=r["user_id"],
             user_email=None,
             action=r["action"],
@@ -308,12 +297,6 @@ async def audit_log_summary(
 
     Returns counts by severity, action type, and daily activity trend.
     """
-    tenant_id = getattr(req.state, "tenant_id", None)
-    if not tenant_id:
-        raise HTTPException(
-            status_code=status.HTTP_401_UNAUTHORIZED, detail="Tenant required"
-        )
-
     date_from = (datetime.now(UTC) - timedelta(days=days)).date()
 
     # Severity breakdown — audit_logs has no severity column, so aggregate by
@@ -321,13 +304,11 @@ async def audit_log_summary(
     action_sql = """
     SELECT action, COUNT(*) as count
     FROM audit_logs
-    WHERE tenant_id = :tenant_id AND created_at >= :date_from
+    WHERE created_at >= :date_from
     GROUP BY action
     ORDER BY count DESC
     """
-    action_result = await db.execute(
-        text(action_sql), {"tenant_id": tenant_id, "date_from": date_from}
-    )
+    action_result = await db.execute(text(action_sql), {"date_from": date_from})
     action_breakdown: dict[str, int] = {}
     severity_breakdown: dict[str, int] = {}
     for r in action_result.mappings().all():
@@ -339,13 +320,11 @@ async def audit_log_summary(
     daily_sql = """
     SELECT DATE(created_at) as day, COUNT(*) as count
     FROM audit_logs
-    WHERE tenant_id = :tenant_id AND created_at >= :date_from
+    WHERE created_at >= :date_from
     GROUP BY DATE(created_at)
     ORDER BY day
     """
-    daily_result = await db.execute(
-        text(daily_sql), {"tenant_id": tenant_id, "date_from": date_from}
-    )
+    daily_result = await db.execute(text(daily_sql), {"date_from": date_from})
     daily_activity = [
         {"date": str(r["day"]), "count": r["count"]}
         for r in daily_result.mappings().all()
@@ -375,13 +354,7 @@ async def list_rbac_roles(
     req: Request,
     db: AsyncSession = Depends(get_async_session),
 ):
-    """List all custom RBAC roles for the tenant."""
-    tenant_id = getattr(req.state, "tenant_id", None)
-    if not tenant_id:
-        raise HTTPException(
-            status_code=status.HTTP_401_UNAUTHORIZED, detail="Tenant required"
-        )
-
+    """List all custom RBAC roles."""
     # Return built-in + custom roles
     built_in = [
         RBACRole(
@@ -524,12 +497,6 @@ async def create_custom_role(
     db: AsyncSession = Depends(get_async_session),
 ):
     """Create a custom RBAC role with fine-grained permissions."""
-    tenant_id = getattr(req.state, "tenant_id", None)
-    if not tenant_id:
-        raise HTTPException(
-            status_code=status.HTTP_401_UNAUTHORIZED, detail="Tenant required"
-        )
-
     # In production, this would persist to a roles table
     # For now, return the role as created (would be stored)
     role.is_custom = True
@@ -547,13 +514,7 @@ async def list_user_role_assignments(
     db: AsyncSession = Depends(get_async_session),
     user_id: Optional[int] = Query(None),
 ):
-    """List role assignments for users in the tenant."""
-    tenant_id = getattr(req.state, "tenant_id", None)
-    if not tenant_id:
-        raise HTTPException(
-            status_code=status.HTTP_401_UNAUTHORIZED, detail="Tenant required"
-        )
-
+    """List role assignments for users."""
     # In production, query user_roles join table
     # Return mock data for now
     assignments = [
@@ -562,7 +523,6 @@ async def list_user_role_assignments(
             user_email="admin@example.com",
             role_id="tenant_admin",
             role_name="Tenant Admin",
-            tenant_id=tenant_id,
             assigned_at=datetime.now(UTC).isoformat(),
             assigned_by="system",
         ),
@@ -581,16 +541,9 @@ async def get_retention_policy(
     req: Request,
     db: AsyncSession = Depends(get_async_session),
 ):
-    """Get current data retention policy for the tenant."""
-    tenant_id = getattr(req.state, "tenant_id", None)
-    if not tenant_id:
-        raise HTTPException(
-            status_code=status.HTTP_401_UNAUTHORIZED, detail="Tenant required"
-        )
-
-    # In production, query tenant_settings table
+    """Get current data retention policy."""
+    # In production, query org_settings table
     policy = GDPRRetentionPolicy(
-        tenant_id=tenant_id,
         profile_retention_days=365,
         event_retention_days=180,
         audit_log_retention_days=2555,
@@ -610,13 +563,6 @@ async def update_retention_policy(
     db: AsyncSession = Depends(get_async_session),
 ):
     """Update data retention policy."""
-    tenant_id = getattr(req.state, "tenant_id", None)
-    if not tenant_id:
-        raise HTTPException(
-            status_code=status.HTTP_401_UNAUTHORIZED, detail="Tenant required"
-        )
-
-    policy.tenant_id = tenant_id
     policy.next_purge_at = (datetime.now(UTC) + timedelta(days=7)).isoformat()
 
     return APIResponse(success=True, data=policy, message="Retention policy updated")
@@ -632,12 +578,6 @@ async def preview_data_purge(
 
     **Important:** This is a PREVIEW only — no data is deleted.
     """
-    tenant_id = getattr(req.state, "tenant_id", None)
-    if not tenant_id:
-        raise HTTPException(
-            status_code=status.HTTP_401_UNAUTHORIZED, detail="Tenant required"
-        )
-
     # Get policy. The tenant_settings table is optional (retention overrides
     # live there when configured); fall back to defaults if it's absent. The
     # lookup runs in a SAVEPOINT so a missing table doesn't poison the outer
@@ -646,11 +586,7 @@ async def preview_data_purge(
     try:
         async with db.begin_nested():
             policy_result = await db.execute(
-                text(
-                    "SELECT * FROM tenant_settings "
-                    "WHERE tenant_id = :tenant_id LIMIT 1"
-                ),
-                {"tenant_id": tenant_id},
+                text("SELECT * FROM tenant_settings LIMIT 1"),
             )
             policy_row = policy_result.mappings().first()
     except SQLAlchemyError:
@@ -677,19 +613,19 @@ async def preview_data_purge(
     # Query counts
     queries = {
         "profiles": (
-            "SELECT COUNT(*) as c FROM cdp_profiles WHERE tenant_id = :t AND updated_at < :d",
+            "SELECT COUNT(*) as c FROM cdp_profiles WHERE updated_at < :d",
             cutoff_profile,
         ),
         "events": (
-            "SELECT COUNT(*) as c FROM cdp_events WHERE tenant_id = :t AND created_at < :d",
+            "SELECT COUNT(*) as c FROM cdp_events WHERE created_at < :d",
             cutoff_event,
         ),
         "audit": (
-            "SELECT COUNT(*) as c FROM audit_logs WHERE tenant_id = :t AND created_at < :d",
+            "SELECT COUNT(*) as c FROM audit_logs WHERE created_at < :d",
             cutoff_audit,
         ),
         "metrics": (
-            "SELECT COUNT(*) as c FROM campaign_metrics WHERE tenant_id = :t AND date < :d",
+            "SELECT COUNT(*) as c FROM campaign_metrics WHERE date < :d",
             cutoff_metric,
         ),
     }
@@ -697,7 +633,7 @@ async def preview_data_purge(
     counts = {}
     for name, (sql, cutoff) in queries.items():
         try:
-            result = await db.execute(text(sql), {"t": tenant_id, "d": cutoff})
+            result = await db.execute(text(sql), {"d": cutoff})
             row = result.mappings().first()
             counts[name] = row["c"] if row else 0
         except Exception:
@@ -756,16 +692,9 @@ async def export_user_data(
     Returns a structured JSON dump of all user-related data across
     campaigns, CDP profiles, events, and audit logs.
     """
-    tenant_id = getattr(req.state, "tenant_id", None)
-    if not tenant_id:
-        raise HTTPException(
-            status_code=status.HTTP_401_UNAUTHORIZED, detail="Tenant required"
-        )
-
     export_data = {
         "export_request": {
             "user_id": user_id,
-            "tenant_id": tenant_id,
             "requested_at": datetime.now(UTC).isoformat(),
             "regulation": "GDPR Article 20",
         },
@@ -780,7 +709,6 @@ async def export_user_data(
         result = await db.execute(
             select(Campaign)
             .where(
-                Campaign.tenant_id == tenant_id,
                 Campaign.is_deleted == False,
             )
             .limit(100)

@@ -4,7 +4,7 @@
 # =============================================================================
 """
 Deep endpoint tests exercising the full request/response cycle via
-httpx.AsyncClient through real middleware (JWT decode, tenant extraction)
+httpx.AsyncClient through real middleware (JWT decode)
 while mocking services/DB at the endpoint handler level.
 
 Features covered:
@@ -145,7 +145,7 @@ class TestAnalyticsDemographics:
     async def test_no_auth_returns_200_with_empty(
         self, api_client: AsyncClient, admin_headers, mock_db
     ):
-        # tenant_id comes from JWT; with no campaigns the result is empty
+        # with no campaigns the result is empty
         resp = await api_client.get(
             "/api/v1/analytics/demographics", headers=admin_headers
         )
@@ -186,14 +186,7 @@ class TestAnalyticsPlatformBreakdown:
     """GET /api/v1/analytics/platform-breakdown"""
 
     async def test_no_auth_returns_401_or_empty(self, api_client: AsyncClient):
-        # Without auth the TenantMiddleware still lets it through with tenant_id=None
-        # which the endpoint will interpret - but the query returns empty.
-        # Actually, analytics endpoints check tenant_id explicitly only in /kpis.
-        # platform-breakdown does NOT raise 401, it just queries with tenant_id=None.
         resp = await api_client.get("/api/v1/analytics/platform-breakdown")
-        # The middleware sets tenant_id from JWT; without JWT it is None.
-        # The endpoint reads getattr(request.state, "tenant_id", None) - no 401 raise.
-        # So it'll run the query and return 200 with empty data.
         assert resp.status_code in (200, 401, 403)
 
     async def test_happy_path(self, api_client: AsyncClient, admin_headers, mock_db):
@@ -249,29 +242,6 @@ class TestAnalyticsAIScalingScore:
             "/api/v1/analytics/ai/scoring/scale", json={}, headers=admin_headers
         )
         assert resp.status_code == 422
-
-    async def test_no_auth_blocked_by_middleware(self, api_client: AsyncClient):
-        """Even though the endpoint has no auth dep, TenantMiddleware
-        requires a valid JWT for non-public paths and returns 401."""
-        payload = {
-            "entity_id": "camp_1",
-            "entity_name": "Test Campaign",
-            "platform": "meta",
-            "spend": 1000,
-            "impressions": 50000,
-            "clicks": 2000,
-            "conversions": 100,
-            "revenue": 5000,
-            "baseline_spend": 900,
-            "baseline_impressions": 45000,
-            "baseline_clicks": 1800,
-            "baseline_conversions": 90,
-            "baseline_revenue": 4500,
-        }
-        resp = await api_client.post("/api/v1/analytics/ai/scoring/scale", json=payload)
-        # Middleware returns 401 for unauthenticated non-public paths
-        assert resp.status_code == 401
-
 
 class TestAnalyticsAIFatigueScore:
     """POST /api/v1/analytics/ai/scoring/fatigue"""
@@ -433,9 +403,9 @@ class TestOAuthAuthorize:
 class TestOAuthCallback:
     """GET /api/v1/oauth/{platform}/callback
 
-    The callback is exempted from TenantMiddleware (#534): the ad platform
-    redirects the user's browser here with no JWT, and tenant context comes
-    from the Redis-stored state token the endpoint validates itself.
+    The callback is exempted from the auth middleware (#534): the ad platform
+    redirects the user's browser here with no JWT; the endpoint validates the
+    Redis-stored state token itself.
     """
 
     async def test_no_auth_reaches_endpoint_and_redirects(
@@ -443,7 +413,7 @@ class TestOAuthCallback:
     ):
         """Unauthenticated callback (the real browser flow) reaches the endpoint.
 
-        Regression for #534: this used to 401 in TenantMiddleware before the
+        Regression for #534: this used to 401 in the middleware before the
         endpoint ran, which made every production OAuth connect flow dead.
         """
         resp = await api_client.get(
@@ -521,7 +491,7 @@ class TestIntegrationsHubSpotStatus:
     """GET /api/v1/integrations/hubspot/status"""
 
     async def test_no_auth_returns_401(self, api_client: AsyncClient):
-        resp = await api_client.get("/api/v1/integrations/hubspot/status?tenant_id=1")
+        resp = await api_client.get("/api/v1/integrations/hubspot/status")
         assert resp.status_code in (401, 403)
 
     async def test_non_owner_returns_403(
@@ -529,22 +499,9 @@ class TestIntegrationsHubSpotStatus:
     ):
         """require_owner dependency should block regular admins."""
         resp = await api_client.get(
-            "/api/v1/integrations/hubspot/status?tenant_id=1", headers=admin_headers
+            "/api/v1/integrations/hubspot/status", headers=admin_headers
         )
         assert resp.status_code == 403
-
-    async def test_wrong_tenant_returns_401_or_403(
-        self, api_client: AsyncClient, owner_headers, mock_db
-    ):
-        """owner has tenant_id=0 in JWT.  Because 0 is falsy, the
-        middleware stores tenant_id=None.  _verify_tenant_access then sees
-        auth_tenant_id is None and raises 401 ('Not authenticated')."""
-        resp = await api_client.get(
-            "/api/v1/integrations/hubspot/status?tenant_id=1",
-            headers=owner_headers,
-        )
-        # _verify_tenant_access: auth_tenant_id is None -> 401
-        assert resp.status_code in (401, 403)
 
 
 class TestIntegrationsHubSpotConnect:
@@ -552,7 +509,7 @@ class TestIntegrationsHubSpotConnect:
 
     async def test_no_auth_returns_401(self, api_client: AsyncClient):
         resp = await api_client.post(
-            "/api/v1/integrations/hubspot/connect?tenant_id=1",
+            "/api/v1/integrations/hubspot/connect",
             json={"redirect_uri": "http://localhost/callback"},
         )
         assert resp.status_code in (401, 403)
@@ -561,7 +518,7 @@ class TestIntegrationsHubSpotConnect:
         self, api_client: AsyncClient, admin_headers
     ):
         resp = await api_client.post(
-            "/api/v1/integrations/hubspot/connect?tenant_id=1",
+            "/api/v1/integrations/hubspot/connect",
             json={"redirect_uri": "http://localhost/callback"},
             headers=admin_headers,
         )
@@ -571,7 +528,7 @@ class TestIntegrationsHubSpotConnect:
         self, api_client: AsyncClient, admin_headers
     ):
         resp = await api_client.post(
-            "/api/v1/integrations/hubspot/connect?tenant_id=1",
+            "/api/v1/integrations/hubspot/connect",
             json={},
             headers=admin_headers,
         )
@@ -582,14 +539,14 @@ class TestIntegrationsPipelineSummary:
     """GET /api/v1/integrations/pipeline/summary"""
 
     async def test_no_auth_returns_401(self, api_client: AsyncClient):
-        resp = await api_client.get("/api/v1/integrations/pipeline/summary?tenant_id=1")
+        resp = await api_client.get("/api/v1/integrations/pipeline/summary")
         assert resp.status_code in (401, 403)
 
     async def test_non_owner_returns_403(
         self, api_client: AsyncClient, admin_headers
     ):
         resp = await api_client.get(
-            "/api/v1/integrations/pipeline/summary?tenant_id=1",
+            "/api/v1/integrations/pipeline/summary",
             headers=admin_headers,
         )
         assert resp.status_code == 403
@@ -599,7 +556,7 @@ class TestIntegrationsContacts:
     """GET /api/v1/integrations/contacts"""
 
     async def test_no_auth_returns_401(self, api_client: AsyncClient):
-        resp = await api_client.get("/api/v1/integrations/contacts?tenant_id=1")
+        resp = await api_client.get("/api/v1/integrations/contacts")
         assert resp.status_code in (401, 403)
 
 
@@ -607,7 +564,7 @@ class TestIntegrationsDeals:
     """GET /api/v1/integrations/deals"""
 
     async def test_no_auth_returns_401(self, api_client: AsyncClient):
-        resp = await api_client.get("/api/v1/integrations/deals?tenant_id=1")
+        resp = await api_client.get("/api/v1/integrations/deals")
         assert resp.status_code in (401, 403)
 
 
@@ -811,7 +768,7 @@ class TestCMSAdminListPosts:
     ):
         """A viewer with cms_role=viewer should have view_all_posts=True."""
         headers = make_auth_headers(
-            subject=5, tenant_id=1, role="viewer", cms_role="viewer"
+            subject=5, role="viewer", cms_role="viewer"
         )
         # check_cms_permission checks "view_all_posts" - viewer has this = True
         # But we need to mock DB for the actual query
@@ -828,14 +785,14 @@ class TestCMSAdminListPosts:
         self, api_client: AsyncClient, mock_db
     ):
         """User with no cms_role and non-owner role -> 403."""
-        headers = make_auth_headers(subject=5, tenant_id=1, role="admin", cms_role="")
+        headers = make_auth_headers(subject=5, role="admin", cms_role="")
         resp = await api_client.get("/api/v1/cms/admin/posts", headers=headers)
         assert resp.status_code == 403
 
     async def test_owner_has_access(self, api_client: AsyncClient, mock_db):
         """Owner should pass check_cms_permission."""
         headers = make_auth_headers(
-            subject=99, tenant_id=0, role="owner", cms_role=""
+            subject=99, role="owner", cms_role=""
         )
         count_result = MagicMock()
         count_result.scalar.return_value = 0
@@ -850,14 +807,22 @@ class TestCMSAdminListPosts:
 class TestCMSAdminCreatePost:
     """POST /api/v1/cms/admin/posts - requires create_post permission"""
 
-    async def test_no_auth_returns_401(self, api_client: AsyncClient):
-        resp = await api_client.post("/api/v1/cms/admin/posts", json={})
-        assert resp.status_code in (401, 403)
+    async def test_no_auth_returns_403(self, api_client: AsyncClient):
+        """Without a JWT there is no cms_role in request.state -> 403.
+
+        A valid body is sent so the request reaches the permission check
+        rather than failing schema validation first.
+        """
+        resp = await api_client.post(
+            "/api/v1/cms/admin/posts",
+            json={"title": "Test Post", "content": "Content"},
+        )
+        assert resp.status_code == 403
 
     async def test_viewer_cannot_create(self, api_client: AsyncClient, mock_db):
         """Viewers have create_post=False so POST admin/posts should be 403."""
         headers = make_auth_headers(
-            subject=5, tenant_id=1, role="admin", cms_role="viewer"
+            subject=5, role="admin", cms_role="viewer"
         )
         payload = {"title": "Test Post", "content": "Content"}
         resp = await api_client.post(
@@ -877,7 +842,7 @@ class TestCMSAdminDeletePost:
     async def test_viewer_cannot_delete(self, api_client: AsyncClient, mock_db):
         """Viewer does not have delete_any_post permission."""
         headers = make_auth_headers(
-            subject=5, tenant_id=1, role="admin", cms_role="viewer"
+            subject=5, role="admin", cms_role="viewer"
         )
         fake_id = str(uuid4())
         resp = await api_client.delete(
@@ -888,7 +853,7 @@ class TestCMSAdminDeletePost:
     async def test_admin_delete_not_found(self, api_client: AsyncClient, mock_db):
         """Admin can delete but post doesn't exist."""
         headers = make_auth_headers(
-            subject=5, tenant_id=1, role="admin", cms_role="admin"
+            subject=5, role="admin", cms_role="admin"
         )
         result = MagicMock()
         result.scalar_one_or_none.return_value = None
@@ -913,7 +878,7 @@ class TestCMSAdminCategories:
     ):
         """Viewer does not have manage_categories permission."""
         headers = make_auth_headers(
-            subject=5, tenant_id=1, role="admin", cms_role="viewer"
+            subject=5, role="admin", cms_role="viewer"
         )
         resp = await api_client.get("/api/v1/cms/admin/categories", headers=headers)
         assert resp.status_code == 403

@@ -419,7 +419,6 @@ class TestCreativePerformanceTracking:
 
         creative = service.register_creative(
             creative_id="creative_123",
-            tenant_id="tenant_1",
             platform="meta",
             campaign_id="campaign_456",
             creative_type=CreativeType.VIDEO,
@@ -442,7 +441,6 @@ class TestCreativePerformanceTracking:
         # Record metrics
         service.record_metrics(
             creative_id="creative_rec_1",
-            tenant_id="tenant_1",
             platform="meta",
             campaign_id="campaign_1",
             metrics=CreativeMetrics(
@@ -517,7 +515,6 @@ class TestCreativePerformanceTracking:
 
             service.record_metrics(
                 creative_id=creative_id,
-                tenant_id="tenant_1",
                 platform="meta",
                 campaign_id="campaign_1",
                 metrics=CreativeMetrics(
@@ -554,7 +551,6 @@ class TestCreativePerformanceTracking:
             date = datetime.now(timezone.utc) - timedelta(days=10 - day)
             service.record_metrics(
                 creative_id=creative_id,
-                tenant_id="tenant_1",
                 platform="meta",
                 campaign_id="campaign_1",
                 metrics=CreativeMetrics(
@@ -592,7 +588,6 @@ class TestCreativePerformanceTracking:
             # Creative 1: Better ROAS
             service.record_metrics(
                 creative_id="compare_creative_1",
-                tenant_id="tenant_1",
                 platform="meta",
                 campaign_id="campaign_1",
                 metrics=CreativeMetrics(
@@ -608,7 +603,6 @@ class TestCreativePerformanceTracking:
             # Creative 2: Lower ROAS
             service.record_metrics(
                 creative_id="compare_creative_2",
-                tenant_id="tenant_1",
                 platform="meta",
                 campaign_id="campaign_1",
                 metrics=CreativeMetrics(
@@ -645,7 +639,6 @@ class TestCreativePerformanceTracking:
         for i, roas in enumerate([1.5, 2.5, 3.5, 1.0, 2.0]):
             service.record_metrics(
                 creative_id=f"top_creative_{i}",
-                tenant_id="tenant_1",
                 platform="meta",
                 campaign_id="campaign_1",
                 metrics=CreativeMetrics(
@@ -657,7 +650,7 @@ class TestCreativePerformanceTracking:
                 ),
             )
 
-        top = service.get_top_creatives(tenant_id="tenant_1", metric="roas", limit=3)
+        top = service.get_top_creatives(metric="roas", limit=3)
 
         assert len(top) == 3
         assert top[0]["creative_id"] == "top_creative_2"  # ROAS 3.5
@@ -687,7 +680,6 @@ class TestCreativePerformanceTracking:
 
             service.record_metrics(
                 creative_id=creative_id,
-                tenant_id="fatigue_tenant",
                 platform="meta",
                 campaign_id="campaign_1",
                 metrics=CreativeMetrics(
@@ -700,8 +692,7 @@ class TestCreativePerformanceTracking:
                 date=date,
             )
 
-        fatigued = service.get_fatigued_creatives(
-            tenant_id="fatigue_tenant", min_fatigue_level=FatigueLevel.LOW
+        fatigued = service.get_fatigued_creatives( min_fatigue_level=FatigueLevel.LOW
         )
 
         # Should have at least our fatigued creative
@@ -720,7 +711,6 @@ class TestCreativePerformanceTracking:
         # Create different creative types
         service.record_metrics(
             creative_id="image_creative",
-            tenant_id="type_tenant",
             platform="meta",
             campaign_id="campaign_1",
             metrics=CreativeMetrics(
@@ -735,7 +725,6 @@ class TestCreativePerformanceTracking:
 
         service.record_metrics(
             creative_id="video_creative",
-            tenant_id="type_tenant",
             platform="meta",
             campaign_id="campaign_1",
             metrics=CreativeMetrics(
@@ -748,7 +737,7 @@ class TestCreativePerformanceTracking:
             creative_type=CreativeType.VIDEO,
         )
 
-        by_type = service.get_creative_type_performance(tenant_id="type_tenant")
+        by_type = service.get_creative_type_performance()
 
         assert "image" in by_type
         assert "video" in by_type
@@ -767,7 +756,6 @@ class TestCreativePerformanceTracking:
         for i in range(5):
             service.record_metrics(
                 creative_id=f"summary_creative_{i}",
-                tenant_id="summary_tenant",
                 platform="meta",
                 campaign_id="campaign_1",
                 metrics=CreativeMetrics(
@@ -779,7 +767,7 @@ class TestCreativePerformanceTracking:
                 ),
             )
 
-        summary = service.get_summary(tenant_id="summary_tenant")
+        summary = service.get_summary()
 
         assert summary["total_creatives"] == 5
         assert "by_status" in summary
@@ -795,7 +783,6 @@ class TestCreativePerformanceTracking:
 
         record_creative_metrics(
             creative_id="convenience_creative",
-            tenant_id="conv_tenant",
             platform="meta",
             campaign_id="campaign_1",
             impressions=10000,
@@ -883,7 +870,6 @@ class TestHighPriorityIntegration:
         # Record creative metrics
         creative_service.record_metrics(
             creative_id="latency_creative",
-            tenant_id="tenant_1",
             platform="meta",
             campaign_id="campaign_1",
             metrics=CreativeMetrics(
@@ -944,7 +930,6 @@ class TestHighPriorityIntegration:
 
                 service.record_metrics(
                     creative_id=creative_id,
-                    tenant_id="opt_tenant",
                     platform="meta",
                     campaign_id="campaign_1",
                     metrics=CreativeMetrics(
@@ -959,14 +944,14 @@ class TestHighPriorityIntegration:
                 )
 
         # Get top performers
-        top = service.get_top_creatives(tenant_id="opt_tenant", metric="roas", limit=3)
+        top = service.get_top_creatives(metric="roas", limit=3)
         assert len(top) == 3
 
         # Check for fatigue
-        fatigued = service.get_fatigued_creatives(tenant_id="opt_tenant")
+        fatigued = service.get_fatigued_creatives()
 
         # Get summary
-        summary = service.get_summary(tenant_id="opt_tenant")
+        summary = service.get_summary()
         assert summary["total_creatives"] == 3
 
 

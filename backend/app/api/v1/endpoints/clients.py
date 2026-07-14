@@ -3,7 +3,7 @@
 # =============================================================================
 """
 Client CRUD, user assignments, portal invitations, and KPI summaries.
-All endpoints enforce tenant isolation and client-scope RBAC.
+All endpoints enforce client-scope RBAC.
 """
 
 from typing import Optional
@@ -65,20 +65,17 @@ async def list_clients(
 ):
     """List clients scoped by user role and assignments."""
     try:
-        tenant_id = current_user.tenant_id
         user = current_user.user
 
         # Get accessible client IDs based on role
         accessible_ids = await perm_get_accessible(
             user_id=user.id,
             user_role=user.role,
-            tenant_id=tenant_id,
             db=db,
             client_id=getattr(user, "client_id", None),
         )
 
         query = select(Client).where(
-            Client.tenant_id == tenant_id,
             Client.is_deleted == False,
         )
 
@@ -166,17 +163,9 @@ async def create_client(
 ):
     """Create a new client. Requires ADMIN+ role."""
     try:
-        tenant_id = current_user.tenant_id
-
-        # Check tier limit
-        from app.auth.deps import check_tier_limit
-
-        await check_tier_limit("clients", tenant_id, db)
-
-        # Check slug uniqueness within tenant
+        # Check slug uniqueness
         existing = await db.execute(
             select(Client.id).where(
-                Client.tenant_id == tenant_id,
                 Client.slug == payload.slug,
                 Client.is_deleted == False,
             )
@@ -188,7 +177,6 @@ async def create_client(
             )
 
         client = Client(
-            tenant_id=tenant_id,
             **payload.model_dump(),
         )
         db.add(client)
@@ -225,7 +213,6 @@ async def get_client(
 ):
     """Get client detail (scoped by role)."""
     try:
-        tenant_id = current_user.tenant_id
         user = current_user.user
 
         # Enforce client access
@@ -233,7 +220,6 @@ async def get_client(
             user_id=user.id,
             user_role=user.role,
             client_id=client_id,
-            tenant_id=tenant_id,
             db=db,
             user_client_id=getattr(user, "client_id", None),
         )
@@ -241,7 +227,6 @@ async def get_client(
         result = await db.execute(
             select(Client).where(
                 Client.id == client_id,
-                Client.tenant_id == tenant_id,
                 Client.is_deleted == False,
             )
         )
@@ -307,14 +292,12 @@ async def update_client(
 ):
     """Update a client. Requires MANAGER+ role."""
     try:
-        tenant_id = current_user.tenant_id
         user = current_user.user
 
         await enforce_client_access(
             user_id=user.id,
             user_role=user.role,
             client_id=client_id,
-            tenant_id=tenant_id,
             db=db,
             user_client_id=getattr(user, "client_id", None),
         )
@@ -322,7 +305,6 @@ async def update_client(
         result = await db.execute(
             select(Client).where(
                 Client.id == client_id,
-                Client.tenant_id == tenant_id,
                 Client.is_deleted == False,
             )
         )
@@ -339,7 +321,6 @@ async def update_client(
         if "slug" in update_data and update_data["slug"] != client.slug:
             slug_check = await db.execute(
                 select(Client.id).where(
-                    Client.tenant_id == tenant_id,
                     Client.slug == update_data["slug"],
                     Client.is_deleted == False,
                     Client.id != client_id,
@@ -391,12 +372,9 @@ async def delete_client(
 ):
     """Soft-delete a client. Requires ADMIN+ role."""
     try:
-        tenant_id = current_user.tenant_id
-
         result = await db.execute(
             select(Client).where(
                 Client.id == client_id,
-                Client.tenant_id == tenant_id,
                 Client.is_deleted == False,
             )
         )
@@ -431,14 +409,12 @@ async def get_client_summary(
 ):
     """Aggregated KPI summary across all campaigns for a client."""
     try:
-        tenant_id = current_user.tenant_id
         user = current_user.user
 
         await enforce_client_access(
             user_id=user.id,
             user_role=user.role,
             client_id=client_id,
-            tenant_id=tenant_id,
             db=db,
             user_client_id=getattr(user, "client_id", None),
         )
@@ -447,7 +423,6 @@ async def get_client_summary(
         client_result = await db.execute(
             select(Client).where(
                 Client.id == client_id,
-                Client.tenant_id == tenant_id,
                 Client.is_deleted == False,
             )
         )
@@ -551,14 +526,12 @@ async def list_assignments(
 ):
     """List users assigned to a client."""
     try:
-        tenant_id = current_user.tenant_id
         user = current_user.user
 
-        # Verify client belongs to this tenant
+        # Verify client exists
         client_check = await db.execute(
             select(Client.id).where(
                 Client.id == client_id,
-                Client.tenant_id == tenant_id,
                 Client.is_deleted == False,
             )
         )
@@ -572,7 +545,6 @@ async def list_assignments(
             user_id=user.id,
             user_role=user.role,
             client_id=client_id,
-            tenant_id=tenant_id,
             db=db,
             user_client_id=getattr(user, "client_id", None),
         )
@@ -642,13 +614,10 @@ async def create_assignment(
 ):
     """Assign a user to a client. Requires ADMIN+ role."""
     try:
-        tenant_id = current_user.tenant_id
-
-        # Verify client exists in tenant
+        # Verify client exists
         client_check = await db.execute(
             select(Client.id).where(
                 Client.id == client_id,
-                Client.tenant_id == tenant_id,
                 Client.is_deleted == False,
             )
         )
@@ -658,11 +627,10 @@ async def create_assignment(
                 detail="Client not found",
             )
 
-        # Verify target user exists in same tenant
+        # Verify target user exists
         user_check = await db.execute(
             select(User).where(
                 User.id == payload.user_id,
-                User.tenant_id == tenant_id,
                 User.is_deleted == False,
             )
         )
@@ -670,7 +638,7 @@ async def create_assignment(
         if not target_user:
             raise HTTPException(
                 status_code=status.HTTP_404_NOT_FOUND,
-                detail="User not found in tenant",
+                detail="User not found",
             )
 
         # Only MANAGER and ANALYST should be assigned via this route
@@ -680,14 +648,11 @@ async def create_assignment(
                 detail="Only MANAGER and ANALYST users can be assigned to clients via assignments",
             )
 
-        # Check duplicate (scoped through Client for tenant isolation)
+        # Check duplicate
         dup_check = await db.execute(
-            select(ClientAssignment.id)
-            .join(Client, ClientAssignment.client_id == Client.id)
-            .where(
+            select(ClientAssignment.id).where(
                 ClientAssignment.user_id == payload.user_id,
                 ClientAssignment.client_id == client_id,
-                Client.tenant_id == tenant_id,
             )
         )
         if dup_check.scalar_one_or_none() is not None:
@@ -743,13 +708,10 @@ async def delete_assignment(
 ):
     """Unassign a user from a client. Requires ADMIN+ role."""
     try:
-        tenant_id = current_user.tenant_id
-
-        # Verify client belongs to this tenant
+        # Verify client exists
         client_check = await db.execute(
             select(Client.id).where(
                 Client.id == client_id,
-                Client.tenant_id == tenant_id,
                 Client.is_deleted == False,
             )
         )
@@ -760,12 +722,9 @@ async def delete_assignment(
             )
 
         result = await db.execute(
-            select(ClientAssignment)
-            .join(Client, ClientAssignment.client_id == Client.id)
-            .where(
+            select(ClientAssignment).where(
                 ClientAssignment.user_id == user_id,
                 ClientAssignment.client_id == client_id,
-                Client.tenant_id == tenant_id,
             )
         )
         assignment = result.scalar_one_or_none()
@@ -814,18 +773,10 @@ async def invite_portal_user(
 ):
     """Invite a client portal user (VIEWER role with client scope). Requires ADMIN+."""
     try:
-        tenant_id = current_user.tenant_id
-
-        # Check tier limit for users
-        from app.auth.deps import check_tier_limit
-
-        await check_tier_limit("users", tenant_id, db)
-
         # Verify client exists
         client_check = await db.execute(
             select(Client.id).where(
                 Client.id == client_id,
-                Client.tenant_id == tenant_id,
                 Client.is_deleted == False,
             )
         )
@@ -835,13 +786,12 @@ async def invite_portal_user(
                 detail="Client not found",
             )
 
-        # Check if email already exists in tenant
+        # Check if email already exists
         from app.core.security import encrypt_pii, hash_pii_for_lookup
 
         email_h = hash_pii_for_lookup(payload.email)
         existing = await db.execute(
             select(User.id).where(
-                User.tenant_id == tenant_id,
                 User.email_hash == email_h,
                 User.is_deleted == False,
             )
@@ -849,7 +799,7 @@ async def invite_portal_user(
         if existing.scalar_one_or_none() is not None:
             raise HTTPException(
                 status_code=status.HTTP_409_CONFLICT,
-                detail="User with this email already exists in the tenant",
+                detail="User with this email already exists",
             )
 
         # Create portal user
@@ -860,7 +810,6 @@ async def invite_portal_user(
         temp_password = secrets.token_urlsafe(16)
 
         portal_user = User(
-            tenant_id=tenant_id,
             email=encrypt_pii(payload.email),
             email_hash=email_h,
             password_hash=get_password_hash(temp_password),
@@ -967,7 +916,6 @@ async def create_portal_request(
     title = payload.campaign_name or f"{request_type.value} request"
 
     client_request = ClientRequest(
-        tenant_id=current_user.tenant_id,
         client_id=client_assignment.client_id,
         requested_by=current_user.id,
         request_type=request_type,
@@ -1019,14 +967,12 @@ async def list_client_requests(
         user_id=current_user.user.id,
         user_role=current_user.user.role,
         client_id=client_id,
-        tenant_id=current_user.tenant_id,
         db=db,
         user_client_id=getattr(current_user.user, "client_id", None),
     )
 
     query = select(ClientRequest).where(
         ClientRequest.client_id == client_id,
-        ClientRequest.tenant_id == current_user.tenant_id,
     )
 
     if status_filter:
@@ -1041,7 +987,6 @@ async def list_client_requests(
     # Count total
     count_query = select(func.count(ClientRequest.id)).where(
         ClientRequest.client_id == client_id,
-        ClientRequest.tenant_id == current_user.tenant_id,
     )
     if status_filter:
         count_query = count_query.where(ClientRequest.status == status_filter)
@@ -1092,7 +1037,6 @@ async def review_client_request(
         user_id=current_user.user.id,
         user_role=current_user.user.role,
         client_id=client_id,
-        tenant_id=current_user.tenant_id,
         db=db,
         user_client_id=getattr(current_user.user, "client_id", None),
     )
@@ -1101,7 +1045,6 @@ async def review_client_request(
         select(ClientRequest).where(
             ClientRequest.id == request_id,
             ClientRequest.client_id == client_id,
-            ClientRequest.tenant_id == current_user.tenant_id,
         )
     )
     client_request = result.scalar_one_or_none()

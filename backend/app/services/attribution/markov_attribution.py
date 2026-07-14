@@ -251,9 +251,8 @@ class MarkovAttributionService:
     Service for training and using Markov Chain attribution models.
     """
 
-    def __init__(self, db: AsyncSession, tenant_id: int):
+    def __init__(self, db: AsyncSession):
         self.db = db
-        self.tenant_id = tenant_id
 
     async def train_model(
         self,
@@ -282,7 +281,6 @@ class MarkovAttributionService:
         deal_result = await self.db.execute(
             select(CRMDeal).where(
                 and_(
-                    CRMDeal.tenant_id == self.tenant_id,
                     CRMDeal.is_won == True,
                     CRMDeal.won_at >= start_date,
                     CRMDeal.won_at <= end_date,
@@ -364,12 +362,7 @@ class MarkovAttributionService:
 
         # Get deal
         deal_result = await self.db.execute(
-            select(CRMDeal).where(
-                and_(
-                    CRMDeal.id == deal_id,
-                    CRMDeal.tenant_id == self.tenant_id,
-                )
-            )
+            select(CRMDeal).where(CRMDeal.id == deal_id)
         )
         deal = deal_result.scalar_one_or_none()
 
@@ -433,12 +426,7 @@ class MarkovAttributionService:
         before_time: Optional[datetime],
     ) -> List[Touchpoint]:
         """Get touchpoints for a contact."""
-        query = select(Touchpoint).where(
-            and_(
-                Touchpoint.contact_id == contact_id,
-                Touchpoint.tenant_id == self.tenant_id,
-            )
-        )
+        query = select(Touchpoint).where(Touchpoint.contact_id == contact_id)
 
         if before_time:
             query = query.where(Touchpoint.event_ts <= before_time)
@@ -460,12 +448,7 @@ class MarkovAttributionService:
         # Subquery for contacts with won deals
         won_contacts = (
             select(CRMDeal.contact_id)
-            .where(
-                and_(
-                    CRMDeal.tenant_id == self.tenant_id,
-                    CRMDeal.is_won == True,
-                )
-            )
+            .where(CRMDeal.is_won == True)
             .distinct()
         )
 
@@ -474,7 +457,6 @@ class MarkovAttributionService:
             select(CRMContact.id)
             .where(
                 and_(
-                    CRMContact.tenant_id == self.tenant_id,
                     CRMContact.touch_count > 0,
                     CRMContact.first_touch_ts >= start_date,
                     CRMContact.first_touch_ts <= end_date,

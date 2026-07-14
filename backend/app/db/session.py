@@ -7,7 +7,7 @@ Implements proper context management for multi-tenant queries.
 """
 
 from contextlib import asynccontextmanager
-from typing import Any, AsyncGenerator, Generator
+from typing import AsyncGenerator, Generator
 
 from sqlalchemy import create_engine, event, text
 from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker, create_async_engine
@@ -133,73 +133,6 @@ async def async_session_context() -> AsyncGenerator[AsyncSession, None]:
         except Exception:
             await session.rollback()
             raise
-
-
-# =============================================================================
-# Multi-Tenant Session Wrapper
-# =============================================================================
-class TenantAwareSession:
-    """
-    Wrapper that ensures all queries are filtered by tenant_id.
-    Implements Row-Level Security at the application level.
-    """
-
-    def __init__(self, session: AsyncSession, tenant_id: int):
-        self._session = session
-        self._tenant_id = tenant_id
-
-    @property
-    def tenant_id(self) -> int:
-        return self._tenant_id
-
-    async def execute(self, statement, *args, **kwargs):
-        """Execute a statement (tenant filtering should be applied by caller)."""
-        return await self._session.execute(statement, *args, **kwargs)
-
-    async def add(self, instance: Any) -> None:
-        """Add an instance, ensuring tenant_id is set."""
-        if hasattr(instance, "tenant_id"):
-            instance.tenant_id = self._tenant_id
-        self._session.add(instance)
-
-    async def delete(self, instance: Any) -> None:
-        """Delete an instance (verify tenant ownership first)."""
-        if hasattr(instance, "tenant_id") and instance.tenant_id != self._tenant_id:
-            logger.warning(
-                "cross_tenant_delete_blocked",
-                requesting_tenant=self._tenant_id,
-                target_tenant=instance.tenant_id,
-                entity_type=type(instance).__name__,
-                entity_id=getattr(instance, "id", "unknown"),
-            )
-            raise PermissionError("Cannot delete object from different tenant")
-        # NOTE: AsyncSession.delete() is synchronous — do NOT await it.
-        self._session.delete(instance)
-
-    async def commit(self) -> None:
-        await self._session.commit()
-
-    async def rollback(self) -> None:
-        await self._session.rollback()
-
-    async def refresh(self, instance: Any) -> None:
-        await self._session.refresh(instance)
-
-
-async def get_tenant_session(
-    session: AsyncSession, tenant_id: int
-) -> TenantAwareSession:
-    """
-    Create a tenant-aware session wrapper.
-
-    Args:
-        session: The underlying async session
-        tenant_id: The tenant ID to filter by
-
-    Returns:
-        TenantAwareSession wrapper
-    """
-    return TenantAwareSession(session, tenant_id)
 
 
 # =============================================================================

@@ -228,7 +228,7 @@ class VerifyEmailOTPResponse(BaseModel):
     verification_token: Optional[str] = None
 
 
-# Public registration schema (auto-creates tenant with free tier)
+# Public registration schema
 class RegisterRequest(BaseModel):
     """Public registration request."""
 
@@ -599,8 +599,7 @@ async def _issue_login_tokens(request: Request, user: User, db: AsyncSession) ->
     Issue access/refresh tokens for a fully-authenticated user.
 
     Shared by password login and the MFA second-factor exchange. Updates
-    last-login, writes the LOGIN audit event, and returns the response data
-    (including the multi-account tenant list).
+    last-login and writes the LOGIN audit event.
     """
     user.last_login_at = datetime.now(timezone.utc)
     await db.commit()
@@ -608,7 +607,6 @@ async def _issue_login_tokens(request: Request, user: User, db: AsyncSession) ->
     access_token = create_access_token(
         subject=user.id,
         additional_claims={
-            "tenant_id": user.tenant_id,
             "role": user.role.value,
             "cms_role": user.cms_role,
             # NOTE: email intentionally excluded from JWT to prevent PII leakage
@@ -617,7 +615,6 @@ async def _issue_login_tokens(request: Request, user: User, db: AsyncSession) ->
     refresh_token = create_refresh_token(subject=user.id)
 
     audit_log = AuditLog(
-        tenant_id=user.tenant_id,
         user_id=user.id,
         action=AuditAction.LOGIN,
         resource_type="user",
@@ -628,42 +625,13 @@ async def _issue_login_tokens(request: Request, user: User, db: AsyncSession) ->
     db.add(audit_log)
     await db.commit()
 
-    logger.info("user_logged_in", user_id=user.id, tenant_id=user.tenant_id)
-
-    from app.models import Tenant as TenantModel
-    from app.models import UserTenantMembership
-
-    membership_result = await db.execute(
-        select(UserTenantMembership, TenantModel)
-        .join(TenantModel, UserTenantMembership.tenant_id == TenantModel.id)
-        .where(
-            UserTenantMembership.user_id == user.id,
-            UserTenantMembership.is_active == True,
-            TenantModel.is_deleted == False,
-        )
-        .order_by(UserTenantMembership.is_default.desc(), TenantModel.name)
-        .limit(1000)
-    )
-    membership_rows = membership_result.all()
-    available_tenants = [
-        {
-            "tenant_id": t.id,
-            "tenant_name": t.name,
-            "tenant_slug": t.slug,
-            "tenant_plan": t.plan,
-            "role": m.role.value if hasattr(m.role, "value") else str(m.role),
-            "is_default": m.is_default,
-            "is_active": m.is_active,
-        }
-        for m, t in membership_rows
-    ]
+    logger.info("user_logged_in", user_id=user.id)
 
     return {
         "access_token": access_token,
         "refresh_token": refresh_token,
         "token_type": "bearer",
         "expires_in": 30 * 60,  # 30 minutes
-        "available_tenants": available_tenants,
     }
 
 
@@ -707,8 +675,6 @@ async def login(
         logger.warning("redis_unavailable_rate_limit_check", error=str(exc))
 
     # Find user(s) by email hash
-    # Note: email_hash is unique per tenant, so the same email may exist
-    # across multiple tenants. We match by password to find the correct user.
     result = await db.execute(
         select(User).where(
             User.email_hash == email_hash,
@@ -827,11 +793,9 @@ async def register(
     Register a new user with verified identity.
 
     Requires a verification_token from email or WhatsApp OTP verification.
-    Auto-creates a tenant with free tier for new signups.
     """
     from app.base_models import UserRole
     from app.core.security import encrypt_pii
-    from app.models import Tenant, UserTenantMembership
 
     # 1. Validate verification token from Redis
     try:
@@ -870,36 +834,8 @@ async def register(
             detail="Email already registered",
         )
 
-    # 3. Auto-create the tenant workspace.
-    #
-    # Tier/subscription gating was removed in the Single-Client conversion
-    # (STRAT-SC-001); plan/trial fields remain on the Tenant model only
-    # until the billing endpoints and columns are deleted in Task A2/A3.
-    slug_base = re.sub(r"[^a-z0-9]+", "-", email_lower.split("@")[0]).strip("-")
-    slug = f"{slug_base}-{secrets.token_hex(4)}"
-    tenant_name = (
-        f"{request_data.full_name}'s Workspace"
-        if request_data.full_name
-        else f"{slug_base}'s Workspace"
-    )
-
-    trial_end = datetime.now(timezone.utc) + timedelta(days=14)
-
-    tenant = Tenant(
-        name=tenant_name,
-        slug=slug,
-        plan="starter",
-        status="active",
-        billing_email=email_lower,
-        trial_ends_at=trial_end,
-        plan_expires_at=trial_end,
-    )
-    db.add(tenant)
-    await db.flush()  # Get tenant.id without committing
-
-    # 4. Create user with encrypted PII (verified = True since they passed OTP)
+    # 3. Create user with encrypted PII (verified = True since they passed OTP)
     user = User(
-        tenant_id=tenant.id,
         email=encrypt_pii(email_lower),
         email_hash=email_hash,
         password_hash=get_password_hash(request_data.password),
@@ -910,21 +846,10 @@ async def register(
         is_verified=True,
     )
     db.add(user)
-    await db.flush()  # Get user.id
-
-    # 5. Create tenant membership (admin, default tenant)
-    membership = UserTenantMembership(
-        user_id=user.id,
-        tenant_id=tenant.id,
-        role=UserRole.ADMIN,
-        is_default=True,
-        is_active=True,
-    )
-    db.add(membership)
-
     await db.commit()
+    await db.refresh(user)
 
-    # 6. Send welcome email in background
+    # 4. Send welcome email in background
     user_name = request_data.full_name or ""
 
     async def send_welcome() -> None:
@@ -936,19 +861,12 @@ async def register(
 
     background_tasks.add_task(send_welcome)
 
-    logger.info(
-        "user_registered",
-        user_id=user.id,
-        tenant_id=tenant.id,
-        plan="starter",
-        trial_ends_at=trial_end.isoformat(),
-    )
+    logger.info("user_registered", user_id=user.id)
 
     return APIResponse(
         success=True,
         data=UserResponse(
             id=user.id,
-            tenant_id=tenant.id,
             email=request_data.email,  # Return original email
             full_name=request_data.full_name,
             role=user.role,
@@ -961,7 +879,7 @@ async def register(
             created_at=user.created_at,
             updated_at=user.updated_at,
         ),
-        message="Registration successful. 14-day Starter trial activated.",
+        message="Registration successful.",
     )
 
 
@@ -1024,7 +942,6 @@ async def refresh_token(
     access_token = create_access_token(
         subject=user.id,
         additional_claims={
-            "tenant_id": user.tenant_id,
             "role": user.role.value,
             "cms_role": user.cms_role,
         },
@@ -1062,7 +979,6 @@ async def logout(
     so they cannot be reused.
     """
     user_id = getattr(request.state, "user_id", None)
-    tenant_id = getattr(request.state, "tenant_id", None)
 
     # Blacklist the access token so it cannot be reused
     auth_header = request.headers.get("Authorization", "")
@@ -1088,7 +1004,6 @@ async def logout(
     if user_id:
         # Log logout event
         audit_log = AuditLog(
-            tenant_id=tenant_id or 0,
             user_id=user_id,
             action=AuditAction.LOGOUT,
             resource_type="user",
@@ -1101,183 +1016,6 @@ async def logout(
         logger.info("user_logged_out", user_id=user_id)
 
     return APIResponse(success=True, message="Logged out successfully")
-
-
-# =============================================================================
-# Multi-Tenant Switcher
-# =============================================================================
-
-
-@router.get("/tenants", response_model=APIResponse[list])
-async def list_my_tenants(
-    request: Request,
-    db: AsyncSession = Depends(get_async_session),
-):
-    """
-    List all tenants the current user has access to.
-    Returns tenant info with the user's role in each tenant.
-    """
-    from app.models import Tenant, UserTenantMembership
-
-    user_id = getattr(request.state, "user_id", None)
-    if not user_id:
-        raise HTTPException(
-            status_code=status.HTTP_401_UNAUTHORIZED,
-            detail="Authentication required",
-        )
-
-    result = await db.execute(
-        select(UserTenantMembership, Tenant)
-        .join(Tenant, UserTenantMembership.tenant_id == Tenant.id)
-        .where(
-            UserTenantMembership.user_id == user_id,
-            UserTenantMembership.is_active == True,
-            Tenant.is_deleted == False,
-        )
-        .order_by(UserTenantMembership.is_default.desc(), Tenant.name)
-        .limit(1000)
-    )
-    rows = result.all()
-
-    tenants = []
-    for membership, tenant in rows:
-        tenants.append(
-            {
-                "tenant_id": tenant.id,
-                "tenant_name": tenant.name,
-                "tenant_slug": tenant.slug,
-                "tenant_plan": tenant.plan,
-                "role": (
-                    membership.role.value
-                    if hasattr(membership.role, "value")
-                    else str(membership.role)
-                ),
-                "is_default": membership.is_default,
-                "is_active": membership.is_active,
-            }
-        )
-
-    return APIResponse(
-        success=True,
-        data=tenants,
-        message=f"Found {len(tenants)} tenant(s)",
-    )
-
-
-class SwitchTenantRequest(BaseModel):
-    """Request to switch active tenant context."""
-
-    tenant_id: int = Field(..., description="Target tenant ID to switch to")
-
-
-@router.post("/switch-tenant", response_model=APIResponse)
-async def switch_tenant(
-    request: Request,
-    switch_data: SwitchTenantRequest,
-    db: AsyncSession = Depends(get_async_session),
-):
-    """
-    Switch active tenant context. Issues new JWT tokens scoped to the target tenant.
-    The user must have an active membership in the target tenant.
-    """
-    from app.models import Tenant, UserTenantMembership
-
-    user_id = getattr(request.state, "user_id", None)
-    if not user_id:
-        raise HTTPException(
-            status_code=status.HTTP_401_UNAUTHORIZED,
-            detail="Authentication required",
-        )
-
-    target_tenant_id = switch_data.tenant_id
-    if not target_tenant_id:
-        raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST,
-            detail="tenant_id is required",
-        )
-
-    # Verify user has active membership in target tenant
-    result = await db.execute(
-        select(UserTenantMembership, Tenant)
-        .join(Tenant, UserTenantMembership.tenant_id == Tenant.id)
-        .where(
-            UserTenantMembership.user_id == user_id,
-            UserTenantMembership.tenant_id == target_tenant_id,
-            UserTenantMembership.is_active == True,
-            Tenant.is_deleted == False,
-        )
-    )
-    row = result.first()
-
-    if not row:
-        raise HTTPException(
-            status_code=status.HTTP_403_FORBIDDEN,
-            detail="You do not have access to this tenant",
-        )
-
-    membership, tenant = row
-
-    # Get the user to access cms_role
-    user_result = await db.execute(select(User).where(User.id == user_id))
-    user = user_result.scalar_one_or_none()
-    if not user:
-        raise HTTPException(
-            status_code=status.HTTP_401_UNAUTHORIZED,
-            detail="User not found",
-        )
-
-    # Use the role from the membership for the target tenant
-    target_role = (
-        membership.role.value
-        if hasattr(membership.role, "value")
-        else str(membership.role)
-    )
-
-    # Issue new tokens scoped to the target tenant
-    access_token = create_access_token(
-        subject=user.id,
-        additional_claims={
-            "tenant_id": tenant.id,
-            "role": target_role,
-            "cms_role": user.cms_role,
-        },
-    )
-    refresh_token = create_refresh_token(subject=user.id)
-
-    # Audit log the switch
-    audit_log = AuditLog(
-        tenant_id=tenant.id,
-        user_id=user.id,
-        action=AuditAction.LOGIN,
-        resource_type="tenant_switch",
-        resource_id=str(tenant.id),
-        ip_address=request.client.host if request.client else None,
-        user_agent=request.headers.get("User-Agent", "")[:500],
-        new_value={"switched_from": getattr(request.state, "tenant_id", None)},
-    )
-    db.add(audit_log)
-    await db.commit()
-
-    logger.info(
-        "tenant_switched",
-        user_id=user.id,
-        from_tenant=getattr(request.state, "tenant_id", None),
-        to_tenant=tenant.id,
-    )
-
-    return APIResponse(
-        success=True,
-        data={
-            "access_token": access_token,
-            "refresh_token": refresh_token,
-            "token_type": "bearer",
-            "expires_in": 30 * 60,
-            "tenant_id": tenant.id,
-            "tenant_name": tenant.name,
-            "role": target_role,
-        },
-        message=f"Switched to {tenant.name}",
-    )
 
 
 # =============================================================================
@@ -1563,7 +1301,7 @@ async def accept_invite(
     user.updated_at = datetime.now(timezone.utc)
     await db.commit()
 
-    logger.info("invite_accepted", user_id=user.id, tenant_id=user.tenant_id)
+    logger.info("invite_accepted", user_id=user.id)
 
     return APIResponse(
         success=True,

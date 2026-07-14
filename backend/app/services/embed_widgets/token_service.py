@@ -59,7 +59,6 @@ class EmbedTokenService:
 
     async def create_token(
         self,
-        tenant_id: int,
         widget_id: UUID,
         allowed_domains: list[str],
         expires_in_days: int = DEFAULT_TOKEN_EXPIRY_DAYS,
@@ -68,7 +67,6 @@ class EmbedTokenService:
         Create a new embed token for a widget.
 
         Args:
-            tenant_id: Tenant ID
             widget_id: Widget ID
             allowed_domains: List of allowed domains (supports wildcards)
             expires_in_days: Token expiration in days
@@ -80,12 +78,11 @@ class EmbedTokenService:
         Raises:
             HTTPException: If limits exceeded or validation fails
         """
-        # Validate widget exists and belongs to tenant
+        # Validate widget exists
         widget = (
             await self.db.execute(
                 select(EmbedWidget).where(
                     EmbedWidget.id == widget_id,
-                    EmbedWidget.tenant_id == tenant_id,
                 )
             )
         ).scalar_one_or_none()
@@ -112,7 +109,7 @@ class EmbedTokenService:
             )
 
         # Validate domains against whitelist
-        await self._validate_domains(tenant_id, allowed_domains)
+        await self._validate_domains(allowed_domains)
 
         # Generate tokens
         full_token, token_prefix, token_hash = EmbedToken.generate_token()
@@ -128,7 +125,6 @@ class EmbedTokenService:
 
         # Create token record
         token = EmbedToken(
-            tenant_id=tenant_id,
             widget_id=widget_id,
             token_prefix=token_prefix,
             token_hash=token_hash,
@@ -312,13 +308,12 @@ class EmbedTokenService:
 
         return db_token, widget
 
-    async def revoke_token(self, tenant_id: int, token_id: UUID) -> None:
+    async def revoke_token(self, token_id: UUID) -> None:
         """Revoke an embed token."""
         token = (
             await self.db.execute(
                 select(EmbedToken).where(
                     EmbedToken.id == token_id,
-                    EmbedToken.tenant_id == tenant_id,
                 )
             )
         ).scalar_one_or_none()
@@ -337,7 +332,6 @@ class EmbedTokenService:
 
     async def _validate_domains(
         self,
-        tenant_id: int,
         domains: list[str],
     ) -> None:
         """Validate domains against whitelist and domain-count limits."""
@@ -347,10 +341,9 @@ class EmbedTokenService:
                 detail=f"Maximum {MAX_EMBED_DOMAINS} domains allowed",
             )
 
-        # Get whitelisted domains for tenant
+        # Get whitelisted domains
         result = await self.db.execute(
             select(EmbedDomainWhitelist).where(
-                EmbedDomainWhitelist.tenant_id == tenant_id,
                 EmbedDomainWhitelist.is_active == True,
             )
         )

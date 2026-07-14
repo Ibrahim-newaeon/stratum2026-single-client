@@ -50,7 +50,6 @@ class _FakeDB:
 def _key(**overrides):
     base = dict(
         id=11,
-        tenant_id=7,
         user_id=3,
         scopes=["read"],
         is_active=True,
@@ -74,12 +73,11 @@ async def test_valid_key_resolves_principal_and_sets_context():
     principal = await get_api_key_principal(req, "strat_live_whatever", db)
 
     assert isinstance(principal, APIKeyPrincipal)
-    assert principal.tenant_id == 7
     assert principal.user_id == 3
     assert principal.scopes == ["read"]
-    # tenant context populated for downstream middleware
-    assert req.state.tenant_id == 7
+    # request context populated for downstream middleware
     assert req.state.user_id == 3
+    assert req.state.role == "api_key"
     # usage stamped
     assert record.last_used_at is not None
     assert db.committed is True

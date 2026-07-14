@@ -20,7 +20,7 @@ pytestmark = pytest.mark.unit
 
 @pytest.fixture
 def rfm() -> RFMAnalysisService:
-    return RFMAnalysisService(db=None, tenant_id=1)
+    return RFMAnalysisService(db=None)
 
 
 # =============================================================================

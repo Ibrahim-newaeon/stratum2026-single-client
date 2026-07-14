@@ -12,6 +12,7 @@ from fastapi import APIRouter, Depends, HTTPException, Query, Request, status
 from sqlalchemy import func, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from app.auth.deps import CurrentUserDep
 from app.core.logging import get_logger
 from app.db.session import get_async_session
 from app.models import AdPlatform, Campaign, CampaignMetric, CampaignStatus
@@ -28,7 +29,7 @@ router = APIRouter()
 
 @router.get("/kpis")
 async def get_kpi_tiles(
-    request: Request,
+    current_user: CurrentUserDep,
     db: AsyncSession = Depends(get_async_session),
     period: str = Query("30d", pattern="^(today|7d|30d|90d)$"),
     account_id: Optional[str] = Query(None, description="Filter by ad account ID"),
@@ -38,13 +39,6 @@ async def get_kpi_tiles(
 
     Returns key metrics with trends.
     """
-    tenant_id = getattr(request.state, "tenant_id", None)
-    if tenant_id is None:
-        raise HTTPException(
-            status_code=status.HTTP_401_UNAUTHORIZED,
-            detail="Authentication required",
-        )
-
     # Determine date ranges
     today = date.today()
     if period == "today":
@@ -72,7 +66,6 @@ async def get_kpi_tiles(
         func.sum(CampaignMetric.clicks).label("clicks"),
         func.sum(CampaignMetric.conversions).label("conversions"),
     ).where(
-        CampaignMetric.tenant_id == tenant_id,
         CampaignMetric.date >= start_date,
         CampaignMetric.date <= today,
     )
@@ -84,7 +77,6 @@ async def get_kpi_tiles(
         func.sum(CampaignMetric.clicks).label("clicks"),
         func.sum(CampaignMetric.conversions).label("conversions"),
     ).where(
-        CampaignMetric.tenant_id == tenant_id,
         CampaignMetric.date >= prev_start,
         CampaignMetric.date <= prev_end,
     )
@@ -189,7 +181,7 @@ async def get_kpi_tiles(
 
 @router.get("/demographics", response_model=APIResponse[DemographicsResponse])
 async def get_demographics(
-    request: Request,
+    current_user: CurrentUserDep,
     db: AsyncSession = Depends(get_async_session),
     campaign_id: Optional[int] = None,
     platform: Optional[AdPlatform] = None,
@@ -200,10 +192,7 @@ async def get_demographics(
 
     Used for age/gender stacked bar charts.
     """
-    tenant_id = getattr(request.state, "tenant_id", None)
-
     query = select(Campaign).where(
-        Campaign.tenant_id == tenant_id,
         Campaign.is_deleted == False,
     )
 
@@ -290,7 +279,7 @@ async def get_demographics(
 
 @router.get("/heatmap", response_model=APIResponse[HeatmapDataResponse])
 async def get_location_heatmap(
-    request: Request,
+    current_user: CurrentUserDep,
     db: AsyncSession = Depends(get_async_session),
     aggregation: str = Query("country", pattern="^(country|state|city)$"),
     metric: str = Query(
@@ -302,11 +291,8 @@ async def get_location_heatmap(
 
     Returns coordinates and weights for map visualization.
     """
-    tenant_id = getattr(request.state, "tenant_id", None)
-
     result = await db.execute(
         select(Campaign).where(
-            Campaign.tenant_id == tenant_id,
             Campaign.is_deleted == False,
         )
     )
@@ -378,14 +364,12 @@ async def get_location_heatmap(
 
 @router.get("/platform-breakdown")
 async def get_platform_breakdown(
-    request: Request,
+    current_user: CurrentUserDep,
     db: AsyncSession = Depends(get_async_session),
 ):
     """
     Get performance breakdown by ad platform.
     """
-    tenant_id = getattr(request.state, "tenant_id", None)
-
     result = await db.execute(
         select(
             Campaign.platform,
@@ -397,7 +381,6 @@ async def get_platform_breakdown(
             func.count(Campaign.id).label("campaign_count"),
         )
         .where(
-            Campaign.tenant_id == tenant_id,
             Campaign.is_deleted == False,
         )
         .group_by(Campaign.platform)
@@ -430,7 +413,7 @@ async def get_platform_breakdown(
 
 @router.get("/account-breakdown")
 async def get_account_breakdown(
-    request: Request,
+    current_user: CurrentUserDep,
     db: AsyncSession = Depends(get_async_session),
     platform: Optional[AdPlatform] = None,
 ):
@@ -440,10 +423,7 @@ async def get_account_breakdown(
     Groups campaign data by account_id, optionally filtered by platform.
     Returns metrics per ad account for cross-account comparison.
     """
-    tenant_id = getattr(request.state, "tenant_id", None)
-
     conditions = [
-        Campaign.tenant_id == tenant_id,
         Campaign.is_deleted == False,
     ]
     if platform:
@@ -477,7 +457,7 @@ async def get_account_breakdown(
             TenantAdAccount.business_name,
             TenantAdAccount.currency,
             TenantAdAccount.is_enabled,
-        ).where(TenantAdAccount.tenant_id == tenant_id)
+        )
     )
     account_lookup = {
         row.platform_account_id: {
@@ -526,7 +506,7 @@ async def get_account_breakdown(
 
 @router.get("/trends")
 async def get_performance_trends(
-    request: Request,
+    current_user: CurrentUserDep,
     db: AsyncSession = Depends(get_async_session),
     days: int = Query(30, ge=7, le=90),
     metric: str = Query(
@@ -538,7 +518,6 @@ async def get_performance_trends(
     Get daily performance trends for a specified metric.
     Optionally filter by ad account.
     """
-    tenant_id = getattr(request.state, "tenant_id", None)
     start_date = date.today() - timedelta(days=days)
 
     query = select(
@@ -549,7 +528,6 @@ async def get_performance_trends(
         func.sum(CampaignMetric.clicks).label("clicks"),
         func.sum(CampaignMetric.conversions).label("conversions"),
     ).where(
-        CampaignMetric.tenant_id == tenant_id,
         CampaignMetric.date >= start_date,
     )
 
@@ -593,109 +571,102 @@ async def get_performance_trends(
 @router.get("/tenant-overview")
 async def get_tenant_overview(
     request: Request,
+    current_user: CurrentUserDep,
     db: AsyncSession = Depends(get_async_session),
 ):
     """
-    Get analytics overview for all tenants (owner view).
-    Returns ROAS, EMQ, status, and key metrics per tenant.
+    Get analytics overview for the organization (owner view).
+
+    Single-client deployment: there is exactly one organization, so this
+    returns a single-item list (shape preserved for the existing owner
+    dashboard, which historically rendered one row per tenant).
     """
-    from app.models import Tenant, UserRole
+    from app.base_models import get_organization
+    from app.models import UserRole
 
     user_role = getattr(request.state, "role", None)
 
-    # Only admin or owner can see all tenants
+    # Only admin or owner can see this overview
     if user_role not in (UserRole.ADMIN.value, "owner"):
-        from fastapi import HTTPException, status
-
         raise HTTPException(
             status_code=status.HTTP_403_FORBIDDEN,
             detail="Admin access required",
         )
 
-    # Get all active tenants
-    tenant_result = await db.execute(select(Tenant).where(Tenant.is_deleted == False))
-    tenants = tenant_result.scalars().all()
+    org = await get_organization(db)
 
-    tenant_analytics = []
-
-    for tenant in tenants:
-        # Get aggregate metrics for this tenant
-        metrics_result = await db.execute(
-            select(
-                func.sum(CampaignMetric.spend_cents).label("spend"),
-                func.sum(CampaignMetric.revenue_cents).label("revenue"),
-                func.sum(CampaignMetric.conversions).label("conversions"),
-                func.sum(CampaignMetric.clicks).label("clicks"),
-                func.sum(CampaignMetric.impressions).label("impressions"),
-            ).where(
-                CampaignMetric.tenant_id == tenant.id,
-                CampaignMetric.date >= date.today() - timedelta(days=30),
-            )
+    # Get aggregate metrics for the organization
+    metrics_result = await db.execute(
+        select(
+            func.sum(CampaignMetric.spend_cents).label("spend"),
+            func.sum(CampaignMetric.revenue_cents).label("revenue"),
+            func.sum(CampaignMetric.conversions).label("conversions"),
+            func.sum(CampaignMetric.clicks).label("clicks"),
+            func.sum(CampaignMetric.impressions).label("impressions"),
+        ).where(
+            CampaignMetric.date >= date.today() - timedelta(days=30),
         )
-        metrics = metrics_result.one()
+    )
+    metrics = metrics_result.one()
 
-        # Calculate ROAS
-        spend = (metrics.spend or 0) / 100
-        revenue = (metrics.revenue or 0) / 100
-        roas = round(revenue / spend, 2) if spend > 0 else 0
+    # Calculate ROAS
+    spend = (metrics.spend or 0) / 100
+    revenue = (metrics.revenue or 0) / 100
+    roas = round(revenue / spend, 2) if spend > 0 else 0
 
-        # Calculate EMQ (Event Match Quality) - simulated based on conversion rate
-        # In production, this would come from platform CAPI data
-        conversions = metrics.conversions or 0
-        clicks = metrics.clicks or 0
-        emq = (
-            min(95, max(50, int(70 + (conversions / max(clicks, 1)) * 100)))
-            if clicks > 0
-            else 75
-        )
+    # Calculate EMQ (Event Match Quality) - simulated based on conversion rate
+    # In production, this would come from platform CAPI data
+    conversions = metrics.conversions or 0
+    clicks = metrics.clicks or 0
+    emq = (
+        min(95, max(50, int(70 + (conversions / max(clicks, 1)) * 100)))
+        if clicks > 0
+        else 75
+    )
 
-        # Determine status based on ROAS trend
-        if roas >= 4.0:
-            status = "scaling"
-        elif roas >= 2.5:
-            status = "stable"
-        else:
-            status = "at_risk"
+    # Determine status based on ROAS trend
+    if roas >= 4.0:
+        org_status = "scaling"
+    elif roas >= 2.5:
+        org_status = "stable"
+    else:
+        org_status = "at_risk"
 
-        tenant_analytics.append(
-            {
-                "id": tenant.id,
-                "name": tenant.name,
-                "slug": tenant.slug,
-                "plan": tenant.plan,
-                "roas": roas,
-                "emq": emq,
-                "status": status,
-                "spend": spend,
-                "revenue": revenue,
-                "conversions": conversions,
-                "impressions": metrics.impressions or 0,
-            }
-        )
+    org_analytics = [
+        {
+            "id": org.id,
+            "name": org.name,
+            "slug": org.slug,
+            "plan": "single-org",
+            "roas": roas,
+            "emq": emq,
+            "status": org_status,
+            "spend": spend,
+            "revenue": revenue,
+            "conversions": conversions,
+            "impressions": metrics.impressions or 0,
+        }
+    ]
 
-    # Sort by revenue descending
-    tenant_analytics.sort(key=lambda x: x["revenue"], reverse=True)
-
-    return APIResponse(success=True, data=tenant_analytics)
+    return APIResponse(success=True, data=org_analytics)
 
 
 @router.get("/executive-summary")
 async def get_executive_summary(
     request: Request,
+    current_user: CurrentUserDep,
     db: AsyncSession = Depends(get_async_session),
 ):
     """
     Get executive summary for owner dashboard.
-    Aggregated metrics across all tenants.
+    Aggregated metrics for the organization (single-client deployment).
     """
-    from app.models import Tenant, UserRole
+    from app.models import UserRole
 
     user_role = getattr(request.state, "role", None)
 
     # Only admin or owner can see executive summary
     if user_role not in (UserRole.ADMIN.value, "owner"):
-        from fastapi import HTTPException, status
-
         raise HTTPException(
             status_code=status.HTTP_403_FORBIDDEN,
             detail="Admin access required",
@@ -734,11 +705,8 @@ async def get_executive_summary(
     )
     prev = prev_result.one()
 
-    # Get tenant counts
-    tenant_count = await db.execute(
-        select(func.count(Tenant.id)).where(Tenant.is_deleted == False)
-    )
-    total_tenants = tenant_count.scalar()
+    # Single-client deployment: exactly one organization.
+    total_tenants = 1
 
     # Get campaign counts
     campaign_count = await db.execute(

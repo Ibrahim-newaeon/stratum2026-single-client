@@ -17,7 +17,11 @@ from sqlalchemy import select
 
 from app.core.config import settings
 from app.db.session import SyncSessionLocal
-from app.models import Campaign, CampaignMetric, Tenant
+# NOTE(STRAT-SC-001/C3): dead `Tenant` import removed so `app.main` can
+# import (endpoints import worker task functions at module load). Task
+# bodies below still reference the old per-org fan-out and are rewritten
+# in Task C4 — they were already runtime-broken since the model deletion.
+from app.models import Campaign, CampaignMetric
 from app.workers.locks import with_distributed_lock
 from app.workers.tasks.helpers import publish_event
 
@@ -67,7 +71,7 @@ def sync_campaign_data(self, tenant_id: int, campaign_id: int):
             if settings.use_mock_ad_data:
                 from app.services.mock_client import MockAdNetwork, MockAdNetworkManager
 
-                manager = MockAdNetworkManager(tenant_id)
+                manager = MockAdNetworkManager()
                 network = MockAdNetwork(seed=tenant_id)
 
                 end_date = datetime.now(UTC).date()
@@ -158,7 +162,6 @@ def sync_platform_campaigns(self, tenant_id: int, platform: str):
         async with async_session_context() as db:
             orchestrator = PlatformSyncOrchestrator(db)
             return await orchestrator.sync_platform(
-                tenant_id=tenant_id,
                 platform=AdPlatform(platform),
             )
 

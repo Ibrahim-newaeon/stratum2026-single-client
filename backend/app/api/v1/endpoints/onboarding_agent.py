@@ -163,7 +163,7 @@ async def start_conversation(
     # Build user context
     user_context = UserContext(
         user_id=str(current_user.id) if current_user else None,
-        tenant_id=str(current_user.tenant_id) if current_user else None,
+        is_new_org=bool(request.is_new_tenant),
         name=request.name or (current_user.full_name if current_user else None),
         email=request.email or (current_user.email if current_user else None),
         company=request.company,
@@ -173,7 +173,7 @@ async def start_conversation(
 
     # If new tenant setup, mark accordingly
     if request.is_new_tenant and current_user:
-        user_context.tenant_id = str(current_user.tenant_id)
+        user_context.is_new_org = True
         user_context.is_new_user = False
 
     try:
@@ -345,32 +345,30 @@ async def complete_onboarding(
                 detail="Onboarding not yet completed",
             )
 
-        # Persist onboarding data to tenant settings
-        from app.base_models import Tenant
+        # Persist onboarding data to the organization's settings
+        from app.base_models import get_organization
 
-        result = await db.execute(
-            select(Tenant).where(Tenant.id == current_user.tenant_id)
-        )
-        tenant = result.scalar_one_or_none()
-        if tenant:
-            tenant_settings = tenant.settings or {}
+        org = await get_organization(db)
+        if org:
+            org_settings = org.settings or {}
             data = context.onboarding_data
             if data.company_name:
-                tenant.name = data.company_name
+                org.name = data.company_name
             if data.industry:
-                tenant_settings["industry"] = data.industry
+                org_settings["industry"] = data.industry
             if data.timezone:
-                tenant_settings["timezone"] = data.timezone
+                org_settings["timezone"] = data.timezone
             if data.currency:
-                tenant_settings["currency"] = data.currency
+                org_settings["currency"] = data.currency
             if data.selected_platforms:
-                tenant_settings["selected_platforms"] = data.selected_platforms
+                org_settings["selected_platforms"] = data.selected_platforms
             if data.healthy_threshold:
-                tenant_settings["trust_threshold_autopilot"] = data.healthy_threshold
+                org_settings["trust_threshold_autopilot"] = data.healthy_threshold
             if data.degraded_threshold:
-                tenant_settings["trust_threshold_alert"] = data.degraded_threshold
-            tenant_settings["onboarding_completed"] = True
-            tenant.settings = tenant_settings
+                org_settings["trust_threshold_alert"] = data.degraded_threshold
+            org_settings["onboarding_completed"] = True
+            org.settings = org_settings
+            org.is_onboarded = True
             await db.commit()
 
         # Delete session after completion
@@ -380,7 +378,6 @@ async def complete_onboarding(
             "onboarding_conversation_completed",
             session_id=session_id,
             user_id=current_user.id,
-            tenant_id=current_user.tenant_id,
         )
 
         return {

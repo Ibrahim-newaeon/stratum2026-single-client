@@ -39,7 +39,6 @@ class APIKeyPrincipal:
     def __init__(self, api_key: APIKey):
         self.api_key = api_key
         self.id = api_key.id
-        self.tenant_id = api_key.tenant_id
         self.user_id = api_key.user_id
         self.scopes = list(api_key.scopes or [])
 
@@ -90,11 +89,10 @@ async def get_api_key_principal(
 
     # Populate request state for downstream middleware / audit logging.
     # /programmatic/* bypasses AuthContextMiddleware (it authenticates by API
-    # key, not JWT), so this dependency is the single place tenant/role
-    # context is set for those requests — mirror the fields the old tenant
-    # middleware used to set so shared services reading request.state.role /
+    # key, not JWT), so this dependency is the single place role context is
+    # set for those requests — mirror the fields the old tenant middleware
+    # used to set so shared services reading request.state.role /
     # is_superadmin don't trip.
-    request.state.tenant_id = record.tenant_id
     request.state.user_id = record.user_id
     request.state.role = "api_key"
     request.state.is_superadmin = False
@@ -103,7 +101,6 @@ async def get_api_key_principal(
     import structlog
 
     structlog.contextvars.bind_contextvars(
-        tenant_id=record.tenant_id,
         user_id=record.user_id,
         role="api_key",
     )

@@ -157,7 +157,7 @@ class KnowledgeGraphService:
         self.db = db
 
     async def get_revenue_by_channel(
-        self, tenant_id: Any, *, days: int = 30
+        self, *, days: int = 30
     ) -> list[dict[str, Any]]:
         """Get revenue breakdown by acquisition channel.
 
@@ -167,7 +167,6 @@ class KnowledgeGraphService:
         and average order value.
 
         Args:
-            tenant_id: The tenant to query.
             days: Lookback window in days.
 
         Returns:
@@ -177,7 +176,6 @@ class KnowledgeGraphService:
 
         logger.info(
             "knowledge_graph.revenue_by_channel",
-            tenant_id=str(tenant_id),
             days=days,
         )
 
@@ -189,7 +187,6 @@ class KnowledgeGraphService:
                 select(CDPEvent)
                 .where(
                     and_(
-                        CDPEvent.tenant_id == tenant_id,
                         CDPEvent.event_time >= cutoff,
                         CDPEvent.event_name.in_(
                             ["purchase", "order_completed", "transaction"]
@@ -246,13 +243,12 @@ class KnowledgeGraphService:
         except (ValueError, TypeError, KeyError, ZeroDivisionError, OSError) as exc:
             logger.exception(
                 "knowledge_graph.revenue_by_channel_failed",
-                tenant_id=str(tenant_id),
                 error=str(exc),
             )
             return []
 
     async def get_segment_revenue_performance(
-        self, tenant_id: Any, *, days: int = 30
+        self, *, days: int = 30
     ) -> list[dict[str, Any]]:
         """Get revenue breakdown by customer segment.
 
@@ -260,7 +256,6 @@ class KnowledgeGraphService:
         revenue metrics per segment.
 
         Args:
-            tenant_id: The tenant to query.
             days: Lookback window in days.
 
         Returns:
@@ -271,7 +266,6 @@ class KnowledgeGraphService:
 
         logger.info(
             "knowledge_graph.segment_revenue",
-            tenant_id=str(tenant_id),
             days=days,
         )
 
@@ -299,12 +293,7 @@ class KnowledgeGraphService:
                     CDPProfile,
                     CDPSegmentMembership.profile_id == CDPProfile.id,
                 )
-                .where(
-                    and_(
-                        CDPSegment.tenant_id == tenant_id,
-                        CDPSegment.status == "active",
-                    )
-                )
+                .where(CDPSegment.status == "active")
                 .group_by(CDPSegment.id, CDPSegment.name)
                 .order_by(func.sum(CDPProfile.total_revenue).desc())
             )
@@ -332,13 +321,12 @@ class KnowledgeGraphService:
         except (ValueError, TypeError, KeyError, ZeroDivisionError, OSError) as exc:
             logger.exception(
                 "knowledge_graph.segment_revenue_failed",
-                tenant_id=str(tenant_id),
                 error=str(exc),
             )
             return []
 
     async def get_customer_journey(
-        self, tenant_id: Any, profile_id: str
+        self, profile_id: str
     ) -> Optional[dict[str, Any]]:
         """Get complete customer journey for a profile.
 
@@ -347,7 +335,6 @@ class KnowledgeGraphService:
         time between stages, and returns the full journey.
 
         Args:
-            tenant_id: The tenant to query.
             profile_id: The CDP profile UUID string.
 
         Returns:
@@ -359,17 +346,13 @@ class KnowledgeGraphService:
 
         logger.info(
             "knowledge_graph.customer_journey",
-            tenant_id=str(tenant_id),
             profile_id=profile_id,
         )
 
         try:
             # Fetch the profile
             profile_stmt = select(CDPProfile).where(
-                and_(
-                    CDPProfile.tenant_id == tenant_id,
-                    cast(CDPProfile.id, String) == profile_id,
-                )
+                cast(CDPProfile.id, String) == profile_id
             )
             profile_result = await self.db.execute(profile_stmt)
             profile = profile_result.scalars().first()
@@ -377,7 +360,6 @@ class KnowledgeGraphService:
             if profile is None:
                 logger.warning(
                     "knowledge_graph.customer_journey_profile_not_found",
-                    tenant_id=str(tenant_id),
                     profile_id=profile_id,
                 )
                 return None
@@ -385,12 +367,7 @@ class KnowledgeGraphService:
             # Fetch all events for this profile ordered by time
             events_stmt = (
                 select(CDPEvent)
-                .where(
-                    and_(
-                        CDPEvent.tenant_id == tenant_id,
-                        cast(CDPEvent.profile_id, String) == profile_id,
-                    )
-                )
+                .where(cast(CDPEvent.profile_id, String) == profile_id)
                 .order_by(CDPEvent.event_time.asc())
             )
             events_result = await self.db.execute(events_stmt.limit(1000))
@@ -466,14 +443,13 @@ class KnowledgeGraphService:
         except (ValueError, TypeError, KeyError, ZeroDivisionError, OSError) as exc:
             logger.exception(
                 "knowledge_graph.customer_journey_failed",
-                tenant_id=str(tenant_id),
                 profile_id=profile_id,
                 error=str(exc),
             )
             return None
 
     async def get_blocked_automations(
-        self, tenant_id: Any, *, days: int = 7
+        self, *, days: int = 7
     ) -> list[dict[str, Any]]:
         """Get automations blocked by the Trust Gate.
 
@@ -482,7 +458,6 @@ class KnowledgeGraphService:
         that were blocked or could not execute.
 
         Args:
-            tenant_id: The tenant to query.
             days: Lookback window in days.
 
         Returns:
@@ -493,7 +468,6 @@ class KnowledgeGraphService:
 
         logger.info(
             "knowledge_graph.blocked_automations",
-            tenant_id=str(tenant_id),
             days=days,
         )
 
@@ -504,7 +478,6 @@ class KnowledgeGraphService:
                 select(FactActionsQueue)
                 .where(
                     and_(
-                        FactActionsQueue.tenant_id == tenant_id,
                         FactActionsQueue.date >= cutoff_date,
                         FactActionsQueue.status.in_(["dismissed", "failed"]),
                     )
@@ -546,13 +519,12 @@ class KnowledgeGraphService:
         except (ValueError, TypeError, KeyError, OSError) as exc:
             logger.exception(
                 "knowledge_graph.blocked_automations_failed",
-                tenant_id=str(tenant_id),
                 error=str(exc),
             )
             return []
 
     async def trace_automation_decision(
-        self, tenant_id: Any, automation_id: str
+        self, automation_id: str
     ) -> Optional[dict[str, Any]]:
         """Trace the full decision path for an automation.
 
@@ -561,7 +533,6 @@ class KnowledgeGraphService:
         time of the decision, before/after values, and the approval chain.
 
         Args:
-            tenant_id: The tenant to query.
             automation_id: The UUID of the action queue entry.
 
         Returns:
@@ -572,17 +543,13 @@ class KnowledgeGraphService:
 
         logger.info(
             "knowledge_graph.trace_automation",
-            tenant_id=str(tenant_id),
             automation_id=automation_id,
         )
 
         try:
             # Fetch the specific action
             stmt = select(FactActionsQueue).where(
-                and_(
-                    FactActionsQueue.tenant_id == tenant_id,
-                    cast(FactActionsQueue.id, String) == automation_id,
-                )
+                cast(FactActionsQueue.id, String) == automation_id
             )
             result = await self.db.execute(stmt)
             action = result.scalars().first()
@@ -615,12 +582,7 @@ class KnowledgeGraphService:
             if action.date:
                 sh_stmt = (
                     select(FactSignalHealthDaily)
-                    .where(
-                        and_(
-                            FactSignalHealthDaily.tenant_id == tenant_id,
-                            FactSignalHealthDaily.date == action.date,
-                        )
-                    )
+                    .where(FactSignalHealthDaily.date == action.date)
                     .order_by(FactSignalHealthDaily.platform)
                 )
                 sh_result = await self.db.execute(sh_stmt.limit(1000))
@@ -685,20 +647,16 @@ class KnowledgeGraphService:
         except (ValueError, TypeError, KeyError, OSError) as exc:
             logger.exception(
                 "knowledge_graph.trace_automation_failed",
-                tenant_id=str(tenant_id),
                 automation_id=automation_id,
                 error=str(exc),
             )
             return None
 
-    async def get_graph_stats(self, tenant_id: Any) -> dict[str, int]:
-        """Get Knowledge Graph statistics for the tenant.
+    async def get_graph_stats(self) -> dict[str, int]:
+        """Get Knowledge Graph statistics.
 
         Counts profiles, events, segments, campaigns, and the relationship
         edges between them to give a snapshot of the graph size.
-
-        Args:
-            tenant_id: The tenant to query.
 
         Returns:
             Dict with counts for nodes and edges in the knowledge graph.
@@ -711,47 +669,35 @@ class KnowledgeGraphService:
             CDPSegmentMembership,
         )
 
-        logger.info(
-            "knowledge_graph.stats",
-            tenant_id=str(tenant_id),
-        )
+        logger.info("knowledge_graph.stats")
 
         try:
             # Count profiles
             profiles_result = await self.db.execute(
-                select(func.count(CDPProfile.id)).where(
-                    CDPProfile.tenant_id == tenant_id
-                )
+                select(func.count(CDPProfile.id))
             )
             profiles_count = profiles_result.scalar() or 0
 
             # Count events
-            events_result = await self.db.execute(
-                select(func.count(CDPEvent.id)).where(CDPEvent.tenant_id == tenant_id)
-            )
+            events_result = await self.db.execute(select(func.count(CDPEvent.id)))
             events_count = events_result.scalar() or 0
 
             # Count segments
             segments_result = await self.db.execute(
-                select(func.count(CDPSegment.id)).where(
-                    CDPSegment.tenant_id == tenant_id
-                )
+                select(func.count(CDPSegment.id))
             )
             segments_count = segments_result.scalar() or 0
 
             # Count campaigns
             campaigns_result = await self.db.execute(
-                select(func.count(Campaign.id)).where(Campaign.tenant_id == tenant_id)
+                select(func.count(Campaign.id))
             )
             campaigns_count = campaigns_result.scalar() or 0
 
             # Count profile->event edges (events linked to profiles)
             profile_event_edges_result = await self.db.execute(
                 select(func.count(CDPEvent.id)).where(
-                    and_(
-                        CDPEvent.tenant_id == tenant_id,
-                        CDPEvent.profile_id.isnot(None),
-                    )
+                    CDPEvent.profile_id.isnot(None)
                 )
             )
             profile_event_edges = profile_event_edges_result.scalar() or 0
@@ -759,10 +705,7 @@ class KnowledgeGraphService:
             # Count profile->segment edges (active memberships)
             profile_segment_edges_result = await self.db.execute(
                 select(func.count(CDPSegmentMembership.id)).where(
-                    and_(
-                        CDPSegmentMembership.tenant_id == tenant_id,
-                        CDPSegmentMembership.is_active.is_(True),
-                    )
+                    CDPSegmentMembership.is_active.is_(True)
                 )
             )
             profile_segment_edges = profile_segment_edges_result.scalar() or 0
@@ -770,18 +713,15 @@ class KnowledgeGraphService:
             # Touchpoints: events with purchase or conversion event names
             touchpoints_result = await self.db.execute(
                 select(func.count(CDPEvent.id)).where(
-                    and_(
-                        CDPEvent.tenant_id == tenant_id,
-                        CDPEvent.event_name.in_(
-                            [
-                                "purchase",
-                                "order_completed",
-                                "add_to_cart",
-                                "checkout_started",
-                                "lead",
-                                "sign_up",
-                            ]
-                        ),
+                    CDPEvent.event_name.in_(
+                        [
+                            "purchase",
+                            "order_completed",
+                            "add_to_cart",
+                            "checkout_started",
+                            "lead",
+                            "sign_up",
+                        ]
                     )
                 )
             )
@@ -793,7 +733,6 @@ class KnowledgeGraphService:
             campaign_touchpoint_result = await self.db.execute(
                 select(func.count(CDPEvent.id)).where(
                     and_(
-                        CDPEvent.tenant_id == tenant_id,
                         CDPEvent.profile_id.isnot(None),
                         CDPEvent.event_name.in_(
                             [
@@ -822,7 +761,6 @@ class KnowledgeGraphService:
         except (ValueError, TypeError, KeyError, OSError) as exc:
             logger.exception(
                 "knowledge_graph.stats_failed",
-                tenant_id=str(tenant_id),
                 error=str(exc),
             )
             return {
@@ -866,13 +804,10 @@ class KnowledgeGraphInsightsEngine:
         self.db = db
         self.kg = KnowledgeGraphService(db)
 
-    async def get_health_summary(self, tenant_id: Any) -> dict[str, Any]:
+    async def get_health_summary(self) -> dict[str, Any]:
         """Get overall health summary based on Knowledge Graph analysis."""
-        logger.info(
-            "knowledge_graph.health_summary",
-            tenant_id=str(tenant_id),
-        )
-        problems = await self.detect_all_problems(tenant_id)
+        logger.info("knowledge_graph.health_summary")
+        problems = await self.detect_all_problems()
 
         problem_counts: dict[str, int] = {}
         for p in problems:
@@ -908,9 +843,7 @@ class KnowledgeGraphInsightsEngine:
             "top_problem": top_problem,
         }
 
-    async def detect_all_problems(
-        self, tenant_id: Any, *, days: int = 7
-    ) -> list[Problem]:
+    async def detect_all_problems(self, *, days: int = 7) -> list[Problem]:
         """Detect all problems within the lookback period.
 
         Runs multiple detection passes against signal health data,
@@ -919,7 +852,6 @@ class KnowledgeGraphInsightsEngine:
         automations, and attribution drift.
 
         Args:
-            tenant_id: The tenant to analyze.
             days: Lookback window in days.
 
         Returns:
@@ -933,7 +865,6 @@ class KnowledgeGraphInsightsEngine:
 
         logger.info(
             "knowledge_graph.detect_problems",
-            tenant_id=str(tenant_id),
             days=days,
         )
 
@@ -947,12 +878,7 @@ class KnowledgeGraphInsightsEngine:
             # ------------------------------------------------------------------
             sh_stmt = (
                 select(FactSignalHealthDaily)
-                .where(
-                    and_(
-                        FactSignalHealthDaily.tenant_id == tenant_id,
-                        FactSignalHealthDaily.date >= cutoff_date,
-                    )
-                )
+                .where(FactSignalHealthDaily.date >= cutoff_date)
                 .order_by(
                     FactSignalHealthDaily.platform,
                     FactSignalHealthDaily.date.asc(),
@@ -1232,12 +1158,7 @@ class KnowledgeGraphInsightsEngine:
             # ------------------------------------------------------------------
             av_stmt = (
                 select(FactAttributionVarianceDaily)
-                .where(
-                    and_(
-                        FactAttributionVarianceDaily.tenant_id == tenant_id,
-                        FactAttributionVarianceDaily.date >= cutoff_date,
-                    )
-                )
+                .where(FactAttributionVarianceDaily.date >= cutoff_date)
                 .order_by(FactAttributionVarianceDaily.date.desc())
             )
             av_result = await self.db.execute(av_stmt.limit(1000))
@@ -1318,7 +1239,6 @@ class KnowledgeGraphInsightsEngine:
                 )
                 .where(
                     and_(
-                        FactActionsQueue.tenant_id == tenant_id,
                         FactActionsQueue.date >= cutoff_date,
                         FactActionsQueue.status == "failed",
                     )
@@ -1394,7 +1314,6 @@ class KnowledgeGraphInsightsEngine:
         except (ValueError, TypeError, KeyError, ZeroDivisionError, OSError) as exc:
             logger.exception(
                 "knowledge_graph.detect_problems_failed",
-                tenant_id=str(tenant_id),
                 error=str(exc),
             )
 
@@ -1409,9 +1328,7 @@ class KnowledgeGraphInsightsEngine:
 
         return problems
 
-    async def get_problem_details(
-        self, tenant_id: Any, problem_id: str
-    ) -> Optional[Problem]:
+    async def get_problem_details(self, problem_id: str) -> Optional[Problem]:
         """Get detailed information about a specific problem.
 
         Re-runs the full problem detection and returns the problem matching
@@ -1420,7 +1337,6 @@ class KnowledgeGraphInsightsEngine:
         problem no longer exists (resolved), returns None.
 
         Args:
-            tenant_id: The tenant to query.
             problem_id: The UUID of the problem to retrieve.
 
         Returns:
@@ -1428,12 +1344,11 @@ class KnowledgeGraphInsightsEngine:
         """
         logger.info(
             "knowledge_graph.problem_details",
-            tenant_id=str(tenant_id),
             problem_id=problem_id,
         )
 
         # Re-detect all problems and find the matching one
-        all_problems = await self.detect_all_problems(tenant_id)
+        all_problems = await self.detect_all_problems()
 
         for problem in all_problems:
             if problem.id == problem_id:
@@ -1444,7 +1359,6 @@ class KnowledgeGraphInsightsEngine:
         # longer detected (it may have been resolved).
         logger.info(
             "knowledge_graph.problem_not_found",
-            tenant_id=str(tenant_id),
             problem_id=problem_id,
             detected_count=len(all_problems),
         )

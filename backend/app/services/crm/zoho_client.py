@@ -93,17 +93,15 @@ class ZohoClient:
     - Multi-region support
     """
 
-    def __init__(self, db: AsyncSession, tenant_id: int, region: str = "com"):
+    def __init__(self, db: AsyncSession, region: str = "com"):
         """
         Initialize Zoho client.
 
         Args:
             db: Database session
-            tenant_id: Tenant ID
             region: Zoho region domain (com, eu, in, com.au, jp, com.cn)
         """
         self.db = db
-        self.tenant_id = tenant_id
         self.region = region
         self._connection: Optional[CRMConnection] = None
         self._http_client: Optional[httpx.AsyncClient] = None
@@ -226,7 +224,6 @@ class ZohoClient:
 
         logger.info(
             "zoho_connected",
-            tenant_id=self.tenant_id,
             org_id=connection.provider_account_id,
         )
 
@@ -260,7 +257,6 @@ class ZohoClient:
                 logger.error(
                     "zoho_token_refresh_failed",
                     status=response.status_code,
-                    tenant_id=self.tenant_id,
                 )
                 connection.status = CRMConnectionStatus.EXPIRED
                 await self.db.commit()
@@ -272,7 +268,6 @@ class ZohoClient:
                 logger.error(
                     "zoho_token_refresh_error",
                     error=data.get("error"),
-                    tenant_id=self.tenant_id,
                 )
                 connection.status = CRMConnectionStatus.EXPIRED
                 await self.db.commit()
@@ -286,7 +281,7 @@ class ZohoClient:
 
         await self.db.commit()
 
-        logger.info("zoho_tokens_refreshed", tenant_id=self.tenant_id)
+        logger.info("zoho_tokens_refreshed")
         return True
 
     async def disconnect(self) -> bool:
@@ -318,7 +313,7 @@ class ZohoClient:
 
         await self.db.commit()
 
-        logger.info("zoho_disconnected", tenant_id=self.tenant_id)
+        logger.info("zoho_disconnected")
         return True
 
     # =========================================================================
@@ -371,7 +366,7 @@ class ZohoClient:
         """
         access_token = await self.get_access_token()
         if not access_token:
-            logger.error("zoho_api_no_token", tenant_id=self.tenant_id)
+            logger.error("zoho_api_no_token")
             return None
 
         url = f"{self.api_base}{endpoint}"
@@ -860,13 +855,12 @@ class ZohoClient:
     # =========================================================================
 
     async def _get_connection(self) -> Optional[CRMConnection]:
-        """Get existing Zoho connection for tenant."""
+        """Get existing Zoho connection."""
         if self._connection:
             return self._connection
 
         result = await self.db.execute(
             select(CRMConnection).where(
-                CRMConnection.tenant_id == self.tenant_id,
                 CRMConnection.provider == CRMProvider.ZOHO,
             )
         )
@@ -874,13 +868,12 @@ class ZohoClient:
         return self._connection
 
     async def _get_or_create_connection(self) -> CRMConnection:
-        """Get or create Zoho connection for tenant."""
+        """Get or create Zoho connection."""
         connection = await self._get_connection()
         if connection:
             return connection
 
         connection = CRMConnection(
-            tenant_id=self.tenant_id,
             provider=CRMProvider.ZOHO,
             status=CRMConnectionStatus.PENDING,
             webhook_secret=secrets.token_urlsafe(32),

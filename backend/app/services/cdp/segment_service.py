@@ -68,9 +68,8 @@ class SegmentEvaluator:
         "external_id",
     }
 
-    def __init__(self, db: AsyncSession, tenant_id: int):
+    def __init__(self, db: AsyncSession):
         self.db = db
-        self.tenant_id = tenant_id
 
     async def evaluate_profile(
         self,
@@ -231,7 +230,6 @@ class SegmentEvaluator:
             result = await self.db.execute(
                 select(CDPEvent)
                 .where(
-                    CDPEvent.tenant_id == self.tenant_id,
                     CDPEvent.profile_id == profile.id,
                     CDPEvent.event_name == event_name,
                 )
@@ -350,10 +348,9 @@ class SegmentService:
     Service for managing CDP segments.
     """
 
-    def __init__(self, db: AsyncSession, tenant_id: int):
+    def __init__(self, db: AsyncSession):
         self.db = db
-        self.tenant_id = tenant_id
-        self.evaluator = SegmentEvaluator(db, tenant_id)
+        self.evaluator = SegmentEvaluator(db)
 
     # =========================================================================
     # Segment CRUD
@@ -375,7 +372,6 @@ class SegmentService:
         slug = self._generate_slug(name)
 
         segment = CDPSegment(
-            tenant_id=self.tenant_id,
             name=name,
             slug=slug,
             description=description,
@@ -392,7 +388,6 @@ class SegmentService:
 
         logger.info(
             "cdp_segment_created",
-            tenant_id=self.tenant_id,
             segment_id=str(segment.id),
             segment_name=name,
             segment_type=segment_type,
@@ -405,7 +400,6 @@ class SegmentService:
         result = await self.db.execute(
             select(CDPSegment).where(
                 CDPSegment.id == segment_id,
-                CDPSegment.tenant_id == self.tenant_id,
             )
         )
         return result.scalar_one_or_none()
@@ -418,7 +412,7 @@ class SegmentService:
         offset: int = 0,
     ) -> tuple[list[CDPSegment], int]:
         """List segments with optional filtering."""
-        query = select(CDPSegment).where(CDPSegment.tenant_id == self.tenant_id)
+        query = select(CDPSegment)
 
         if status:
             query = query.where(CDPSegment.status == status)
@@ -426,11 +420,7 @@ class SegmentService:
             query = query.where(CDPSegment.segment_type == segment_type)
 
         # Get total count
-        count_result = await self.db.execute(
-            select(func.count(CDPSegment.id)).where(
-                CDPSegment.tenant_id == self.tenant_id
-            )
-        )
+        count_result = await self.db.execute(select(func.count(CDPSegment.id)))
         total = count_result.scalar() or 0
 
         # Get segments
@@ -463,7 +453,6 @@ class SegmentService:
 
         logger.info(
             "cdp_segment_updated",
-            tenant_id=self.tenant_id,
             segment_id=str(segment_id),
             updates=list(updates.keys()),
         )
@@ -481,7 +470,6 @@ class SegmentService:
 
         logger.info(
             "cdp_segment_deleted",
-            tenant_id=self.tenant_id,
             segment_id=str(segment_id),
         )
 
@@ -518,7 +506,6 @@ class SegmentService:
                 # Fetch batch of profiles
                 result = await self.db.execute(
                     select(CDPProfile)
-                    .where(CDPProfile.tenant_id == self.tenant_id)
                     .options(selectinload(CDPProfile.identifiers))
                     .offset(offset)
                     .limit(batch_size)
@@ -546,7 +533,6 @@ class SegmentService:
                         if not existing:
                             # Add to segment
                             membership = CDPSegmentMembership(
-                                tenant_id=self.tenant_id,
                                 segment_id=segment_id,
                                 profile_id=profile.id,
                                 match_score=Decimal(str(score)) if score else None,
@@ -597,7 +583,6 @@ class SegmentService:
 
             logger.info(
                 "cdp_segment_computed",
-                tenant_id=self.tenant_id,
                 segment_id=str(segment_id),
                 profile_count=profile_count,
                 added=added_count,
@@ -612,7 +597,6 @@ class SegmentService:
             await self.db.flush()
             logger.error(
                 "cdp_segment_computation_error",
-                tenant_id=self.tenant_id,
                 segment_id=str(segment_id),
                 error=str(e),
             )
@@ -637,7 +621,6 @@ class SegmentService:
         while len(matching_profiles) < limit and total_checked < 10000:
             result = await self.db.execute(
                 select(CDPProfile)
-                .where(CDPProfile.tenant_id == self.tenant_id)
                 .options(selectinload(CDPProfile.identifiers))
                 .offset(offset)
                 .limit(batch_size)
@@ -662,11 +645,7 @@ class SegmentService:
             match_rate = len(matching_profiles) / total_checked
 
             # Get total profile count
-            count_result = await self.db.execute(
-                select(func.count(CDPProfile.id)).where(
-                    CDPProfile.tenant_id == self.tenant_id
-                )
-            )
+            count_result = await self.db.execute(select(func.count(CDPProfile.id)))
             total_profiles = count_result.scalar() or 0
             estimated_count = int(total_profiles * match_rate)
         else:
@@ -739,7 +718,6 @@ class SegmentService:
             return True
 
         membership = CDPSegmentMembership(
-            tenant_id=self.tenant_id,
             segment_id=segment_id,
             profile_id=profile_id,
             added_by_user_id=added_by_user_id,
@@ -789,7 +767,6 @@ class SegmentService:
             .where(
                 CDPSegmentMembership.profile_id == profile_id,
                 CDPSegmentMembership.is_active == True,
-                CDPSegment.tenant_id == self.tenant_id,
             )
             .limit(1000)
         )

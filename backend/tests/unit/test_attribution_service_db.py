@@ -132,7 +132,7 @@ def _deal(**overrides: Any) -> SimpleNamespace:
 
 
 def _service(results: Optional[List[Any]] = None) -> AttributionService:
-    return AttributionService(db=_make_db(results), tenant_id=1)
+    return AttributionService(db=_make_db(results))
 
 
 # =============================================================================
@@ -216,7 +216,7 @@ class TestAttributeDeal:
             _tp(days_before=1.0),
         ]
         db = _make_db([_scalar(deal), _scalars(tps)])
-        service = AttributionService(db=db, tenant_id=1)
+        service = AttributionService(db=db)
 
         result = await service.attribute_deal(deal.id, AttributionModel.LAST_TOUCH)
 
@@ -241,7 +241,7 @@ class TestAttributeDeal:
         deal = _deal()
         tps = [_tp(days_before=5.0), _tp(days_before=1.0)]
         db = _make_db([_scalar(deal), _scalars(tps)])
-        service = AttributionService(db=db, tenant_id=1)
+        service = AttributionService(db=db)
 
         result = await service.attribute_deal(deal.id, AttributionModel.FIRST_TOUCH)
 
@@ -281,7 +281,7 @@ class TestAttributeDealWithPlatformWindows:
         all_tps = [beyond_lookback, dropped_click, kept_click, dropped_view, kept_view]
 
         db = _make_db([_scalar(deal), _scalars(all_tps)])
-        service = AttributionService(db=db, tenant_id=1)
+        service = AttributionService(db=db)
 
         result = await service.attribute_deal_with_platform_windows(
             deal.id, model=AttributionModel.TIME_DECAY, platform="meta"
@@ -310,7 +310,7 @@ class TestAttributeDealWithPlatformWindows:
             _tp(days_before=0.5, source="meta"),  # view tp, google view_window=0
         ]
         db = _make_db([_scalar(deal), _scalars(tps)])
-        service = AttributionService(db=db, tenant_id=1)
+        service = AttributionService(db=db)
 
         result = await service.attribute_deal_with_platform_windows(deal.id)
 
@@ -326,7 +326,7 @@ class TestAttributeDealWithPlatformWindows:
             _tp(days_before=15.0, fbclid="f-2"),
         ]
         db = _make_db([_scalar(deal), _scalars(tps)])
-        service = AttributionService(db=db, tenant_id=1)
+        service = AttributionService(db=db)
 
         result = await service.attribute_deal_with_platform_windows(
             deal.id, platform="meta"
@@ -340,7 +340,7 @@ class TestAttributeDealWithPlatformWindows:
         deal = _deal()
         tps = [_tp(days_before=5.0, gclid="a"), _tp(days_before=1.0, gclid="b")]
         db = _make_db([_scalar(deal), _scalars(tps)])
-        service = AttributionService(db=db, tenant_id=1)
+        service = AttributionService(db=db)
 
         result = await service.attribute_deal_with_platform_windows(
             deal.id, model=AttributionModel.FIRST_TOUCH, platform="google"
@@ -690,7 +690,7 @@ class TestGetContactTouchpoints:
 class TestReconcileClaims:
     @pytest.fixture
     def attributor(self) -> CrossPlatformAttributor:
-        return CrossPlatformAttributor(db=None, tenant_id=1)
+        return CrossPlatformAttributor(db=None)
 
     def test_zero_claims_guard(self, attributor: CrossPlatformAttributor) -> None:
         claims = {
@@ -780,7 +780,7 @@ class TestActualConversionsAndUnified:
         # result.first() returns a (count, sum) 2-tuple.
         row_result = MagicMock()
         row_result.first.return_value = (3, Decimal("500.50"))
-        attributor = CrossPlatformAttributor(db=_make_db([row_result]), tenant_id=1)
+        attributor = CrossPlatformAttributor(db=_make_db([row_result]))
 
         actual = await attributor._get_actual_conversions(
             CONVERSION - timedelta(days=30), CONVERSION
@@ -791,7 +791,7 @@ class TestActualConversionsAndUnified:
     async def test_get_actual_conversions_null_row_values(self) -> None:
         row_result = MagicMock()
         row_result.first.return_value = (None, None)
-        attributor = CrossPlatformAttributor(db=_make_db([row_result]), tenant_id=1)
+        attributor = CrossPlatformAttributor(db=_make_db([row_result]))
 
         actual = await attributor._get_actual_conversions(
             CONVERSION - timedelta(days=30), CONVERSION
@@ -800,7 +800,7 @@ class TestActualConversionsAndUnified:
         assert actual == {"count": 0, "revenue": 0.0}
 
     async def test_get_unified_attribution(self) -> None:
-        attributor = CrossPlatformAttributor(db=_make_db(), tenant_id=1)
+        attributor = CrossPlatformAttributor(db=_make_db())
         attributor._get_actual_conversions = AsyncMock(
             return_value={"count": 10, "revenue": 1000.0}
         )

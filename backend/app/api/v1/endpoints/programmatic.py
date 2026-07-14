@@ -24,7 +24,6 @@ class APIKeyIdentity(BaseModel):
     """Identity resolved from a valid API key."""
 
     key_id: int
-    tenant_id: int
     user_id: int
     scopes: list[str]
 
@@ -36,7 +35,6 @@ async def whoami(principal: APIKeyPrincipalDep) -> APIResponse[APIKeyIdentity]:
         success=True,
         data=APIKeyIdentity(
             key_id=principal.id,
-            tenant_id=principal.tenant_id,
             user_id=principal.user_id,
             scopes=principal.scopes,
         ),

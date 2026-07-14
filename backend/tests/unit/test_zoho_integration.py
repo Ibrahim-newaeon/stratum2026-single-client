@@ -76,7 +76,6 @@ def sample_connection_data():
     """Sample CRM connection data."""
     return {
         "id": uuid4(),
-        "tenant_id": 1,
         "provider": "zoho",
         "provider_account_id": "12345678",
         "provider_account_name": "Test Organization",
@@ -112,12 +111,12 @@ class TestZohoClient:
         from app.services.crm.zoho_client import ZohoClient
 
         # Test US region (default)
-        client = ZohoClient(mock_db_session, tenant_id=1, region="com")
+        client = ZohoClient(mock_db_session, region="com")
         assert "zoho.com" in client.auth_url
         assert "zohoapis.com" in client.api_base
 
         # Test EU region
-        client_eu = ZohoClient(mock_db_session, tenant_id=1, region="eu")
+        client_eu = ZohoClient(mock_db_session, region="eu")
         assert "zoho.eu" in client_eu.auth_url
         assert "zohoapis.eu" in client_eu.api_base
 
@@ -129,7 +128,7 @@ class TestZohoClient:
             mock_settings.zoho_client_id = "test_client_id"
             mock_settings.zoho_client_secret = "test_secret"
 
-            client = ZohoClient(mock_db_session, tenant_id=1, region="com")
+            client = ZohoClient(mock_db_session, region="com")
             auth_url = client.get_authorization_url(
                 redirect_uri="https://app.stratum.ai/callback", state="test_state_123"
             )
@@ -161,7 +160,7 @@ class TestZohoClient:
         """Should detect token needing refresh when expiring within 5 minutes."""
         from app.services.crm.zoho_client import ZohoClient
 
-        client = ZohoClient(mock_db_session, tenant_id=1, region="com")
+        client = ZohoClient(mock_db_session, region="com")
 
         # Mock connection with token expiring in 4 minutes
         mock_connection = MagicMock()
@@ -178,7 +177,7 @@ class TestZohoClient:
         """Should not need refresh when token is valid for >5 minutes."""
         from app.services.crm.zoho_client import ZohoClient
 
-        client = ZohoClient(mock_db_session, tenant_id=1, region="com")
+        client = ZohoClient(mock_db_session, region="com")
 
         # Mock connection with token expiring in 30 minutes
         mock_connection = MagicMock()
@@ -417,18 +416,6 @@ class TestCRMSyncTasks:
 class TestZohoIntegrationFlow:
     """Tests for end-to-end integration flows."""
 
-    def test_oauth_state_parsing(self):
-        """Should correctly parse OAuth state parameter."""
-        # State format: tenant_id:region:random_token
-        state = "123:eu:abc123xyz"
-
-        parts = state.split(":", 2)
-        tenant_id = int(parts[0])
-        region = parts[1]
-
-        assert tenant_id == 123
-        assert region == "eu"
-
     def test_connection_status_response(self, sample_connection_data):
         """Connection status should return correct structure."""
         status = {
@@ -453,7 +440,7 @@ class TestZohoIntegrationFlow:
         regions = ["com", "eu", "in", "com.au", "jp", "com.cn"]
 
         for region in regions:
-            client = ZohoClient(mock_db_session, tenant_id=1, region=region)
+            client = ZohoClient(mock_db_session, region=region)
             assert f"zoho.{region}" in client.auth_url
 
 

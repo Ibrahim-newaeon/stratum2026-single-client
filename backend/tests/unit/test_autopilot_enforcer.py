@@ -16,7 +16,6 @@ Tests cover:
 
 import smtplib
 from datetime import UTC, datetime, timedelta
-from types import SimpleNamespace
 from typing import Any, List, Optional
 from unittest.mock import AsyncMock, MagicMock, patch
 from uuid import uuid4
@@ -54,7 +53,7 @@ def enforcer():
     """Create an AutopilotEnforcer instance without database."""
     # Create a fresh enforcer instance for each test to ensure clean state
     instance = AutopilotEnforcer(db=None)
-    instance._settings_cache.clear()
+    instance._settings_cache = None
     instance._pending_confirmations.clear()
     return instance
 
@@ -63,7 +62,6 @@ def enforcer():
 def default_settings():
     """Create default enforcement settings."""
     return EnforcementSettings(
-        tenant_id=1,
         enforcement_enabled=True,
         default_mode=EnforcementMode.ADVISORY,
         max_campaign_budget=10000.0,
@@ -76,7 +74,6 @@ def default_settings():
 def strict_settings():
     """Create strict enforcement settings with hard_block mode."""
     return EnforcementSettings(
-        tenant_id=1,
         enforcement_enabled=True,
         default_mode=EnforcementMode.HARD_BLOCK,
         max_campaign_budget=5000.0,
@@ -95,12 +92,11 @@ class TestEnforcementSettings:
 
     @pytest.mark.asyncio
     async def test_get_default_settings(self, enforcer):
-        """Test getting default settings for a new tenant."""
-        settings = await enforcer.get_settings(tenant_id=1)
+        """Test getting default settings on first use."""
+        settings = await enforcer.get_settings()
 
-        assert settings.tenant_id == 1
         assert settings.enforcement_enabled is True
-        # TRUST-003: an unconfigured tenant fails safe to SOFT_BLOCK.
+        # TRUST-003: an unconfigured install fails safe to SOFT_BLOCK.
         assert settings.default_mode == EnforcementMode.SOFT_BLOCK
         assert settings.budget_increase_limit_pct == 30.0
         assert settings.min_roas_threshold == 1.0
@@ -109,7 +105,6 @@ class TestEnforcementSettings:
     async def test_update_settings(self, enforcer):
         """Test updating enforcement settings."""
         settings = await enforcer.update_settings(
-            tenant_id=1,
             updates={
                 "max_campaign_budget": 5000.0,
                 "default_mode": EnforcementMode.SOFT_BLOCK,
@@ -123,15 +118,13 @@ class TestEnforcementSettings:
     async def test_settings_caching(self, enforcer):
         """Test that settings are cached."""
         # First call creates settings
-        settings1 = await enforcer.get_settings(tenant_id=1)
+        await enforcer.get_settings()
 
         # Update settings
-        await enforcer.update_settings(
-            tenant_id=1, updates={"max_campaign_budget": 7500.0}
-        )
+        await enforcer.update_settings(updates={"max_campaign_budget": 7500.0})
 
         # Second call should return cached (updated) settings
-        settings2 = await enforcer.get_settings(tenant_id=1)
+        settings2 = await enforcer.get_settings()
 
         assert settings2.max_campaign_budget == 7500.0
 
@@ -148,12 +141,10 @@ class TestBudgetEnforcement:
     async def test_budget_under_limit_allowed(self, enforcer):
         """Test that budget under limit is allowed."""
         await enforcer.update_settings(
-            tenant_id=1,
             updates={"max_campaign_budget": 10000.0},
         )
 
         result = await enforcer.check_action(
-            tenant_id=1,
             action_type="set_budget",
             entity_type="campaign",
             entity_id="camp_123",
@@ -167,7 +158,6 @@ class TestBudgetEnforcement:
     async def test_budget_over_limit_violations(self, enforcer):
         """Test that budget over limit creates violation."""
         await enforcer.update_settings(
-            tenant_id=1,
             updates={
                 "max_campaign_budget": 5000.0,
                 "default_mode": EnforcementMode.ADVISORY,
@@ -175,7 +165,6 @@ class TestBudgetEnforcement:
         )
 
         result = await enforcer.check_action(
-            tenant_id=1,
             action_type="set_budget",
             entity_type="campaign",
             entity_id="camp_123",
@@ -191,7 +180,6 @@ class TestBudgetEnforcement:
     async def test_budget_increase_percentage_check(self, enforcer):
         """Test budget increase percentage limit."""
         await enforcer.update_settings(
-            tenant_id=1,
             updates={
                 "budget_increase_limit_pct": 30.0,
                 "default_mode": EnforcementMode.ADVISORY,
@@ -200,7 +188,6 @@ class TestBudgetEnforcement:
 
         # 50% increase should violate 30% limit
         result = await enforcer.check_action(
-            tenant_id=1,
             action_type="budget_increase",
             entity_type="campaign",
             entity_id="camp_123",
@@ -218,7 +205,6 @@ class TestBudgetEnforcement:
         # confirmation gate: budget_increase is a high-risk action that would
         # otherwise require confirmation under the default SOFT_BLOCK (TRUST-004).
         await enforcer.update_settings(
-            tenant_id=1,
             updates={
                 "budget_increase_limit_pct": 30.0,
                 "default_mode": EnforcementMode.ADVISORY,
@@ -227,7 +213,6 @@ class TestBudgetEnforcement:
 
         # 20% increase should be allowed
         result = await enforcer.check_action(
-            tenant_id=1,
             action_type="budget_increase",
             entity_type="campaign",
             entity_id="camp_123",
@@ -251,12 +236,10 @@ class TestROASEnforcement:
     async def test_roas_above_threshold_allowed(self, enforcer):
         """Test that ROAS above threshold is allowed."""
         await enforcer.update_settings(
-            tenant_id=1,
             updates={"min_roas_threshold": 1.5},
         )
 
         result = await enforcer.check_action(
-            tenant_id=1,
             action_type="budget_increase",
             entity_type="campaign",
             entity_id="camp_123",
@@ -276,7 +259,6 @@ class TestROASEnforcement:
     async def test_roas_below_threshold_violation(self, enforcer):
         """Test that ROAS below threshold creates violation."""
         await enforcer.update_settings(
-            tenant_id=1,
             updates={
                 "min_roas_threshold": 2.0,
                 "default_mode": EnforcementMode.ADVISORY,
@@ -284,7 +266,6 @@ class TestROASEnforcement:
         )
 
         result = await enforcer.check_action(
-            tenant_id=1,
             action_type="budget_increase",
             entity_type="campaign",
             entity_id="camp_123",
@@ -313,7 +294,6 @@ class TestEnforcementModes:
     async def test_advisory_mode_allows_with_warnings(self, enforcer):
         """Test advisory mode allows action but returns warnings."""
         await enforcer.update_settings(
-            tenant_id=1,
             updates={
                 "default_mode": EnforcementMode.ADVISORY,
                 "max_campaign_budget": 1000.0,
@@ -321,7 +301,6 @@ class TestEnforcementModes:
         )
 
         result = await enforcer.check_action(
-            tenant_id=1,
             action_type="set_budget",
             entity_type="campaign",
             entity_id="camp_123",
@@ -336,7 +315,6 @@ class TestEnforcementModes:
     async def test_soft_block_requires_confirmation(self, enforcer):
         """Test soft_block mode requires confirmation."""
         await enforcer.update_settings(
-            tenant_id=1,
             updates={
                 "default_mode": EnforcementMode.SOFT_BLOCK,
                 "max_campaign_budget": 1000.0,
@@ -344,7 +322,6 @@ class TestEnforcementModes:
         )
 
         result = await enforcer.check_action(
-            tenant_id=1,
             action_type="set_budget",
             entity_type="campaign",
             entity_id="camp_123",
@@ -360,7 +337,6 @@ class TestEnforcementModes:
     async def test_hard_block_prevents_action(self, enforcer):
         """Test hard_block mode prevents action completely."""
         await enforcer.update_settings(
-            tenant_id=1,
             updates={
                 "default_mode": EnforcementMode.HARD_BLOCK,
                 "max_campaign_budget": 1000.0,
@@ -368,7 +344,6 @@ class TestEnforcementModes:
         )
 
         result = await enforcer.check_action(
-            tenant_id=1,
             action_type="set_budget",
             entity_type="campaign",
             entity_id="camp_123",
@@ -383,7 +358,6 @@ class TestEnforcementModes:
     async def test_no_violations_always_allowed(self, enforcer):
         """Test that no violations means action is always allowed."""
         await enforcer.update_settings(
-            tenant_id=1,
             updates={
                 "default_mode": EnforcementMode.HARD_BLOCK,
                 "max_campaign_budget": 10000.0,
@@ -391,7 +365,6 @@ class TestEnforcementModes:
         )
 
         result = await enforcer.check_action(
-            tenant_id=1,
             action_type="set_budget",
             entity_type="campaign",
             entity_id="camp_123",
@@ -414,7 +387,6 @@ class TestSoftBlockConfirmation:
     async def test_confirm_valid_token(self, enforcer):
         """Test confirming a valid soft-block token."""
         await enforcer.update_settings(
-            tenant_id=1,
             updates={
                 "default_mode": EnforcementMode.SOFT_BLOCK,
                 "max_campaign_budget": 1000.0,
@@ -423,7 +395,6 @@ class TestSoftBlockConfirmation:
 
         # Create a soft-blocked action
         result = await enforcer.check_action(
-            tenant_id=1,
             action_type="set_budget",
             entity_type="campaign",
             entity_id="camp_123",
@@ -435,7 +406,6 @@ class TestSoftBlockConfirmation:
 
         # Confirm the action
         success, error = await enforcer.confirm_action(
-            tenant_id=1,
             confirmation_token=token,
             user_id=42,
             override_reason="Approved by manager",
@@ -448,7 +418,6 @@ class TestSoftBlockConfirmation:
     async def test_confirm_invalid_token(self, enforcer):
         """Test confirming an invalid token fails."""
         success, error = await enforcer.confirm_action(
-            tenant_id=1,
             confirmation_token="invalid-token",
             user_id=42,
         )
@@ -457,39 +426,9 @@ class TestSoftBlockConfirmation:
         assert "Invalid" in error or "expired" in error
 
     @pytest.mark.asyncio
-    async def test_confirm_wrong_tenant(self, enforcer):
-        """Test confirming token with wrong tenant fails."""
-        await enforcer.update_settings(
-            tenant_id=1,
-            updates={
-                "default_mode": EnforcementMode.SOFT_BLOCK,
-                "max_campaign_budget": 1000.0,
-            },
-        )
-
-        result = await enforcer.check_action(
-            tenant_id=1,
-            action_type="set_budget",
-            entity_type="campaign",
-            entity_id="camp_123",
-            proposed_value={"budget": 5000.0},
-        )
-
-        # Try to confirm with different tenant
-        success, error = await enforcer.confirm_action(
-            tenant_id=999,  # Wrong tenant
-            confirmation_token=result.confirmation_token,
-            user_id=42,
-        )
-
-        assert success is False
-        assert "tenant" in error.lower()
-
-    @pytest.mark.asyncio
     async def test_token_can_only_be_used_once(self, enforcer):
         """Test that confirmation token can only be used once."""
         await enforcer.update_settings(
-            tenant_id=1,
             updates={
                 "default_mode": EnforcementMode.SOFT_BLOCK,
                 "max_campaign_budget": 1000.0,
@@ -497,7 +436,6 @@ class TestSoftBlockConfirmation:
         )
 
         result = await enforcer.check_action(
-            tenant_id=1,
             action_type="set_budget",
             entity_type="campaign",
             entity_id="camp_123",
@@ -508,7 +446,6 @@ class TestSoftBlockConfirmation:
 
         # First confirmation succeeds
         success1, _ = await enforcer.confirm_action(
-            tenant_id=1,
             confirmation_token=token,
             user_id=42,
         )
@@ -516,7 +453,6 @@ class TestSoftBlockConfirmation:
 
         # Second confirmation fails
         success2, _error2 = await enforcer.confirm_action(
-            tenant_id=1,
             confirmation_token=token,
             user_id=42,
         )
@@ -535,7 +471,6 @@ class TestKillSwitch:
     async def test_kill_switch_disables_enforcement(self, enforcer):
         """Test that kill switch disables all enforcement."""
         await enforcer.update_settings(
-            tenant_id=1,
             updates={
                 "enforcement_enabled": False,
                 "default_mode": EnforcementMode.HARD_BLOCK,
@@ -545,7 +480,6 @@ class TestKillSwitch:
 
         # Even with hard_block and low budget limit, action should be allowed
         result = await enforcer.check_action(
-            tenant_id=1,
             action_type="set_budget",
             entity_type="campaign",
             entity_id="camp_123",
@@ -559,7 +493,6 @@ class TestKillSwitch:
     async def test_set_kill_switch(self, enforcer):
         """Test setting kill switch via method."""
         settings = await enforcer.set_kill_switch(
-            tenant_id=1,
             enabled=False,
             user_id=42,
             reason="Emergency override",
@@ -569,7 +502,6 @@ class TestKillSwitch:
 
         # Re-enable
         settings = await enforcer.set_kill_switch(
-            tenant_id=1,
             enabled=True,
             user_id=42,
             reason="Issue resolved",
@@ -583,35 +515,33 @@ class TestEmergencyStop:
 
     @pytest.mark.asyncio
     async def test_default_not_frozen(self, enforcer):
-        """A new tenant is not frozen by default."""
-        settings = await enforcer.get_settings(tenant_id=1)
+        """A fresh install is not frozen by default."""
+        settings = await enforcer.get_settings()
         assert settings.autopilot_frozen is False
-        assert await enforcer.is_frozen(tenant_id=1) is False
+        assert await enforcer.is_frozen() is False
 
     @pytest.mark.asyncio
     async def test_set_freeze_halts(self, enforcer):
         """Freezing sets the flag and is_frozen reports True."""
         settings = await enforcer.set_freeze(
-            tenant_id=1,
             frozen=True,
             user_id=42,
             reason="Meta reporting outage",
         )
         assert settings.autopilot_frozen is True
-        assert await enforcer.is_frozen(tenant_id=1) is True
+        assert await enforcer.is_frozen() is True
 
     @pytest.mark.asyncio
     async def test_set_freeze_resume(self, enforcer):
         """Resuming clears the freeze."""
-        await enforcer.set_freeze(tenant_id=1, frozen=True, user_id=42)
+        await enforcer.set_freeze(frozen=True, user_id=42)
         settings = await enforcer.set_freeze(
-            tenant_id=1,
             frozen=False,
             user_id=42,
             reason="Incident resolved",
         )
         assert settings.autopilot_frozen is False
-        assert await enforcer.is_frozen(tenant_id=1) is False
+        assert await enforcer.is_frozen() is False
 
     @pytest.mark.asyncio
     async def test_freeze_independent_of_enforcement_toggle(self, enforcer):
@@ -620,21 +550,16 @@ class TestEmergencyStop:
         Freezing must not silently flip the guardrails toggle, and toggling
         the kill switch must not freeze — they are distinct controls.
         """
-        await enforcer.set_freeze(tenant_id=1, frozen=True, user_id=1)
-        settings = await enforcer.get_settings(tenant_id=1)
+        await enforcer.set_freeze(frozen=True, user_id=1)
+        settings = await enforcer.get_settings()
         assert settings.autopilot_frozen is True
         assert settings.enforcement_enabled is True
 
-        await enforcer.set_kill_switch(tenant_id=1, enabled=False, user_id=1)
-        settings = await enforcer.get_settings(tenant_id=1)
+        await enforcer.set_kill_switch(enabled=False, user_id=1)
+        settings = await enforcer.get_settings()
         assert settings.enforcement_enabled is False
         # Freeze survives an enforcement-toggle change.
         assert settings.autopilot_frozen is True
-
-    @pytest.mark.asyncio
-    async def test_is_frozen_defaults_false_for_unknown_tenant(self, enforcer):
-        """is_frozen returns False (not an error) for a tenant with no row."""
-        assert await enforcer.is_frozen(tenant_id=9999) is False
 
 
 # =============================================================================
@@ -658,7 +583,6 @@ class TestCustomRules:
         )
 
         await enforcer.update_settings(
-            tenant_id=1,
             updates={
                 "rules": [custom_rule],
                 "default_mode": EnforcementMode.ADVISORY,
@@ -666,7 +590,6 @@ class TestCustomRules:
         )
 
         result = await enforcer.check_action(
-            tenant_id=1,
             action_type="set_budget",
             entity_type="campaign",
             entity_id="camp_123",
@@ -693,7 +616,6 @@ class TestCustomRules:
         )
 
         await enforcer.update_settings(
-            tenant_id=1,
             updates={
                 "rules": [custom_rule],
                 "default_mode": EnforcementMode.ADVISORY,
@@ -701,7 +623,6 @@ class TestCustomRules:
         )
 
         result = await enforcer.check_action(
-            tenant_id=1,
             action_type="budget_increase",
             entity_type="campaign",
             entity_id="camp_123",
@@ -725,12 +646,10 @@ class TestCustomRules:
         )
 
         await enforcer.update_settings(
-            tenant_id=1,
             updates={"rules": [custom_rule]},
         )
 
         result = await enforcer.check_action(
-            tenant_id=1,
             action_type="set_budget",
             entity_type="campaign",
             entity_id="camp_123",
@@ -753,7 +672,6 @@ class TestAutoPause:
     async def test_auto_pause_in_hard_block_mode(self, enforcer):
         """Test auto-pause works in hard_block mode."""
         await enforcer.update_settings(
-            tenant_id=1,
             updates={
                 "default_mode": EnforcementMode.HARD_BLOCK,
                 "enforcement_enabled": True,
@@ -774,7 +692,6 @@ class TestAutoPause:
                 {"meta": mock_executor},
             ):
                 paused = await enforcer.auto_pause_campaign(
-                    tenant_id=1,
                     campaign_id="camp_123",
                     reason="ROAS below threshold",
                     metrics={"roas": 0.5, "spend": 1000.0},
@@ -786,7 +703,6 @@ class TestAutoPause:
     async def test_auto_pause_disabled_in_advisory_mode(self, enforcer):
         """Test auto-pause is disabled in advisory mode."""
         await enforcer.update_settings(
-            tenant_id=1,
             updates={
                 "default_mode": EnforcementMode.ADVISORY,
                 "enforcement_enabled": True,
@@ -794,7 +710,6 @@ class TestAutoPause:
         )
 
         paused = await enforcer.auto_pause_campaign(
-            tenant_id=1,
             campaign_id="camp_123",
             reason="ROAS below threshold",
             metrics={"roas": 0.5},
@@ -806,7 +721,6 @@ class TestAutoPause:
     async def test_auto_pause_disabled_when_kill_switch_off(self, enforcer):
         """Test auto-pause is disabled when enforcement is off."""
         await enforcer.update_settings(
-            tenant_id=1,
             updates={
                 "default_mode": EnforcementMode.HARD_BLOCK,
                 "enforcement_enabled": False,
@@ -814,7 +728,6 @@ class TestAutoPause:
         )
 
         paused = await enforcer.auto_pause_campaign(
-            tenant_id=1,
             campaign_id="camp_123",
             reason="ROAS below threshold",
             metrics={"roas": 0.5},
@@ -870,7 +783,6 @@ class TestNotificationService:
         mock_slack_cls.return_value = mock_slack_instance
 
         intervention = InterventionLog(
-            tenant_id=1,
             timestamp=datetime.now(UTC),
             action_type="set_budget",
             entity_type="campaign",
@@ -882,7 +794,6 @@ class TestNotificationService:
         )
 
         result = await send_enforcement_notification(
-            tenant_id=1,
             intervention=intervention,
             notification_channels=["email", "slack"],
         )
@@ -905,7 +816,6 @@ class TestEdgeCases:
         # what this test checks: that a zero current budget doesn't raise a
         # division error.
         await enforcer.update_settings(
-            tenant_id=1,
             updates={
                 "budget_increase_limit_pct": 30.0,
                 "default_mode": EnforcementMode.ADVISORY,
@@ -914,7 +824,6 @@ class TestEdgeCases:
 
         # Increasing from zero should not cause division error
         result = await enforcer.check_action(
-            tenant_id=1,
             action_type="budget_increase",
             entity_type="campaign",
             entity_id="camp_123",
@@ -928,7 +837,6 @@ class TestEdgeCases:
     async def test_missing_metrics(self, enforcer):
         """Test handling of missing metrics."""
         result = await enforcer.check_action(
-            tenant_id=1,
             action_type="budget_increase",
             entity_type="campaign",
             entity_id="camp_123",
@@ -965,7 +873,6 @@ class TestEdgeCases:
         )
 
         await enforcer.update_settings(
-            tenant_id=1,
             updates={
                 "rules": [advisory_rule, hard_block_rule],
                 "default_mode": EnforcementMode.ADVISORY,
@@ -973,7 +880,6 @@ class TestEdgeCases:
         )
 
         result = await enforcer.check_action(
-            tenant_id=1,
             action_type="set_budget",
             entity_type="campaign",
             entity_id="camp_123",
@@ -1035,13 +941,6 @@ def _scalar_one(value: Any) -> MagicMock:
     return result
 
 
-def _scalar_one_or_none(value: Any) -> MagicMock:
-    """Result stub for ``result.scalar_one_or_none()``."""
-    result = MagicMock()
-    result.scalar_one_or_none.return_value = value
-    return result
-
-
 def _rows_all(rows: List[Any]) -> MagicMock:
     """Result stub for ``result.all()``."""
     result = MagicMock()
@@ -1061,7 +960,6 @@ def _added_of_type(db: MagicMock, model_cls: type) -> List[Any]:
 def _db_settings_row(**overrides: Any) -> TenantEnforcementSettingsDB:
     """Construct an in-memory TenantEnforcementSettings row (no DB needed)."""
     row = TenantEnforcementSettingsDB(
-        tenant_id=1,
         enforcement_enabled=True,
         autopilot_frozen=False,
         default_mode=DBEnforcementMode.SOFT_BLOCK,
@@ -1086,7 +984,6 @@ class TestGetSettingsDbPaths:
     async def test_loads_existing_row_with_rules(self):
         """An existing DB row (with custom rules) maps to the Pydantic model."""
         rule_row = TenantEnforcementRuleDB(
-            tenant_id=1,
             rule_id="min_roas_rule",
             rule_type=DBViolationType.ROAS_BELOW_THRESHOLD,
             threshold_value=2.0,
@@ -1098,9 +995,8 @@ class TestGetSettingsDbPaths:
         db = _make_db([_scalars_first(row)])
         enforcer = AutopilotEnforcer(db=db)
 
-        settings = await enforcer.get_settings(tenant_id=1)
+        settings = await enforcer.get_settings()
 
-        assert settings.tenant_id == 1
         assert settings.default_mode == EnforcementMode.SOFT_BLOCK
         assert settings.max_daily_budget == 250.0
         assert settings.max_campaign_budget == 5000.0
@@ -1119,7 +1015,7 @@ class TestGetSettingsDbPaths:
 
         # Nothing was created; result is cached (no second query)
         db.add.assert_not_called()
-        await enforcer.get_settings(tenant_id=1)
+        await enforcer.get_settings()
         assert db.execute.await_count == 1
 
     @pytest.mark.asyncio
@@ -1128,20 +1024,18 @@ class TestGetSettingsDbPaths:
         db = _make_db([_scalars_first(None)])
         enforcer = AutopilotEnforcer(db=db)
 
-        settings = await enforcer.get_settings(tenant_id=7)
+        settings = await enforcer.get_settings()
 
         created = _added_of_type(db, TenantEnforcementSettingsDB)
         assert len(created) == 1
-        assert created[0].tenant_id == 7
         assert created[0].enforcement_enabled is True
         # TRUST-003: the persisted first-use default fails safe to SOFT_BLOCK.
         assert created[0].default_mode == DBEnforcementMode.SOFT_BLOCK
         db.flush.assert_awaited_once()
 
-        assert settings.tenant_id == 7
         assert settings.default_mode == EnforcementMode.SOFT_BLOCK
         # Cached for subsequent calls
-        assert enforcer._settings_cache[7] is settings
+        assert enforcer._settings_cache is settings
 
 
 class TestUpdateSettingsDbPaths:
@@ -1154,10 +1048,9 @@ class TestUpdateSettingsDbPaths:
         db = _make_db([_scalars_first(row)])
         enforcer = AutopilotEnforcer(db=db)
         # Pre-seed the cache so get_settings() does not consume db.execute
-        enforcer._settings_cache[1] = EnforcementSettings(tenant_id=1)
+        enforcer._settings_cache = EnforcementSettings()
 
         settings = await enforcer.update_settings(
-            tenant_id=1,
             updates={
                 "default_mode": "hard_block",
                 "max_campaign_budget": 9000.0,
@@ -1179,16 +1072,14 @@ class TestUpdateSettingsDbPaths:
         """If no settings row exists yet, update_settings creates one."""
         db = _make_db([_scalars_first(None)])
         enforcer = AutopilotEnforcer(db=db)
-        enforcer._settings_cache[1] = EnforcementSettings(tenant_id=1)
+        enforcer._settings_cache = EnforcementSettings()
 
         await enforcer.update_settings(
-            tenant_id=1,
             updates={"max_daily_budget": 100.0},
         )
 
         created = _added_of_type(db, TenantEnforcementSettingsDB)
         assert len(created) == 1
-        assert created[0].tenant_id == 1
         assert created[0].max_daily_budget == 100.0
         db.commit.assert_awaited_once()
 
@@ -1196,7 +1087,6 @@ class TestUpdateSettingsDbPaths:
     async def test_rules_update_replaces_db_rules(self):
         """A rules update deletes existing DB rules and inserts the new set."""
         existing_rule = TenantEnforcementRuleDB(
-            tenant_id=1,
             rule_id="old_rule",
             rule_type=DBViolationType.BUDGET_EXCEEDED,
             threshold_value=100.0,
@@ -1206,7 +1096,7 @@ class TestUpdateSettingsDbPaths:
         row = _db_settings_row(rules=[existing_rule])
         db = _make_db([_scalars_first(row)])
         enforcer = AutopilotEnforcer(db=db)
-        enforcer._settings_cache[1] = EnforcementSettings(tenant_id=1)
+        enforcer._settings_cache = EnforcementSettings()
 
         new_rule = EnforcementRule(
             rule_id="new_rule",
@@ -1216,7 +1106,7 @@ class TestUpdateSettingsDbPaths:
             enabled=True,
             description="New budget cap",
         )
-        await enforcer.update_settings(tenant_id=1, updates={"rules": [new_rule]})
+        await enforcer.update_settings(updates={"rules": [new_rule]})
 
         db.delete.assert_awaited_once_with(existing_rule)
         inserted = _added_of_type(db, TenantEnforcementRuleDB)
@@ -1225,7 +1115,6 @@ class TestUpdateSettingsDbPaths:
         assert inserted[0].rule_type == DBViolationType.BUDGET_EXCEEDED
         assert inserted[0].enforcement_mode == DBEnforcementMode.SOFT_BLOCK
         assert inserted[0].threshold_value == 2500.0
-        assert inserted[0].tenant_id == 1
         db.commit.assert_awaited_once()
 
 
@@ -1238,14 +1127,12 @@ class TestCheckActionDbPaths:
         # Two DB round-trips come from _check_frequency_rules
         db = _make_db([_scalar_one(0), _scalars_first(None)])
         enforcer = AutopilotEnforcer(db=db)
-        enforcer._settings_cache[1] = EnforcementSettings(
-            tenant_id=1,
+        enforcer._settings_cache = EnforcementSettings(
             default_mode=EnforcementMode.SOFT_BLOCK,
             max_campaign_budget=1000.0,
         )
 
         result = await enforcer.check_action(
-            tenant_id=1,
             action_type="set_budget",
             entity_type="campaign",
             entity_id="camp_123",
@@ -1257,7 +1144,6 @@ class TestCheckActionDbPaths:
         tokens = _added_of_type(db, PendingConfirmationTokenDB)
         assert len(tokens) == 1
         assert tokens[0].token == result.confirmation_token
-        assert tokens[0].tenant_id == 1
         assert tokens[0].action_type == "set_budget"
         assert tokens[0].entity_id == "camp_123"
         assert tokens[0].expires_at > tokens[0].created_at
@@ -1268,8 +1154,7 @@ class TestCheckActionDbPaths:
         """A hard-blocked action writes an audit row and sends a notification."""
         db = _make_db([_scalar_one(0), _scalars_first(None)])
         enforcer = AutopilotEnforcer(db=db)
-        enforcer._settings_cache[1] = EnforcementSettings(
-            tenant_id=1,
+        enforcer._settings_cache = EnforcementSettings(
             default_mode=EnforcementMode.HARD_BLOCK,
             max_campaign_budget=1000.0,
         )
@@ -1277,7 +1162,6 @@ class TestCheckActionDbPaths:
         notify = AsyncMock(return_value=True)
         with patch("app.autopilot.enforcer.send_enforcement_notification", notify):
             result = await enforcer.check_action(
-                tenant_id=1,
                 action_type="set_budget",
                 entity_type="campaign",
                 entity_id="camp_123",
@@ -1302,9 +1186,9 @@ class TestFrequencyRulesDbPaths:
         last_change = datetime.now(UTC) - timedelta(hours=1)
         db = _make_db([_scalar_one(5), _scalars_first(last_change)])
         enforcer = AutopilotEnforcer(db=db)
-        settings = EnforcementSettings(tenant_id=1)  # 5/day cap, 4h min gap
+        settings = EnforcementSettings()  # 5/day cap, 4h min gap
 
-        violations = await enforcer._check_frequency_rules(settings, 1, "camp_123")
+        violations = await enforcer._check_frequency_rules(settings, "camp_123")
 
         assert len(violations) == 2
         assert all(
@@ -1320,9 +1204,9 @@ class TestFrequencyRulesDbPaths:
         """No recent budget changes means no frequency violations."""
         db = _make_db([_scalar_one(0), _scalars_first(None)])
         enforcer = AutopilotEnforcer(db=db)
-        settings = EnforcementSettings(tenant_id=1)
+        settings = EnforcementSettings()
 
-        violations = await enforcer._check_frequency_rules(settings, 1, "camp_123")
+        violations = await enforcer._check_frequency_rules(settings, "camp_123")
 
         assert violations == []
 
@@ -1330,11 +1214,10 @@ class TestFrequencyRulesDbPaths:
 class TestConfirmActionDbPaths:
     """Tests for confirm_action() DB token fallback."""
 
-    def _token_row(self, tenant_id: int = 1) -> PendingConfirmationTokenDB:
+    def _token_row(self) -> PendingConfirmationTokenDB:
         """Construct an in-memory pending confirmation token row."""
         now = datetime.now(UTC)
         return PendingConfirmationTokenDB(
-            tenant_id=tenant_id,
             token="a" * 64,
             action_type="set_budget",
             entity_id="camp_123",
@@ -1351,7 +1234,6 @@ class TestConfirmActionDbPaths:
         enforcer = AutopilotEnforcer(db=db)
 
         success, error = await enforcer.confirm_action(
-            tenant_id=1,
             confirmation_token="a" * 64,
             user_id=7,
             override_reason="Manager approved",
@@ -1373,30 +1255,12 @@ class TestConfirmActionDbPaths:
         enforcer = AutopilotEnforcer(db=db)
 
         success, error = await enforcer.confirm_action(
-            tenant_id=1,
             confirmation_token="missing-token",
             user_id=7,
         )
 
         assert success is False
         assert "Invalid" in error or "expired" in error
-
-    @pytest.mark.asyncio
-    async def test_db_token_wrong_tenant_rejected(self):
-        """A DB token belonging to another tenant is rejected (but consumed)."""
-        token_row = self._token_row(tenant_id=2)
-        db = _make_db([_scalars_first(token_row)])
-        enforcer = AutopilotEnforcer(db=db)
-
-        success, error = await enforcer.confirm_action(
-            tenant_id=1,
-            confirmation_token="a" * 64,
-            user_id=7,
-        )
-
-        assert success is False
-        assert "tenant" in error.lower()
-        db.delete.assert_awaited_once_with(token_row)
 
 
 class TestInterventionLogDbPaths:
@@ -1409,7 +1273,6 @@ class TestInterventionLogDbPaths:
         enforcer = AutopilotEnforcer(db=db)
 
         await enforcer._log_intervention(
-            tenant_id=1,
             action_type="budget_decrease",
             entity_type="campaign",
             entity_id="camp_123",
@@ -1427,7 +1290,6 @@ class TestInterventionLogDbPaths:
         audit_rows = _added_of_type(db, EnforcementAuditLogDB)
         assert len(audit_rows) == 1
         row = audit_rows[0]
-        assert row.tenant_id == 1
         assert row.violation_type == DBViolationType.BUDGET_EXCEEDED
         assert row.intervention_action == DBInterventionAction.WARNED
         assert row.enforcement_mode == DBEnforcementMode.ADVISORY
@@ -1449,7 +1311,6 @@ class TestInterventionLogDbPaths:
         enforcer = AutopilotEnforcer(db=db)
 
         await enforcer._log_intervention(
-            tenant_id=1,
             action_type="set_budget",
             entity_type="campaign",
             entity_id="camp_123",
@@ -1474,7 +1335,6 @@ class TestInterventionLogDbPaths:
         notify = AsyncMock(side_effect=ConnectionError("smtp down"))
         with patch("app.autopilot.enforcer.send_enforcement_notification", notify):
             await enforcer._log_intervention(
-                tenant_id=1,
                 action_type="set_budget",
                 entity_type="campaign",
                 entity_id="camp_123",
@@ -1496,13 +1356,12 @@ class TestGetInterventionLogDbPaths:
     async def test_no_db_returns_empty_list(self):
         """Without a DB session the log is empty."""
         enforcer = AutopilotEnforcer(db=None)
-        assert await enforcer.get_intervention_log(tenant_id=1) == []
+        assert await enforcer.get_intervention_log() == []
 
     @pytest.mark.asyncio
     async def test_returns_serialized_rows(self):
         """Audit rows come back serialized via to_dict()."""
         log_row = EnforcementAuditLogDB(
-            tenant_id=1,
             timestamp=datetime.now(UTC),
             action_type="set_budget",
             entity_type="campaign",
@@ -1516,7 +1375,7 @@ class TestGetInterventionLogDbPaths:
         db = _make_db([_scalars_all([log_row])])
         enforcer = AutopilotEnforcer(db=db)
 
-        entries = await enforcer.get_intervention_log(tenant_id=1, days=7, limit=10)
+        entries = await enforcer.get_intervention_log(days=7, limit=10)
 
         assert len(entries) == 1
         assert entries[0]["action_type"] == "set_budget"
@@ -1530,9 +1389,8 @@ class TestAutoPauseExecutorPaths:
     """Tests for auto_pause_campaign() platform executor delegation."""
 
     async def _arm_hard_block(self, enforcer: AutopilotEnforcer) -> None:
-        """Put the tenant in hard-block mode so auto-pause can run."""
+        """Put the enforcer in hard-block mode so auto-pause can run."""
         await enforcer.update_settings(
-            tenant_id=1,
             updates={
                 "default_mode": EnforcementMode.HARD_BLOCK,
                 "enforcement_enabled": True,
@@ -1551,7 +1409,6 @@ class TestAutoPauseExecutorPaths:
             {"google": executor},
         ):
             paused = await enforcer.auto_pause_campaign(
-                tenant_id=1,
                 campaign_id="camp_9",
                 reason="ROAS collapse",
                 metrics={"platform": "google", "roas": 0.2},
@@ -1571,7 +1428,6 @@ class TestAutoPauseExecutorPaths:
 
         with patch("app.tasks.apply_actions_queue.PLATFORM_EXECUTORS", {}):
             paused = await enforcer.auto_pause_campaign(
-                tenant_id=1,
                 campaign_id="camp_9",
                 reason="ROAS collapse",
                 metrics={"platform": "unknown"},
@@ -1593,7 +1449,6 @@ class TestAutoPauseExecutorPaths:
             {"meta": executor},
         ):
             paused = await enforcer.auto_pause_campaign(
-                tenant_id=1,
                 campaign_id="camp_9",
                 reason="ROAS collapse",
                 metrics={"roas": 0.2},
@@ -1613,7 +1468,6 @@ class TestAutoPauseExecutorPaths:
             {"meta": executor},
         ):
             paused = await enforcer.auto_pause_campaign(
-                tenant_id=1,
                 campaign_id="camp_9",
                 reason="ROAS collapse",
                 metrics={"roas": 0.2},
@@ -1633,7 +1487,6 @@ class TestAutoPauseExecutorPaths:
             {"meta": executor},
         ):
             paused = await enforcer.auto_pause_campaign(
-                tenant_id=1,
                 campaign_id="camp_9",
                 reason="ROAS collapse",
                 metrics={"roas": 0.2},
@@ -1648,7 +1501,6 @@ class TestNotificationDbPaths:
     def _intervention(self) -> InterventionLog:
         """Build a representative blocked-action intervention."""
         return InterventionLog(
-            tenant_id=1,
             timestamp=datetime.now(UTC),
             action_type="set_budget",
             entity_type="campaign",
@@ -1662,7 +1514,7 @@ class TestNotificationDbPaths:
     @pytest.mark.asyncio
     @patch("app.autopilot.enforcer.get_email_service")
     async def test_email_sent_to_all_admin_users(self, mock_get_email):
-        """Emails go to every active admin/manager for the tenant."""
+        """Emails go to every active admin/manager user."""
         email_svc = MagicMock()
         email_svc._create_message.return_value = MagicMock()
         email_svc._send_email.return_value = True
@@ -1670,13 +1522,11 @@ class TestNotificationDbPaths:
 
         db = _make_db(
             [
-                _scalar_one_or_none("Acme Corp"),
                 _rows_all([("admin@acme.test", "Admin"), ("mgr@acme.test", "Mgr")]),
             ]
         )
 
         sent = await send_enforcement_notification(
-            tenant_id=1,
             intervention=self._intervention(),
             notification_channels=["email"],
             db=db,
@@ -1699,13 +1549,11 @@ class TestNotificationDbPaths:
 
         db = _make_db(
             [
-                _scalar_one_or_none("Acme Corp"),
                 _rows_all([("admin@acme.test", "Admin")]),
             ]
         )
 
         sent = await send_enforcement_notification(
-            tenant_id=1,
             intervention=self._intervention(),
             notification_channels=["email"],
             db=db,
@@ -1716,11 +1564,10 @@ class TestNotificationDbPaths:
     @pytest.mark.asyncio
     @patch("app.autopilot.enforcer.get_email_service")
     async def test_no_admin_users_sends_nothing(self, mock_get_email):
-        """No admin users (and no tenant name) means no email is attempted."""
-        db = _make_db([_scalar_one_or_none(None), _rows_all([])])
+        """No active admin/manager users means no email is attempted."""
+        db = _make_db([_rows_all([])])
 
         sent = await send_enforcement_notification(
-            tenant_id=1,
             intervention=self._intervention(),
             notification_channels=["email"],
             db=db,
@@ -1736,7 +1583,6 @@ class TestNotificationDbPaths:
         db.execute = AsyncMock(side_effect=ConnectionError("db unreachable"))
 
         sent = await send_enforcement_notification(
-            tenant_id=1,
             intervention=self._intervention(),
             notification_channels=["email"],
             db=db,
@@ -1756,7 +1602,6 @@ class TestNotificationDbPaths:
         mock_slack_cls.return_value = slack_instance
 
         sent = await send_enforcement_notification(
-            tenant_id=1,
             intervention=self._intervention(),
             notification_channels=["slack"],
         )
@@ -1766,16 +1611,15 @@ class TestNotificationDbPaths:
 
 class TestHighRiskActionGate:
     """TRUST-004: high-risk action types require confirmation even with no
-    threshold violation, unless the tenant opted into advisory mode."""
+    threshold violation, unless the operator opted into advisory mode."""
 
     @pytest.mark.asyncio
     async def test_high_risk_requires_confirmation_when_not_advisory(self, enforcer):
         await enforcer.update_settings(
-            tenant_id=1, updates={"default_mode": EnforcementMode.SOFT_BLOCK}
+            updates={"default_mode": EnforcementMode.SOFT_BLOCK}
         )
         # 10% increase — no threshold violation; risk comes purely from the type.
         result = await enforcer.check_action(
-            tenant_id=1,
             action_type="budget_increase",
             entity_type="campaign",
             entity_id="c1",
@@ -1789,10 +1633,9 @@ class TestHighRiskActionGate:
     @pytest.mark.asyncio
     async def test_safe_action_allowed_under_soft_block_default(self, enforcer):
         await enforcer.update_settings(
-            tenant_id=1, updates={"default_mode": EnforcementMode.SOFT_BLOCK}
+            updates={"default_mode": EnforcementMode.SOFT_BLOCK}
         )
         result = await enforcer.check_action(
-            tenant_id=1,
             action_type="budget_decrease",
             entity_type="campaign",
             entity_id="c1",
@@ -1805,10 +1648,9 @@ class TestHighRiskActionGate:
     @pytest.mark.asyncio
     async def test_high_risk_allowed_when_advisory_opt_out(self, enforcer):
         await enforcer.update_settings(
-            tenant_id=1, updates={"default_mode": EnforcementMode.ADVISORY}
+            updates={"default_mode": EnforcementMode.ADVISORY}
         )
         result = await enforcer.check_action(
-            tenant_id=1,
             action_type="budget_increase",
             entity_type="campaign",
             entity_id="c1",

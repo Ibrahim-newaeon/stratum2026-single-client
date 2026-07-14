@@ -39,9 +39,8 @@ class COGSService:
     Service for COGS and margin management.
     """
 
-    def __init__(self, db: AsyncSession, tenant_id: int):
+    def __init__(self, db: AsyncSession):
         self.db = db
-        self.tenant_id = tenant_id
 
     # =========================================================================
     # Product Margin Management
@@ -112,7 +111,6 @@ class COGSService:
         )
 
         margin = ProductMargin(
-            tenant_id=self.tenant_id,
             product_id=product_id,
             effective_date=effective_date,
             cogs_cents=cogs_cents,
@@ -209,12 +207,7 @@ class COGSService:
 
                 # Find product by SKU
                 result = await self.db.execute(
-                    select(ProductCatalog).where(
-                        and_(
-                            ProductCatalog.tenant_id == self.tenant_id,
-                            ProductCatalog.sku == sku,
-                        )
-                    )
+                    select(ProductCatalog).where(ProductCatalog.sku == sku)
                 )
                 product = result.scalar_one_or_none()
 
@@ -270,7 +263,6 @@ class COGSService:
     ) -> MarginRule:
         """Create a margin rule."""
         rule = MarginRule(
-            tenant_id=self.tenant_id,
             name=name,
             description=description,
             priority=priority,
@@ -295,13 +287,14 @@ class COGSService:
         active_only: bool = True,
     ) -> List[MarginRule]:
         """List all margin rules."""
-        conditions = [MarginRule.tenant_id == self.tenant_id]
+        conditions = []
         if active_only:
             conditions.append(MarginRule.is_active == True)
 
-        result = await self.db.execute(
-            select(MarginRule).where(and_(*conditions)).order_by(MarginRule.priority)
-        )
+        query = select(MarginRule).order_by(MarginRule.priority)
+        if conditions:
+            query = query.where(and_(*conditions))
+        result = await self.db.execute(query)
         return list(result.scalars().all())
 
     async def update_margin_rule(
@@ -311,12 +304,7 @@ class COGSService:
     ) -> Optional[MarginRule]:
         """Update a margin rule."""
         result = await self.db.execute(
-            select(MarginRule).where(
-                and_(
-                    MarginRule.id == rule_id,
-                    MarginRule.tenant_id == self.tenant_id,
-                )
-            )
+            select(MarginRule).where(MarginRule.id == rule_id)
         )
         rule = result.scalar_one_or_none()
 
@@ -350,12 +338,7 @@ class COGSService:
     async def delete_margin_rule(self, rule_id: UUID) -> bool:
         """Delete a margin rule."""
         result = await self.db.execute(
-            delete(MarginRule).where(
-                and_(
-                    MarginRule.id == rule_id,
-                    MarginRule.tenant_id == self.tenant_id,
-                )
-            )
+            delete(MarginRule).where(MarginRule.id == rule_id)
         )
         await self.db.commit()
         return result.rowcount > 0
@@ -366,10 +349,9 @@ class COGSIngestionService:
     Service for ingesting COGS data from various sources.
     """
 
-    def __init__(self, db: AsyncSession, tenant_id: int):
+    def __init__(self, db: AsyncSession):
         self.db = db
-        self.tenant_id = tenant_id
-        self.cogs_service = COGSService(db, tenant_id)
+        self.cogs_service = COGSService(db)
 
     async def ingest_csv(
         self,
@@ -403,7 +385,6 @@ class COGSIngestionService:
 
         # Create upload record
         upload = COGSUpload(
-            tenant_id=self.tenant_id,
             filename=filename,
             file_type="csv",
             source=COGSSource.CSV_UPLOAD,
@@ -519,7 +500,6 @@ class COGSIngestionService:
         """Get COGS upload history."""
         result = await self.db.execute(
             select(COGSUpload)
-            .where(COGSUpload.tenant_id == self.tenant_id)
             .order_by(COGSUpload.uploaded_at.desc())
             .limit(limit)
         )
@@ -528,11 +508,6 @@ class COGSIngestionService:
     async def get_upload_status(self, upload_id: UUID) -> Optional[COGSUpload]:
         """Get status of a specific upload."""
         result = await self.db.execute(
-            select(COGSUpload).where(
-                and_(
-                    COGSUpload.id == upload_id,
-                    COGSUpload.tenant_id == self.tenant_id,
-                )
-            )
+            select(COGSUpload).where(COGSUpload.id == upload_id)
         )
         return result.scalar_one_or_none()

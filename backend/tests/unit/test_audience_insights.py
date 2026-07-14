@@ -10,6 +10,8 @@ overlap estimation, and the P2 enhancement predictors (LTV, decay,
 clustering).
 """
 
+import time
+
 import pytest
 
 from app.services.audience_insights_service import (
@@ -41,7 +43,7 @@ def _excellent_metrics(**overrides):
     return AudienceMetrics(**values)
 
 
-def _register(svc, audience_id="a1", tenant_id="t1", **kwargs):
+def _register(svc, audience_id="a1", **kwargs):
     defaults = dict(
         platform="meta",
         name="Test Audience",
@@ -49,7 +51,7 @@ def _register(svc, audience_id="a1", tenant_id="t1", **kwargs):
         size=100000,
     )
     defaults.update(kwargs)
-    return svc.register_audience(audience_id, tenant_id, **defaults)
+    return svc.register_audience(audience_id, **defaults)
 
 
 # =============================================================================
@@ -280,7 +282,7 @@ class TestRecommendations:
         svc = AudienceInsightsService()
         _register(svc, "top", audience_type=AudienceType.CUSTOM)
         svc.update_metrics("top", _excellent_metrics())
-        recs = svc.get_recommendations("t1")
+        recs = svc.get_recommendations()
         lookalike = next(r for r in recs if r.action == "create_lookalike")
         assert lookalike.audience_id == "top"
         assert lookalike.priority == "high"
@@ -292,7 +294,7 @@ class TestRecommendations:
         svc.update_metrics(
             "weak", AudienceMetrics(impressions=1000, clicks=1, spend=100.0)
         )
-        recs = svc.get_recommendations("t1")
+        recs = svc.get_recommendations()
         pause = next(r for r in recs if r.action == "pause")
         assert pause.audience_id == "weak"
         assert pause.expected_impact["budget_saved"] == 50.0
@@ -301,13 +303,13 @@ class TestRecommendations:
         svc = AudienceInsightsService()
         _register(svc, "grow", audience_type=AudienceType.INTEREST)
         svc.update_metrics("grow", _excellent_metrics())  # penetration 0.05 -> HIGH
-        recs = svc.get_recommendations("t1")
+        recs = svc.get_recommendations()
         expand = next(r for r in recs if r.action == "expand")
         assert expand.audience_id == "grow"
         assert expand.priority == "medium"
 
-    def test_empty_tenant_gets_test_fallback(self):
-        recs = AudienceInsightsService().get_recommendations("nobody")
+    def test_empty_service_gets_test_fallback(self):
+        recs = AudienceInsightsService().get_recommendations()
         assert len(recs) == 1
         assert recs[0].action == "test"
         assert recs[0].audience_id is None
@@ -317,7 +319,7 @@ class TestRecommendations:
         for i in range(5):
             _register(svc, f"a{i}")
             svc.update_metrics(f"a{i}", _excellent_metrics())
-        assert len(svc.get_recommendations("t1", limit=2)) == 2
+        assert len(svc.get_recommendations(limit=2)) == 2
 
 
 # =============================================================================
@@ -448,14 +450,14 @@ class TestSummary:
         svc.update_metrics("a1", _excellent_metrics())
         _register(svc, "a2", audience_type=AudienceType.BROAD)
         svc.update_metrics("a2", AudienceMetrics(spend=500.0, revenue=500.0))
-        summary = svc.get_summary("t1")
+        summary = svc.get_summary()
         assert summary["total_audiences"] == 2
         assert summary["by_type"] == {"custom": 1, "broad": 1}
         assert summary["total_spend"] == 1000.0
         assert summary["overall_roas"] == 2.0  # 2000/1000
 
-    def test_empty_tenant(self):
-        summary = AudienceInsightsService().get_summary("nobody")
+    def test_empty_service(self):
+        summary = AudienceInsightsService().get_summary()
         assert summary["total_audiences"] == 0
         assert summary["overall_roas"] == 0
 
@@ -465,9 +467,7 @@ class TestSummary:
 # =============================================================================
 class TestLTVPredictor:
     def test_retargeting_premium_tier(self):
-        prediction = AudienceLTVPredictor().predict(
-            "a1", AudienceType.RETARGETING, "unknown_tenant"
-        )
+        prediction = AudienceLTVPredictor().predict("a1", AudienceType.RETARGETING)
         assert prediction.predicted_avg_ltv == 180.0  # 100 baseline * 1.8
         assert prediction.value_tier == "premium"
         assert prediction.recommended_cac_limit == 60.0
@@ -480,7 +480,6 @@ class TestLTVPredictor:
         prediction = predictor.predict(
             "a1",
             AudienceType.LOOKALIKE,
-            "t1",
             historical_performance={"roas": 5.0, "conversion_rate": 0.1},
         )
         # perf multiplier maxed: 0.8 + 0.3 + 0.2 = 1.3
@@ -490,10 +489,10 @@ class TestLTVPredictor:
         # lookalike variance is 30%
         assert prediction.ltv_range_low == 91.0
 
-    def test_tenant_baseline_override(self):
+    def test_baseline_override(self):
         predictor = AudienceLTVPredictor()
-        predictor.set_baseline_ltv("rich_tenant", 1000.0)
-        prediction = predictor.predict("a1", AudienceType.CUSTOM, "rich_tenant")
+        predictor.set_baseline_ltv(1000.0)
+        prediction = predictor.predict("a1", AudienceType.CUSTOM)
         assert prediction.predicted_avg_ltv == 1200.0
 
 
@@ -515,6 +514,9 @@ class TestDecayPredictor:
         predictor = AudienceDecayPredictor()
         for score in [100.0, 90.0, 80.0]:
             predictor.record_performance("a1", score)
+            # Distinct timestamps: the predictor sorts (timestamp, score) tuples,
+            # and equal timestamps would tie-break on score, inverting the order.
+            time.sleep(0.01)
         prediction = predictor.predict(
             "a1", AudienceType.CUSTOM, current_score=80.0, audience_age_days=0
         )

@@ -65,7 +65,6 @@ class AutopilotService:
 
     async def queue_action(
         self,
-        tenant_id: int,
         action_type: str,
         entity_type: str,
         entity_id: str,
@@ -79,7 +78,6 @@ class AutopilotService:
         Queue a new action for processing.
 
         Args:
-            tenant_id: Tenant ID
             action_type: Type of action (budget_increase, pause, etc.)
             entity_type: Type of entity (campaign, adset, creative)
             entity_id: Platform entity ID
@@ -96,7 +94,7 @@ class AutopilotService:
         from app.quality.trust_layer_service import SignalHealthService
 
         signal_service = SignalHealthService(self.db)
-        health_data = await signal_service.get_signal_health(tenant_id, date.today())
+        health_data = await signal_service.get_signal_health(date.today())
         signal_status = health_data.get("status", "unknown")
 
         # Determine action status based on trust gate
@@ -107,7 +105,6 @@ class AutopilotService:
 
             get_logger(__name__).warning(
                 "trust_gate_blocked_action",
-                tenant_id=tenant_id,
                 action_type=action_type,
                 signal_status=signal_status,
             )
@@ -122,7 +119,6 @@ class AutopilotService:
             action_status = ActionStatus.QUEUED.value
 
         action = FactActionsQueue(
-            tenant_id=tenant_id,
             date=date.today(),
             action_type=action_type,
             entity_type=entity_type,
@@ -141,19 +137,16 @@ class AutopilotService:
 
     async def get_queued_actions(
         self,
-        tenant_id: int,
         target_date: Optional[date] = None,
         status: Optional[str] = None,
         platform: Optional[str] = None,
         limit: int = 100,
     ) -> List[FactActionsQueue]:
-        """Get queued actions for a tenant."""
+        """Get queued actions."""
         # Eager-load the approver so action_to_response can serialize
         # "accepted by" without a lazy load (which raises in async).
-        query = (
-            select(FactActionsQueue)
-            .options(selectinload(FactActionsQueue.approved_by))
-            .where(FactActionsQueue.tenant_id == tenant_id)
+        query = select(FactActionsQueue).options(
+            selectinload(FactActionsQueue.approved_by)
         )
 
         if target_date:
@@ -173,29 +166,22 @@ class AutopilotService:
     async def get_action_by_id(
         self,
         action_id: UUID,
-        tenant_id: int,
     ) -> Optional[FactActionsQueue]:
         """Get a specific action by ID."""
         result = await self.db.execute(
             select(FactActionsQueue)
             .options(selectinload(FactActionsQueue.approved_by))
-            .where(
-                and_(
-                    FactActionsQueue.id == action_id,
-                    FactActionsQueue.tenant_id == tenant_id,
-                )
-            )
+            .where(FactActionsQueue.id == action_id)
         )
         return result.scalar_one_or_none()
 
     async def approve_action(
         self,
         action_id: UUID,
-        tenant_id: int,
         user_id: int,
     ) -> Optional[FactActionsQueue]:
         """Approve an action for execution."""
-        action = await self.get_action_by_id(action_id, tenant_id)
+        action = await self.get_action_by_id(action_id)
         if not action:
             return None
 
@@ -211,19 +197,13 @@ class AutopilotService:
 
     async def approve_all_queued(
         self,
-        tenant_id: int,
         user_id: int,
         action_ids: Optional[List[UUID]] = None,
     ) -> int:
         """Approve multiple actions at once."""
         query = (
             update(FactActionsQueue)
-            .where(
-                and_(
-                    FactActionsQueue.tenant_id == tenant_id,
-                    FactActionsQueue.status == ActionStatus.QUEUED.value,
-                )
-            )
+            .where(FactActionsQueue.status == ActionStatus.QUEUED.value)
             .values(
                 status=ActionStatus.APPROVED.value,
                 approved_by_user_id=user_id,
@@ -241,7 +221,6 @@ class AutopilotService:
     async def dismiss_action(
         self,
         action_id: UUID,
-        tenant_id: int,
         user_id: int,
     ) -> Optional[FactActionsQueue]:
         """Dismiss an action (won't be executed).
@@ -250,7 +229,7 @@ class AutopilotService:
         from PENDING_APPROVAL (operator declines a soft-blocked action's
         override instead of confirming it).
         """
-        action = await self.get_action_by_id(action_id, tenant_id)
+        action = await self.get_action_by_id(action_id)
         if not action:
             return None
 
@@ -315,7 +294,6 @@ class AutopilotService:
 
     async def get_action_summary(
         self,
-        tenant_id: int,
         days: int = 7,
     ) -> Dict[str, Any]:
         """Get summary of actions over the past N days."""
@@ -327,12 +305,7 @@ class AutopilotService:
                 FactActionsQueue.status,
                 func.count(FactActionsQueue.id).label("count"),
             )
-            .where(
-                and_(
-                    FactActionsQueue.tenant_id == tenant_id,
-                    FactActionsQueue.date >= start_date,
-                )
-            )
+            .where(FactActionsQueue.date >= start_date)
             .group_by(FactActionsQueue.status)
         )
         status_result = await self.db.execute(status_query)
@@ -344,12 +317,7 @@ class AutopilotService:
                 FactActionsQueue.action_type,
                 func.count(FactActionsQueue.id).label("count"),
             )
-            .where(
-                and_(
-                    FactActionsQueue.tenant_id == tenant_id,
-                    FactActionsQueue.date >= start_date,
-                )
-            )
+            .where(FactActionsQueue.date >= start_date)
             .group_by(FactActionsQueue.action_type)
         )
         type_result = await self.db.execute(type_query)
@@ -361,12 +329,7 @@ class AutopilotService:
                 FactActionsQueue.platform,
                 func.count(FactActionsQueue.id).label("count"),
             )
-            .where(
-                and_(
-                    FactActionsQueue.tenant_id == tenant_id,
-                    FactActionsQueue.date >= start_date,
-                )
-            )
+            .where(FactActionsQueue.date >= start_date)
             .group_by(FactActionsQueue.platform)
         )
         platform_result = await self.db.execute(platform_query)

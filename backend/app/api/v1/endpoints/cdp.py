@@ -14,7 +14,6 @@ Endpoints:
 Security features:
 - Rate limiting on all endpoints
 - Source key authentication for event ingestion
-- Tenant isolation on all operations
 """
 
 import hashlib
@@ -219,17 +218,17 @@ class ProfileCache:
         self._hits: int = 0
         self._misses: int = 0
 
-    def _make_key(self, tenant_id: int, profile_id: str) -> str:
-        """Create cache key from tenant_id and profile_id."""
-        return f"profile:{tenant_id}:{profile_id}"
+    def _make_key(self, profile_id: str) -> str:
+        """Create cache key from profile_id."""
+        return f"profile:{profile_id}"
 
-    def _make_lookup_key(self, tenant_id: int, ident_type: str, ident_hash: str) -> str:
+    def _make_lookup_key(self, ident_type: str, ident_hash: str) -> str:
         """Create cache key for identifier lookups."""
-        return f"lookup:{tenant_id}:{ident_type}:{ident_hash}"
+        return f"lookup:{ident_type}:{ident_hash}"
 
-    def get(self, tenant_id: int, profile_id: str) -> Optional[Any]:
+    def get(self, profile_id: str) -> Optional[Any]:
         """Get cached profile if not expired."""
-        key = self._make_key(tenant_id, profile_id)
+        key = self._make_key(profile_id)
         with self._lock:
             if key in self.cache:
                 expiry, value = self.cache[key]
@@ -242,11 +241,9 @@ class ProfileCache:
             self._misses += 1
         return None
 
-    def get_by_lookup(
-        self, tenant_id: int, ident_type: str, ident_hash: str
-    ) -> Optional[Any]:
+    def get_by_lookup(self, ident_type: str, ident_hash: str) -> Optional[Any]:
         """Get cached profile by identifier lookup."""
-        key = self._make_lookup_key(tenant_id, ident_type, ident_hash)
+        key = self._make_lookup_key(ident_type, ident_hash)
         with self._lock:
             if key in self.cache:
                 expiry, value = self.cache[key]
@@ -258,9 +255,9 @@ class ProfileCache:
             self._misses += 1
         return None
 
-    def set(self, tenant_id: int, profile_id: str, value: Any) -> None:
+    def set(self, profile_id: str, value: Any) -> None:
         """Cache a profile response."""
-        key = self._make_key(tenant_id, profile_id)
+        key = self._make_key(profile_id)
         with self._lock:
             if key in self.cache:
                 del self.cache[key]
@@ -268,11 +265,9 @@ class ProfileCache:
                 self._evict()
             self.cache[key] = (time.time() + self.ttl, value)
 
-    def set_by_lookup(
-        self, tenant_id: int, ident_type: str, ident_hash: str, value: Any
-    ) -> None:
+    def set_by_lookup(self, ident_type: str, ident_hash: str, value: Any) -> None:
         """Cache a profile for identifier lookup."""
-        key = self._make_lookup_key(tenant_id, ident_type, ident_hash)
+        key = self._make_lookup_key(ident_type, ident_hash)
         with self._lock:
             if key in self.cache:
                 del self.cache[key]
@@ -280,27 +275,19 @@ class ProfileCache:
                 self._evict()
             self.cache[key] = (time.time() + self.ttl, value)
 
-    def invalidate(self, tenant_id: int, profile_id: str) -> None:
+    def invalidate(self, profile_id: str) -> None:
         """Invalidate cache for a specific profile."""
-        key = self._make_key(tenant_id, profile_id)
+        key = self._make_key(profile_id)
         with self._lock:
             self.cache.pop(key, None)
             # Also clear any lookup keys pointing to this profile
             # This is approximate - we can't track all lookup keys for a profile
             # without additional overhead, so we rely on TTL for those
 
-    def invalidate_tenant(self, tenant_id: int) -> None:
-        """Invalidate all cached profiles for a tenant."""
-        prefix = f"profile:{tenant_id}:"
-        lookup_prefix = f"lookup:{tenant_id}:"
+    def invalidate_all(self) -> None:
+        """Invalidate all cached profiles."""
         with self._lock:
-            keys_to_delete = [
-                k
-                for k in self.cache
-                if k.startswith(prefix) or k.startswith(lookup_prefix)
-            ]
-            for k in keys_to_delete:
-                del self.cache[k]
+            self.cache.clear()
 
     def _evict(self) -> None:
         """Remove expired first, then oldest 20% if still over capacity. Must hold lock."""
@@ -337,12 +324,11 @@ async def check_event_rate_limit(
     current_user=Depends(get_current_user),
 ):
     """Rate limit for event ingestion."""
-    key = f"{current_user.tenant_id}:events"
+    key = f"{current_user.id}:events"
     if not _event_limiter.is_allowed(key):
         logger.warning(
             "cdp_rate_limit_exceeded",
             operation="events",
-            tenant_id=current_user.tenant_id,
         )
         raise HTTPException(
             status_code=status.HTTP_429_TOO_MANY_REQUESTS,
@@ -355,12 +341,11 @@ async def check_profile_rate_limit(
     current_user=Depends(get_current_user),
 ):
     """Rate limit for profile lookups."""
-    key = f"{current_user.tenant_id}:profiles"
+    key = f"{current_user.id}:profiles"
     if not _profile_limiter.is_allowed(key):
         logger.warning(
             "cdp_rate_limit_exceeded",
             operation="profiles",
-            tenant_id=current_user.tenant_id,
         )
         raise HTTPException(
             status_code=status.HTTP_429_TOO_MANY_REQUESTS,
@@ -373,12 +358,11 @@ async def check_source_rate_limit(
     current_user=Depends(get_current_user),
 ):
     """Rate limit for source operations."""
-    key = f"{current_user.tenant_id}:sources"
+    key = f"{current_user.id}:sources"
     if not _source_limiter.is_allowed(key):
         logger.warning(
             "cdp_rate_limit_exceeded",
             operation="sources",
-            tenant_id=current_user.tenant_id,
         )
         raise HTTPException(
             status_code=status.HTTP_429_TOO_MANY_REQUESTS,
@@ -391,12 +375,11 @@ async def check_webhook_rate_limit(
     current_user=Depends(get_current_user),
 ):
     """Rate limit for webhook operations."""
-    key = f"{current_user.tenant_id}:webhooks"
+    key = f"{current_user.id}:webhooks"
     if not _webhook_limiter.is_allowed(key):
         logger.warning(
             "cdp_rate_limit_exceeded",
             operation="webhooks",
-            tenant_id=current_user.tenant_id,
         )
         raise HTTPException(
             status_code=status.HTTP_429_TOO_MANY_REQUESTS,
@@ -491,7 +474,6 @@ def calculate_emq_score(
 
 async def find_or_create_profile(
     db: AsyncSession,
-    tenant_id: int,
     identifiers: list,
 ) -> tuple[CDPProfile, bool]:
     """
@@ -506,7 +488,6 @@ async def find_or_create_profile(
         result = await db.execute(
             select(CDPProfileIdentifier)
             .where(
-                CDPProfileIdentifier.tenant_id == tenant_id,
                 CDPProfileIdentifier.identifier_type == ident.type,
                 CDPProfileIdentifier.identifier_hash == ident_hash,
             )
@@ -519,7 +500,6 @@ async def find_or_create_profile(
 
     # No existing profile found, create new one
     profile = CDPProfile(
-        tenant_id=tenant_id,
         lifecycle_stage=LifecycleStage.ANONYMOUS.value,
     )
     db.add(profile)
@@ -530,7 +510,6 @@ async def find_or_create_profile(
 
 async def link_identifiers_to_profile(
     db: AsyncSession,
-    tenant_id: int,
     profile: CDPProfile,
     identifiers: list,
 ) -> None:
@@ -542,7 +521,6 @@ async def link_identifiers_to_profile(
         # Check if identifier already exists
         result = await db.execute(
             select(CDPProfileIdentifier).where(
-                CDPProfileIdentifier.tenant_id == tenant_id,
                 CDPProfileIdentifier.identifier_type == ident.type,
                 CDPProfileIdentifier.identifier_hash == ident_hash,
             )
@@ -555,7 +533,6 @@ async def link_identifiers_to_profile(
         else:
             # Create new identifier
             new_ident = CDPProfileIdentifier(
-                tenant_id=tenant_id,
                 profile_id=profile.id,
                 identifier_type=ident.type,
                 identifier_value=ident.value,  # Store original (can be redacted later)
@@ -577,7 +554,6 @@ async def link_identifiers_to_profile(
 
 async def validate_source_key(
     db: AsyncSession,
-    tenant_id: int,
     source_key: Optional[str],
 ) -> Optional[CDPSource]:
     """
@@ -590,7 +566,6 @@ async def validate_source_key(
 
     result = await db.execute(
         select(CDPSource).where(
-            CDPSource.tenant_id == tenant_id,
             CDPSource.source_key == source_key,
             CDPSource.is_active.is_(True),
         )
@@ -600,7 +575,6 @@ async def validate_source_key(
     if not source:
         logger.warning(
             "cdp_invalid_source_key",
-            tenant_id=tenant_id,
             source_key_prefix=source_key[:8] + "..." if source_key else None,
         )
         raise HTTPException(
@@ -639,19 +613,17 @@ async def ingest_events(
     - Stores event with source_id
     - Calculates EMQ score
     """
-    tenant_id = current_user.tenant_id
     results = []
     accepted = 0
     rejected = 0
     duplicates = 0
 
     # Validate source authentication
-    source = await validate_source_key(db, tenant_id, source_key)
+    source = await validate_source_key(db, source_key)
     source_id = source.id if source else None
 
     logger.info(
         "cdp_event_ingestion_started",
-        tenant_id=tenant_id,
         event_count=len(batch.events),
         source_id=str(source_id) if source_id else None,
     )
@@ -667,7 +639,6 @@ async def ingest_events(
                     cutoff = datetime.now(UTC) - timedelta(hours=24)
                     result = await db.execute(
                         select(CDPEvent.id).where(
-                            CDPEvent.tenant_id == tenant_id,
                             CDPEvent.idempotency_key == event.idempotency_key,
                             CDPEvent.received_at >= cutoff,
                         )
@@ -684,12 +655,12 @@ async def ingest_events(
 
                 # Find or create profile
                 profile, _is_new = await find_or_create_profile(
-                    db, tenant_id, event.identifiers
+                    db, event.identifiers
                 )
 
                 # Link identifiers to profile
                 await link_identifiers_to_profile(
-                    db, tenant_id, profile, event.identifiers
+                    db, profile, event.identifiers
                 )
 
                 # Calculate EMQ score
@@ -708,7 +679,6 @@ async def ingest_events(
 
                 # Create event
                 db_event = CDPEvent(
-                    tenant_id=tenant_id,
                     profile_id=profile.id,
                     source_id=source_id,
                     event_name=event.event_name,
@@ -732,7 +702,7 @@ async def ingest_events(
                 profile.last_seen_at = received_at
 
                 # Invalidate cache for this profile
-                _profile_cache.invalidate(tenant_id, str(profile.id))
+                _profile_cache.invalidate(str(profile.id))
 
                 # Handle consent if provided
                 if event.consent:
@@ -743,7 +713,6 @@ async def ingest_events(
                             # Upsert consent
                             result = await db.execute(
                                 select(CDPConsent).where(
-                                    CDPConsent.tenant_id == tenant_id,
                                     CDPConsent.profile_id == profile.id,
                                     CDPConsent.consent_type == consent_type,
                                 )
@@ -759,7 +728,6 @@ async def ingest_events(
                                     existing_consent.revoked_at = received_at
                             else:
                                 new_consent = CDPConsent(
-                                    tenant_id=tenant_id,
                                     profile_id=profile.id,
                                     consent_type=consent_type,
                                     granted=granted,
@@ -782,7 +750,6 @@ async def ingest_events(
             except (ValueError, KeyError, TypeError) as e:
                 logger.error(
                     "cdp_event_processing_error",
-                    tenant_id=tenant_id,
                     event_name=event.event_name,
                     error=str(e),
                 )
@@ -803,7 +770,6 @@ async def ingest_events(
 
     logger.info(
         "cdp_event_ingestion_completed",
-        tenant_id=tenant_id,
         accepted=accepted,
         rejected=rejected,
         duplicates=duplicates,
@@ -826,7 +792,6 @@ def _build_profile_response(profile: CDPProfile) -> ProfileResponse:
     """Build ProfileResponse from a CDPProfile ORM object."""
     return ProfileResponse(
         id=profile.id,
-        tenant_id=profile.tenant_id,
         external_id=profile.external_id,
         first_seen_at=profile.first_seen_at,
         last_seen_at=profile.last_seen_at,
@@ -872,16 +837,13 @@ async def lookup_profile(
     _rate_limit=Depends(check_profile_rate_limit),
 ):
     """Lookup profile by identifier with caching."""
-    tenant_id = current_user.tenant_id
 
     # Normalize and hash the identifier
     normalized = normalize_identifier(identifier_type, identifier_value)
     ident_hash = hash_identifier(normalized)
 
     # Check cache first
-    cached = _profile_cache.get_by_lookup(
-        tenant_id, identifier_type.lower(), ident_hash
-    )
+    cached = _profile_cache.get_by_lookup(identifier_type.lower(), ident_hash)
     if cached is not None:
         logger.debug(
             "cdp_profile_lookup_cache_hit",
@@ -893,7 +855,6 @@ async def lookup_profile(
     result = await db.execute(
         select(CDPProfileIdentifier)
         .where(
-            CDPProfileIdentifier.tenant_id == tenant_id,
             CDPProfileIdentifier.identifier_type == identifier_type.lower(),
             CDPProfileIdentifier.identifier_hash == ident_hash,
         )
@@ -914,10 +875,8 @@ async def lookup_profile(
     response = _build_profile_response(ident.profile)
 
     # Cache the response for both lookup key and profile ID
-    _profile_cache.set_by_lookup(
-        tenant_id, identifier_type.lower(), ident_hash, response
-    )
-    _profile_cache.set(tenant_id, str(ident.profile.id), response)
+    _profile_cache.set_by_lookup(identifier_type.lower(), ident_hash, response)
+    _profile_cache.set(str(ident.profile.id), response)
 
     return response
 
@@ -939,11 +898,9 @@ async def list_sources(
     _rate_limit=Depends(check_source_rate_limit),
 ):
     """List all data sources for tenant."""
-    tenant_id = current_user.tenant_id
 
     result = await db.execute(
         select(CDPSource)
-        .where(CDPSource.tenant_id == tenant_id)
         .order_by(CDPSource.created_at.desc())
         .limit(1000)
     )
@@ -983,13 +940,11 @@ async def create_source(
     _rate_limit=Depends(check_source_rate_limit),
 ):
     """Create a new data source."""
-    tenant_id = current_user.tenant_id
 
     # Generate unique source key
     source_key = f"cdp_{secrets.token_urlsafe(32)}"
 
     db_source = CDPSource(
-        tenant_id=tenant_id,
         name=source.name,
         source_type=source.source_type,
         source_key=source_key,
@@ -1000,7 +955,6 @@ async def create_source(
 
     logger.info(
         "cdp_source_created",
-        tenant_id=tenant_id,
         source_id=str(db_source.id),
         source_type=source.source_type,
     )
@@ -1067,12 +1021,10 @@ async def export_profiles(
 
     from fastapi.responses import StreamingResponse
 
-    tenant_id = current_user.tenant_id
 
     # Fetch profiles
     result = await db.execute(
         select(CDPProfile)
-        .where(CDPProfile.tenant_id == tenant_id)
         .order_by(CDPProfile.created_at.desc())
         .offset(offset)
         .limit(limit)
@@ -1131,7 +1083,7 @@ async def export_profiles(
             iter([output.getvalue()]),
             media_type="text/csv",
             headers={
-                "Content-Disposition": f"attachment; filename=cdp_profiles_{tenant_id}.csv"
+                "Content-Disposition": f"attachment; filename=cdp_profiles.csv"
             },
         )
 
@@ -1206,10 +1158,9 @@ async def export_events(
 
     from fastapi.responses import StreamingResponse
 
-    tenant_id = current_user.tenant_id
 
     # Build query with filters
-    query = select(CDPEvent).where(CDPEvent.tenant_id == tenant_id)
+    query = select(CDPEvent)
 
     if start_date:
         query = query.where(CDPEvent.event_time >= start_date)
@@ -1260,7 +1211,7 @@ async def export_events(
             iter([output.getvalue()]),
             media_type="text/csv",
             headers={
-                "Content-Disposition": f"attachment; filename=cdp_events_{tenant_id}.csv"
+                "Content-Disposition": f"attachment; filename=cdp_events.csv"
             },
         )
 
@@ -1322,13 +1273,11 @@ async def get_event_statistics(
     - EMQ score distribution
     - Top event sources
     """
-    tenant_id = current_user.tenant_id
     cutoff_date = datetime.now(UTC) - timedelta(days=period_days)
 
     # Total events in period
     total_result = await db.execute(
         select(func.count(CDPEvent.id)).where(
-            CDPEvent.tenant_id == tenant_id,
             CDPEvent.event_time >= cutoff_date,
         )
     )
@@ -1341,7 +1290,6 @@ async def get_event_statistics(
             func.count(CDPEvent.id).label("count"),
         )
         .where(
-            CDPEvent.tenant_id == tenant_id,
             CDPEvent.event_time >= cutoff_date,
         )
         .group_by(CDPEvent.event_name)
@@ -1364,7 +1312,6 @@ async def get_event_statistics(
             func.count(CDPEvent.id).label("count"),
         )
         .where(
-            CDPEvent.tenant_id == tenant_id,
             CDPEvent.event_time >= daily_cutoff,
         )
         .group_by(date_expr)
@@ -1383,7 +1330,6 @@ async def get_event_statistics(
             func.count(CDPEvent.id).label("count"),
         )
         .where(
-            CDPEvent.tenant_id == tenant_id,
             CDPEvent.event_time >= cutoff_date,
             CDPEvent.emq_score.isnot(None),
         )
@@ -1402,7 +1348,6 @@ async def get_event_statistics(
     # Average EMQ score
     avg_emq_result = await db.execute(
         select(func.avg(CDPEvent.emq_score)).where(
-            CDPEvent.tenant_id == tenant_id,
             CDPEvent.event_time >= cutoff_date,
             CDPEvent.emq_score.isnot(None),
         )
@@ -1417,7 +1362,6 @@ async def get_event_statistics(
         )
         .join(CDPSource, CDPEvent.source_id == CDPSource.id)
         .where(
-            CDPEvent.tenant_id == tenant_id,
             CDPEvent.event_time >= cutoff_date,
         )
         .group_by(CDPSource.name)
@@ -1432,7 +1376,6 @@ async def get_event_statistics(
     # Unique profiles with events
     unique_profiles_result = await db.execute(
         select(func.count(func.distinct(CDPEvent.profile_id))).where(
-            CDPEvent.tenant_id == tenant_id,
             CDPEvent.event_time >= cutoff_date,
         )
     )
@@ -1466,7 +1409,6 @@ async def get_event_trends(
     """
     Get event trends comparing current period vs previous period.
     """
-    tenant_id = current_user.tenant_id
     now = datetime.now(UTC)
 
     # Current period
@@ -1479,7 +1421,6 @@ async def get_event_trends(
     # Current period events
     current_result = await db.execute(
         select(func.count(CDPEvent.id)).where(
-            CDPEvent.tenant_id == tenant_id,
             CDPEvent.event_time >= current_start,
         )
     )
@@ -1488,7 +1429,6 @@ async def get_event_trends(
     # Previous period events
     previous_result = await db.execute(
         select(func.count(CDPEvent.id)).where(
-            CDPEvent.tenant_id == tenant_id,
             CDPEvent.event_time >= previous_start,
             CDPEvent.event_time < previous_end,
         )
@@ -1508,7 +1448,6 @@ async def get_event_trends(
             func.count(CDPEvent.id).label("count"),
         )
         .where(
-            CDPEvent.tenant_id == tenant_id,
             CDPEvent.event_time >= current_start,
         )
         .group_by(CDPEvent.event_name)
@@ -1521,7 +1460,6 @@ async def get_event_trends(
             func.count(CDPEvent.id).label("count"),
         )
         .where(
-            CDPEvent.tenant_id == tenant_id,
             CDPEvent.event_time >= previous_start,
             CDPEvent.event_time < previous_end,
         )
@@ -1587,12 +1525,11 @@ async def get_profile_statistics(
     """
     Get profile statistics for the tenant.
     """
-    tenant_id = current_user.tenant_id
     now = datetime.now(UTC)
 
     # Total profiles
     total_result = await db.execute(
-        select(func.count(CDPProfile.id)).where(CDPProfile.tenant_id == tenant_id)
+        select(func.count(CDPProfile.id))
     )
     total_profiles = total_result.scalar() or 0
 
@@ -1602,7 +1539,6 @@ async def get_profile_statistics(
             CDPProfile.lifecycle_stage,
             func.count(CDPProfile.id).label("count"),
         )
-        .where(CDPProfile.tenant_id == tenant_id)
         .group_by(CDPProfile.lifecycle_stage)
     )
     lifecycle_distribution = {
@@ -1613,7 +1549,6 @@ async def get_profile_statistics(
     week_ago = now - timedelta(days=7)
     new_profiles_result = await db.execute(
         select(func.count(CDPProfile.id)).where(
-            CDPProfile.tenant_id == tenant_id,
             CDPProfile.created_at >= week_ago,
         )
     )
@@ -1623,7 +1558,6 @@ async def get_profile_statistics(
     month_ago = now - timedelta(days=30)
     active_result = await db.execute(
         select(func.count(CDPProfile.id)).where(
-            CDPProfile.tenant_id == tenant_id,
             CDPProfile.last_seen_at >= month_ago,
         )
     )
@@ -1632,7 +1566,6 @@ async def get_profile_statistics(
     # Profiles with email
     email_result = await db.execute(
         select(func.count(func.distinct(CDPProfileIdentifier.profile_id))).where(
-            CDPProfileIdentifier.tenant_id == tenant_id,
             CDPProfileIdentifier.identifier_type == "email",
         )
     )
@@ -1641,7 +1574,6 @@ async def get_profile_statistics(
     # Profiles with phone
     phone_result = await db.execute(
         select(func.count(func.distinct(CDPProfileIdentifier.profile_id))).where(
-            CDPProfileIdentifier.tenant_id == tenant_id,
             CDPProfileIdentifier.identifier_type == "phone",
         )
     )
@@ -1650,7 +1582,6 @@ async def get_profile_statistics(
     # Customers (has purchases)
     customers_result = await db.execute(
         select(func.count(CDPProfile.id)).where(
-            CDPProfile.tenant_id == tenant_id,
             CDPProfile.total_purchases > 0,
         )
     )
@@ -1662,7 +1593,7 @@ async def get_profile_statistics(
             func.sum(CDPProfile.total_revenue).label("total"),
             func.avg(CDPProfile.total_revenue).label("avg"),
             func.max(CDPProfile.total_revenue).label("max"),
-        ).where(CDPProfile.tenant_id == tenant_id)
+        )
     )
     revenue_row = revenue_result.first()
 
@@ -1671,7 +1602,7 @@ async def get_profile_statistics(
         select(
             func.sum(CDPProfile.total_events).label("total"),
             func.avg(CDPProfile.total_events).label("avg"),
-        ).where(CDPProfile.tenant_id == tenant_id)
+        )
     )
     event_stats_row = event_stats_result.first()
 
@@ -1780,10 +1711,9 @@ async def search_profiles(
     - Filter by date ranges
     - Flexible sorting options
     """
-    tenant_id = current_user.tenant_id
 
     # Build base query
-    query_builder = select(CDPProfile).where(CDPProfile.tenant_id == tenant_id)
+    query_builder = select(CDPProfile)
 
     # Text search
     if query:
@@ -1839,7 +1769,6 @@ async def search_profiles(
             select(CDPProfileIdentifier.profile_id)
             .where(
                 CDPProfileIdentifier.identifier_type.in_(identifier_types),
-                CDPProfileIdentifier.tenant_id == tenant_id,
             )
             .distinct()
         )
@@ -1875,7 +1804,6 @@ async def search_profiles(
     if has_email is not None:
         email_subquery = select(CDPProfileIdentifier.profile_id).where(
             CDPProfileIdentifier.identifier_type == "email",
-            CDPProfileIdentifier.tenant_id == tenant_id,
         )
         if has_email:
             query_builder = query_builder.where(CDPProfile.id.in_(email_subquery))
@@ -1885,7 +1813,6 @@ async def search_profiles(
     if has_phone is not None:
         phone_subquery = select(CDPProfileIdentifier.profile_id).where(
             CDPProfileIdentifier.identifier_type == "phone",
-            CDPProfileIdentifier.tenant_id == tenant_id,
         )
         if has_phone:
             query_builder = query_builder.where(CDPProfile.id.in_(phone_subquery))
@@ -2046,10 +1973,9 @@ async def export_audience(
 
     from fastapi.responses import StreamingResponse
 
-    tenant_id = current_user.tenant_id
 
     # Build base query
-    query = select(CDPProfile).where(CDPProfile.tenant_id == tenant_id)
+    query = select(CDPProfile)
 
     # Apply segment filter if provided
     if segment_id:
@@ -2186,7 +2112,7 @@ async def export_audience(
 
         output.seek(0)
         filename = (
-            f"audience_export_{tenant_id}_{export_time.strftime('%Y%m%d_%H%M%S')}.csv"
+            f"audience_export_{export_time.strftime('%Y%m%d_%H%M%S')}.csv"
         )
         return StreamingResponse(
             iter([output.getvalue()]),
@@ -2310,11 +2236,9 @@ async def list_webhooks(
     _rate_limit=Depends(check_webhook_rate_limit),
 ):
     """List all webhooks for tenant."""
-    tenant_id = current_user.tenant_id
 
     result = await db.execute(
         select(CDPWebhook)
-        .where(CDPWebhook.tenant_id == tenant_id)
         .order_by(CDPWebhook.created_at.desc())
         .limit(1000)
     )
@@ -2340,13 +2264,11 @@ async def create_webhook(
     _rate_limit=Depends(check_webhook_rate_limit),
 ):
     """Create a new webhook destination."""
-    tenant_id = current_user.tenant_id
 
     # Generate secret key for HMAC signature
     secret_key = secrets.token_urlsafe(32)
 
     db_webhook = CDPWebhook(
-        tenant_id=tenant_id,
         name=webhook.name,
         url=webhook.url,
         event_types=webhook.event_types,
@@ -2359,7 +2281,6 @@ async def create_webhook(
 
     logger.info(
         "cdp_webhook_created",
-        tenant_id=tenant_id,
         webhook_id=str(db_webhook.id),
         event_types=webhook.event_types,
     )
@@ -2381,12 +2302,10 @@ async def get_webhook(
     _rate_limit=Depends(check_webhook_rate_limit),
 ):
     """Get webhook by ID."""
-    tenant_id = current_user.tenant_id
 
     result = await db.execute(
         select(CDPWebhook).where(
             CDPWebhook.id == webhook_id,
-            CDPWebhook.tenant_id == tenant_id,
         )
     )
     webhook = result.scalar_one_or_none()
@@ -2414,12 +2333,10 @@ async def update_webhook(
     _rate_limit=Depends(check_webhook_rate_limit),
 ):
     """Update webhook configuration."""
-    tenant_id = current_user.tenant_id
 
     result = await db.execute(
         select(CDPWebhook).where(
             CDPWebhook.id == webhook_id,
-            CDPWebhook.tenant_id == tenant_id,
         )
     )
     webhook = result.scalar_one_or_none()
@@ -2443,7 +2360,6 @@ async def update_webhook(
 
     logger.info(
         "cdp_webhook_updated",
-        tenant_id=tenant_id,
         webhook_id=str(webhook_id),
         updates=list(update_data.keys()),
     )
@@ -2464,12 +2380,10 @@ async def delete_webhook(
     _rate_limit=Depends(check_webhook_rate_limit),
 ):
     """Delete a webhook."""
-    tenant_id = current_user.tenant_id
 
     result = await db.execute(
         select(CDPWebhook).where(
             CDPWebhook.id == webhook_id,
-            CDPWebhook.tenant_id == tenant_id,
         )
     )
     webhook = result.scalar_one_or_none()
@@ -2485,7 +2399,6 @@ async def delete_webhook(
 
     logger.info(
         "cdp_webhook_deleted",
-        tenant_id=tenant_id,
         webhook_id=str(webhook_id),
     )
 
@@ -2508,12 +2421,10 @@ async def test_webhook(
 
     import httpx
 
-    tenant_id = current_user.tenant_id
 
     result = await db.execute(
         select(CDPWebhook).where(
             CDPWebhook.id == webhook_id,
-            CDPWebhook.tenant_id == tenant_id,
         )
     )
     webhook = result.scalar_one_or_none()
@@ -2527,7 +2438,6 @@ async def test_webhook(
     # Prepare test payload
     test_payload = {
         "event_type": "test",
-        "tenant_id": tenant_id,
         "webhook_id": str(webhook_id),
         "timestamp": datetime.now(UTC).isoformat(),
         "data": {
@@ -2572,7 +2482,6 @@ async def test_webhook(
 
         logger.info(
             "cdp_webhook_test",
-            tenant_id=tenant_id,
             webhook_id=str(webhook_id),
             success=success,
             status_code=response.status_code,
@@ -2590,7 +2499,6 @@ async def test_webhook(
         elapsed_ms = (time.time() - start_time) * 1000
         logger.warning(
             "cdp_webhook_test_timeout",
-            tenant_id=tenant_id,
             webhook_id=str(webhook_id),
         )
         return WebhookTestResult(
@@ -2604,7 +2512,6 @@ async def test_webhook(
         elapsed_ms = (time.time() - start_time) * 1000
         logger.error(
             "cdp_webhook_test_error",
-            tenant_id=tenant_id,
             webhook_id=str(webhook_id),
             error=str(e),
         )
@@ -2629,12 +2536,10 @@ async def rotate_webhook_secret(
     _rate_limit=Depends(check_webhook_rate_limit),
 ):
     """Rotate the webhook secret key."""
-    tenant_id = current_user.tenant_id
 
     result = await db.execute(
         select(CDPWebhook).where(
             CDPWebhook.id == webhook_id,
-            CDPWebhook.tenant_id == tenant_id,
         )
     )
     webhook = result.scalar_one_or_none()
@@ -2651,7 +2556,6 @@ async def rotate_webhook_secret(
 
     logger.info(
         "cdp_webhook_secret_rotated",
-        tenant_id=tenant_id,
         webhook_id=str(webhook_id),
     )
 
@@ -2724,7 +2628,6 @@ async def detect_event_anomalies(
 
     from sqlalchemy import Date, cast
 
-    tenant_id = current_user.tenant_id
 
     # Get daily event counts per source for the last N+1 days
     cutoff = datetime.now(UTC) - timedelta(days=window_days + 1)
@@ -2736,7 +2639,6 @@ async def detect_event_anomalies(
             func.count(CDPEvent.id).label("event_count"),
         )
         .where(
-            CDPEvent.tenant_id == tenant_id,
             CDPEvent.received_at >= cutoff,
         )
         .group_by(CDPEvent.source_id, cast(CDPEvent.received_at, Date))
@@ -2752,7 +2654,6 @@ async def detect_event_anomalies(
             func.count(CDPEvent.id).label("event_count"),
         )
         .where(
-            CDPEvent.tenant_id == tenant_id,
             CDPEvent.received_at >= cutoff,
         )
         .group_by(cast(CDPEvent.received_at, Date))
@@ -2763,7 +2664,7 @@ async def detect_event_anomalies(
 
     # Get source names for display
     sources_result = await db.execute(
-        select(CDPSource.id, CDPSource.name).where(CDPSource.tenant_id == tenant_id)
+        select(CDPSource.id, CDPSource.name)
     )
     source_names = {row.id: row.name for row in sources_result.all()}
 
@@ -2874,7 +2775,6 @@ async def detect_event_anomalies(
 
     logger.info(
         "cdp_anomaly_detection_completed",
-        tenant_id=tenant_id,
         anomaly_count=len(anomalies),
         has_critical=has_critical,
         has_high=has_high,
@@ -2904,7 +2804,6 @@ async def get_anomaly_summary(
     """
     Get a summary of CDP data health including volume trends and anomalies.
     """
-    tenant_id = current_user.tenant_id
 
     # Get event counts for the last 7 days
     cutoff_7d = datetime.now(UTC) - timedelta(days=7)
@@ -2913,7 +2812,6 @@ async def get_anomaly_summary(
     # Last 7 days total
     result_7d = await db.execute(
         select(func.count(CDPEvent.id)).where(
-            CDPEvent.tenant_id == tenant_id,
             CDPEvent.received_at >= cutoff_7d,
         )
     )
@@ -2922,7 +2820,6 @@ async def get_anomaly_summary(
     # Previous 7 days (days 8-14)
     result_prev_7d = await db.execute(
         select(func.count(CDPEvent.id)).where(
-            CDPEvent.tenant_id == tenant_id,
             CDPEvent.received_at >= cutoff_14d,
             CDPEvent.received_at < cutoff_7d,
         )
@@ -2933,7 +2830,6 @@ async def get_anomaly_summary(
     today_start = datetime.now(UTC).replace(hour=0, minute=0, second=0, microsecond=0)
     result_today = await db.execute(
         select(func.count(CDPEvent.id)).where(
-            CDPEvent.tenant_id == tenant_id,
             CDPEvent.received_at >= today_start,
         )
     )
@@ -2942,7 +2838,6 @@ async def get_anomaly_summary(
     # Average EMQ score (last 7 days)
     result_emq = await db.execute(
         select(func.avg(CDPEvent.emq_score)).where(
-            CDPEvent.tenant_id == tenant_id,
             CDPEvent.received_at >= cutoff_7d,
             CDPEvent.emq_score.isnot(None),
         )
@@ -3007,11 +2902,10 @@ async def get_profile(
     _rate_limit=Depends(check_profile_rate_limit),
 ):
     """Get profile by ID with caching."""
-    tenant_id = current_user.tenant_id
     profile_id_str = str(profile_id)
 
     # Check cache first
-    cached = _profile_cache.get(tenant_id, profile_id_str)
+    cached = _profile_cache.get(profile_id_str)
     if cached is not None:
         logger.debug("cdp_profile_cache_hit", profile_id=profile_id_str)
         return cached
@@ -3021,7 +2915,6 @@ async def get_profile(
         select(CDPProfile)
         .where(
             CDPProfile.id == profile_id,
-            CDPProfile.tenant_id == tenant_id,
         )
         .options(selectinload(CDPProfile.identifiers))
     )
@@ -3036,7 +2929,7 @@ async def get_profile(
     response = _build_profile_response(profile)
 
     # Cache the response
-    _profile_cache.set(tenant_id, profile_id_str, response)
+    _profile_cache.set(profile_id_str, response)
 
     return response
 
@@ -3064,13 +2957,11 @@ async def get_profile_identity_graph(
     Returns nodes (identifiers) and edges (links between identifiers).
     Useful for visualizing how a profile's identifiers are connected.
     """
-    tenant_id = current_user.tenant_id
 
     # Verify profile exists
     result = await db.execute(
         select(CDPProfile).where(
             CDPProfile.id == profile_id,
-            CDPProfile.tenant_id == tenant_id,
         )
     )
     profile = result.scalar_one_or_none()
@@ -3082,7 +2973,7 @@ async def get_profile_identity_graph(
         )
 
     # Use identity resolution service to get graph
-    service = IdentityResolutionService(db, tenant_id)
+    service = IdentityResolutionService(db)
     graph_data = await service.get_identity_graph(profile_id)
 
     return IdentityGraphResponse(
@@ -3112,13 +3003,11 @@ async def get_profile_canonical_identity(
     The canonical identity is the strongest (highest priority) identifier
     for the profile, used for identity resolution decisions.
     """
-    tenant_id = current_user.tenant_id
 
     # Get canonical identity
     result = await db.execute(
         select(CDPCanonicalIdentity).where(
             CDPCanonicalIdentity.profile_id == profile_id,
-            CDPCanonicalIdentity.tenant_id == tenant_id,
         )
     )
     canonical = result.scalar_one_or_none()
@@ -3160,13 +3049,11 @@ async def get_profile_merge_history(
     Shows all merges where this profile was either the surviving profile
     or a profile that was merged into it.
     """
-    tenant_id = current_user.tenant_id
 
     # Get merges where this profile was involved
     result = await db.execute(
         select(CDPProfileMerge)
         .where(
-            CDPProfileMerge.tenant_id == tenant_id,
             CDPProfileMerge.surviving_profile_id == profile_id,
         )
         .order_by(CDPProfileMerge.created_at.desc())
@@ -3213,7 +3100,6 @@ async def merge_profiles(
     - All consents will be merged
     - Source profile will be deleted
     """
-    tenant_id = current_user.tenant_id
 
     if merge_request.source_profile_id == merge_request.target_profile_id:
         raise HTTPException(
@@ -3226,7 +3112,6 @@ async def merge_profiles(
         select(CDPProfile)
         .where(
             CDPProfile.id == merge_request.source_profile_id,
-            CDPProfile.tenant_id == tenant_id,
         )
         .options(selectinload(CDPProfile.identifiers))
     )
@@ -3236,7 +3121,6 @@ async def merge_profiles(
         select(CDPProfile)
         .where(
             CDPProfile.id == merge_request.target_profile_id,
-            CDPProfile.tenant_id == tenant_id,
         )
         .options(selectinload(CDPProfile.identifiers))
     )
@@ -3255,7 +3139,7 @@ async def merge_profiles(
         )
 
     # Perform merge using identity resolution service
-    service = IdentityResolutionService(db, tenant_id)
+    service = IdentityResolutionService(db)
     merge_record = await service.merge_profiles(
         surviving_profile=target_profile,
         merged_profile=source_profile,
@@ -3266,12 +3150,11 @@ async def merge_profiles(
     await db.commit()
 
     # Invalidate cache for both profiles
-    _profile_cache.invalidate(tenant_id, str(merge_request.source_profile_id))
-    _profile_cache.invalidate(tenant_id, str(merge_request.target_profile_id))
+    _profile_cache.invalidate(str(merge_request.source_profile_id))
+    _profile_cache.invalidate(str(merge_request.target_profile_id))
 
     logger.info(
         "cdp_manual_profile_merge",
-        tenant_id=tenant_id,
         source_profile_id=str(merge_request.source_profile_id),
         target_profile_id=str(merge_request.target_profile_id),
         merged_by=current_user.id if hasattr(current_user, "id") else None,
@@ -3307,20 +3190,16 @@ async def list_merge_history(
 
     Shows a history of all automatic and manual merges.
     """
-    tenant_id = current_user.tenant_id
 
     # Get total count
     count_result = await db.execute(
-        select(func.count(CDPProfileMerge.id)).where(
-            CDPProfileMerge.tenant_id == tenant_id
-        )
+        select(func.count(CDPProfileMerge.id))
     )
     total = count_result.scalar() or 0
 
     # Get merges
     result = await db.execute(
         select(CDPProfileMerge)
-        .where(CDPProfileMerge.tenant_id == tenant_id)
         .order_by(CDPProfileMerge.created_at.desc())
         .offset(offset)
         .limit(limit)
@@ -3363,18 +3242,15 @@ async def list_identity_links(
 
     Identity links represent relationships between identifiers in the graph.
     """
-    tenant_id = current_user.tenant_id
 
     # Build query
-    query = select(CDPIdentityLink).where(CDPIdentityLink.tenant_id == tenant_id)
+    query = select(CDPIdentityLink)
 
     if link_type:
         query = query.where(CDPIdentityLink.link_type == link_type)
 
     # Get total count
-    count_query = select(func.count(CDPIdentityLink.id)).where(
-        CDPIdentityLink.tenant_id == tenant_id
-    )
+    count_query = select(func.count(CDPIdentityLink.id))
     if link_type:
         count_query = count_query.where(CDPIdentityLink.link_type == link_type)
     count_result = await db.execute(count_query)
@@ -3418,8 +3294,7 @@ async def check_segment_rate_limit(
     current_user=Depends(get_current_user),
 ) -> bool:
     """Check segment rate limit (60/min)."""
-    tenant_id = current_user.tenant_id
-    if not segment_rate_limiter.is_allowed(f"segment:{tenant_id}"):
+    if not segment_rate_limiter.is_allowed(f"segment:{current_user.id}"):
         raise HTTPException(
             status_code=status.HTTP_429_TOO_MANY_REQUESTS,
             detail="Segment rate limit exceeded. Max 60 requests per minute.",
@@ -3471,9 +3346,8 @@ async def create_segment(
     - **dynamic**: Rule-based, auto-computed
     - **computed**: ML/algorithm-based
     """
-    tenant_id = current_user.tenant_id
 
-    service = SegmentService(db, tenant_id)
+    service = SegmentService(db)
     segment = await service.create_segment(
         name=segment_data.name,
         rules=segment_data.rules.model_dump(),
@@ -3489,7 +3363,6 @@ async def create_segment(
 
     logger.info(
         "cdp_segment_created",
-        tenant_id=tenant_id,
         segment_id=str(segment.id),
         segment_name=segment.name,
     )
@@ -3515,9 +3388,8 @@ async def list_segments(
     _rate_limit=Depends(check_segment_rate_limit),
 ):
     """List all segments for the tenant."""
-    tenant_id = current_user.tenant_id
 
-    service = SegmentService(db, tenant_id)
+    service = SegmentService(db)
     segments, total = await service.list_segments(
         status=status_filter,
         segment_type=segment_type,
@@ -3544,9 +3416,8 @@ async def get_segment(
     _rate_limit=Depends(check_segment_rate_limit),
 ):
     """Get a segment by ID."""
-    tenant_id = current_user.tenant_id
 
-    service = SegmentService(db, tenant_id)
+    service = SegmentService(db)
     segment = await service.get_segment(segment_id)
 
     if not segment:
@@ -3572,9 +3443,8 @@ async def update_segment(
     _rate_limit=Depends(check_segment_rate_limit),
 ):
     """Update a segment."""
-    tenant_id = current_user.tenant_id
 
-    service = SegmentService(db, tenant_id)
+    service = SegmentService(db)
 
     # Build updates dict
     updates = {}
@@ -3617,9 +3487,8 @@ async def delete_segment(
     _rate_limit=Depends(check_segment_rate_limit),
 ):
     """Delete a segment."""
-    tenant_id = current_user.tenant_id
 
-    service = SegmentService(db, tenant_id)
+    service = SegmentService(db)
     deleted = await service.delete_segment(segment_id)
 
     if not deleted:
@@ -3632,7 +3501,6 @@ async def delete_segment(
 
     logger.info(
         "cdp_segment_deleted",
-        tenant_id=tenant_id,
         segment_id=str(segment_id),
     )
 
@@ -3655,9 +3523,8 @@ async def compute_segment(
     This evaluates all profiles against segment rules and updates membership.
     For large datasets, this is a long-running operation.
     """
-    tenant_id = current_user.tenant_id
 
-    service = SegmentService(db, tenant_id)
+    service = SegmentService(db)
     segment = await service.get_segment(segment_id)
 
     if not segment:
@@ -3674,7 +3541,6 @@ async def compute_segment(
 
     logger.info(
         "cdp_segment_computed",
-        tenant_id=tenant_id,
         segment_id=str(segment_id),
         profiles_added=added,
         profiles_removed=removed,
@@ -3701,9 +3567,8 @@ async def preview_segment(
     Returns estimated count and sample profiles that match the rules.
     Does not create or modify any data.
     """
-    tenant_id = current_user.tenant_id
 
-    service = SegmentService(db, tenant_id)
+    service = SegmentService(db)
     estimated_count, sample_profiles = await service.preview_segment(
         rules=preview_data.rules.model_dump(),
         limit=preview_data.limit,
@@ -3715,7 +3580,6 @@ async def preview_segment(
         profile_responses.append(
             ProfileResponse(
                 id=p.id,
-                tenant_id=p.tenant_id,
                 external_id=p.external_id,
                 first_seen_at=p.first_seen_at,
                 last_seen_at=p.last_seen_at,
@@ -3753,9 +3617,8 @@ async def get_segment_profiles(
     _rate_limit=Depends(check_profile_rate_limit),
 ):
     """Get profiles in a segment."""
-    tenant_id = current_user.tenant_id
 
-    service = SegmentService(db, tenant_id)
+    service = SegmentService(db)
     profiles, total = await service.get_segment_profiles(
         segment_id=segment_id,
         limit=limit,
@@ -3768,7 +3631,6 @@ async def get_segment_profiles(
         profile_responses.append(
             ProfileResponse(
                 id=p.id,
-                tenant_id=p.tenant_id,
                 external_id=p.external_id,
                 first_seen_at=p.first_seen_at,
                 last_seen_at=p.last_seen_at,
@@ -3816,9 +3678,8 @@ async def get_profile_segments(
     _rate_limit=Depends(check_profile_rate_limit),
 ):
     """Get all segments a profile belongs to."""
-    tenant_id = current_user.tenant_id
 
-    service = SegmentService(db, tenant_id)
+    service = SegmentService(db)
     segments = await service.get_profile_segments(profile_id)
 
     return ProfileSegmentsResponse(
@@ -3844,9 +3705,8 @@ async def add_profile_to_segment(
 
     Only works for static segments. Dynamic segments are computed automatically.
     """
-    tenant_id = current_user.tenant_id
 
-    service = SegmentService(db, tenant_id)
+    service = SegmentService(db)
     success = await service.add_profile_to_segment(
         segment_id=segment_id,
         profile_id=profile_id,
@@ -3878,9 +3738,8 @@ async def remove_profile_from_segment(
     _rate_limit=Depends(check_segment_rate_limit),
 ):
     """Remove a profile from a segment."""
-    tenant_id = current_user.tenant_id
 
-    service = SegmentService(db, tenant_id)
+    service = SegmentService(db)
     success = await service.remove_profile_from_segment(
         segment_id=segment_id,
         profile_id=profile_id,
@@ -3929,13 +3788,11 @@ async def delete_profile(
 
     This action cannot be undone.
     """
-    tenant_id = current_user.tenant_id
 
     # Verify profile exists
     result = await db.execute(
         select(CDPProfile).where(
             CDPProfile.id == profile_id,
-            CDPProfile.tenant_id == tenant_id,
         )
     )
     profile = result.scalar_one_or_none()
@@ -4019,13 +3876,12 @@ async def delete_profile(
     await db.commit()
 
     # Invalidate cache
-    _profile_cache.invalidate(tenant_id, str(profile_id))
+    _profile_cache.invalidate(str(profile_id))
 
     deletion_time = datetime.now(UTC)
 
     logger.info(
         "cdp_profile_deleted_gdpr",
-        tenant_id=tenant_id,
         profile_id=str(profile_id),
         events_deleted=events_deleted,
         identifiers_deleted=identifiers_deleted,
@@ -4086,9 +3942,8 @@ async def create_computed_trait(
     Computed traits are derived values calculated from profile events.
     Examples: total_purchases, average_order_value, days_since_last_login
     """
-    tenant_id = current_user.tenant_id
 
-    service = ComputedTraitsService(db, tenant_id)
+    service = ComputedTraitsService(db)
 
     # Check if trait already exists
     existing = await service.get_trait_by_name(trait_data.name)
@@ -4128,9 +3983,8 @@ async def list_computed_traits(
     _rate_limit=Depends(check_source_rate_limit),
 ):
     """List all computed traits."""
-    tenant_id = current_user.tenant_id
 
-    service = ComputedTraitsService(db, tenant_id)
+    service = ComputedTraitsService(db)
     traits, total = await service.list_traits(
         active_only=active_only,
         limit=limit,
@@ -4156,9 +4010,8 @@ async def get_computed_trait(
     _rate_limit=Depends(check_source_rate_limit),
 ):
     """Get a computed trait by ID."""
-    tenant_id = current_user.tenant_id
 
-    service = ComputedTraitsService(db, tenant_id)
+    service = ComputedTraitsService(db)
     trait = await service.get_trait(trait_id)
 
     if not trait:
@@ -4183,9 +4036,8 @@ async def delete_computed_trait(
     _rate_limit=Depends(check_source_rate_limit),
 ):
     """Delete a computed trait."""
-    tenant_id = current_user.tenant_id
 
-    service = ComputedTraitsService(db, tenant_id)
+    service = ComputedTraitsService(db)
     deleted = await service.delete_trait(trait_id)
 
     if not deleted:
@@ -4213,16 +4065,14 @@ async def compute_all_traits(
 
     This is a batch operation that may take time for large datasets.
     """
-    tenant_id = current_user.tenant_id
 
-    service = ComputedTraitsService(db, tenant_id)
+    service = ComputedTraitsService(db)
     processed, errors = await service.compute_traits_batch()
 
     await db.commit()
 
     logger.info(
         "cdp_traits_computed",
-        tenant_id=tenant_id,
         profiles_processed=processed,
         errors=errors,
     )
@@ -4245,13 +4095,11 @@ async def compute_traits_for_profile(
     _rate_limit=Depends(check_profile_rate_limit),
 ):
     """Compute all traits for a specific profile."""
-    tenant_id = current_user.tenant_id
 
     # Get profile
     result = await db.execute(
         select(CDPProfile).where(
             CDPProfile.id == profile_id,
-            CDPProfile.tenant_id == tenant_id,
         )
     )
     profile = result.scalar_one_or_none()
@@ -4262,13 +4110,13 @@ async def compute_traits_for_profile(
             detail="Profile not found",
         )
 
-    service = ComputedTraitsService(db, tenant_id)
+    service = ComputedTraitsService(db)
     computed_traits = await service.compute_all_traits_for_profile(profile)
 
     await db.commit()
 
     # Invalidate cache
-    _profile_cache.invalidate(tenant_id, str(profile_id))
+    _profile_cache.invalidate(str(profile_id))
 
     return {
         "profile_id": str(profile_id),
@@ -4306,13 +4154,11 @@ async def get_profile_rfm(
     - **Frequency**: How often do they purchase?
     - **Monetary**: How much do they spend?
     """
-    tenant_id = current_user.tenant_id
 
     # Get profile
     result = await db.execute(
         select(CDPProfile).where(
             CDPProfile.id == profile_id,
-            CDPProfile.tenant_id == tenant_id,
         )
     )
     profile = result.scalar_one_or_none()
@@ -4323,7 +4169,7 @@ async def get_profile_rfm(
             detail="Profile not found",
         )
 
-    service = RFMAnalysisService(db, tenant_id)
+    service = RFMAnalysisService(db)
     rfm = await service.calculate_rfm_for_profile(
         profile,
         purchase_event_name=purchase_event_name,
@@ -4351,13 +4197,12 @@ async def compute_rfm_batch(
 
     Results are stored in each profile's computed_traits field.
     """
-    tenant_id = current_user.tenant_id
 
     # Use defaults if not provided
     if config is None:
         config = RFMConfig()
 
-    service = RFMAnalysisService(db, tenant_id)
+    service = RFMAnalysisService(db)
     result = await service.calculate_rfm_batch(
         purchase_event_name=config.purchase_event_name,
         revenue_property=config.revenue_property,
@@ -4368,7 +4213,6 @@ async def compute_rfm_batch(
 
     logger.info(
         "cdp_rfm_batch_computed",
-        tenant_id=tenant_id,
         profiles_processed=result["profiles_processed"],
     )
 
@@ -4391,9 +4235,8 @@ async def get_rfm_summary(
 
     Returns segment distribution and coverage statistics.
     """
-    tenant_id = current_user.tenant_id
 
-    service = RFMAnalysisService(db, tenant_id)
+    service = RFMAnalysisService(db)
     summary = await service.get_rfm_summary()
 
     return RFMSummaryResponse(**summary)
@@ -4411,8 +4254,7 @@ async def check_funnel_rate_limit(
     current_user=Depends(get_current_user),
 ) -> bool:
     """Check funnel rate limit (60/min)."""
-    tenant_id = current_user.tenant_id
-    if not funnel_rate_limiter.is_allowed(f"funnel:{tenant_id}"):
+    if not funnel_rate_limiter.is_allowed(f"funnel:{current_user.id}"):
         raise HTTPException(
             status_code=status.HTTP_429_TOO_MANY_REQUESTS,
             detail="Funnel rate limit exceeded. Max 60 requests per minute.",
@@ -4466,9 +4308,8 @@ async def create_funnel(
     Funnels track user progression through a series of events.
     Example: Product View → Add to Cart → Checkout → Purchase
     """
-    tenant_id = current_user.tenant_id
 
-    service = FunnelService(db, tenant_id)
+    service = FunnelService(db)
     funnel = await service.create_funnel(
         name=funnel_data.name,
         steps=[s.model_dump() for s in funnel_data.steps],
@@ -4485,7 +4326,6 @@ async def create_funnel(
 
     logger.info(
         "cdp_funnel_created",
-        tenant_id=tenant_id,
         funnel_id=str(funnel.id),
         funnel_name=funnel.name,
         steps_count=len(funnel_data.steps),
@@ -4511,9 +4351,8 @@ async def list_funnels(
     _rate_limit=Depends(check_funnel_rate_limit),
 ):
     """List all funnels for the tenant."""
-    tenant_id = current_user.tenant_id
 
-    service = FunnelService(db, tenant_id)
+    service = FunnelService(db)
     funnels, total = await service.list_funnels(
         status=status_filter,
         limit=limit,
@@ -4539,9 +4378,8 @@ async def get_funnel(
     _rate_limit=Depends(check_funnel_rate_limit),
 ):
     """Get a funnel by ID."""
-    tenant_id = current_user.tenant_id
 
-    service = FunnelService(db, tenant_id)
+    service = FunnelService(db)
     funnel = await service.get_funnel(funnel_id)
 
     if not funnel:
@@ -4567,9 +4405,8 @@ async def update_funnel(
     _rate_limit=Depends(check_funnel_rate_limit),
 ):
     """Update a funnel."""
-    tenant_id = current_user.tenant_id
 
-    service = FunnelService(db, tenant_id)
+    service = FunnelService(db)
 
     # Convert update data to dict, handling steps specially
     updates = update_data.model_dump(exclude_unset=True)
@@ -4590,7 +4427,6 @@ async def update_funnel(
 
     logger.info(
         "cdp_funnel_updated",
-        tenant_id=tenant_id,
         funnel_id=str(funnel_id),
         updates=list(updates.keys()),
     )
@@ -4611,9 +4447,8 @@ async def delete_funnel(
     _rate_limit=Depends(check_funnel_rate_limit),
 ):
     """Delete a funnel."""
-    tenant_id = current_user.tenant_id
 
-    service = FunnelService(db, tenant_id)
+    service = FunnelService(db)
     deleted = await service.delete_funnel(funnel_id)
 
     if not deleted:
@@ -4645,9 +4480,8 @@ async def compute_funnel(
     - Drop-off points
     - Overall conversion rate
     """
-    tenant_id = current_user.tenant_id
 
-    service = FunnelService(db, tenant_id)
+    service = FunnelService(db)
 
     try:
         result = await service.compute_funnel(funnel_id)
@@ -4687,9 +4521,8 @@ async def analyze_funnel(
 
     Optionally filter by date range to see funnel performance over time.
     """
-    tenant_id = current_user.tenant_id
 
-    service = FunnelService(db, tenant_id)
+    service = FunnelService(db)
 
     start_date = analysis_request.start_date if analysis_request else None
     end_date = analysis_request.end_date if analysis_request else None
@@ -4729,9 +4562,8 @@ async def get_funnel_drop_offs(
 
     Useful for identifying users who need re-engagement.
     """
-    tenant_id = current_user.tenant_id
 
-    service = FunnelService(db, tenant_id)
+    service = FunnelService(db)
 
     # Verify funnel exists
     funnel = await service.get_funnel(funnel_id)
@@ -4760,7 +4592,6 @@ async def get_funnel_drop_offs(
         profiles=[
             ProfileResponse(
                 id=p.id,
-                tenant_id=p.tenant_id,
                 external_id=p.external_id,
                 first_seen_at=p.first_seen_at,
                 last_seen_at=p.last_seen_at,
@@ -4799,13 +4630,11 @@ async def get_profile_funnel_journeys(
 
     Shows which funnels the user has entered and their progress.
     """
-    tenant_id = current_user.tenant_id
 
     # Verify profile exists
     result = await db.execute(
         select(CDPProfile).where(
             CDPProfile.id == profile_id,
-            CDPProfile.tenant_id == tenant_id,
         )
     )
     profile = result.scalar_one_or_none()
@@ -4816,7 +4645,7 @@ async def get_profile_funnel_journeys(
             detail="Profile not found",
         )
 
-    service = FunnelService(db, tenant_id)
+    service = FunnelService(db)
     journeys = await service.get_profile_funnel_journey(profile_id, funnel_id)
 
     return ProfileFunnelJourneysResponse(

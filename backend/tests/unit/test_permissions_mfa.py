@@ -753,7 +753,6 @@ class TestEnforceClientAccess:
             user_id=1,
             user_role="owner",
             client_id=99,
-            tenant_id=1,
             db=db,
         )
         # No exception means success
@@ -767,7 +766,6 @@ class TestEnforceClientAccess:
             user_id=1,
             user_role="admin",
             client_id=99,
-            tenant_id=1,
             db=db,
         )
 
@@ -781,7 +779,6 @@ class TestEnforceClientAccess:
             user_id=1,
             user_role="viewer",
             client_id=42,
-            tenant_id=1,
             db=db,
             user_client_id=42,
         )
@@ -801,7 +798,6 @@ class TestEnforceClientAccess:
                 user_id=1,
                 user_role="viewer",
                 client_id=99,
-                tenant_id=1,
                 db=db,
             )
         assert exc.value.status_code == 403
@@ -818,7 +814,6 @@ class TestGetAccessibleClientIds:
         result = await get_accessible_client_ids(
             user_id=1,
             user_role="owner",
-            tenant_id=1,
             db=db,
         )
         assert result is None
@@ -831,7 +826,6 @@ class TestGetAccessibleClientIds:
         result = await get_accessible_client_ids(
             user_id=1,
             user_role="admin",
-            tenant_id=1,
             db=db,
         )
         assert result is None
@@ -844,7 +838,6 @@ class TestGetAccessibleClientIds:
         result = await get_accessible_client_ids(
             user_id=1,
             user_role="viewer",
-            tenant_id=1,
             db=db,
             client_id=42,
         )
@@ -859,7 +852,6 @@ class TestGetAccessibleClientIds:
         result = await get_accessible_client_ids(
             user_id=1,
             user_role="viewer",
-            tenant_id=1,
             db=db,
         )
         assert result == [77]
@@ -873,7 +865,6 @@ class TestGetAccessibleClientIds:
         result = await get_accessible_client_ids(
             user_id=1,
             user_role="manager",
-            tenant_id=1,
             db=db,
         )
         assert result == [10, 20, 30]

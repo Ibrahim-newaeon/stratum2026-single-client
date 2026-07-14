@@ -262,9 +262,9 @@ class TestServiceBatches:
         asyncio.run(svc.upload_conversions([_conversion(platform="tiktok")], "tiktok"))
         assert len(svc.get_upload_history()) == 2
         assert len(svc.get_upload_history(platform="meta")) == 1
-        failed = svc.list_batches("t1", status="failed")
+        failed = svc.list_batches(status="failed")
         assert len(failed) == 2
-        assert svc.list_batches("t1", platform="tiktok")[0]["platform"] == "tiktok"
+        assert svc.list_batches(platform="tiktok")[0]["platform"] == "tiktok"
 
 
 # =============================================================================

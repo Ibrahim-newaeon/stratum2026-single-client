@@ -56,9 +56,8 @@ class HubSpotClient:
     - Rate limiting awareness
     """
 
-    def __init__(self, db: AsyncSession, tenant_id: int):
+    def __init__(self, db: AsyncSession):
         self.db = db
-        self.tenant_id = tenant_id
         self._connection: Optional[CRMConnection] = None
         self._http_client: Optional[httpx.AsyncClient] = None
 
@@ -161,7 +160,6 @@ class HubSpotClient:
 
         logger.info(
             "hubspot_connected",
-            tenant_id=self.tenant_id,
             portal_id=connection.provider_account_id,
         )
 
@@ -195,7 +193,6 @@ class HubSpotClient:
                 logger.error(
                     "hubspot_token_refresh_failed",
                     status=response.status_code,
-                    tenant_id=self.tenant_id,
                 )
                 connection.status = CRMConnectionStatus.EXPIRED
                 await self.db.commit()
@@ -213,7 +210,7 @@ class HubSpotClient:
 
         await self.db.commit()
 
-        logger.info("hubspot_tokens_refreshed", tenant_id=self.tenant_id)
+        logger.info("hubspot_tokens_refreshed")
         return True
 
     async def disconnect(self) -> bool:
@@ -244,7 +241,7 @@ class HubSpotClient:
 
         await self.db.commit()
 
-        logger.info("hubspot_disconnected", tenant_id=self.tenant_id)
+        logger.info("hubspot_disconnected")
         return True
 
     # =========================================================================
@@ -297,7 +294,7 @@ class HubSpotClient:
         """
         access_token = await self.get_access_token()
         if not access_token:
-            logger.error("hubspot_api_no_token", tenant_id=self.tenant_id)
+            logger.error("hubspot_api_no_token")
             return None
 
         url = f"{HUBSPOT_API_BASE}{endpoint}"
@@ -794,7 +791,6 @@ class HubSpotClient:
 
         result = await self.db.execute(
             select(CRMConnection).where(
-                CRMConnection.tenant_id == self.tenant_id,
                 CRMConnection.provider == CRMProvider.HUBSPOT,
             )
         )
@@ -808,7 +804,6 @@ class HubSpotClient:
             return connection
 
         connection = CRMConnection(
-            tenant_id=self.tenant_id,
             provider=CRMProvider.HUBSPOT,
             status=CRMConnectionStatus.PENDING,
             webhook_secret=secrets.token_urlsafe(32),

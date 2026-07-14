@@ -184,7 +184,6 @@ class ProfileResponse(CDPBaseSchema):
     """Full profile response with identifiers and metadata."""
 
     id: UUID
-    tenant_id: int
     external_id: Optional[str] = None
 
     first_seen_at: datetime

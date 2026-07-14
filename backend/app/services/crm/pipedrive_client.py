@@ -45,9 +45,8 @@ class PipedriveClient:
     - Rate limiting awareness
     """
 
-    def __init__(self, db: AsyncSession, tenant_id: int):
+    def __init__(self, db: AsyncSession):
         self.db = db
-        self.tenant_id = tenant_id
         self._connection: Optional[CRMConnection] = None
         self._http_client: Optional[httpx.AsyncClient] = None
         self._api_domain: Optional[str] = None
@@ -155,7 +154,6 @@ class PipedriveClient:
 
         logger.info(
             "pipedrive_connected",
-            tenant_id=self.tenant_id,
             company_id=connection.provider_account_id,
         )
 
@@ -189,7 +187,6 @@ class PipedriveClient:
                 logger.error(
                     "pipedrive_token_refresh_failed",
                     status=response.status_code,
-                    tenant_id=self.tenant_id,
                 )
                 connection.status = CRMConnectionStatus.EXPIRED
                 await self.db.commit()
@@ -207,7 +204,7 @@ class PipedriveClient:
 
         await self.db.commit()
 
-        logger.info("pipedrive_tokens_refreshed", tenant_id=self.tenant_id)
+        logger.info("pipedrive_tokens_refreshed")
         return True
 
     async def disconnect(self) -> bool:
@@ -227,7 +224,7 @@ class PipedriveClient:
 
         await self.db.commit()
 
-        logger.info("pipedrive_disconnected", tenant_id=self.tenant_id)
+        logger.info("pipedrive_disconnected")
         return True
 
     # =========================================================================
@@ -295,7 +292,7 @@ class PipedriveClient:
         """
         access_token = await self.get_access_token()
         if not access_token:
-            logger.error("pipedrive_api_no_token", tenant_id=self.tenant_id)
+            logger.error("pipedrive_api_no_token")
             return None
 
         api_domain = await self._get_api_domain()
@@ -650,7 +647,6 @@ class PipedriveClient:
 
         result = await self.db.execute(
             select(CRMConnection).where(
-                CRMConnection.tenant_id == self.tenant_id,
                 CRMConnection.provider == CRMProvider.PIPEDRIVE,
             )
         )
@@ -664,7 +660,6 @@ class PipedriveClient:
             return connection
 
         connection = CRMConnection(
-            tenant_id=self.tenant_id,
             provider=CRMProvider.PIPEDRIVE,
             status=CRMConnectionStatus.PENDING,
             webhook_secret=secrets.token_urlsafe(32),

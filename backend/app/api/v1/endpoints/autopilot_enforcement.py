@@ -18,6 +18,7 @@ from fastapi import APIRouter, Body, Depends, HTTPException, Query, Request
 from pydantic import BaseModel, Field
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from app.auth.deps import get_current_user
 from app.autopilot.enforcer import (
     AutopilotEnforcer,
     EnforcementMode,
@@ -28,12 +29,16 @@ from app.autopilot.enforcer import (
 from app.db.session import get_async_session
 from app.schemas.response import APIResponse
 
-# NOTE(STRAT-SC-001/C2): de-tenanted from "/tenant/{tenant_id}/autopilot/enforcement"
-# — see task-C2-report.md. Route bodies still take/use tenant_id internally
-# (full removal is the C3 endpoint sweep); with no {tenant_id} path segment
-# left in the prefix, any such parameter binds as a query param instead.
+# NOTE(STRAT-SC-001/C2): de-tenanted from the old per-org-scoped prefix
+# — see task-C2-report.md. Route bodies no longer take per-org params (C3
+# endpoint sweep complete); AutopilotEnforcer is a single global singleton.
+# SECURITY (STRAT-SC-001/C3): the old per-org request guards were the only
+# auth on these routes; deleted in the de-tenanting sweep, so real auth is
+# enforced router-wide here.
 router = APIRouter(
-    prefix="/autopilot/enforcement", tags=["autopilot-enforcement"]
+    prefix="/autopilot/enforcement",
+    tags=["autopilot-enforcement"],
+    dependencies=[Depends(get_current_user)],
 )
 
 
@@ -137,7 +142,6 @@ class FreezeRequest(BaseModel):
 @router.get("/settings", response_model=APIResponse[Dict[str, Any]])
 async def get_enforcement_settings(
     request: Request,
-    tenant_id: int,
     db: AsyncSession = Depends(get_async_session),
 ):
     """
@@ -151,11 +155,8 @@ async def get_enforcement_settings(
     - Frequency limits
     - Custom rules
     """
-    if getattr(request.state, "tenant_id", None) != tenant_id:
-        raise HTTPException(status_code=403, detail="Access denied to this tenant")
-
     enforcer = AutopilotEnforcer(db)
-    settings = await enforcer.get_settings(tenant_id)
+    settings = await enforcer.get_settings()
 
     # get_async_session does not auto-commit; get_settings lazily inserts
     # the tenant's default settings row on first touch, which is otherwise
@@ -194,7 +195,6 @@ async def get_enforcement_settings(
 @router.put("/settings", response_model=APIResponse[Dict[str, Any]])
 async def update_enforcement_settings(
     request: Request,
-    tenant_id: int,
     body: EnforcementSettingsRequest,
     db: AsyncSession = Depends(get_async_session),
 ):
@@ -203,9 +203,6 @@ async def update_enforcement_settings(
 
     Requires admin role.
     """
-    if getattr(request.state, "tenant_id", None) != tenant_id:
-        raise HTTPException(status_code=403, detail="Access denied to this tenant")
-
     user_id = getattr(request.state, "user_id", None)
     if not user_id:
         raise HTTPException(status_code=401, detail="User authentication required")
@@ -237,7 +234,7 @@ async def update_enforcement_settings(
         updates["min_hours_between_changes"] = body.min_hours_between_changes
 
     enforcer = AutopilotEnforcer(db)
-    settings = await enforcer.update_settings(tenant_id, updates)
+    settings = await enforcer.update_settings(updates)
 
     return APIResponse(
         success=True,
@@ -263,7 +260,6 @@ async def update_enforcement_settings(
 @router.post("/check", response_model=APIResponse[Dict[str, Any]])
 async def check_enforcement(
     request: Request,
-    tenant_id: int,
     body: EnforcementCheckRequest,
     db: AsyncSession = Depends(get_async_session),
 ):
@@ -278,12 +274,8 @@ async def check_enforcement(
     - requires_confirmation: Whether soft-block confirmation is needed
     - confirmation_token: Token to use for confirmation (if soft-blocked)
     """
-    if getattr(request.state, "tenant_id", None) != tenant_id:
-        raise HTTPException(status_code=403, detail="Access denied to this tenant")
-
     enforcer = AutopilotEnforcer(db)
     result = await enforcer.check_action(
-        tenant_id=tenant_id,
         action_type=body.action_type,
         entity_type=body.entity_type,
         entity_id=body.entity_id,
@@ -306,7 +298,6 @@ async def check_enforcement(
 @router.post("/confirm", response_model=APIResponse[Dict[str, Any]])
 async def confirm_soft_blocked_action(
     request: Request,
-    tenant_id: int,
     body: ConfirmActionRequest,
     db: AsyncSession = Depends(get_async_session),
 ):
@@ -316,16 +307,12 @@ async def confirm_soft_blocked_action(
     Requires the confirmation_token from the enforcement check response.
     Override reason is logged for audit purposes.
     """
-    if getattr(request.state, "tenant_id", None) != tenant_id:
-        raise HTTPException(status_code=403, detail="Access denied to this tenant")
-
     user_id = getattr(request.state, "user_id", None)
     if not user_id:
         raise HTTPException(status_code=401, detail="User authentication required")
 
     enforcer = AutopilotEnforcer(db)
     success, error = await enforcer.confirm_action(
-        tenant_id=tenant_id,
         confirmation_token=body.confirmation_token,
         user_id=user_id,
         override_reason=body.override_reason,
@@ -351,7 +338,6 @@ async def confirm_soft_blocked_action(
 @router.post("/kill-switch", response_model=APIResponse[Dict[str, Any]])
 async def toggle_kill_switch(
     request: Request,
-    tenant_id: int,
     body: KillSwitchRequest,
     db: AsyncSession = Depends(get_async_session),
 ):
@@ -361,16 +347,12 @@ async def toggle_kill_switch(
     This is a kill switch that immediately stops all enforcement checks.
     All changes are logged for audit purposes.
     """
-    if getattr(request.state, "tenant_id", None) != tenant_id:
-        raise HTTPException(status_code=403, detail="Access denied to this tenant")
-
     user_id = getattr(request.state, "user_id", None)
     if not user_id:
         raise HTTPException(status_code=401, detail="User authentication required")
 
     enforcer = AutopilotEnforcer(db)
     settings = await enforcer.set_kill_switch(
-        tenant_id=tenant_id,
         enabled=body.enabled,
         user_id=user_id,
         reason=body.reason,
@@ -396,7 +378,6 @@ async def toggle_kill_switch(
 @router.post("/freeze", response_model=APIResponse[Dict[str, Any]])
 async def toggle_freeze(
     request: Request,
-    tenant_id: int,
     body: FreezeRequest,
     db: AsyncSession = Depends(get_async_session),
 ):
@@ -411,16 +392,12 @@ async def toggle_freeze(
 
     All changes are logged for audit purposes.
     """
-    if getattr(request.state, "tenant_id", None) != tenant_id:
-        raise HTTPException(status_code=403, detail="Access denied to this tenant")
-
     user_id = getattr(request.state, "user_id", None)
     if not user_id:
         raise HTTPException(status_code=401, detail="User authentication required")
 
     enforcer = AutopilotEnforcer(db)
     settings = await enforcer.set_freeze(
-        tenant_id=tenant_id,
         frozen=body.frozen,
         user_id=user_id,
         reason=body.reason,
@@ -446,7 +423,6 @@ async def toggle_freeze(
 @router.get("/audit-log", response_model=APIResponse[Dict[str, Any]])
 async def get_intervention_audit_log(
     request: Request,
-    tenant_id: int,
     days: int = Query(default=30, ge=1, le=90),
     limit: int = Query(default=100, ge=1, le=500),
     db: AsyncSession = Depends(get_async_session),
@@ -461,11 +437,8 @@ async def get_intervention_audit_log(
     - Kill switch changes
     - Auto-pause events
     """
-    if getattr(request.state, "tenant_id", None) != tenant_id:
-        raise HTTPException(status_code=403, detail="Access denied to this tenant")
-
     enforcer = AutopilotEnforcer(db)
-    logs = await enforcer.get_intervention_log(tenant_id, days=days, limit=limit)
+    logs = await enforcer.get_intervention_log(days=days, limit=limit)
 
     return APIResponse(
         success=True,
@@ -483,7 +456,6 @@ async def get_intervention_audit_log(
 @router.post("/rules", response_model=APIResponse[Dict[str, Any]])
 async def add_custom_rule(
     request: Request,
-    tenant_id: int,
     body: AddRuleRequest,
     db: AsyncSession = Depends(get_async_session),
 ):
@@ -493,9 +465,6 @@ async def add_custom_rule(
     Custom rules allow fine-grained control over specific thresholds
     and can have different enforcement modes than the default.
     """
-    if getattr(request.state, "tenant_id", None) != tenant_id:
-        raise HTTPException(status_code=403, detail="Access denied to this tenant")
-
     user_id = getattr(request.state, "user_id", None)
     if not user_id:
         raise HTTPException(status_code=401, detail="User authentication required")
@@ -528,9 +497,9 @@ async def add_custom_rule(
     )
 
     enforcer = AutopilotEnforcer(db)
-    settings = await enforcer.get_settings(tenant_id)
+    settings = await enforcer.get_settings()
     settings.rules.append(rule)
-    await enforcer.update_settings(tenant_id, {"rules": settings.rules})
+    await enforcer.update_settings({"rules": settings.rules})
 
     return APIResponse(
         success=True,
@@ -544,20 +513,16 @@ async def add_custom_rule(
 @router.delete("/rules/{rule_id}", response_model=APIResponse[Dict[str, Any]])
 async def delete_custom_rule(
     request: Request,
-    tenant_id: int,
     rule_id: str,
     db: AsyncSession = Depends(get_async_session),
 ):
     """Delete a custom enforcement rule."""
-    if getattr(request.state, "tenant_id", None) != tenant_id:
-        raise HTTPException(status_code=403, detail="Access denied to this tenant")
-
     user_id = getattr(request.state, "user_id", None)
     if not user_id:
         raise HTTPException(status_code=401, detail="User authentication required")
 
     enforcer = AutopilotEnforcer(db)
-    settings = await enforcer.get_settings(tenant_id)
+    settings = await enforcer.get_settings()
 
     original_count = len(settings.rules)
     settings.rules = [r for r in settings.rules if r.rule_id != rule_id]
@@ -565,7 +530,7 @@ async def delete_custom_rule(
     if len(settings.rules) == original_count:
         raise HTTPException(status_code=404, detail=f"Rule '{rule_id}' not found")
 
-    await enforcer.update_settings(tenant_id, {"rules": settings.rules})
+    await enforcer.update_settings({"rules": settings.rules})
 
     return APIResponse(
         success=True,

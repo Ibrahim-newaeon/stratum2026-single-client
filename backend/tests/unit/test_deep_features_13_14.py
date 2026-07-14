@@ -7,7 +7,7 @@ Deep endpoint tests for:
   Feature 14 -- Owner console dashboard & Owner console Analytics
 
 Each test exercises the FULL request/response cycle via httpx.AsyncClient,
-passing through TenantMiddleware (real JWT decode + tenant extraction) while
+passing through AuthContextMiddleware (real JWT decode) while
 mocking services / DB at the endpoint-handler level.
 """
 
@@ -206,46 +206,20 @@ def _fake_execution(
     return e
 
 
-def _fake_tenant(
-    *,
-    tid: int = 1,
-    name: str = "Acme Inc",
-    plan: str = "professional",
-) -> MagicMock:
-    t = MagicMock()
-    t.id = tid
-    t.name = name
-    t.slug = name.lower().replace(" ", "-")
-    t.plan = plan
-    t.is_deleted = False
-    t.status = "active"
-    t.mrr_cents = 9900
-    t.max_users = 10
-    t.created_at = _NOW
-    t.health_score = 90
-    t.churn_risk_score = 0.1
-    t.last_admin_login_at = _NOW
-    t.last_activity_at = _NOW
-    t.onboarding_completed = True
-    t.trial_ends_at = None
-    return t
-
-
 # ---------------------------------------------------------------------------
-# Fixtures: reporting endpoints need overrides for tenancy.deps functions
+# Fixtures: reporting endpoints resolve the user via app.auth.deps
 # ---------------------------------------------------------------------------
 
 
 @pytest_asyncio.fixture
 async def reporting_client(test_app, mock_db):
     """
-    httpx.AsyncClient with overrides for BOTH app.db.session AND
-    app.tenancy.deps dependency functions used by reporting endpoints.
+    httpx.AsyncClient with overrides for the app.db.session AND
+    app.auth.deps dependency functions used by reporting endpoints.
     """
+    from app.auth.deps import get_current_user
     from app.db.session import get_async_session
     from app.db.session import get_db as db_session_get_db
-    from app.tenancy.deps import get_current_user
-    from app.tenancy.deps import get_db as tenancy_get_db
 
     fake_user = _fake_user()
 
@@ -257,7 +231,6 @@ async def reporting_client(test_app, mock_db):
 
     test_app.dependency_overrides[get_async_session] = override_session
     test_app.dependency_overrides[db_session_get_db] = override_session
-    test_app.dependency_overrides[tenancy_get_db] = override_session
     test_app.dependency_overrides[get_current_user] = override_current_user
 
     async with AsyncClient(
@@ -266,49 +239,6 @@ async def reporting_client(test_app, mock_db):
     ) as ac:
         yield ac
 
-    test_app.dependency_overrides.clear()
-
-
-@pytest_asyncio.fixture
-async def reporting_client_factory(test_app, mock_db):
-    """
-    Factory that lets each test supply its own fake_user to the
-    get_current_user override.
-    """
-    from app.db.session import get_async_session
-    from app.db.session import get_db as db_session_get_db
-    from app.tenancy.deps import get_current_user
-    from app.tenancy.deps import get_db as tenancy_get_db
-
-    class _Factory:
-        def __init__(self):
-            self.client = None
-
-        async def build(self, fake_user=None):
-            if fake_user is None:
-                fake_user = _fake_user()
-
-            async def override_session():
-                yield mock_db
-
-            async def override_current_user():
-                return fake_user
-
-            test_app.dependency_overrides[get_async_session] = override_session
-            test_app.dependency_overrides[db_session_get_db] = override_session
-            test_app.dependency_overrides[tenancy_get_db] = override_session
-            test_app.dependency_overrides[get_current_user] = override_current_user
-
-            self.client = AsyncClient(
-                transport=ASGITransport(app=test_app),
-                base_url="http://testserver",
-            )
-            return self.client
-
-    factory = _Factory()
-    yield factory
-    if factory.client:
-        await factory.client.aclose()
     test_app.dependency_overrides.clear()
 
 
@@ -469,23 +399,6 @@ class TestReportingTemplatesCRUD:
         mock_db.get = AsyncMock(return_value=None)
         r = await reporting_client.get(
             f"/api/v1/reporting/templates/{uuid.uuid4()}",
-            headers=admin_headers,
-        )
-        assert r.status_code == 404
-
-    async def test_get_template_wrong_tenant(
-        self,
-        reporting_client_factory,
-        mock_db,
-        admin_headers,
-    ):
-        user = _fake_user(tenant_id=1)
-        client = await reporting_client_factory.build(fake_user=user)
-        tpl = _fake_template(tenant_id=999)
-        mock_db.get = AsyncMock(return_value=tpl)
-
-        r = await client.get(
-            f"/api/v1/reporting/templates/{_UUID1}",
             headers=admin_headers,
         )
         assert r.status_code == 404
@@ -892,22 +805,6 @@ class TestReportingExecutions:
         )
         assert r.status_code == 404
 
-    async def test_get_execution_wrong_tenant(
-        self,
-        reporting_client,
-        mock_db,
-        admin_headers,
-    ):
-        exe = _fake_execution(tenant_id=999)
-        mock_db.get = AsyncMock(return_value=exe)
-
-        r = await reporting_client.get(
-            f"/api/v1/reporting/executions/{_UUID3}",
-            headers=admin_headers,
-        )
-        assert r.status_code == 404
-
-
 class TestReportingReportTypes:
     """The /report-types info endpoint."""
 
@@ -931,154 +828,6 @@ class TestReportingReportTypes:
         assert "frequencies" in body
         assert "delivery_channels" in body
         assert len(body["report_types"]) >= 5
-
-
-# ============================================================================
-# FEATURE 14 -- OWNER CONSOLE DASHBOARD
-# ============================================================================
-
-
-class TestOwnerConsoleRevenue:
-    """GET /api/v1/console/revenue and /revenue/breakdown."""
-
-    async def test_revenue_no_auth(self, api_client):
-        r = await api_client.get("/api/v1/console/revenue")
-        assert r.status_code == 401
-
-    async def test_revenue_non_owner(self, api_client, admin_headers):
-        r = await api_client.get("/api/v1/console/revenue", headers=admin_headers)
-        assert r.status_code == 403
-
-    async def test_revenue_happy(self, api_client, mock_db, owner_headers):
-        tenant = _fake_tenant()
-        mock_db.execute = AsyncMock(return_value=make_scalars_result([tenant]))
-
-        r = await api_client.get(
-            "/api/v1/console/revenue",
-            headers=owner_headers,
-        )
-        assert r.status_code == 200
-        data = r.json()["data"]
-        assert "mrr" in data
-        assert "arr" in data
-        assert data["total_tenants"] == 1
-
-    async def test_revenue_multiple_tenants(
-        self, api_client, mock_db, owner_headers
-    ):
-        t1 = _fake_tenant(tid=1, plan="professional")
-        t2 = _fake_tenant(tid=2, plan="starter", name="Beta Co")
-        t2.mrr_cents = 4900
-        mock_db.execute = AsyncMock(return_value=make_scalars_result([t1, t2]))
-
-        r = await api_client.get(
-            "/api/v1/console/revenue",
-            headers=owner_headers,
-        )
-        assert r.status_code == 200
-        data = r.json()["data"]
-        assert data["total_tenants"] == 2
-        assert data["mrr"] == (9900 + 4900) / 100
-
-    async def test_revenue_breakdown_no_auth(self, api_client):
-        r = await api_client.get("/api/v1/console/revenue/breakdown")
-        assert r.status_code == 401
-
-    async def test_revenue_breakdown_non_owner(self, api_client, admin_headers):
-        r = await api_client.get(
-            "/api/v1/console/revenue/breakdown",
-            headers=admin_headers,
-        )
-        assert r.status_code == 403
-
-    async def test_revenue_breakdown_happy(
-        self, api_client, mock_db, owner_headers
-    ):
-        t1 = _fake_tenant(tid=1, plan="professional")
-        t2 = _fake_tenant(tid=2, plan="starter", name="Beta Co")
-        mock_db.execute = AsyncMock(return_value=make_scalars_result([t1, t2]))
-
-        r = await api_client.get(
-            "/api/v1/console/revenue/breakdown",
-            headers=owner_headers,
-        )
-        assert r.status_code == 200
-        data = r.json()["data"]
-        assert "by_plan" in data
-        assert "total_mrr" in data
-
-
-class TestOwnerConsoleTenantPortfolio:
-    """GET /api/v1/console/tenants/portfolio."""
-
-    async def test_portfolio_no_auth(self, api_client):
-        r = await api_client.get("/api/v1/console/tenants/portfolio")
-        assert r.status_code == 401
-
-    async def test_portfolio_non_owner(self, api_client, admin_headers):
-        r = await api_client.get(
-            "/api/v1/console/tenants/portfolio",
-            headers=admin_headers,
-        )
-        assert r.status_code == 403
-
-    async def test_portfolio_happy(self, api_client, mock_db, owner_headers):
-        tenant = _fake_tenant()
-        # The endpoint batches counts in grouped queries and reads .all() ->
-        # rows of (tenant_id, count), not a single scalar.
-        user_count_result = MagicMock()
-        user_count_result.all.return_value = [(tenant.id, 3)]
-        campaign_count_result = MagicMock()
-        campaign_count_result.all.return_value = [(tenant.id, 5)]
-        mock_db.execute = AsyncMock(
-            side_effect=[
-                make_scalars_result([tenant]),
-                user_count_result,
-                campaign_count_result,
-            ]
-        )
-
-        r = await api_client.get(
-            "/api/v1/console/tenants/portfolio",
-            headers=owner_headers,
-        )
-        assert r.status_code == 200
-        data = r.json()["data"]
-        assert "tenants" in data
-        assert data["total"] == 1
-        assert data["tenants"][0]["name"] == "Acme Inc"
-        assert data["tenants"][0]["users_count"] == 3
-
-    async def test_portfolio_empty(self, api_client, mock_db, owner_headers):
-        mock_db.execute = AsyncMock(return_value=make_scalars_result([]))
-        r = await api_client.get(
-            "/api/v1/console/tenants/portfolio",
-            headers=owner_headers,
-        )
-        assert r.status_code == 200
-        data = r.json()["data"]
-        assert data["tenants"] == []
-        assert data["total"] == 0
-
-    async def test_portfolio_pagination_params(
-        self, api_client, mock_db, owner_headers
-    ):
-        mock_db.execute = AsyncMock(return_value=make_scalars_result([]))
-        r = await api_client.get(
-            "/api/v1/console/tenants/portfolio?skip=0&limit=10",
-            headers=owner_headers,
-        )
-        assert r.status_code == 200
-
-    async def test_portfolio_sort_by_name(
-        self, api_client, mock_db, owner_headers
-    ):
-        mock_db.execute = AsyncMock(return_value=make_scalars_result([]))
-        r = await api_client.get(
-            "/api/v1/console/tenants/portfolio?sort_by=name&sort_order=asc",
-            headers=owner_headers,
-        )
-        assert r.status_code == 200
 
 
 class TestOwnerConsoleSystemHealth:
@@ -1121,56 +870,6 @@ class TestOwnerConsoleSystemHealth:
         assert data["instrumented"]["service_health"] is True
 
 
-class TestOwnerConsoleChurnRisks:
-    """GET /api/v1/console/churn/risks."""
-
-    async def test_churn_no_auth(self, api_client):
-        r = await api_client.get("/api/v1/console/churn/risks")
-        assert r.status_code == 401
-
-    async def test_churn_non_owner(self, api_client, admin_headers):
-        r = await api_client.get(
-            "/api/v1/console/churn/risks",
-            headers=admin_headers,
-        )
-        assert r.status_code == 403
-
-    async def test_churn_happy_with_risky_tenant(
-        self, api_client, mock_db, owner_headers
-    ):
-        tenant = _fake_tenant()
-        tenant.last_activity_at = None
-        tenant.onboarding_completed = False
-        mock_db.execute = AsyncMock(return_value=make_scalars_result([tenant]))
-
-        r = await api_client.get(
-            "/api/v1/console/churn/risks?min_risk=0.1",
-            headers=owner_headers,
-        )
-        assert r.status_code == 200
-        data = r.json()["data"]
-        assert "at_risk_tenants" in data
-        assert "total_mrr_at_risk" in data
-        assert data["total_count"] >= 1
-
-    async def test_churn_empty_with_high_threshold(
-        self, api_client, mock_db, owner_headers
-    ):
-        tenant = _fake_tenant()
-        tenant.last_activity_at = _NOW
-        tenant.health_score = 95
-        tenant.onboarding_completed = True
-        mock_db.execute = AsyncMock(return_value=make_scalars_result([tenant]))
-
-        r = await api_client.get(
-            "/api/v1/console/churn/risks?min_risk=0.99",
-            headers=owner_headers,
-        )
-        assert r.status_code == 200
-        data = r.json()["data"]
-        assert data["total_count"] == 0
-
-
 # ============================================================================
 # FEATURE 14 -- OWNER CONSOLE ANALYTICS
 # ============================================================================
@@ -1179,12 +878,8 @@ class TestOwnerConsoleChurnRisks:
 # at /api/v1/console/analytics, giving:
 #   /api/v1/console/analytics/console/<endpoint>
 #
-# Auth check: getattr(request.state, "is_superadmin", False) -- attribute
-# name kept until Phase C rewrites the tenant middleware (STRAT-SC-001).
-# TenantMiddleware sets request.state.role but NOT is_superadmin.
-# Non-owner users get 403. Even owner users get 403 because
-# is_superadmin is never set. We test auth-rejection behavior and also
-# test with a patched is_superadmin flag.
+# Auth: every route depends on require_owner() — unauthenticated requests
+# get 401, authenticated non-owner users get 403, owners get through.
 
 
 class TestOwnerConsoleAnalyticsPlatformOverview:
@@ -1213,50 +908,15 @@ class TestOwnerConsoleAnalyticsPlatformOverview:
         from unittest.mock import MagicMock
 
         row = MagicMock(total=0, applied=0, failed=0)
-        scalar_r = MagicMock()
-        scalar_r.scalar.return_value = 0
         first_r = MagicMock()
         first_r.first.return_value = row
         empty_iter = MagicMock()
         empty_iter.__iter__ = lambda s: iter([])
-        mock_db.execute.side_effect = [scalar_r, first_r, empty_iter, empty_iter]
+        mock_db.execute.side_effect = [first_r, empty_iter, empty_iter]
 
         r = await api_client.get(self._URL, headers=owner_headers)
         assert r.status_code == 200
         assert r.json()["success"] is True
-
-
-class TestOwnerConsoleAnalyticsTenantProfitability:
-    """GET /api/v1/console/analytics/console/tenant-profitability."""
-
-    _URL = "/api/v1/console/analytics/console/tenant-profitability"
-
-    async def test_no_auth(self, api_client):
-        r = await api_client.get(self._URL)
-        assert r.status_code == 401
-
-    async def test_non_owner_forbidden(self, api_client, admin_headers):
-        r = await api_client.get(self._URL, headers=admin_headers)
-        assert r.status_code == 403
-
-    async def test_owner_access_allowed(
-        self,
-        api_client,
-        owner_headers,
-        mock_db,
-    ):
-        """Owner can access tenant profitability."""
-        from unittest.mock import MagicMock
-
-        empty_iter = MagicMock()
-        empty_iter.__iter__ = lambda s: iter([])
-        mock_db.execute.side_effect = [empty_iter, empty_iter]
-
-        r = await api_client.get(self._URL, headers=owner_headers)
-        assert r.status_code == 200
-        data = r.json()["data"]
-        assert data["total_tenants"] == 0
-        assert data["tenants"] == []
 
 
 class TestOwnerConsoleAnalyticsSignalHealthTrends:
@@ -1322,145 +982,3 @@ class TestOwnerConsoleAnalyticsActionsAnalytics:
         data = r.json()["data"]
         assert data["total_actions"] == 0
 
-
-# ============================================================================
-# Unit tests for helper functions (Feature 14)
-# ============================================================================
-
-
-class TestCalculateHealthScore:
-    """Unit tests for console_analytics.calculate_health_score."""
-
-    def test_both_none(self):
-        from app.api.v1.endpoints.console_analytics import calculate_health_score
-
-        assert calculate_health_score(None, None) == 0
-
-    def test_only_emq(self):
-        from app.api.v1.endpoints.console_analytics import calculate_health_score
-
-        score = calculate_health_score(80.0, None)
-        assert score == round(80.0 * 0.7, 1)
-
-    def test_only_event_loss(self):
-        from app.api.v1.endpoints.console_analytics import calculate_health_score
-
-        score = calculate_health_score(None, 10.0)
-        assert score == round((100 - 10.0) * 0.3, 1)
-
-    def test_both_present(self):
-        from app.api.v1.endpoints.console_analytics import calculate_health_score
-
-        score = calculate_health_score(90.0, 5.0)
-        expected = round(90.0 * 0.7 + (100 - 5.0) * 0.3, 1)
-        assert score == expected
-
-    def test_zero_values(self):
-        from app.api.v1.endpoints.console_analytics import calculate_health_score
-
-        score = calculate_health_score(0.0, 0.0)
-        expected = round(0.0 * 0.7 + (100 - 0.0) * 0.3, 1)
-        assert score == expected
-
-
-class TestCalculateChurnRisk:
-    """Unit tests for console.calculate_churn_risk."""
-
-    def test_healthy_tenant(self):
-        from app.api.v1.endpoints.console import calculate_churn_risk
-
-        t = _fake_tenant()
-        t.last_activity_at = _NOW
-        t.health_score = 95
-        t.onboarding_completed = True
-        risk, factors = calculate_churn_risk(t)
-        assert risk < 0.3
-        assert isinstance(factors, list)
-
-    def test_inactive_tenant(self):
-        from app.api.v1.endpoints.console import calculate_churn_risk
-
-        t = _fake_tenant()
-        t.last_activity_at = None
-        t.health_score = 60
-        t.onboarding_completed = False
-        risk, factors = calculate_churn_risk(t)
-        assert risk > 0.3
-        assert len(factors) >= 2
-
-    def test_past_due_tenant(self):
-        from app.api.v1.endpoints.console import calculate_churn_risk
-
-        t = _fake_tenant()
-        t.status = "past_due"
-        t.last_activity_at = _NOW
-        t.health_score = 90
-        t.onboarding_completed = True
-        risk, factors = calculate_churn_risk(t)
-        assert risk >= 0.25
-        assert any("past due" in f.lower() for f in factors)
-
-    def test_cancelled_tenant(self):
-        from app.api.v1.endpoints.console import calculate_churn_risk
-
-        t = _fake_tenant()
-        t.status = "cancelled"
-        t.last_activity_at = _NOW
-        t.health_score = 90
-        t.onboarding_completed = True
-        risk, factors = calculate_churn_risk(t)
-        assert risk >= 0.5
-        assert any("cancelled" in f.lower() for f in factors)
-
-    def test_risk_clamped_to_1(self):
-        from app.api.v1.endpoints.console import calculate_churn_risk
-
-        t = _fake_tenant()
-        t.status = "cancelled"
-        t.last_activity_at = None
-        t.health_score = 30
-        t.onboarding_completed = False
-        risk, _ = calculate_churn_risk(t)
-        assert risk <= 1.0
-
-
-class TestGetChurnActions:
-    """Unit tests for console.get_churn_actions."""
-
-    def test_activity_factor(self):
-        from app.api.v1.endpoints.console import get_churn_actions
-
-        actions = get_churn_actions(["Low activity (20 days since last login)"])
-        assert any(
-            "check-in" in a.lower() or "engagement" in a.lower() for a in actions
-        )
-
-    def test_data_quality_factor(self):
-        from app.api.v1.endpoints.console import get_churn_actions
-
-        actions = get_churn_actions(["Data quality issues (health score: 55)"])
-        assert any("pipeline" in a.lower() or "support" in a.lower() for a in actions)
-
-    def test_onboarding_factor(self):
-        from app.api.v1.endpoints.console import get_churn_actions
-
-        actions = get_churn_actions(["Onboarding not completed"])
-        assert any("onboarding" in a.lower() for a in actions)
-
-    def test_trial_factor(self):
-        from app.api.v1.endpoints.console import get_churn_actions
-
-        actions = get_churn_actions(["Trial ending in 3 days"])
-        assert any("trial" in a.lower() for a in actions)
-
-    def test_payment_factor(self):
-        from app.api.v1.endpoints.console import get_churn_actions
-
-        actions = get_churn_actions(["Payment past due"])
-        assert any("dunning" in a.lower() or "payment" in a.lower() for a in actions)
-
-    def test_no_matching_factors(self):
-        from app.api.v1.endpoints.console import get_churn_actions
-
-        actions = get_churn_actions(["Some unknown factor"])
-        assert actions == ["Monitor and gather more data"]

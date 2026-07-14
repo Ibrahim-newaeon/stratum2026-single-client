@@ -21,6 +21,7 @@ from sqlalchemy import and_, or_, select
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import selectinload
 
+from app.auth.deps import get_current_user
 from app.core.config import settings
 from app.core.logging import get_logger
 from app.db.session import get_async_session
@@ -37,7 +38,13 @@ from app.models.campaign_builder import (
 from app.schemas.response import APIResponse, PaginatedResponse
 
 logger = get_logger(__name__)
-router = APIRouter(prefix="/tenant/{tenant_id}", tags=["campaign-builder"])
+# SECURITY (STRAT-SC-001/C3): the old per-org request guards were the only
+# auth on these routes; deleted in the de-tenanting sweep, so real auth is
+# enforced router-wide here.
+router = APIRouter(
+    tags=["campaign-builder"],
+    dependencies=[Depends(get_current_user)],
+)
 
 
 async def require_campaign_publish_enabled() -> None:
@@ -111,7 +118,6 @@ class CampaignDraftResponse(BaseModel):
     model_config = ConfigDict(from_attributes=True)
 
     id: UUID
-    tenant_id: int
     platform: str
     ad_account_id: Optional[UUID] = None
     name: str
@@ -153,21 +159,13 @@ class PublishLogResponse(BaseModel):
 )
 async def get_connector_status(
     request: Request,
-    tenant_id: int,
     platform: AdPlatform,
     db: AsyncSession = Depends(get_async_session),
 ):
     """Get connection status for a platform."""
-    # Enforce tenant context
-    if getattr(request.state, "tenant_id", None) != tenant_id:
-        raise HTTPException(status_code=403, detail="Access denied to this tenant")
-
     result = await db.execute(
         select(TenantPlatformConnection).where(
-            and_(
-                TenantPlatformConnection.tenant_id == tenant_id,
-                TenantPlatformConnection.platform == platform,
-            )
+            TenantPlatformConnection.platform == platform
         )
     )
     connection = result.scalar_one_or_none()
@@ -197,7 +195,6 @@ async def get_connector_status(
 @router.post("/connect/{platform}/start")
 async def start_platform_connection(
     request: Request,
-    tenant_id: int,
     platform: AdPlatform,
     db: AsyncSession = Depends(get_async_session),
 ):
@@ -205,14 +202,11 @@ async def start_platform_connection(
     Start OAuth flow for a platform.
     Returns the authorization URL to redirect the user.
     """
-    if getattr(request.state, "tenant_id", None) != tenant_id:
-        raise HTTPException(status_code=403, detail="Access denied to this tenant")
-
     # Generate OAuth URL with state parameter for CSRF protection
     import secrets
 
     state_token = secrets.token_urlsafe(32)
-    redirect_uri = f"{request.base_url}api/v1/tenant/{tenant_id}/campaign-builder/connect/{platform.value}/callback"
+    redirect_uri = f"{request.base_url}api/v1/campaign-builder/connect/{platform.value}/callback"
 
     oauth_configs = {
         AdPlatform.META: {
@@ -277,20 +271,13 @@ async def start_platform_connection(
 @router.post("/connect/{platform}/refresh")
 async def refresh_platform_token(
     request: Request,
-    tenant_id: int,
     platform: AdPlatform,
     db: AsyncSession = Depends(get_async_session),
 ):
     """Refresh OAuth token for a platform."""
-    if getattr(request.state, "tenant_id", None) != tenant_id:
-        raise HTTPException(status_code=403, detail="Access denied to this tenant")
-
     result = await db.execute(
         select(TenantPlatformConnection).where(
-            and_(
-                TenantPlatformConnection.tenant_id == tenant_id,
-                TenantPlatformConnection.platform == platform,
-            )
+            TenantPlatformConnection.platform == platform
         )
     )
     connection = result.scalar_one_or_none()
@@ -332,7 +319,6 @@ async def refresh_platform_token(
         logger.warning(
             "token_refresh_failed",
             platform=platform.value,
-            tenant_id=tenant_id,
             error=str(e),
         )
         connection.last_refreshed_at = datetime.now(timezone.utc)
@@ -350,20 +336,13 @@ async def refresh_platform_token(
 @router.delete("/connect/{platform}")
 async def disconnect_platform(
     request: Request,
-    tenant_id: int,
     platform: AdPlatform,
     db: AsyncSession = Depends(get_async_session),
 ):
     """Disconnect a platform (revoke OAuth)."""
-    if getattr(request.state, "tenant_id", None) != tenant_id:
-        raise HTTPException(status_code=403, detail="Access denied to this tenant")
-
     result = await db.execute(
         select(TenantPlatformConnection).where(
-            and_(
-                TenantPlatformConnection.tenant_id == tenant_id,
-                TenantPlatformConnection.platform == platform,
-            )
+            TenantPlatformConnection.platform == platform
         )
     )
     connection = result.scalar_one_or_none()
@@ -393,21 +372,12 @@ async def disconnect_platform(
 )
 async def list_ad_accounts(
     request: Request,
-    tenant_id: int,
     platform: AdPlatform,
     enabled_only: bool = False,
     db: AsyncSession = Depends(get_async_session),
 ):
     """List ad accounts for a platform."""
-    if getattr(request.state, "tenant_id", None) != tenant_id:
-        raise HTTPException(status_code=403, detail="Access denied to this tenant")
-
-    query = select(TenantAdAccount).where(
-        and_(
-            TenantAdAccount.tenant_id == tenant_id,
-            TenantAdAccount.platform == platform,
-        )
-    )
+    query = select(TenantAdAccount).where(TenantAdAccount.platform == platform)
 
     if enabled_only:
         query = query.where(TenantAdAccount.is_enabled == True)
@@ -424,20 +394,15 @@ async def list_ad_accounts(
 @router.post("/ad-accounts/{platform}/sync")
 async def sync_ad_accounts(
     request: Request,
-    tenant_id: int,
     platform: AdPlatform,
     background_tasks: BackgroundTasks,
     db: AsyncSession = Depends(get_async_session),
 ):
     """Trigger ad accounts sync from platform."""
-    if getattr(request.state, "tenant_id", None) != tenant_id:
-        raise HTTPException(status_code=403, detail="Access denied to this tenant")
-
     # Check connection exists and is connected
     result = await db.execute(
         select(TenantPlatformConnection).where(
             and_(
-                TenantPlatformConnection.tenant_id == tenant_id,
                 TenantPlatformConnection.platform == platform,
                 TenantPlatformConnection.status == ConnectionStatus.CONNECTED,
             )
@@ -451,7 +416,7 @@ async def sync_ad_accounts(
         )
 
     # In production, trigger Celery task
-    # background_tasks.add_task(sync_ad_accounts_task, tenant_id, platform)
+    # background_tasks.add_task(sync_ad_accounts_task, platform)
 
     return APIResponse(
         success=True,
@@ -465,23 +430,14 @@ async def sync_ad_accounts(
 )
 async def update_ad_account(
     request: Request,
-    tenant_id: int,
     platform: AdPlatform,
     ad_account_id: UUID,
     update_data: AdAccountUpdateRequest,
     db: AsyncSession = Depends(get_async_session),
 ):
     """Update ad account settings (enable/disable, budget cap)."""
-    if getattr(request.state, "tenant_id", None) != tenant_id:
-        raise HTTPException(status_code=403, detail="Access denied to this tenant")
-
     result = await db.execute(
-        select(TenantAdAccount).where(
-            and_(
-                TenantAdAccount.id == ad_account_id,
-                TenantAdAccount.tenant_id == tenant_id,
-            )
-        )
+        select(TenantAdAccount).where(TenantAdAccount.id == ad_account_id)
     )
     account = result.scalar_one_or_none()
 
@@ -510,14 +466,10 @@ async def update_ad_account(
 @router.post("/campaign-drafts", response_model=APIResponse[CampaignDraftResponse])
 async def create_campaign_draft(
     request: Request,
-    tenant_id: int,
     draft_data: CampaignDraftCreate,
     db: AsyncSession = Depends(get_async_session),
 ):
     """Create a new campaign draft."""
-    if getattr(request.state, "tenant_id", None) != tenant_id:
-        raise HTTPException(status_code=403, detail="Access denied to this tenant")
-
     user_id = getattr(request.state, "user_id", None)
 
     # Validate ad account exists and is enabled
@@ -525,7 +477,6 @@ async def create_campaign_draft(
         select(TenantAdAccount).where(
             and_(
                 TenantAdAccount.id == draft_data.ad_account_id,
-                TenantAdAccount.tenant_id == tenant_id,
                 TenantAdAccount.is_enabled == True,
             )
         )
@@ -538,7 +489,6 @@ async def create_campaign_draft(
         )
 
     draft = CampaignDraft(
-        tenant_id=tenant_id,
         platform=AdPlatform(draft_data.platform),
         ad_account_id=draft_data.ad_account_id,
         name=draft_data.name,
@@ -561,7 +511,6 @@ async def create_campaign_draft(
 @router.get("/campaign-drafts", response_model=APIResponse[List[CampaignDraftResponse]])
 async def list_campaign_drafts(
     request: Request,
-    tenant_id: int,
     platform: Optional[AdPlatform] = None,
     status: Optional[DraftStatus] = None,
     ad_account_id: Optional[UUID] = None,
@@ -570,10 +519,7 @@ async def list_campaign_drafts(
     db: AsyncSession = Depends(get_async_session),
 ):
     """List campaign drafts with optional filters."""
-    if getattr(request.state, "tenant_id", None) != tenant_id:
-        raise HTTPException(status_code=403, detail="Access denied to this tenant")
-
-    query = select(CampaignDraft).where(CampaignDraft.tenant_id == tenant_id)
+    query = select(CampaignDraft)
 
     if platform:
         query = query.where(CampaignDraft.platform == platform)
@@ -598,22 +544,11 @@ async def list_campaign_drafts(
 )
 async def get_campaign_draft(
     request: Request,
-    tenant_id: int,
     draft_id: UUID,
     db: AsyncSession = Depends(get_async_session),
 ):
     """Get a specific campaign draft."""
-    if getattr(request.state, "tenant_id", None) != tenant_id:
-        raise HTTPException(status_code=403, detail="Access denied to this tenant")
-
-    result = await db.execute(
-        select(CampaignDraft).where(
-            and_(
-                CampaignDraft.id == draft_id,
-                CampaignDraft.tenant_id == tenant_id,
-            )
-        )
-    )
+    result = await db.execute(select(CampaignDraft).where(CampaignDraft.id == draft_id))
     draft = result.scalar_one_or_none()
 
     if not draft:
@@ -630,23 +565,12 @@ async def get_campaign_draft(
 )
 async def update_campaign_draft(
     request: Request,
-    tenant_id: int,
     draft_id: UUID,
     update_data: CampaignDraftUpdate,
     db: AsyncSession = Depends(get_async_session),
 ):
     """Update a campaign draft (only allowed in draft status)."""
-    if getattr(request.state, "tenant_id", None) != tenant_id:
-        raise HTTPException(status_code=403, detail="Access denied to this tenant")
-
-    result = await db.execute(
-        select(CampaignDraft).where(
-            and_(
-                CampaignDraft.id == draft_id,
-                CampaignDraft.tenant_id == tenant_id,
-            )
-        )
-    )
+    result = await db.execute(select(CampaignDraft).where(CampaignDraft.id == draft_id))
     draft = result.scalar_one_or_none()
 
     if not draft:
@@ -685,24 +609,13 @@ async def update_campaign_draft(
 )
 async def submit_campaign_draft(
     request: Request,
-    tenant_id: int,
     draft_id: UUID,
     db: AsyncSession = Depends(get_async_session),
 ):
     """Submit draft for approval."""
-    if getattr(request.state, "tenant_id", None) != tenant_id:
-        raise HTTPException(status_code=403, detail="Access denied to this tenant")
-
     user_id = getattr(request.state, "user_id", None)
 
-    result = await db.execute(
-        select(CampaignDraft).where(
-            and_(
-                CampaignDraft.id == draft_id,
-                CampaignDraft.tenant_id == tenant_id,
-            )
-        )
-    )
+    result = await db.execute(select(CampaignDraft).where(CampaignDraft.id == draft_id))
     draft = result.scalar_one_or_none()
 
     if not draft:
@@ -733,24 +646,13 @@ async def submit_campaign_draft(
 )
 async def approve_campaign_draft(
     request: Request,
-    tenant_id: int,
     draft_id: UUID,
     db: AsyncSession = Depends(get_async_session),
 ):
     """Approve a submitted draft (requires CAMPAIGN_APPROVE permission)."""
-    if getattr(request.state, "tenant_id", None) != tenant_id:
-        raise HTTPException(status_code=403, detail="Access denied to this tenant")
-
     user_id = getattr(request.state, "user_id", None)
 
-    result = await db.execute(
-        select(CampaignDraft).where(
-            and_(
-                CampaignDraft.id == draft_id,
-                CampaignDraft.tenant_id == tenant_id,
-            )
-        )
-    )
+    result = await db.execute(select(CampaignDraft).where(CampaignDraft.id == draft_id))
     draft = result.scalar_one_or_none()
 
     if not draft:
@@ -781,25 +683,14 @@ async def approve_campaign_draft(
 )
 async def reject_campaign_draft(
     request: Request,
-    tenant_id: int,
     draft_id: UUID,
     reason: str = Query(..., min_length=1),
     db: AsyncSession = Depends(get_async_session),
 ):
     """Reject a submitted draft."""
-    if getattr(request.state, "tenant_id", None) != tenant_id:
-        raise HTTPException(status_code=403, detail="Access denied to this tenant")
-
     user_id = getattr(request.state, "user_id", None)
 
-    result = await db.execute(
-        select(CampaignDraft).where(
-            and_(
-                CampaignDraft.id == draft_id,
-                CampaignDraft.tenant_id == tenant_id,
-            )
-        )
-    )
+    result = await db.execute(select(CampaignDraft).where(CampaignDraft.id == draft_id))
     draft = result.scalar_one_or_none()
 
     if not draft:
@@ -832,26 +723,17 @@ async def reject_campaign_draft(
 )
 async def publish_campaign_draft(
     request: Request,
-    tenant_id: int,
     draft_id: UUID,
     background_tasks: BackgroundTasks,
     db: AsyncSession = Depends(get_async_session),
 ):
     """Publish an approved campaign draft to the platform."""
-    if getattr(request.state, "tenant_id", None) != tenant_id:
-        raise HTTPException(status_code=403, detail="Access denied to this tenant")
-
     user_id = getattr(request.state, "user_id", None)
 
     result = await db.execute(
         select(CampaignDraft)
         .options(selectinload(CampaignDraft.ad_account))
-        .where(
-            and_(
-                CampaignDraft.id == draft_id,
-                CampaignDraft.tenant_id == tenant_id,
-            )
-        )
+        .where(CampaignDraft.id == draft_id)
     )
     draft = result.scalar_one_or_none()
 
@@ -881,7 +763,6 @@ async def publish_campaign_draft(
 
     # Create publish log entry
     publish_log = CampaignPublishLog(
-        tenant_id=tenant_id,
         draft_id=draft_id,
         platform=draft.platform,
         platform_account_id=(
@@ -920,7 +801,6 @@ async def publish_campaign_draft(
 )
 async def list_publish_logs(
     request: Request,
-    tenant_id: int,
     draft_id: Optional[UUID] = None,
     platform: Optional[AdPlatform] = None,
     result_status: Optional[PublishResult] = None,
@@ -929,10 +809,7 @@ async def list_publish_logs(
     db: AsyncSession = Depends(get_async_session),
 ):
     """List publish logs with optional filters."""
-    if getattr(request.state, "tenant_id", None) != tenant_id:
-        raise HTTPException(status_code=403, detail="Access denied to this tenant")
-
-    query = select(CampaignPublishLog).where(CampaignPublishLog.tenant_id == tenant_id)
+    query = select(CampaignPublishLog)
 
     if draft_id:
         query = query.where(CampaignPublishLog.draft_id == draft_id)
@@ -957,22 +834,13 @@ async def list_publish_logs(
 @router.post("/campaign-publish-logs/{log_id}/retry")
 async def retry_publish(
     request: Request,
-    tenant_id: int,
     log_id: UUID,
     background_tasks: BackgroundTasks,
     db: AsyncSession = Depends(get_async_session),
 ):
     """Retry a failed publish attempt."""
-    if getattr(request.state, "tenant_id", None) != tenant_id:
-        raise HTTPException(status_code=403, detail="Access denied to this tenant")
-
     result = await db.execute(
-        select(CampaignPublishLog).where(
-            and_(
-                CampaignPublishLog.id == log_id,
-                CampaignPublishLog.tenant_id == tenant_id,
-            )
-        )
+        select(CampaignPublishLog).where(CampaignPublishLog.id == log_id)
     )
     log = result.scalar_one_or_none()
 

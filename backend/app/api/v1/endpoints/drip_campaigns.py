@@ -20,6 +20,7 @@ from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.config import settings
+from app.auth.deps import get_current_user
 from app.core.logging import get_logger
 from app.db.session import get_async_session
 from app.models.drip import DripExecutionRecord, DripSequence
@@ -47,7 +48,9 @@ async def require_drip_enabled() -> None:
 router = APIRouter(
     prefix="/drip-campaigns",
     tags=["Drip Campaigns"],
-    dependencies=[Depends(require_drip_enabled)],
+    # SECURITY (STRAT-SC-001/C3): the old per-org guards this router relied
+    # on were deleted in the de-tenanting sweep; real auth now enforced here.
+    dependencies=[Depends(require_drip_enabled), Depends(get_current_user)],
 )
 
 
@@ -214,24 +217,13 @@ def _serialize_log(log: DripExecutionRecord) -> DripExecutionLog:
     )
 
 
-def _require_tenant(req: Request) -> int:
-    """Return the request tenant_id or raise 401 if absent."""
-    tenant_id = getattr(req.state, "tenant_id", None)
-    if not tenant_id:
-        raise HTTPException(
-            status_code=status.HTTP_401_UNAUTHORIZED, detail="Tenant required"
-        )
-    return tenant_id
-
-
 async def _get_sequence(
-    db: AsyncSession, tenant_id: int, sequence_id: str
+    db: AsyncSession, sequence_id: str
 ) -> Optional[DripSequence]:
-    """Fetch a tenant-scoped sequence by id (None if not found)."""
+    """Fetch a sequence by id (None if not found)."""
     result = await db.execute(
         select(DripSequence).where(
             DripSequence.id == sequence_id,
-            DripSequence.tenant_id == tenant_id,
         )
     )
     return result.scalar_one_or_none()
@@ -248,10 +240,8 @@ async def list_drip_sequences(
     db: AsyncSession = Depends(get_async_session),
     status_filter: Optional[str] = Query(None),
 ):
-    """List all drip sequences for the tenant."""
-    tenant_id = _require_tenant(req)
-
-    stmt = select(DripSequence).where(DripSequence.tenant_id == tenant_id)
+    """List all drip sequences."""
+    stmt = select(DripSequence)
     if status_filter:
         stmt = stmt.where(DripSequence.status == status_filter)
     stmt = stmt.order_by(DripSequence.created_at.desc())
@@ -276,11 +266,9 @@ async def create_drip_sequence(
     (connections with labels like 'yes'/'no'). We store the graph and
     compile it to an execution plan.
     """
-    tenant_id = _require_tenant(req)
     user_id = getattr(req.state, "user_id", None)
 
     sequence = DripSequence(
-        tenant_id=tenant_id,
         name=request.name,
         description=request.description or "",
         trigger_type=request.trigger_type.value,
@@ -296,7 +284,6 @@ async def create_drip_sequence(
 
     logger.info(
         "drip_sequence_created",
-        tenant_id=tenant_id,
         sequence_id=sequence.id,
         name=sequence.name,
     )
@@ -313,9 +300,7 @@ async def get_drip_sequence(
     db: AsyncSession = Depends(get_async_session),
 ):
     """Get a single drip sequence with its full flow graph."""
-    tenant_id = _require_tenant(req)
-
-    sequence = await _get_sequence(db, tenant_id, sequence_id)
+    sequence = await _get_sequence(db, sequence_id)
     if not sequence:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND, detail="Sequence not found"
@@ -334,9 +319,7 @@ async def update_drip_sequence(
     db: AsyncSession = Depends(get_async_session),
 ):
     """Update a drip sequence — save changes from the flow builder."""
-    tenant_id = _require_tenant(req)
-
-    sequence = await _get_sequence(db, tenant_id, sequence_id)
+    sequence = await _get_sequence(db, sequence_id)
     if not sequence:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND, detail="Sequence not found"
@@ -365,9 +348,7 @@ async def activate_sequence(
     db: AsyncSession = Depends(get_async_session),
 ):
     """Activate a sequence — start watching for triggers."""
-    tenant_id = _require_tenant(req)
-
-    sequence = await _get_sequence(db, tenant_id, sequence_id)
+    sequence = await _get_sequence(db, sequence_id)
     if not sequence:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND, detail="Sequence not found"
@@ -390,9 +371,7 @@ async def pause_sequence(
     db: AsyncSession = Depends(get_async_session),
 ):
     """Pause a sequence — no new entries, existing continue."""
-    tenant_id = _require_tenant(req)
-
-    sequence = await _get_sequence(db, tenant_id, sequence_id)
+    sequence = await _get_sequence(db, sequence_id)
     if not sequence:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND, detail="Sequence not found"
@@ -415,9 +394,7 @@ async def delete_sequence(
     db: AsyncSession = Depends(get_async_session),
 ):
     """Archive a sequence (soft delete)."""
-    tenant_id = _require_tenant(req)
-
-    sequence = await _get_sequence(db, tenant_id, sequence_id)
+    sequence = await _get_sequence(db, sequence_id)
     if not sequence:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND, detail="Sequence not found"
@@ -441,9 +418,7 @@ async def manual_trigger(
     db: AsyncSession = Depends(get_async_session),
 ):
     """Manually trigger a sequence for a specific recipient (testing)."""
-    tenant_id = _require_tenant(req)
-
-    sequence = await _get_sequence(db, tenant_id, sequence_id)
+    sequence = await _get_sequence(db, sequence_id)
     if not sequence:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND, detail="Sequence not found"
@@ -451,7 +426,6 @@ async def manual_trigger(
 
     # Record a simulated trigger send.
     log_entry = DripExecutionRecord(
-        tenant_id=tenant_id,
         sequence_id=sequence_id,
         recipient_email=recipient_email,
         step_number=0,
@@ -484,13 +458,10 @@ async def get_execution_logs(
     page_size: int = Query(50, ge=1, le=200),
 ):
     """Get execution logs for a sequence."""
-    tenant_id = _require_tenant(req)
-
     result = await db.execute(
         select(DripExecutionRecord)
         .where(
             DripExecutionRecord.sequence_id == sequence_id,
-            DripExecutionRecord.tenant_id == tenant_id,
         )
         .order_by(DripExecutionRecord.sent_at.desc().nullslast())
     )
@@ -511,9 +482,7 @@ async def get_drip_analytics(
     db: AsyncSession = Depends(get_async_session),
 ):
     """Get aggregated analytics for a drip sequence."""
-    tenant_id = _require_tenant(req)
-
-    sequence = await _get_sequence(db, tenant_id, sequence_id)
+    sequence = await _get_sequence(db, sequence_id)
     if not sequence:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND, detail="Sequence not found"
@@ -522,7 +491,6 @@ async def get_drip_analytics(
     result = await db.execute(
         select(DripExecutionRecord).where(
             DripExecutionRecord.sequence_id == sequence_id,
-            DripExecutionRecord.tenant_id == tenant_id,
         )
     )
     logs = result.scalars().all()
@@ -585,8 +553,6 @@ async def get_prebuilt_templates(
     db: AsyncSession = Depends(get_async_session),
 ):
     """Get pre-built drip sequence templates users can clone."""
-    _require_tenant(req)
-
     templates = [
         {
             "id": "tpl_welcome",

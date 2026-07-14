@@ -75,17 +75,6 @@ def get_security_service() -> EmbedSecurityService:
     return EmbedSecurityService(settings.embed_signing_key)
 
 
-def get_tenant_id(request: Request) -> int:
-    """Extract tenant_id from request state (set by tenant middleware)."""
-    tenant_id = getattr(request.state, "tenant_id", None)
-    if tenant_id is None:
-        raise HTTPException(
-            status_code=status.HTTP_401_UNAUTHORIZED,
-            detail="Tenant context not found. Authenticate first.",
-        )
-    return int(tenant_id)
-
-
 # =============================================================================
 # Widget Endpoints
 # =============================================================================
@@ -96,11 +85,10 @@ def get_tenant_id(request: Request) -> int:
 )
 async def create_widget(
     data: WidgetCreate,
-    tenant_id: int = Depends(get_tenant_id),
     service: EmbedWidgetService = Depends(get_widget_service),
 ):
     """Create a new embed widget."""
-    widget = await service.create_widget(tenant_id, data)
+    widget = await service.create_widget(data)
     return widget
 
 
@@ -108,22 +96,20 @@ async def create_widget(
 async def list_widgets(
     widget_type: Optional[WidgetTypeEnum] = None,
     is_active: Optional[bool] = None,
-    tenant_id: int = Depends(get_tenant_id),
     service: EmbedWidgetService = Depends(get_widget_service),
 ):
     """List all widgets for the current tenant."""
-    widgets = await service.list_widgets(tenant_id, widget_type, is_active)
+    widgets = await service.list_widgets(widget_type, is_active)
     return widgets
 
 
 @router.get("/widgets/{widget_id}", response_model=WidgetResponse)
 async def get_widget(
     widget_id: UUID,
-    tenant_id: int = Depends(get_tenant_id),
     service: EmbedWidgetService = Depends(get_widget_service),
 ):
     """Get a specific widget by ID."""
-    widget = await service.get_widget(tenant_id, widget_id)
+    widget = await service.get_widget(widget_id)
     if not widget:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND, detail="Widget not found"
@@ -135,22 +121,20 @@ async def get_widget(
 async def update_widget(
     widget_id: UUID,
     data: WidgetUpdate,
-    tenant_id: int = Depends(get_tenant_id),
     service: EmbedWidgetService = Depends(get_widget_service),
 ):
     """Update an existing widget."""
-    widget = await service.update_widget(tenant_id, widget_id, data)
+    widget = await service.update_widget(widget_id, data)
     return widget
 
 
 @router.delete("/widgets/{widget_id}", status_code=status.HTTP_204_NO_CONTENT)
 async def delete_widget(
     widget_id: UUID,
-    tenant_id: int = Depends(get_tenant_id),
     service: EmbedWidgetService = Depends(get_widget_service),
 ):
     """Delete a widget and all associated tokens."""
-    await service.delete_widget(tenant_id, widget_id)
+    await service.delete_widget(widget_id)
 
 
 # =============================================================================
@@ -166,7 +150,6 @@ async def delete_widget(
 async def create_token(
     widget_id: UUID,
     data: TokenCreate,
-    tenant_id: int = Depends(get_tenant_id),
     service: EmbedTokenService = Depends(get_token_service),
 ):
     """
@@ -176,7 +159,6 @@ async def create_token(
     Store it securely - it cannot be retrieved again.
     """
     token, plaintext_token, refresh_token = await service.create_token(
-        tenant_id=tenant_id,
         widget_id=widget_id,
         allowed_domains=data.allowed_domains,
         expires_in_days=data.expires_in_days,
@@ -196,7 +178,6 @@ async def create_token(
 @router.get("/widgets/{widget_id}/tokens", response_model=list[TokenResponse])
 async def list_tokens(
     widget_id: UUID,
-    tenant_id: int = Depends(get_tenant_id),
     db: AsyncSession = Depends(get_db),
 ):
     """List all tokens for a widget (without actual token values)."""
@@ -204,7 +185,6 @@ async def list_tokens(
         select(EmbedToken)
         .where(
             EmbedToken.widget_id == widget_id,
-            EmbedToken.tenant_id == tenant_id,
         )
         .order_by(EmbedToken.created_at.desc())
         .limit(1000)
@@ -239,11 +219,10 @@ async def refresh_token(
 @router.delete("/tokens/{token_id}", status_code=status.HTTP_204_NO_CONTENT)
 async def revoke_token(
     token_id: UUID,
-    tenant_id: int = Depends(get_tenant_id),
     service: EmbedTokenService = Depends(get_token_service),
 ):
     """Revoke an embed token."""
-    await service.revoke_token(tenant_id, token_id)
+    await service.revoke_token(token_id)
 
 
 # =============================================================================
@@ -258,7 +237,6 @@ async def revoke_token(
 )
 async def add_domain(
     data: DomainWhitelistCreate,
-    tenant_id: int = Depends(get_tenant_id),
     service: EmbedWidgetService = Depends(get_widget_service),
 ):
     """
@@ -268,7 +246,6 @@ async def add_domain(
     Supports wildcards like *.example.com
     """
     domain = await service.add_domain_to_whitelist(
-        tenant_id=tenant_id,
         domain_pattern=data.domain_pattern,
         description=data.description,
     )
@@ -277,22 +254,20 @@ async def add_domain(
 
 @router.get("/domains", response_model=list[DomainWhitelistResponse])
 async def list_domains(
-    tenant_id: int = Depends(get_tenant_id),
     service: EmbedWidgetService = Depends(get_widget_service),
 ):
     """List all whitelisted domains."""
-    domains = await service.list_whitelisted_domains(tenant_id)
+    domains = await service.list_whitelisted_domains()
     return domains
 
 
 @router.delete("/domains/{domain_id}", status_code=status.HTTP_204_NO_CONTENT)
 async def remove_domain(
     domain_id: UUID,
-    tenant_id: int = Depends(get_tenant_id),
     service: EmbedWidgetService = Depends(get_widget_service),
 ):
     """Remove a domain from the whitelist."""
-    await service.remove_domain_from_whitelist(tenant_id, domain_id)
+    await service.remove_domain_from_whitelist(domain_id)
 
 
 # =============================================================================
@@ -304,7 +279,6 @@ async def remove_domain(
 async def get_embed_code(
     widget_id: UUID,
     token_id: UUID = Query(..., description="Token ID to use for the embed"),
-    tenant_id: int = Depends(get_tenant_id),
     service: EmbedWidgetService = Depends(get_widget_service),
     db: AsyncSession = Depends(get_db),
 ):
@@ -313,7 +287,7 @@ async def get_embed_code(
 
     Returns both iframe and script embed options.
     """
-    widget = await service.get_widget(tenant_id, widget_id)
+    widget = await service.get_widget(widget_id)
     if not widget:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND, detail="Widget not found"
@@ -428,12 +402,10 @@ async def _get_widget_data(widget: EmbedWidget, db: AsyncSession) -> dict:
     Returns empty/minimal responses when no data is available.
     """
     widget_type = widget.widget_type
-    tenant_id = widget.tenant_id
 
-    # Fetch active campaigns for the tenant
+    # Fetch active campaigns
     result = await db.execute(
         select(Campaign).where(
-            Campaign.tenant_id == tenant_id,
             Campaign.status == "active",
         )
     )

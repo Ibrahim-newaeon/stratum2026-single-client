@@ -53,7 +53,6 @@ def _mock_db():
 def _entry(**overrides) -> DeliveryLogEntry:
     base = dict(
         id=str(uuid4()),
-        tenant_id=7,
         platform="meta",
         event_id="e1",
         event_name="Purchase",
@@ -151,7 +150,6 @@ async def test_none_event_value_maps_to_null_cents():
 def _history_row(**overrides):
     base = dict(
         id=uuid4(),
-        tenant_id=7,
         platform="meta",
         event_id="e1",
         event_name="Purchase",
@@ -183,7 +181,6 @@ async def test_get_delivery_history_maps_rows_to_entries():
 
     with patch(_MODULE, new=_fake_session_factory(db)):
         entries = await DeliveryLogger().get_delivery_history(
-            tenant_id=7,
             platform="meta",
             event_name="Purchase",
             status=DeliveryStatus.SUCCESS,
@@ -205,7 +202,7 @@ async def test_get_delivery_history_returns_empty_on_db_error():
     db = _mock_db()
     db.execute = AsyncMock(side_effect=SQLAlchemyError("boom"))
     with patch(_MODULE, new=_fake_session_factory(db)):
-        entries = await DeliveryLogger().get_delivery_history(tenant_id=7)
+        entries = await DeliveryLogger().get_delivery_history()
     assert entries == []
 
 
@@ -237,7 +234,7 @@ async def test_get_metrics_aggregates_counts_percentiles_and_breakdowns():
     db.execute = AsyncMock(side_effect=[totals, latencies, by_platform, by_event])
 
     with patch(_MODULE, new=_fake_session_factory(db)):
-        metrics = await DeliveryLogger().get_metrics(tenant_id=7)
+        metrics = await DeliveryLogger().get_metrics()
 
     assert metrics.total_events == 200
     assert metrics.successful == 180
@@ -263,7 +260,6 @@ async def test_get_metrics_zero_events_leaves_defaults():
 
     with patch(_MODULE, new=_fake_session_factory(db)):
         metrics = await DeliveryLogger().get_metrics(
-            tenant_id=7,
             start_time=_NOW - timedelta(hours=1),
             end_time=_NOW,
         )
@@ -278,7 +274,7 @@ async def test_get_metrics_returns_defaults_on_db_error():
     db = _mock_db()
     db.execute = AsyncMock(side_effect=SQLAlchemyError("boom"))
     with patch(_MODULE, new=_fake_session_factory(db)):
-        metrics = await DeliveryLogger().get_metrics(tenant_id=7)
+        metrics = await DeliveryLogger().get_metrics()
     assert isinstance(metrics, DeliveryMetrics)
     assert metrics.total_events == 0
 

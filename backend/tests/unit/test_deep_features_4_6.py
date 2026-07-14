@@ -3,7 +3,7 @@
 # =============================================================================
 """
 Deep endpoint tests for:
-  Feature 4 - Campaign Builder  (prefix /api/v1/campaign-builder/tenant/{tenant_id}/...)
+  Feature 4 - Campaign Builder  (prefix /api/v1/campaign-builder/...)
   Feature 5 - Audience Sync     (prefix /api/v1/cdp/audience-sync/...)
   Feature 6 - Authentication    (prefix /api/v1/auth/... and /api/v1/mfa/...)
 
@@ -31,7 +31,7 @@ from tests.unit.conftest import (
 # ---------------------------------------------------------------------------
 # Constants
 # ---------------------------------------------------------------------------
-CAMPAIGN_BUILDER_PREFIX = "/api/v1/campaign-builder/tenant"
+CAMPAIGN_BUILDER_PREFIX = "/api/v1/campaign-builder"
 AUDIENCE_SYNC_PREFIX = "/api/v1/cdp/audience-sync"
 AUTH_PREFIX = "/api/v1/auth"
 MFA_PREFIX = "/api/v1/mfa"
@@ -156,24 +156,6 @@ def _mock_user(*, user_id=1, tenant_id=1, role_value="admin"):
 class TestCampaignBuilderConnectors:
     """Tests for campaign builder connector (OAuth) endpoints."""
 
-    # ---- No auth -> 401 ----
-
-    @pytest.mark.asyncio
-    async def test_get_connector_status_no_auth(self, api_client):
-        """GET connector status without JWT returns 401."""
-        r = await api_client.get(f"{CAMPAIGN_BUILDER_PREFIX}/1/connect/meta/status")
-        assert r.status_code == 401
-
-    # ---- Wrong tenant -> 403 ----
-
-    @pytest.mark.asyncio
-    async def test_get_connector_status_wrong_tenant(self, api_client, tenant2_headers):
-        """GET connector status for tenant 1 with tenant-2 token returns 403."""
-        r = await api_client.get(
-            f"{CAMPAIGN_BUILDER_PREFIX}/1/connect/meta/status",
-            headers=tenant2_headers,
-        )
-        assert r.status_code == 403
 
     # ---- Happy path: status (no connection) ----
 
@@ -184,7 +166,7 @@ class TestCampaignBuilderConnectors:
         """GET connector status returns disconnected when no connection exists."""
         # Default mock_db.execute returns None for scalar_one_or_none
         r = await api_client.get(
-            f"{CAMPAIGN_BUILDER_PREFIX}/1/connect/meta/status",
+            f"{CAMPAIGN_BUILDER_PREFIX}/connect/meta/status",
             headers=admin_headers,
         )
         assert r.status_code == 200
@@ -203,7 +185,7 @@ class TestCampaignBuilderConnectors:
         conn = _mock_connection()
         mock_db.execute.return_value = make_scalar_result(conn)
         r = await api_client.get(
-            f"{CAMPAIGN_BUILDER_PREFIX}/1/connect/meta/status",
+            f"{CAMPAIGN_BUILDER_PREFIX}/connect/meta/status",
             headers=admin_headers,
         )
         assert r.status_code == 200
@@ -219,7 +201,7 @@ class TestCampaignBuilderConnectors:
     ):
         """DELETE disconnect returns 404 when platform is not connected."""
         r = await api_client.delete(
-            f"{CAMPAIGN_BUILDER_PREFIX}/1/connect/meta",
+            f"{CAMPAIGN_BUILDER_PREFIX}/connect/meta",
             headers=admin_headers,
         )
         assert r.status_code == 404
@@ -234,7 +216,7 @@ class TestCampaignBuilderConnectors:
         conn = _mock_connection()
         mock_db.execute.return_value = make_scalar_result(conn)
         r = await api_client.delete(
-            f"{CAMPAIGN_BUILDER_PREFIX}/1/connect/meta",
+            f"{CAMPAIGN_BUILDER_PREFIX}/connect/meta",
             headers=admin_headers,
         )
         assert r.status_code == 200
@@ -248,7 +230,7 @@ class TestCampaignBuilderConnectors:
     ):
         """GET connector status with invalid platform returns 422."""
         r = await api_client.get(
-            f"{CAMPAIGN_BUILDER_PREFIX}/1/connect/invalid_platform/status",
+            f"{CAMPAIGN_BUILDER_PREFIX}/connect/invalid_platform/status",
             headers=admin_headers,
         )
         assert r.status_code == 422
@@ -258,25 +240,10 @@ class TestCampaignBuilderAdAccounts:
     """Tests for ad account endpoints."""
 
     @pytest.mark.asyncio
-    async def test_list_ad_accounts_no_auth(self, api_client):
-        """GET ad accounts without JWT returns 401."""
-        r = await api_client.get(f"{CAMPAIGN_BUILDER_PREFIX}/1/ad-accounts/meta")
-        assert r.status_code == 401
-
-    @pytest.mark.asyncio
-    async def test_list_ad_accounts_wrong_tenant(self, api_client, tenant2_headers):
-        """GET ad accounts for tenant 1 with tenant-2 token returns 403."""
-        r = await api_client.get(
-            f"{CAMPAIGN_BUILDER_PREFIX}/1/ad-accounts/meta",
-            headers=tenant2_headers,
-        )
-        assert r.status_code == 403
-
-    @pytest.mark.asyncio
     async def test_list_ad_accounts_empty(self, api_client, admin_headers, mock_db):
         """GET ad accounts returns empty list when none exist."""
         r = await api_client.get(
-            f"{CAMPAIGN_BUILDER_PREFIX}/1/ad-accounts/meta",
+            f"{CAMPAIGN_BUILDER_PREFIX}/ad-accounts/meta",
             headers=admin_headers,
         )
         assert r.status_code == 200
@@ -290,7 +257,7 @@ class TestCampaignBuilderAdAccounts:
     ):
         """POST sync returns 400 when platform not connected."""
         r = await api_client.post(
-            f"{CAMPAIGN_BUILDER_PREFIX}/1/ad-accounts/meta/sync",
+            f"{CAMPAIGN_BUILDER_PREFIX}/ad-accounts/meta/sync",
             headers=admin_headers,
         )
         assert r.status_code == 400
@@ -301,7 +268,7 @@ class TestCampaignBuilderAdAccounts:
         conn = _mock_connection()
         mock_db.execute.return_value = make_scalar_result(conn)
         r = await api_client.post(
-            f"{CAMPAIGN_BUILDER_PREFIX}/1/ad-accounts/meta/sync",
+            f"{CAMPAIGN_BUILDER_PREFIX}/ad-accounts/meta/sync",
             headers=admin_headers,
         )
         assert r.status_code == 200
@@ -313,7 +280,7 @@ class TestCampaignBuilderAdAccounts:
     ):
         """PUT update returns 404 when ad account not found."""
         r = await api_client.put(
-            f"{CAMPAIGN_BUILDER_PREFIX}/1/ad-accounts/meta/{FAKE_UUID}",
+            f"{CAMPAIGN_BUILDER_PREFIX}/ad-accounts/meta/{FAKE_UUID}",
             headers=admin_headers,
             json={"is_enabled": False},
         )
@@ -324,25 +291,10 @@ class TestCampaignBuilderDrafts:
     """Tests for campaign draft CRUD and workflow endpoints."""
 
     @pytest.mark.asyncio
-    async def test_list_drafts_no_auth(self, api_client):
-        """GET campaign drafts without JWT returns 401."""
-        r = await api_client.get(f"{CAMPAIGN_BUILDER_PREFIX}/1/campaign-drafts")
-        assert r.status_code == 401
-
-    @pytest.mark.asyncio
-    async def test_list_drafts_wrong_tenant(self, api_client, tenant2_headers):
-        """GET campaign drafts for tenant 1 with tenant-2 token returns 403."""
-        r = await api_client.get(
-            f"{CAMPAIGN_BUILDER_PREFIX}/1/campaign-drafts",
-            headers=tenant2_headers,
-        )
-        assert r.status_code == 403
-
-    @pytest.mark.asyncio
     async def test_list_drafts_empty(self, api_client, admin_headers, mock_db):
         """GET campaign drafts returns empty list when none exist."""
         r = await api_client.get(
-            f"{CAMPAIGN_BUILDER_PREFIX}/1/campaign-drafts",
+            f"{CAMPAIGN_BUILDER_PREFIX}/campaign-drafts",
             headers=admin_headers,
         )
         assert r.status_code == 200
@@ -354,7 +306,7 @@ class TestCampaignBuilderDrafts:
     ):
         """POST create draft returns 400 when ad account not found/enabled."""
         r = await api_client.post(
-            f"{CAMPAIGN_BUILDER_PREFIX}/1/campaign-drafts",
+            f"{CAMPAIGN_BUILDER_PREFIX}/campaign-drafts",
             headers=admin_headers,
             json={
                 "platform": "meta",
@@ -369,7 +321,7 @@ class TestCampaignBuilderDrafts:
     async def test_create_draft_validation_error(self, api_client, admin_headers):
         """POST create draft with missing fields returns 422."""
         r = await api_client.post(
-            f"{CAMPAIGN_BUILDER_PREFIX}/1/campaign-drafts",
+            f"{CAMPAIGN_BUILDER_PREFIX}/campaign-drafts",
             headers=admin_headers,
             json={"platform": "meta"},  # Missing required fields
         )
@@ -379,7 +331,7 @@ class TestCampaignBuilderDrafts:
     async def test_get_draft_not_found(self, api_client, admin_headers, mock_db):
         """GET single draft returns 404 when not found."""
         r = await api_client.get(
-            f"{CAMPAIGN_BUILDER_PREFIX}/1/campaign-drafts/{FAKE_UUID}",
+            f"{CAMPAIGN_BUILDER_PREFIX}/campaign-drafts/{FAKE_UUID}",
             headers=admin_headers,
         )
         assert r.status_code == 404
@@ -388,7 +340,7 @@ class TestCampaignBuilderDrafts:
     async def test_submit_draft_not_found(self, api_client, admin_headers, mock_db):
         """POST submit draft returns 404 when draft not found."""
         r = await api_client.post(
-            f"{CAMPAIGN_BUILDER_PREFIX}/1/campaign-drafts/{FAKE_UUID}/submit",
+            f"{CAMPAIGN_BUILDER_PREFIX}/campaign-drafts/{FAKE_UUID}/submit",
             headers=admin_headers,
         )
         assert r.status_code == 404
@@ -399,7 +351,7 @@ class TestCampaignBuilderDrafts:
         draft = _mock_campaign_draft(status="submitted")
         mock_db.execute.return_value = make_scalar_result(draft)
         r = await api_client.post(
-            f"{CAMPAIGN_BUILDER_PREFIX}/1/campaign-drafts/{FAKE_UUID}/submit",
+            f"{CAMPAIGN_BUILDER_PREFIX}/campaign-drafts/{FAKE_UUID}/submit",
             headers=admin_headers,
         )
         assert r.status_code == 400
@@ -412,7 +364,7 @@ class TestCampaignBuilderDrafts:
         draft = _mock_campaign_draft(status="draft")
         mock_db.execute.return_value = make_scalar_result(draft)
         r = await api_client.post(
-            f"{CAMPAIGN_BUILDER_PREFIX}/1/campaign-drafts/{FAKE_UUID}/approve",
+            f"{CAMPAIGN_BUILDER_PREFIX}/campaign-drafts/{FAKE_UUID}/approve",
             headers=admin_headers,
         )
         assert r.status_code == 400
@@ -426,7 +378,7 @@ class TestCampaignBuilderDrafts:
         mock_db.execute.return_value = make_scalar_result(draft)
         # No reason query param -> 422
         r = await api_client.post(
-            f"{CAMPAIGN_BUILDER_PREFIX}/1/campaign-drafts/{FAKE_UUID}/reject",
+            f"{CAMPAIGN_BUILDER_PREFIX}/campaign-drafts/{FAKE_UUID}/reject",
             headers=admin_headers,
         )
         assert r.status_code == 422
@@ -436,16 +388,10 @@ class TestCampaignBuilderPublishLogs:
     """Tests for publish log endpoints."""
 
     @pytest.mark.asyncio
-    async def test_list_publish_logs_no_auth(self, api_client):
-        """GET publish logs without JWT returns 401."""
-        r = await api_client.get(f"{CAMPAIGN_BUILDER_PREFIX}/1/campaign-publish-logs")
-        assert r.status_code == 401
-
-    @pytest.mark.asyncio
     async def test_list_publish_logs_empty(self, api_client, admin_headers, mock_db):
         """GET publish logs returns empty list when none exist."""
         r = await api_client.get(
-            f"{CAMPAIGN_BUILDER_PREFIX}/1/campaign-publish-logs",
+            f"{CAMPAIGN_BUILDER_PREFIX}/campaign-publish-logs",
             headers=admin_headers,
         )
         assert r.status_code == 200
@@ -455,7 +401,7 @@ class TestCampaignBuilderPublishLogs:
     async def test_retry_publish_not_found(self, api_client, admin_headers, mock_db):
         """POST retry publish returns 404 when log not found."""
         r = await api_client.post(
-            f"{CAMPAIGN_BUILDER_PREFIX}/1/campaign-publish-logs/{FAKE_UUID2}/retry",
+            f"{CAMPAIGN_BUILDER_PREFIX}/campaign-publish-logs/{FAKE_UUID2}/retry",
             headers=admin_headers,
         )
         assert r.status_code == 404
@@ -466,7 +412,7 @@ class TestCampaignBuilderPublishLogs:
         log = _mock_publish_log(result_status="success")
         mock_db.execute.return_value = make_scalar_result(log)
         r = await api_client.post(
-            f"{CAMPAIGN_BUILDER_PREFIX}/1/campaign-publish-logs/{FAKE_UUID2}/retry",
+            f"{CAMPAIGN_BUILDER_PREFIX}/campaign-publish-logs/{FAKE_UUID2}/retry",
             headers=admin_headers,
         )
         assert r.status_code == 400
@@ -477,7 +423,7 @@ class TestCampaignBuilderPublishLogs:
         log = _mock_publish_log(result_status="failure")
         mock_db.execute.return_value = make_scalar_result(log)
         r = await api_client.post(
-            f"{CAMPAIGN_BUILDER_PREFIX}/1/campaign-publish-logs/{FAKE_UUID2}/retry",
+            f"{CAMPAIGN_BUILDER_PREFIX}/campaign-publish-logs/{FAKE_UUID2}/retry",
             headers=admin_headers,
         )
         assert r.status_code == 200
@@ -817,7 +763,6 @@ class TestAuthRegister:
             json={
                 "email": "new@example.com",
                 "password": "alllower1",  # No uppercase
-                "tenant_id": 1,
             },
         )
         assert r.status_code == 422
@@ -830,7 +775,6 @@ class TestAuthRegister:
             json={
                 "email": "new@example.com",
                 "password": "Ab1",
-                "tenant_id": 1,
             },
         )
         assert r.status_code == 422
@@ -839,8 +783,7 @@ class TestAuthRegister:
     async def test_register_invalid_verification(self, api_client, mock_db):
         """POST /register without a valid verification token returns 400.
 
-        Registration now requires an email/WhatsApp OTP verification token and
-        auto-creates a free-tier tenant, so there is no tenant_id to validate;
+        Registration requires an email/WhatsApp OTP verification token;
         an unrecognized token is rejected with 400."""
         fake_redis = AsyncMock()
         fake_redis.get = AsyncMock(return_value=None)  # token not found
@@ -889,10 +832,13 @@ class TestAuthLogout:
 
     @pytest.mark.asyncio
     async def test_logout_no_auth(self, api_client):
-        """POST /logout without token still returns 200 (graceful)."""
-        # Logout is on a non-public path, so middleware will reject with 401
+        """POST /logout without token still returns 200 (graceful).
+
+        The logout handler tolerates a missing Authorization header — there
+        is simply no token to blacklist — and returns success.
+        """
         r = await api_client.post(f"{AUTH_PREFIX}/logout")
-        assert r.status_code == 401
+        assert r.status_code == 200
 
     @pytest.mark.asyncio
     @patch("app.api.v1.endpoints.auth.blacklist_token", new_callable=AsyncMock)
@@ -962,41 +908,6 @@ class TestAuthPasswordReset:
             json={"token": "sometoken", "password": "short"},
         )
         assert r.status_code == 422
-
-
-class TestAuthTenants:
-    """Tests for tenant listing/switching endpoints."""
-
-    @pytest.mark.asyncio
-    async def test_list_tenants_no_auth(self, api_client):
-        """GET /tenants without JWT returns 401."""
-        r = await api_client.get(f"{AUTH_PREFIX}/tenants")
-        assert r.status_code == 401
-
-    @pytest.mark.asyncio
-    async def test_list_tenants_with_auth(self, api_client, admin_headers, mock_db):
-        """GET /tenants with valid JWT returns 200."""
-        # Default mock_db.execute -> empty result.all()
-        result_mock = MagicMock()
-        result_mock.all.return_value = []
-        mock_db.execute.return_value = result_mock
-
-        r = await api_client.get(
-            f"{AUTH_PREFIX}/tenants",
-            headers=admin_headers,
-        )
-        assert r.status_code == 200
-        body = r.json()
-        assert body["success"] is True
-
-    @pytest.mark.asyncio
-    async def test_switch_tenant_no_auth(self, api_client):
-        """POST /switch-tenant without JWT returns 401."""
-        r = await api_client.post(
-            f"{AUTH_PREFIX}/switch-tenant",
-            json={"tenant_id": 2},
-        )
-        assert r.status_code == 401
 
 
 # ============================================================================
@@ -1136,10 +1047,10 @@ class TestMFAValidate:
         MockMFAService.return_value = mock_svc
 
         # /mfa/validate is a public-ish endpoint (no JWT needed, part of login flow)
-        # But TenantMiddleware will block it. We need auth headers.
+        # But the auth middleware will block it. We need auth headers.
         r = await api_client.post(
             f"{MFA_PREFIX}/validate",
-            headers=make_auth_headers(subject=1, tenant_id=1, role="admin"),
+            headers=make_auth_headers(subject=1, role="admin"),
             json={"user_id": 1, "code": "000000"},
         )
         assert r.status_code == 200
@@ -1160,7 +1071,7 @@ class TestMFAValidate:
 
         r = await api_client.post(
             f"{MFA_PREFIX}/validate",
-            headers=make_auth_headers(subject=1, tenant_id=1, role="admin"),
+            headers=make_auth_headers(subject=1, role="admin"),
             json={"user_id": 1, "code": "123456"},
         )
         assert r.status_code == 200

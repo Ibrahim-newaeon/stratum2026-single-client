@@ -51,9 +51,8 @@ class IdentityResolutionService:
     5. Update canonical identity based on priority
     """
 
-    def __init__(self, db: AsyncSession, tenant_id: int):
+    def __init__(self, db: AsyncSession):
         self.db = db
-        self.tenant_id = tenant_id
 
     # =========================================================================
     # Identity Priority Resolution
@@ -96,7 +95,6 @@ class IdentityResolutionService:
         for identifier in identifiers:
             result = await self.db.execute(
                 select(CDPProfileIdentifier).where(
-                    CDPProfileIdentifier.tenant_id == self.tenant_id,
                     CDPProfileIdentifier.identifier_hash == identifier.get("hash"),
                 )
             )
@@ -113,7 +111,6 @@ class IdentityResolutionService:
 
         # No existing profile found, create new one
         profile = CDPProfile(
-            tenant_id=self.tenant_id,
             lifecycle_stage=LifecycleStage.ANONYMOUS.value,
             total_events=0,
             created_at=datetime.now(UTC),
@@ -125,7 +122,6 @@ class IdentityResolutionService:
         # Add identifiers to the new profile
         for identifier in identifiers:
             profile_identifier = CDPProfileIdentifier(
-                tenant_id=self.tenant_id,
                 profile_id=profile.id,
                 identifier_type=identifier.get("type"),
                 identifier_value=identifier.get("value"),
@@ -182,7 +178,6 @@ class IdentityResolutionService:
         """Get canonical identity for a profile."""
         result = await self.db.execute(
             select(CDPCanonicalIdentity).where(
-                CDPCanonicalIdentity.tenant_id == self.tenant_id,
                 CDPCanonicalIdentity.profile_id == profile_id,
             )
         )
@@ -215,7 +210,6 @@ class IdentityResolutionService:
                 # Check if link already exists
                 existing = await self.db.execute(
                     select(CDPIdentityLink).where(
-                        CDPIdentityLink.tenant_id == self.tenant_id,
                         or_(
                             and_(
                                 CDPIdentityLink.source_identifier_id == source.id,
@@ -240,7 +234,6 @@ class IdentityResolutionService:
 
                 # Create bidirectional link (source -> target)
                 link = CDPIdentityLink(
-                    tenant_id=self.tenant_id,
                     source_identifier_id=source.id,
                     target_identifier_id=target.id,
                     link_type=link_type.value,
@@ -254,7 +247,6 @@ class IdentityResolutionService:
             await self.db.flush()
             logger.info(
                 "cdp_identity_links_created",
-                tenant_id=self.tenant_id,
                 link_count=len(created_links),
                 link_type=link_type.value,
             )
@@ -310,7 +302,6 @@ class IdentityResolutionService:
             select(CDPProfile)
             .join(CDPProfileIdentifier)
             .where(
-                CDPProfileIdentifier.tenant_id == self.tenant_id,
                 CDPProfileIdentifier.identifier_type == identifier_type,
                 CDPProfileIdentifier.identifier_hash == identifier_hash,
             )
@@ -341,7 +332,6 @@ class IdentityResolutionService:
         """
         logger.info(
             "cdp_profile_merge_started",
-            tenant_id=self.tenant_id,
             surviving_profile_id=str(surviving_profile.id),
             merged_profile_id=str(merged_profile.id),
             merge_reason=merge_reason.value,
@@ -454,7 +444,6 @@ class IdentityResolutionService:
 
         # 6. Record merge in history
         merge_record = CDPProfileMerge(
-            tenant_id=self.tenant_id,
             surviving_profile_id=surviving_profile.id,
             merged_profile_id=merged_profile.id,
             merge_reason=merge_reason.value,
@@ -478,7 +467,6 @@ class IdentityResolutionService:
 
         logger.info(
             "cdp_profile_merge_completed",
-            tenant_id=self.tenant_id,
             surviving_profile_id=str(surviving_profile.id),
             merged_profile_id=str(merged_profile.id),
             events_merged=merged_profile.total_events,
@@ -544,7 +532,6 @@ class IdentityResolutionService:
         result = await self.db.execute(
             select(CDPProfileIdentifier)
             .where(
-                CDPProfileIdentifier.tenant_id == self.tenant_id,
                 CDPProfileIdentifier.profile_id == profile_id,
             )
             .limit(1000)
@@ -573,7 +560,6 @@ class IdentityResolutionService:
             canonical = existing
         else:
             canonical = CDPCanonicalIdentity(
-                tenant_id=self.tenant_id,
                 profile_id=profile_id,
                 canonical_identifier_id=strongest.id,
                 canonical_type=strongest.identifier_type,
@@ -588,7 +574,6 @@ class IdentityResolutionService:
 
         logger.debug(
             "cdp_canonical_identity_updated",
-            tenant_id=self.tenant_id,
             profile_id=str(profile_id),
             canonical_type=strongest.identifier_type,
             priority_score=priority_score,
@@ -623,7 +608,6 @@ class IdentityResolutionService:
                 result = await self.db.execute(
                     select(CDPIdentityLink)
                     .where(
-                        CDPIdentityLink.tenant_id == self.tenant_id,
                         CDPIdentityLink.is_active == True,
                         or_(
                             CDPIdentityLink.source_identifier_id == current_id,
@@ -672,7 +656,6 @@ class IdentityResolutionService:
         result = await self.db.execute(
             select(CDPProfileIdentifier)
             .where(
-                CDPProfileIdentifier.tenant_id == self.tenant_id,
                 CDPProfileIdentifier.profile_id == profile_id,
             )
             .limit(1000)
@@ -688,7 +671,6 @@ class IdentityResolutionService:
         result = await self.db.execute(
             select(CDPIdentityLink)
             .where(
-                CDPIdentityLink.tenant_id == self.tenant_id,
                 or_(
                     CDPIdentityLink.source_identifier_id.in_(identifier_ids),
                     CDPIdentityLink.target_identifier_id.in_(identifier_ids),
@@ -730,7 +712,6 @@ class IdentityResolutionService:
 
 async def resolve_identity_on_event(
     db: AsyncSession,
-    tenant_id: int,
     profile: CDPProfile,
     identifiers: list[CDPProfileIdentifier],
     event_id: Optional[UUID] = None,
@@ -743,7 +724,7 @@ async def resolve_identity_on_event(
     2. Check for profile merges needed
     3. Update canonical identity
     """
-    service = IdentityResolutionService(db, tenant_id)
+    service = IdentityResolutionService(db)
 
     # Link all identifiers from this event
     await service.link_identifiers(

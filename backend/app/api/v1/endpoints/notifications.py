@@ -100,9 +100,8 @@ async def list_notifications(
     List notifications for the current user.
     """
     user_id = getattr(request.state, "user_id", None)
-    tenant_id = getattr(request.state, "tenant_id", None)
 
-    if not user_id or not tenant_id:
+    if not user_id:
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
             detail="Not authenticated",
@@ -110,7 +109,6 @@ async def list_notifications(
 
     # Build query - user's notifications + tenant broadcasts
     conditions = [
-        Notification.tenant_id == tenant_id,
         ((Notification.user_id == user_id) | (Notification.user_id.is_(None))),
     ]
 
@@ -169,16 +167,14 @@ async def get_notification_count(
     Get notification counts for the current user.
     """
     user_id = getattr(request.state, "user_id", None)
-    tenant_id = getattr(request.state, "tenant_id", None)
 
-    if not user_id or not tenant_id:
+    if not user_id:
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
             detail="Not authenticated",
         )
 
     base_conditions = [
-        Notification.tenant_id == tenant_id,
         ((Notification.user_id == user_id) | (Notification.user_id.is_(None))),
         (Notification.expires_at.is_(None))
         | (Notification.expires_at > datetime.now(UTC)),
@@ -217,9 +213,8 @@ async def mark_notifications_read(
     Mark notifications as read.
     """
     user_id = getattr(request.state, "user_id", None)
-    tenant_id = getattr(request.state, "tenant_id", None)
 
-    if not user_id or not tenant_id:
+    if not user_id:
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
             detail="Not authenticated",
@@ -228,7 +223,6 @@ async def mark_notifications_read(
     now = datetime.now(UTC)
 
     conditions = [
-        Notification.tenant_id == tenant_id,
         ((Notification.user_id == user_id) | (Notification.user_id.is_(None))),
         Notification.is_read == False,
     ]
@@ -262,9 +256,8 @@ async def delete_notification(
     Delete a notification.
     """
     user_id = getattr(request.state, "user_id", None)
-    tenant_id = getattr(request.state, "tenant_id", None)
 
-    if not user_id or not tenant_id:
+    if not user_id:
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
             detail="Not authenticated",
@@ -274,7 +267,6 @@ async def delete_notification(
         select(Notification).where(
             and_(
                 Notification.id == notification_id,
-                Notification.tenant_id == tenant_id,
                 ((Notification.user_id == user_id) | (Notification.user_id.is_(None))),
             )
         )
@@ -305,9 +297,8 @@ async def create_notification(
     Create a new notification (admin/system use).
     """
     user_id = getattr(request.state, "user_id", None)
-    tenant_id = getattr(request.state, "tenant_id", None)
 
-    if not user_id or not tenant_id:
+    if not user_id:
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
             detail="Not authenticated",
@@ -331,7 +322,6 @@ async def create_notification(
         notif_category = NotificationCategory.SYSTEM
 
     notification = Notification(
-        tenant_id=tenant_id,
         user_id=body.user_id,
         title=body.title,
         message=body.message,

@@ -58,15 +58,15 @@ class TestOtherPlatforms:
 # =============================================================================
 class TestSyncResult:
     def test_defaults(self):
-        r = SyncResult(platform="meta", tenant_id=1)
+        r = SyncResult(platform="meta")
         assert r.campaigns_synced == 0
         assert r.metrics_upserted == 0
         assert r.errors == []
         assert r.duration_seconds == 0.0
 
     def test_independent_error_lists(self):
-        a = SyncResult(platform="meta", tenant_id=1)
-        b = SyncResult(platform="google", tenant_id=1)
+        a = SyncResult(platform="meta")
+        b = SyncResult(platform="google")
         a.errors.append("boom")
         # Default-factory lists must not be shared between instances.
         assert b.errors == []

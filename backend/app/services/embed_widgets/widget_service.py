@@ -59,14 +59,12 @@ class EmbedWidgetService:
 
     async def create_widget(
         self,
-        tenant_id: int,
         data: WidgetCreate,
     ) -> EmbedWidget:
         """
         Create a new embed widget.
 
         Args:
-            tenant_id: Tenant ID
             data: Widget creation data
 
         Returns:
@@ -80,7 +78,6 @@ class EmbedWidgetService:
             select(func.count())
             .select_from(EmbedWidget)
             .where(
-                EmbedWidget.tenant_id == tenant_id,
                 EmbedWidget.is_active == True,
             )
         )
@@ -104,7 +101,6 @@ class EmbedWidgetService:
 
         # Create widget
         widget = EmbedWidget(
-            tenant_id=tenant_id,
             name=data.name,
             description=data.description,
             widget_type=data.widget_type.value,
@@ -132,27 +128,23 @@ class EmbedWidgetService:
         return widget
 
     async def get_widget(
-        self, tenant_id: int, widget_id: UUID
+        self, widget_id: UUID
     ) -> Optional[EmbedWidget]:
         """Get a widget by ID."""
         result = await self.db.execute(
             select(EmbedWidget).where(
                 EmbedWidget.id == widget_id,
-                EmbedWidget.tenant_id == tenant_id,
             )
         )
         return result.scalar_one_or_none()
 
     async def list_widgets(
         self,
-        tenant_id: int,
         widget_type: Optional[WidgetType] = None,
         is_active: Optional[bool] = None,
     ) -> list[EmbedWidget]:
-        """List widgets for a tenant."""
-        query = select(EmbedWidget).where(
-            EmbedWidget.tenant_id == tenant_id,
-        )
+        """List widgets."""
+        query = select(EmbedWidget)
 
         if widget_type:
             query = query.where(EmbedWidget.widget_type == widget_type.value)
@@ -166,12 +158,11 @@ class EmbedWidgetService:
 
     async def update_widget(
         self,
-        tenant_id: int,
         widget_id: UUID,
         data: WidgetUpdate,
     ) -> EmbedWidget:
         """Update an existing widget."""
-        widget = await self.get_widget(tenant_id, widget_id)
+        widget = await self.get_widget(widget_id)
 
         if not widget:
             raise HTTPException(
@@ -214,9 +205,9 @@ class EmbedWidgetService:
 
         return widget
 
-    async def delete_widget(self, tenant_id: int, widget_id: UUID) -> None:
+    async def delete_widget(self, widget_id: UUID) -> None:
         """Delete a widget and its tokens."""
-        widget = await self.get_widget(tenant_id, widget_id)
+        widget = await self.get_widget(widget_id)
 
         if not widget:
             raise HTTPException(
@@ -232,7 +223,6 @@ class EmbedWidgetService:
 
     async def add_domain_to_whitelist(
         self,
-        tenant_id: int,
         domain_pattern: str,
         description: Optional[str],
     ) -> EmbedDomainWhitelist:
@@ -242,7 +232,6 @@ class EmbedWidgetService:
             select(func.count())
             .select_from(EmbedDomainWhitelist)
             .where(
-                EmbedDomainWhitelist.tenant_id == tenant_id,
                 EmbedDomainWhitelist.is_active == True,
             )
         )
@@ -256,7 +245,6 @@ class EmbedWidgetService:
         # Check if already exists
         result = await self.db.execute(
             select(EmbedDomainWhitelist).where(
-                EmbedDomainWhitelist.tenant_id == tenant_id,
                 EmbedDomainWhitelist.domain_pattern == domain_pattern.lower(),
             )
         )
@@ -278,7 +266,6 @@ class EmbedWidgetService:
 
         # Create new whitelist entry
         whitelist = EmbedDomainWhitelist(
-            tenant_id=tenant_id,
             domain_pattern=domain_pattern.lower(),
             description=description,
         )
@@ -290,13 +277,12 @@ class EmbedWidgetService:
         return whitelist
 
     async def list_whitelisted_domains(
-        self, tenant_id: int
+        self,
     ) -> list[EmbedDomainWhitelist]:
-        """List all whitelisted domains for a tenant."""
+        """List all whitelisted domains."""
         result = await self.db.execute(
             select(EmbedDomainWhitelist)
             .where(
-                EmbedDomainWhitelist.tenant_id == tenant_id,
                 EmbedDomainWhitelist.is_active == True,
             )
             .order_by(EmbedDomainWhitelist.domain_pattern)
@@ -305,14 +291,12 @@ class EmbedWidgetService:
 
     async def remove_domain_from_whitelist(
         self,
-        tenant_id: int,
         domain_id: UUID,
     ) -> None:
         """Remove a domain from the whitelist."""
         result = await self.db.execute(
             select(EmbedDomainWhitelist).where(
                 EmbedDomainWhitelist.id == domain_id,
-                EmbedDomainWhitelist.tenant_id == tenant_id,
             )
         )
         domain = result.scalar_one_or_none()

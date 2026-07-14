@@ -215,7 +215,6 @@ class CopilotSession(BaseModel):
 
     session_id: str
     user_id: int
-    tenant_id: int
     messages: List[CopilotMessage] = []
     created_at: str = Field(default_factory=lambda: datetime.now(UTC).isoformat())
     context: Dict[str, Any] = {}

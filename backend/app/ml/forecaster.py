@@ -38,7 +38,6 @@ class ROASForecaster:
         campaigns: List[Campaign],
         days_ahead: int = 30,
         granularity: str = "daily",
-        tenant_id: int = None,
         db: AsyncSession = None,
     ) -> Dict[str, Any]:
         """
@@ -48,14 +47,13 @@ class ROASForecaster:
             campaigns: List of campaigns to forecast
             days_ahead: Number of days to forecast
             granularity: 'daily', 'weekly', or 'monthly'
-            tenant_id: Tenant ID for filtering
             db: Database session for historical data
 
         Returns:
             Forecast results with predictions and metadata
         """
         # Get historical data
-        historical_data = await self._get_historical_data(campaigns, tenant_id, db)
+        historical_data = await self._get_historical_data(campaigns, db)
 
         if not historical_data:
             return self._generate_mock_forecast(days_ahead, granularity)
@@ -98,7 +96,6 @@ class ROASForecaster:
     async def _get_historical_data(
         self,
         campaigns: List[Campaign],
-        tenant_id: int,
         db: AsyncSession,
     ) -> List[Dict]:
         """Fetch historical metrics for campaigns."""
@@ -112,7 +109,6 @@ class ROASForecaster:
             select(CampaignMetric)
             .where(
                 CampaignMetric.campaign_id.in_(campaign_ids),
-                CampaignMetric.tenant_id == tenant_id,
                 CampaignMetric.date >= date.today() - timedelta(days=lookback_days),
             )
             .order_by(CampaignMetric.date)

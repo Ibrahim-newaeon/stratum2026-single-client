@@ -200,15 +200,13 @@ class MockAdNetwork:
 
     def generate_campaigns(
         self,
-        tenant_id: int,
         count: int = 20,
         platforms: Optional[List[AdPlatform]] = None,
     ) -> List[MockCampaignData]:
         """
-        Generate mock campaigns for a tenant.
+        Generate mock campaigns.
 
         Args:
-            tenant_id: Tenant ID for seeding
             count: Number of campaigns to generate
             platforms: List of platforms (default: all)
 
@@ -216,19 +214,18 @@ class MockAdNetwork:
             List of MockCampaignData objects
         """
         platforms = platforms or list(AdPlatform)
-        rng = self._seeded_random(f"campaigns:{tenant_id}")
+        rng = self._seeded_random("campaigns")
 
         campaigns = []
         for i in range(count):
             platform = rng.choice(platforms)
-            campaign = self._generate_single_campaign(tenant_id, i, platform, rng)
+            campaign = self._generate_single_campaign(i, platform, rng)
             campaigns.append(campaign)
 
         return campaigns
 
     def _generate_single_campaign(
         self,
-        tenant_id: int,
         index: int,
         platform: AdPlatform,
         rng: random.Random,
@@ -297,15 +294,15 @@ class MockAdNetwork:
 
         # Generate performance metrics
         metrics = self._generate_metrics(
-            tenant_id, index, platform, daily_budget, start_date, end_date, rng
+            platform, daily_budget, start_date, end_date, rng
         )
 
         # Generate demographics
         demographics = self._generate_demographics(metrics["impressions"], rng)
 
         return MockCampaignData(
-            external_id=f"{platform.value}_{tenant_id}_{index:04d}",
-            account_id=f"act_{tenant_id}_{platform.value[:2].upper()}001",
+            external_id=f"{platform.value}_{index:04d}",
+            account_id=f"act_{platform.value[:2].upper()}001",
             name=name,
             platform=platform,
             status=status,
@@ -324,8 +321,6 @@ class MockAdNetwork:
 
     def _generate_metrics(
         self,
-        tenant_id: int,
-        campaign_index: int,
         platform: AdPlatform,
         daily_budget: int,
         start_date: date,
@@ -588,22 +583,19 @@ class MockAdNetworkManager:
     Manager for coordinating mock data across multiple ad platforms.
     """
 
-    def __init__(self, tenant_id: int):
-        self.tenant_id = tenant_id
-        self.network = MockAdNetwork(seed=tenant_id)
+    def __init__(self):
+        self.network = MockAdNetwork()
 
     async def sync_all_platforms(self) -> Dict[str, Any]:
         """Simulate syncing data from all platforms."""
 
         campaigns = self.network.generate_campaigns(
-            self.tenant_id,
             count=25,
             platforms=list(AdPlatform),
         )
 
         logger.info(
             "mock_sync_completed",
-            tenant_id=self.tenant_id,
             campaigns_generated=len(campaigns),
         )
 
@@ -619,7 +611,7 @@ class MockAdNetworkManager:
         """Get details for a specific campaign."""
         # In a real implementation, this would call the actual API
         # For mock, we regenerate based on the ID
-        campaigns = self.network.generate_campaigns(self.tenant_id, count=30)
+        campaigns = self.network.generate_campaigns(count=30)
         for campaign in campaigns:
             if campaign.external_id == external_id:
                 return campaign

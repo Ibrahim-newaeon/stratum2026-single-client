@@ -146,6 +146,13 @@ api_router.include_router(
     prefix="/whatsapp",
     tags=["WhatsApp"],
 )
+# WhatsApp webhooks: separate un-authed router (self-authenticating via
+# Meta HMAC signature / hub verify token; public path per auth middleware).
+api_router.include_router(
+    whatsapp.webhook_router,
+    prefix="/whatsapp",
+    tags=["WhatsApp"],
+)
 
 # ML Training & Data Upload
 # Model management operates on the GLOBAL, app-wide model registry (upload,
@@ -230,7 +237,7 @@ api_router.include_router(
 
 # Autopilot (Automated campaign optimization)
 # Note (STRAT-SC-001/C2): autopilot.router already declares prefix="/autopilot"
-# (de-tenanted from "/tenant/{tenant_id}/autopilot"), so it must be mounted
+# (de-tenanted from the old per-org-scoped path), so it must be mounted
 # WITHOUT an extra prefix (matching autopilot_enforcement below).
 api_router.include_router(
     autopilot.router,
@@ -239,7 +246,7 @@ api_router.include_router(
 
 # Autopilot Enforcement (Budget/ROAS restrictions)
 # Note (STRAT-SC-001/C2): autopilot_enforcement.router already has prefix
-# "/autopilot/enforcement" (de-tenanted from "/tenant/{tenant_id}/...")
+# "/autopilot/enforcement" (de-tenanted from the old per-org-scoped path)
 api_router.include_router(
     autopilot_enforcement.router,
     tags=["Autopilot Enforcement"],
@@ -254,7 +261,7 @@ api_router.include_router(
 
 # Feature Flags (Feature toggles and rollouts)
 # Note (STRAT-SC-001/C2): feature_flags.tenant_router is now un-prefixed
-# (de-tenanted from "/tenant/{tenant_id}"); feature_flags.owner_router keeps
+# (de-tenanted from the old per-org-scoped path); feature_flags.owner_router keeps
 # its "/console" prefix (renamed from "/superadmin" in B1).
 api_router.include_router(
     feature_flags.router,

@@ -267,21 +267,6 @@ async def lifespan(app: FastAPI) -> AsyncGenerator:
 # =============================================================================
 # Application Factory
 # =============================================================================
-def _resolve_ws_tenant(payload: dict, requested_tenant: Optional[int]) -> Optional[int]:
-    """
-    Resolve the tenant for a WebSocket connection from the VERIFIED token (TEN-001).
-
-    The client-supplied ``?tenant_id=`` query param is not trusted: a
-    non-owner is always pinned to their token's ``tenant_id``, so it is
-    impossible to subscribe to another tenant's real-time stream by spoofing
-    the param. Only an owner may explicitly target a different tenant.
-    """
-    token_tenant = payload.get("tenant_id")
-    if payload.get("role") == "owner" and requested_tenant is not None:
-        return requested_tenant
-    return token_tenant
-
-
 def create_application() -> FastAPI:
     """
     Create and configure the FastAPI application.
@@ -769,7 +754,7 @@ def create_application() -> FastAPI:
     # -------------------------------------------------------------------------
     # Always-on exposition of the full global registry (domain metrics +
     # HTTP collectors when ENABLE_METRICS=true — see instrumentation above).
-    # The registry carries tenant_id-labeled series (EMQ, autopilot, trust
+    # The registry carries domain-labeled series (EMQ, autopilot, trust
     # gate), so exposition is gated: when METRICS_API_KEY is set, scrapers
     # must send "Authorization: Bearer <key>" (see the commented authorization
     # block in infrastructure/prometheus/prometheus.yml). Unset = open, for
@@ -814,9 +799,10 @@ def create_application() -> FastAPI:
             redis_client = redis.from_url(settings.redis_url)
             pubsub = redis_client.pubsub()
 
-            # Get tenant from request context
-            tenant_id = getattr(request.state, "tenant_id", None)
-            channel = f"events:tenant:{tenant_id}" if tenant_id else "events:global"
+            # Single-org deployment: all authenticated clients share one
+            # event stream. (C4 re-routes authenticated streams to an
+            # "events:org" channel; "events:global" remains the public one.)
+            channel = "events:global"
 
             await pubsub.subscribe(channel)
             logger.info("sse_client_connected", channel=channel)
@@ -852,14 +838,12 @@ def create_application() -> FastAPI:
     @app.websocket("/ws")
     async def websocket_endpoint(
         websocket: WebSocket,
-        tenant_id: Optional[int] = Query(default=None),
         token: Optional[str] = Query(default=None),
     ):
         """
         WebSocket endpoint for real-time dashboard updates.
 
         Query params:
-        - tenant_id: Optional tenant ID for tenant-scoped messages
         - token: Optional auth token for authenticated connections
 
         Message types:
@@ -871,7 +855,7 @@ def create_application() -> FastAPI:
         - platform_status: Platform health updates
         """
         # SECURITY: Require a valid token for WebSocket connections.
-        # Anonymous connections could receive tenant-scoped data without auth.
+        # Anonymous connections could receive org-scoped data without auth.
         user_id = None
         if token:
             try:
@@ -887,9 +871,6 @@ def create_application() -> FastAPI:
                     await websocket.close(code=4001, reason="Invalid token type")
                     return
                 user_id = payload.get("sub")
-                # SECURITY (TEN-001): tenant comes from the VERIFIED token claim,
-                # never the client-supplied query param (see _resolve_ws_tenant).
-                tenant_id = _resolve_ws_tenant(payload, tenant_id)
             except (
                 pyjwt.InvalidTokenError,
                 ValueError,
@@ -907,14 +888,12 @@ def create_application() -> FastAPI:
         # Connect the client
         client_id = await ws_manager.connect(
             websocket=websocket,
-            tenant_id=tenant_id,
             user_id=user_id,
         )
 
         logger.info(
             "websocket_connection_established",
             client_id=client_id,
-            tenant_id=tenant_id,
         )
 
         try:

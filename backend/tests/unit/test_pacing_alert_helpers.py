@@ -24,7 +24,7 @@ pytestmark = pytest.mark.unit
 
 @pytest.fixture
 def service() -> PacingAlertService:
-    return PacingAlertService(db=None, tenant_id=1)
+    return PacingAlertService(db=None)
 
 
 # =============================================================================

@@ -19,7 +19,7 @@ from typing import Any, Optional
 from urllib.parse import urlencode
 
 import aiohttp
-from sqlalchemy import and_, select
+from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 from tenacity import (
     retry,
@@ -100,11 +100,9 @@ class SalesforceClient:
     def __init__(
         self,
         db: AsyncSession,
-        tenant_id: int,
         is_sandbox: bool = False,
     ):
         self.db = db
-        self.tenant_id = tenant_id
         self.is_sandbox = is_sandbox
         self._session: Optional[aiohttp.ClientSession] = None
         self._connection: Optional[CRMConnection] = None
@@ -142,10 +140,7 @@ class SalesforceClient:
 
         result = await self.db.execute(
             select(CRMConnection).where(
-                and_(
-                    CRMConnection.tenant_id == self.tenant_id,
-                    CRMConnection.provider == CRMProvider.SALESFORCE,
-                )
+                CRMConnection.provider == CRMProvider.SALESFORCE,
             )
         )
         self._connection = result.scalar_one_or_none()
@@ -180,7 +175,7 @@ class SalesforceClient:
         """Make authenticated request to Salesforce API."""
         access_token = await self._get_access_token()
         if not access_token:
-            logger.error("salesforce_no_access_token", tenant_id=self.tenant_id)
+            logger.error("salesforce_no_access_token")
             return None
 
         if not self._session:
@@ -195,7 +190,7 @@ class SalesforceClient:
                 self._instance_url = raw_props.get("instance_url")
 
             if not self._instance_url:
-                logger.error("salesforce_no_instance_url", tenant_id=self.tenant_id)
+                logger.error("salesforce_no_instance_url")
                 return None
 
             url = f"{self._instance_url}/services/data/{API_VERSION}{endpoint}"
@@ -330,7 +325,6 @@ class SalesforceClient:
         connection = await self._get_connection()
         if not connection:
             connection = CRMConnection(
-                tenant_id=self.tenant_id,
                 provider=CRMProvider.SALESFORCE,
             )
             self.db.add(connection)
@@ -362,7 +356,6 @@ class SalesforceClient:
 
         logger.info(
             "salesforce_connected",
-            tenant_id=self.tenant_id,
             org_id=connection.provider_account_id,
         )
 
@@ -398,7 +391,6 @@ class SalesforceClient:
                     error_data = await response.json()
                     logger.error(
                         "salesforce_token_refresh_failed",
-                        tenant_id=self.tenant_id,
                         error=error_data,
                     )
                     connection.status = CRMConnectionStatus.EXPIRED
@@ -425,7 +417,7 @@ class SalesforceClient:
         await self.db.commit()
         self._connection = None  # Reset cache
 
-        logger.info("salesforce_token_refreshed", tenant_id=self.tenant_id)
+        logger.info("salesforce_token_refreshed")
         return True
 
     async def disconnect(self) -> bool:
@@ -451,7 +443,7 @@ class SalesforceClient:
         await self.db.commit()
 
         self._connection = None
-        logger.info("salesforce_disconnected", tenant_id=self.tenant_id)
+        logger.info("salesforce_disconnected")
         return True
 
     async def get_connection_status(self) -> dict[str, Any]:

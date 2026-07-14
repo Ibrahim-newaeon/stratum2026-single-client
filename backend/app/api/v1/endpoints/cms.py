@@ -3266,7 +3266,6 @@ async def invite_cms_user(
         cms_role=body.cms_role,
         is_active=True,
         is_verified=True,
-        tenant_id=1,  # Global CMS tenant
     )
     db.add(new_user)
     await db.commit()

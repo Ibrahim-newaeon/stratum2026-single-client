@@ -24,6 +24,7 @@ from fastapi import (
 from sqlalchemy import func, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from app.auth.deps import get_current_user
 from app.core.logging import get_logger
 from app.core.uploads import enforce_content_length, read_upload_capped
 from app.db.session import get_async_session
@@ -38,7 +39,11 @@ from app.schemas import (
 from app.services.storage import StorageError, get_object_storage
 
 logger = get_logger(__name__)
-router = APIRouter()
+router = APIRouter(
+    # SECURITY (STRAT-SC-001/C3): the old per-org guards this router relied
+    # on were deleted in the de-tenanting sweep; real auth now enforced here.
+    dependencies=[Depends(get_current_user)],
+)
 
 # Allowed MIME types and max size (20MB)
 ALLOWED_MIME_TYPES = {
@@ -125,8 +130,6 @@ async def upload_asset(
     - folder_id: Optional folder to place the asset in
     - name: Optional display name (defaults to filename)
     """
-    tenant_id = getattr(request.state, "tenant_id", None)
-
     # Validate MIME type and file extension to prevent MIME spoofing
     content_type = file.content_type or "application/octet-stream"
     _validate_file_extension(file.filename, content_type)
@@ -145,18 +148,12 @@ async def upload_asset(
     ext = Path(file.filename or "file").suffix or ".bin"
     unique_name = f"{uuid.uuid4().hex}{ext}"
 
-    # Sanitize tenant_id to prevent path traversal
-    tenant_id_safe = str(tenant_id or "default")
-    if any(c in tenant_id_safe for c in ("/", "\\", "..", "\x00")):
-        raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST,
-            detail="Invalid tenant identifier",
-        )
-
     # Persist via the configured object storage backend (local volume or S3/R2).
     # On Railway the container FS is ephemeral, so the 's3' backend is what keeps
     # assets alive across redeploys; the storage layer owns durability + the URL.
-    object_key = f"{tenant_id_safe}/{unique_name}"
+    # unique_name is a server-generated UUID + validated extension (never
+    # user-controlled), so no path-traversal characters can reach the key.
+    object_key = unique_name
     try:
         file_url = await get_object_storage().save(object_key, contents, content_type)
     except StorageError as exc:
@@ -172,7 +169,6 @@ async def upload_asset(
     # Create DB record
     display_name = name or file.filename or unique_name
     asset = CreativeAsset(
-        tenant_id=tenant_id,
         name=display_name,
         asset_type=asset_type_str,
         file_url=file_url,
@@ -185,9 +181,7 @@ async def upload_asset(
     await db.commit()
     await db.refresh(asset)
 
-    logger.info(
-        "asset_uploaded", asset_id=asset.id, tenant_id=tenant_id, size=len(contents)
-    )
+    logger.info("asset_uploaded", asset_id=asset.id, size=len(contents))
 
     return APIResponse(
         success=True,
@@ -218,10 +212,7 @@ async def list_assets(
         min_fatigue_score: Minimum fatigue score
         max_fatigue_score: Maximum fatigue score
     """
-    tenant_id = getattr(request.state, "tenant_id", None)
-
     query = select(CreativeAsset).where(
-        CreativeAsset.tenant_id == tenant_id,
         CreativeAsset.is_deleted == False,
     )
 
@@ -269,12 +260,9 @@ async def list_folders(
     db: AsyncSession = Depends(get_async_session),
 ):
     """Get list of unique folders."""
-    tenant_id = getattr(request.state, "tenant_id", None)
-
     result = await db.execute(
         select(CreativeAsset.folder)
         .where(
-            CreativeAsset.tenant_id == tenant_id,
             CreativeAsset.is_deleted == False,
             CreativeAsset.folder.isnot(None),
         )
@@ -296,12 +284,9 @@ async def get_fatigued_assets(
     Get assets with high fatigue scores.
     Useful for identifying creatives that need refreshing.
     """
-    tenant_id = getattr(request.state, "tenant_id", None)
-
     result = await db.execute(
         select(CreativeAsset)
         .where(
-            CreativeAsset.tenant_id == tenant_id,
             CreativeAsset.is_deleted == False,
             CreativeAsset.fatigue_score >= threshold,
         )
@@ -323,12 +308,9 @@ async def get_asset(
     db: AsyncSession = Depends(get_async_session),
 ):
     """Get asset details."""
-    tenant_id = getattr(request.state, "tenant_id", None)
-
     result = await db.execute(
         select(CreativeAsset).where(
             CreativeAsset.id == asset_id,
-            CreativeAsset.tenant_id == tenant_id,
             CreativeAsset.is_deleted == False,
         )
     )
@@ -357,12 +339,9 @@ async def create_asset(
     db: AsyncSession = Depends(get_async_session),
 ):
     """Create a new creative asset."""
-    tenant_id = getattr(request.state, "tenant_id", None)
-
     # mode="json" coerces HttpUrl fields (file_url / thumbnail_url) to plain
     # strings; the raw HttpUrl objects can't be encoded by the asyncpg driver.
     asset = CreativeAsset(
-        tenant_id=tenant_id,
         **asset_data.model_dump(mode="json"),
     )
 
@@ -370,7 +349,7 @@ async def create_asset(
     await db.commit()
     await db.refresh(asset)
 
-    logger.info("asset_created", asset_id=asset.id, tenant_id=tenant_id)
+    logger.info("asset_created", asset_id=asset.id)
 
     return APIResponse(
         success=True,
@@ -387,12 +366,9 @@ async def update_asset(
     db: AsyncSession = Depends(get_async_session),
 ):
     """Update an asset."""
-    tenant_id = getattr(request.state, "tenant_id", None)
-
     result = await db.execute(
         select(CreativeAsset).where(
             CreativeAsset.id == asset_id,
-            CreativeAsset.tenant_id == tenant_id,
             CreativeAsset.is_deleted == False,
         )
     )
@@ -424,12 +400,9 @@ async def delete_asset(
     db: AsyncSession = Depends(get_async_session),
 ):
     """Soft delete an asset."""
-    tenant_id = getattr(request.state, "tenant_id", None)
-
     result = await db.execute(
         select(CreativeAsset).where(
             CreativeAsset.id == asset_id,
-            CreativeAsset.tenant_id == tenant_id,
             CreativeAsset.is_deleted == False,
         )
     )
@@ -462,12 +435,9 @@ async def calculate_fatigue_score(
     - CTR trend (if decreasing)
     - Impressions volume
     """
-    tenant_id = getattr(request.state, "tenant_id", None)
-
     result = await db.execute(
         select(CreativeAsset).where(
             CreativeAsset.id == asset_id,
-            CreativeAsset.tenant_id == tenant_id,
         )
     )
     asset = result.scalar_one_or_none()

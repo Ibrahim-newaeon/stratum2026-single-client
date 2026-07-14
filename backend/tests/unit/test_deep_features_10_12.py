@@ -3,27 +3,20 @@
 # =============================================================================
 """
 Deep endpoint tests exercising the FULL request/response cycle via
-httpx.AsyncClient, going through real middleware (JWT decode, tenant
-extraction) while mocking services/DB at the endpoint handler level.
+httpx.AsyncClient, going through real middleware (JWT decode)
+while mocking services/DB at the endpoint handler level.
 
 Feature 10: WhatsApp Integration
-Feature 11: Payments (Stripe)
-Feature 12: Multi-tenancy
+Feature 11: Payments (Stripe) — removed
+Feature 12: Dashboard settings (formerly multi-tenancy; single-org now)
 """
 
-import hashlib
-import hmac
-import json
-from datetime import datetime, timedelta, timezone
+from datetime import datetime, timezone
 from unittest.mock import AsyncMock, MagicMock, patch
 
 import pytest
 
-from tests.unit.conftest import (
-    make_auth_headers,
-    make_scalar_result,
-    make_scalars_result,
-)
+from tests.unit.conftest import make_scalars_result
 
 # =============================================================================
 # Helper: mock ORM objects
@@ -103,31 +96,6 @@ def _mock_message(**overrides):
     return obj
 
 
-def _mock_tenant(**overrides):
-    """Build a mock Tenant ORM object."""
-    defaults = dict(
-        id=1,
-        name="Acme Inc",
-        slug="acme-inc",
-        domain="acme.com",
-        plan="professional",
-        plan_expires_at=datetime.now(timezone.utc) + timedelta(days=30),
-        max_users=25,
-        max_campaigns=200,
-        settings={"currency": "USD", "timezone": "UTC"},
-        feature_flags={"whatsapp": True},
-        stripe_customer_id="cus_test_123",
-        is_deleted=False,
-        created_at=datetime.now(timezone.utc),
-        updated_at=datetime.now(timezone.utc),
-    )
-    defaults.update(overrides)
-    obj = MagicMock()
-    for k, v in defaults.items():
-        setattr(obj, k, v)
-    return obj
-
-
 # =============================================================================
 # FEATURE 10 - WhatsApp Integration
 # =============================================================================
@@ -135,13 +103,6 @@ def _mock_tenant(**overrides):
 
 class TestWhatsAppContacts:
     """Tests for WhatsApp contact endpoints."""
-
-    # ── No auth → 401/403 ──────────────────────────────────────────────
-    @pytest.mark.asyncio
-    async def test_list_contacts_no_auth(self, api_client):
-        """GET /whatsapp/contacts without auth returns 401/403."""
-        resp = await api_client.get("/api/v1/whatsapp/contacts")
-        assert resp.status_code in (401, 403)
 
     # ── Happy path: list contacts ──────────────────────────────────────
     @pytest.mark.asyncio
@@ -275,12 +236,6 @@ class TestWhatsAppContacts:
 
 class TestWhatsAppTemplates:
     """Tests for WhatsApp template endpoints."""
-
-    @pytest.mark.asyncio
-    async def test_list_templates_no_auth(self, api_client):
-        """GET /whatsapp/templates without auth → 401/403."""
-        resp = await api_client.get("/api/v1/whatsapp/templates")
-        assert resp.status_code in (401, 403)
 
     @pytest.mark.asyncio
     async def test_list_templates_happy(self, api_client, mock_db, admin_headers):
@@ -489,376 +444,68 @@ class TestWhatsAppWebhook:
         assert resp.json()["status"] == "received"
 
 
-# FEATURE 11 - Payments (Stripe) — removed (STRAT-SC-001 / Task A1-A2).
-#
-# TestPaymentsOverview / TestPaymentsCheckout / TestPaymentsSubscription /
-# TestStripeWebhook / TestSubscriptionEndpoints used to exercise
-# app.api.v1.endpoints.{payments,stripe_webhook,subscription} and
-# app.services.stripe_service. Task A1 unregistered the routers; Task A2
-# deleted the endpoint modules, the Stripe service, and the corresponding
-# integration test files (test_payments_api.py, test_subscription_api.py,
-# test_tier_api.py) outright.
+class TestDashboardSettings:
+    """Tests for /dashboard/overview and /dashboard/settings (org settings)."""
 
-# =============================================================================
-# FEATURE 12 - Multi-tenancy
-# =============================================================================
-
-
-class TestTenantsCRUD:
-    """Tests for /tenants/* CRUD endpoints."""
-
-    # ── No auth → 401/403 ──────────────────────────────────────────────
-    @pytest.mark.asyncio
-    async def test_list_tenants_no_auth(self, api_client):
-        """GET /tenants without auth → 401/403."""
-        resp = await api_client.get("/api/v1/tenants")
-        assert resp.status_code in (401, 403)
-
-    # ── List tenants: viewer sees only their own ───────────────────────
-    @pytest.mark.asyncio
-    async def test_list_tenants_viewer_limited(
-        self, api_client, mock_db, viewer_headers
-    ):
-        """GET /tenants as viewer → succeeds but filters to own tenant."""
-        tenant = _mock_tenant(id=1)
-        data_result = make_scalars_result([tenant])
-        mock_db.execute = AsyncMock(return_value=data_result)
-
-        resp = await api_client.get("/api/v1/tenants", headers=viewer_headers)
-        assert resp.status_code == 200
-        body = resp.json()
-        assert body["success"] is True
-
-    # ── List tenants: admin sees all ───────────────────────────────────
-    @pytest.mark.asyncio
-    async def test_list_tenants_admin(self, api_client, mock_db, admin_headers):
-        """GET /tenants as admin → returns all tenants."""
-        tenants = [_mock_tenant(id=i, slug=f"tenant-{i}") for i in (1, 2, 3)]
-        data_result = make_scalars_result(tenants)
-        mock_db.execute = AsyncMock(return_value=data_result)
-
-        resp = await api_client.get("/api/v1/tenants", headers=admin_headers)
-        assert resp.status_code == 200
-        body = resp.json()
-        assert body["success"] is True
-        assert len(body["data"]) == 3
-
-    # ── Get current tenant ─────────────────────────────────────────────
-    @pytest.mark.asyncio
-    async def test_get_current_tenant(self, api_client, mock_db, admin_headers):
-        """GET /tenants/current returns authenticated user's tenant."""
-        tenant = _mock_tenant(id=1)
-        tenant_result = make_scalar_result(tenant)
-        mock_db.execute = AsyncMock(return_value=tenant_result)
-
-        resp = await api_client.get("/api/v1/tenants/current", headers=admin_headers)
-        assert resp.status_code == 200
-        body = resp.json()
-        assert body["success"] is True
-        assert body["data"]["id"] == 1
-        assert body["data"]["slug"] == "acme-inc"
-
-    # ── Get specific tenant: cross-tenant blocked for viewer ───────────
-    @pytest.mark.asyncio
-    async def test_get_tenant_cross_tenant_blocked(
-        self, api_client, mock_db, viewer_headers
-    ):
-        """GET /tenants/2 as viewer of tenant 1 → 403."""
-        resp = await api_client.get("/api/v1/tenants/2", headers=viewer_headers)
-        assert resp.status_code == 403
-
-    # ── Get specific tenant: admin can access other tenants ────────────
-    @pytest.mark.asyncio
-    async def test_get_tenant_owner_cross_tenant(
-        self, api_client, mock_db, owner_headers
-    ):
-        """Cross-tenant read (GET /tenants/2) is allowed for an owner; a
-        regular admin is restricted to their own tenant."""
-        tenant = _mock_tenant(id=2, slug="other-co")
-        tenant_result = make_scalar_result(tenant)
-        mock_db.execute = AsyncMock(return_value=tenant_result)
-
-        resp = await api_client.get("/api/v1/tenants/2", headers=owner_headers)
-        assert resp.status_code == 200
-        body = resp.json()
-        assert body["data"]["id"] == 2
-
-    # ── Create tenant: viewer blocked ──────────────────────────────────
-    @pytest.mark.asyncio
-    async def test_create_tenant_viewer_blocked(
-        self, api_client, mock_db, viewer_headers
-    ):
-        """POST /tenants as viewer → 403 (admin required)."""
-        payload = {
-            "name": "New Co",
-            "slug": "new-co",
-        }
-        resp = await api_client.post(
-            "/api/v1/tenants", json=payload, headers=viewer_headers
-        )
-        assert resp.status_code == 403
-
-    # ── Create tenant: owner happy path ───────────────────────────────
-    @pytest.mark.asyncio
-    async def test_create_tenant_happy(self, api_client, mock_db, owner_headers):
-        """POST /tenants creates a new tenant (owner-only)."""
-        # Duplicate check: no existing tenant with slug
-        dup_result = MagicMock()
-        dup_result.scalar_one_or_none.return_value = None
-        mock_db.execute = AsyncMock(return_value=dup_result)
-
-        new_tenant = _mock_tenant(id=10, name="New Co", slug="new-co", plan="free")
-        mock_db.refresh = AsyncMock(
-            side_effect=lambda obj: [
-                setattr(obj, k, getattr(new_tenant, k))
-                for k in (
-                    "id",
-                    "name",
-                    "slug",
-                    "domain",
-                    "plan",
-                    "plan_expires_at",
-                    "max_users",
-                    "max_campaigns",
-                    "settings",
-                    "feature_flags",
-                    "created_at",
-                    "updated_at",
-                )
-            ]
-        )
-
-        payload = {
-            "name": "New Co",
-            "slug": "new-co",
-            "plan": "free",
-        }
-        resp = await api_client.post(
-            "/api/v1/tenants", json=payload, headers=owner_headers
-        )
-        assert resp.status_code == 201
-        body = resp.json()
-        assert body["success"] is True
-
-    # ── Create tenant: duplicate slug → 409 ────────────────────────────
-    @pytest.mark.asyncio
-    async def test_create_tenant_duplicate_slug(
-        self, api_client, mock_db, owner_headers
-    ):
-        """POST /tenants with existing slug → 409 (owner-only)."""
-        existing = _mock_tenant(slug="acme-inc")
-        dup_result = MagicMock()
-        dup_result.scalar_one_or_none.return_value = existing
-        mock_db.execute = AsyncMock(return_value=dup_result)
-
-        payload = {
-            "name": "Another Acme",
-            "slug": "acme-inc",
-        }
-        resp = await api_client.post(
-            "/api/v1/tenants", json=payload, headers=owner_headers
-        )
-        assert resp.status_code == 409
-
-    # ── Validation error ───────────────────────────────────────────────
-    @pytest.mark.asyncio
-    async def test_create_tenant_validation_error(self, api_client, admin_headers):
-        """POST /tenants with invalid slug → 422."""
-        payload = {
-            "name": "X",
-            "slug": "BAD SLUG!",
-        }
-        resp = await api_client.post(
-            "/api/v1/tenants", json=payload, headers=admin_headers
-        )
-        assert resp.status_code == 422
-
-    # ── Update tenant: viewer blocked ──────────────────────────────────
-    @pytest.mark.asyncio
-    async def test_update_tenant_viewer_blocked(
-        self, api_client, mock_db, viewer_headers
-    ):
-        """PATCH /tenants/1 as viewer → 403."""
-        payload = {"name": "Updated Name"}
-        resp = await api_client.patch(
-            "/api/v1/tenants/1", json=payload, headers=viewer_headers
-        )
-        assert resp.status_code == 403
-
-    # ── Update tenant: admin happy ─────────────────────────────────────
-    @pytest.mark.asyncio
-    async def test_update_tenant_happy(self, api_client, mock_db, admin_headers):
-        """PATCH /tenants/1 as admin → updates tenant."""
-        tenant = _mock_tenant(id=1)
-        tenant_result = make_scalar_result(tenant)
-        mock_db.execute = AsyncMock(return_value=tenant_result)
-
-        updated = _mock_tenant(id=1, name="Acme Updated")
-        mock_db.refresh = AsyncMock(
-            side_effect=lambda obj: [
-                setattr(obj, k, getattr(updated, k))
-                for k in (
-                    "id",
-                    "name",
-                    "slug",
-                    "domain",
-                    "plan",
-                    "plan_expires_at",
-                    "max_users",
-                    "max_campaigns",
-                    "settings",
-                    "feature_flags",
-                    "created_at",
-                    "updated_at",
-                )
-            ]
-        )
-
-        payload = {"name": "Acme Updated"}
-        resp = await api_client.patch(
-            "/api/v1/tenants/1", json=payload, headers=admin_headers
-        )
-        assert resp.status_code == 200
-        body = resp.json()
-        assert body["success"] is True
-
-    # ── Get tenant users: cross-tenant blocked ─────────────────────────
-    @pytest.mark.asyncio
-    async def test_get_tenant_users_cross_tenant_blocked(
-        self, api_client, mock_db, viewer_headers
-    ):
-        """GET /tenants/2/users as viewer of tenant 1 → 403."""
-        resp = await api_client.get("/api/v1/tenants/2/users", headers=viewer_headers)
-        assert resp.status_code == 403
-
-    # ── Get tenant users: happy path ───────────────────────────────────
-    @pytest.mark.asyncio
-    async def test_get_tenant_users_happy(self, api_client, mock_db, admin_headers):
-        """GET /tenants/1/users as admin → returns user count."""
-        tenant = _mock_tenant(id=1, max_users=25)
-        tenant_result = make_scalar_result(tenant)
-
-        count_result = MagicMock()
-        count_result.scalar.return_value = 5
-
-        mock_db.execute = AsyncMock(side_effect=[tenant_result, count_result])
-
-        resp = await api_client.get("/api/v1/tenants/1/users", headers=admin_headers)
-        assert resp.status_code == 200
-        body = resp.json()
-        assert body["success"] is True
-        assert body["data"]["user_count"] == 5
-        assert body["data"]["max_users"] == 25
-        assert body["data"]["slots_available"] == 20
-
-
-class TestTenantDashboard:
-    """Tests for /tenant/{tenant_id}/dashboard/* and /tenant/{tenant_id}/settings."""
+    @staticmethod
+    def _mock_org():
+        org = MagicMock()
+        org.settings = {"currency": "USD", "timezone": "UTC"}
+        org.feature_flags = {"whatsapp": True}
+        return org
 
     @pytest.mark.asyncio
     async def test_dashboard_overview_no_auth(self, api_client):
-        """GET /tenant/1/dashboard/overview without auth → 401."""
-        resp = await api_client.get("/api/v1/tenant/1/dashboard/overview")
+        """GET /dashboard/overview without auth → 401."""
+        resp = await api_client.get("/api/v1/dashboard/overview")
         assert resp.status_code in (401, 403)
 
     @pytest.mark.asyncio
-    async def test_dashboard_overview_cross_tenant_blocked(
-        self, api_client, mock_db, tenant2_headers
-    ):
-        """GET /tenant/1/dashboard/overview as tenant 2 → 403."""
-        resp = await api_client.get(
-            "/api/v1/tenant/1/dashboard/overview", headers=tenant2_headers
-        )
-        assert resp.status_code == 403
-
-    @pytest.mark.asyncio
     async def test_dashboard_overview_happy(self, api_client, mock_db, admin_headers):
-        """GET /tenant/1/dashboard/overview returns KPIs."""
-        # The endpoint fetches campaigns via tenant_query then does math
+        """GET /dashboard/overview returns KPIs (safe empty with mocked DB)."""
         empty_result = make_scalars_result([])
         mock_db.execute = AsyncMock(return_value=empty_result)
 
         resp = await api_client.get(
-            "/api/v1/tenant/1/dashboard/overview", headers=admin_headers
+            "/api/v1/dashboard/overview", headers=admin_headers
         )
         assert resp.status_code == 200
         body = resp.json()
         assert body["success"] is True
-        assert "total_spend" in body["data"]
+        assert "metrics" in body["data"]
         assert "total_campaigns" in body["data"]
 
     @pytest.mark.asyncio
-    async def test_settings_cross_tenant_blocked(
-        self, api_client, mock_db, tenant2_headers
-    ):
-        """GET /tenant/1/settings as tenant 2 → 403."""
-        resp = await api_client.get(
-            "/api/v1/tenant/1/settings", headers=tenant2_headers
-        )
-        assert resp.status_code == 403
+    async def test_get_settings_no_auth(self, api_client):
+        """GET /dashboard/settings without auth → 401."""
+        resp = await api_client.get("/api/v1/dashboard/settings")
+        assert resp.status_code in (401, 403)
 
     @pytest.mark.asyncio
     async def test_get_settings_happy(self, api_client, mock_db, admin_headers):
-        """GET /tenant/1/settings returns tenant settings."""
-        tenant = _mock_tenant(id=1)
-        tenant_result = make_scalar_result(tenant)
-        mock_db.execute = AsyncMock(return_value=tenant_result)
+        """GET /dashboard/settings returns org settings."""
+        mock_db.get = AsyncMock(return_value=self._mock_org())
 
-        resp = await api_client.get("/api/v1/tenant/1/settings", headers=admin_headers)
+        resp = await api_client.get(
+            "/api/v1/dashboard/settings", headers=admin_headers
+        )
         assert resp.status_code == 200
         body = resp.json()
         assert body["success"] is True
-        assert "currency" in body["data"]
-
-    @pytest.mark.asyncio
-    async def test_update_settings_cross_tenant_blocked(
-        self, api_client, mock_db, tenant2_headers
-    ):
-        """PUT /tenant/1/settings as tenant 2 → 403."""
-        payload = {"currency": "EUR"}
-        resp = await api_client.put(
-            "/api/v1/tenant/1/settings", json=payload, headers=tenant2_headers
-        )
-        assert resp.status_code == 403
-
-    @pytest.mark.asyncio
-    async def test_update_settings_viewer_reaches_handler(
-        self, api_client, mock_db, viewer_headers
-    ):
-        """PUT /tenant/1/settings as viewer.
-
-        The TENANT_SETTINGS permission gate was removed from this endpoint
-        (Permission enum drop, STRAT-SC-001 rename ledger) — tenant_dashboard.py
-        is deleted whole in Phase C, so the dependency was dropped rather than
-        reworked. A viewer with matching tenant_id now reaches the handler
-        (require_tenant still gates cross-tenant access) and gets 404 because
-        the mocked DB has no Tenant row, not a 403 permission rejection.
-        """
-        payload = {"currency": "EUR"}
-        resp = await api_client.put(
-            "/api/v1/tenant/1/settings", json=payload, headers=viewer_headers
-        )
-        assert resp.status_code == 404
+        assert body["data"]["currency"] == "USD"
 
     @pytest.mark.asyncio
     async def test_update_settings_admin_happy(
         self, api_client, mock_db, admin_headers
     ):
-        """PUT /tenant/1/settings as admin updates settings."""
-        tenant = _mock_tenant(id=1)
-        tenant_result = make_scalar_result(tenant)
-        mock_db.execute = AsyncMock(return_value=tenant_result)
-        mock_db.refresh = AsyncMock(
-            side_effect=lambda obj: [
-                setattr(obj, "settings", {**tenant.settings, "currency": "EUR"}),
-                setattr(obj, "feature_flags", tenant.feature_flags),
-            ]
-        )
+        """PUT /dashboard/settings as admin updates org settings."""
+        mock_db.get = AsyncMock(return_value=self._mock_org())
 
         payload = {"currency": "EUR"}
         resp = await api_client.put(
-            "/api/v1/tenant/1/settings", json=payload, headers=admin_headers
+            "/api/v1/dashboard/settings", json=payload, headers=admin_headers
         )
         assert resp.status_code == 200
         body = resp.json()
         assert body["success"] is True
+        assert body["data"]["currency"] == "EUR"

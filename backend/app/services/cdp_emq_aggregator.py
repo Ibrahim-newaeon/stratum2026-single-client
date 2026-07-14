@@ -29,7 +29,7 @@ class CDPEMQAggregator:
     Aggregates CDP EMQ scores for integration with Trust Engine.
 
     This service provides:
-    1. Daily aggregate EMQ scores per tenant
+    1. Daily aggregate EMQ scores
     2. EMQ trend analysis over time
     3. Profile quality metrics
     4. Integration with Signal Health calculation
@@ -46,15 +46,13 @@ class CDPEMQAggregator:
 
     async def get_aggregate_emq(
         self,
-        tenant_id: int,
         target_date: Optional[date] = None,
         lookback_days: int = 7,
     ) -> dict[str, Any]:
         """
-        Get aggregated CDP EMQ score for a tenant.
+        Get aggregated CDP EMQ score.
 
         Args:
-            tenant_id: Tenant identifier
             target_date: Date to calculate for (default: today)
             lookback_days: Days to include in average
 
@@ -81,7 +79,6 @@ class CDPEMQAggregator:
                 func.stddev(CDPEvent.emq_score).label("std_emq"),
             ).where(
                 and_(
-                    CDPEvent.tenant_id == tenant_id,
                     func.date(CDPEvent.received_at) >= start_date,
                     func.date(CDPEvent.received_at) <= target_date,
                     CDPEvent.emq_score.isnot(None),
@@ -91,18 +88,13 @@ class CDPEMQAggregator:
         stats = result.one()
 
         # Get profile count
-        profile_result = await self.db.execute(
-            select(func.count(CDPProfile.id)).where(CDPProfile.tenant_id == tenant_id)
-        )
+        profile_result = await self.db.execute(select(func.count(CDPProfile.id)))
         profile_count = profile_result.scalar() or 0
 
         # Get recent event count (last 24h)
         recent_result = await self.db.execute(
             select(func.count(CDPEvent.id)).where(
-                and_(
-                    CDPEvent.tenant_id == tenant_id,
-                    CDPEvent.received_at >= datetime.now(UTC) - timedelta(hours=24),
-                )
+                CDPEvent.received_at >= datetime.now(UTC) - timedelta(hours=24)
             )
         )
         recent_event_count = recent_result.scalar() or 0
@@ -155,14 +147,12 @@ class CDPEMQAggregator:
 
     async def get_emq_trend(
         self,
-        tenant_id: int,
         days: int = 30,
     ) -> list[dict[str, Any]]:
         """
-        Get daily EMQ trend for a tenant.
+        Get daily EMQ trend.
 
         Args:
-            tenant_id: Tenant identifier
             days: Number of days to retrieve
 
         Returns:
@@ -179,7 +169,6 @@ class CDPEMQAggregator:
             )
             .where(
                 and_(
-                    CDPEvent.tenant_id == tenant_id,
                     func.date(CDPEvent.received_at) >= start_date,
                     func.date(CDPEvent.received_at) <= end_date,
                     CDPEvent.emq_score.isnot(None),
@@ -198,10 +187,7 @@ class CDPEMQAggregator:
             for row in result.all()
         ]
 
-    async def get_profile_quality_breakdown(
-        self,
-        tenant_id: int,
-    ) -> dict[str, Any]:
+    async def get_profile_quality_breakdown(self) -> dict[str, Any]:
         """
         Get profile quality breakdown by lifecycle stage.
 
@@ -212,9 +198,7 @@ class CDPEMQAggregator:
                 CDPProfile.lifecycle_stage,
                 func.count(CDPProfile.id).label("count"),
                 func.avg(CDPProfile.total_events).label("avg_events"),
-            )
-            .where(CDPProfile.tenant_id == tenant_id)
-            .group_by(CDPProfile.lifecycle_stage)
+            ).group_by(CDPProfile.lifecycle_stage)
         )
 
         stages = {}
@@ -244,10 +228,7 @@ class CDPEMQAggregator:
             "identity_resolution_rate": round(resolution_rate, 1),
         }
 
-    async def get_consent_metrics(
-        self,
-        tenant_id: int,
-    ) -> dict[str, Any]:
+    async def get_consent_metrics(self) -> dict[str, Any]:
         """
         Get consent compliance metrics.
 
@@ -256,9 +237,7 @@ class CDPEMQAggregator:
         - consent_by_type: Breakdown by consent type
         """
         # Get total profiles
-        total_result = await self.db.execute(
-            select(func.count(CDPProfile.id)).where(CDPProfile.tenant_id == tenant_id)
-        )
+        total_result = await self.db.execute(select(func.count(CDPProfile.id)))
         total_profiles = total_result.scalar() or 0
 
         if total_profiles == 0:
@@ -272,10 +251,7 @@ class CDPEMQAggregator:
         # Get profiles with at least one consent granted
         profiles_with_consent_result = await self.db.execute(
             select(func.count(func.distinct(CDPConsent.profile_id))).where(
-                and_(
-                    CDPConsent.tenant_id == tenant_id,
-                    CDPConsent.granted == True,
-                )
+                CDPConsent.granted == True
             )
         )
         profiles_with_consent = profiles_with_consent_result.scalar() or 0
@@ -286,9 +262,7 @@ class CDPEMQAggregator:
                 CDPConsent.consent_type,
                 func.count(CDPConsent.id).label("count"),
                 func.sum(func.cast(CDPConsent.granted, Integer)).label("granted_count"),
-            )
-            .where(CDPConsent.tenant_id == tenant_id)
-            .group_by(CDPConsent.consent_type)
+            ).group_by(CDPConsent.consent_type)
         )
 
         consent_by_type = {}
@@ -393,7 +367,6 @@ class CDPEMQAggregator:
 
 async def get_cdp_emq_for_signal_health(
     db: AsyncSession,
-    tenant_id: int,
     target_date: Optional[date] = None,
 ) -> dict[str, Any]:
     """
@@ -401,7 +374,6 @@ async def get_cdp_emq_for_signal_health(
 
     Args:
         db: Database session
-        tenant_id: Tenant identifier
         target_date: Date to calculate for
 
     Returns:
@@ -410,13 +382,13 @@ async def get_cdp_emq_for_signal_health(
     aggregator = CDPEMQAggregator(db)
 
     # Get aggregate EMQ
-    emq_data = await aggregator.get_aggregate_emq(tenant_id, target_date)
+    emq_data = await aggregator.get_aggregate_emq(target_date)
 
     # Get profile quality
-    profile_data = await aggregator.get_profile_quality_breakdown(tenant_id)
+    profile_data = await aggregator.get_profile_quality_breakdown()
 
     # Get consent metrics
-    consent_data = await aggregator.get_consent_metrics(tenant_id)
+    consent_data = await aggregator.get_consent_metrics()
 
     # Calculate CDP contribution (now includes consent)
     cdp_score, issues = aggregator.calculate_cdp_contribution(

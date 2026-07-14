@@ -11,12 +11,13 @@ Enterprise integration endpoints:
 from datetime import UTC, datetime, timedelta
 from typing import Any, Optional
 
-from fastapi import APIRouter, Depends, HTTPException, Request, status
+from fastapi import APIRouter, Depends, HTTPException, status
 from pydantic import BaseModel, Field
 from sqlalchemy import text
 from sqlalchemy.exc import SQLAlchemyError
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from app.auth.deps import CurrentUserDep
 from app.core.config import settings
 from app.core.logging import get_logger
 from app.db.session import get_async_session
@@ -131,16 +132,10 @@ class TeamsMessageRequest(BaseModel):
 
 @router.get("/zapier", response_model=APIResponse[list[ZapierWebhookConfig]])
 async def list_zapier_webhooks(
-    req: Request,
+    current_user: CurrentUserDep,
     db: AsyncSession = Depends(get_async_session),
 ):
     """List configured Zapier/Make.com outgoing webhooks."""
-    tenant_id = getattr(req.state, "tenant_id", None)
-    if not tenant_id:
-        raise HTTPException(
-            status_code=status.HTTP_401_UNAUTHORIZED, detail="Tenant required"
-        )
-
     # In production, query integration_configs table
     # Return sample configs for now
     configs = [
@@ -162,23 +157,16 @@ async def list_zapier_webhooks(
 @router.post("/zapier", response_model=APIResponse[ZapierWebhookConfig])
 async def create_zapier_webhook(
     config: ZapierWebhookConfig,
-    req: Request,
+    current_user: CurrentUserDep,
     db: AsyncSession = Depends(get_async_session),
 ):
     """Register a new Zapier/Make.com outgoing webhook."""
-    tenant_id = getattr(req.state, "tenant_id", None)
-    if not tenant_id:
-        raise HTTPException(
-            status_code=status.HTTP_401_UNAUTHORIZED, detail="Tenant required"
-        )
-
     config.created_at = datetime.now(UTC).isoformat()
     config.last_triggered_at = None
     config.trigger_count = 0
 
     logger.info(
         "zapier_webhook_created",
-        tenant_id=tenant_id,
         webhook_id=config.id,
         events=config.event_types,
     )
@@ -189,7 +177,7 @@ async def create_zapier_webhook(
 @router.post("/zapier/trigger", response_model=APIResponse[ZapierTriggerResult])
 async def trigger_zapier_webhook(
     request: ZapierTriggerRequest,
-    req: Request,
+    current_user: CurrentUserDep,
     db: AsyncSession = Depends(get_async_session),
 ):
     """
@@ -197,24 +185,17 @@ async def trigger_zapier_webhook(
 
     Used for testing webhook connectivity or forcing immediate sync.
     """
-    tenant_id = getattr(req.state, "tenant_id", None)
-    if not tenant_id:
-        raise HTTPException(
-            status_code=status.HTTP_401_UNAUTHORIZED, detail="Tenant required"
-        )
-
     import time
 
     import aiohttp
 
     start = time.perf_counter()
 
-    # In production, fetch webhook URL from DB, validate tenant ownership
+    # In production, fetch webhook URL from DB
     webhook_url = "https://example.com/zapier-placeholder"
 
     payload = {
         "event": request.event_type,
-        "tenant_id": tenant_id,
         "timestamp": datetime.now(UTC).isoformat(),
         "data": request.payload,
     }
@@ -263,16 +244,10 @@ async def trigger_zapier_webhook(
 
 @router.get("/warehouse", response_model=APIResponse[list[WarehouseExportConfig]])
 async def list_warehouse_exports(
-    req: Request,
+    current_user: CurrentUserDep,
     db: AsyncSession = Depends(get_async_session),
 ):
     """List configured data warehouse export destinations."""
-    tenant_id = getattr(req.state, "tenant_id", None)
-    if not tenant_id:
-        raise HTTPException(
-            status_code=status.HTTP_401_UNAUTHORIZED, detail="Tenant required"
-        )
-
     configs = [
         WarehouseExportConfig(
             id="wh_001",
@@ -294,21 +269,15 @@ async def list_warehouse_exports(
 @router.post("/warehouse/sync", response_model=APIResponse[WarehouseSyncResult])
 async def sync_to_warehouse(
     export_id: str,
-    req: Request,
+    current_user: CurrentUserDep,
     db: AsyncSession = Depends(get_async_session),
 ):
     """
     Trigger a manual sync to a data warehouse.
 
-    Exports tenant-scoped campaign and metric data to the configured
-    Snowflake, BigQuery, Databricks, or Redshift destination.
+    Exports campaign and metric data to the configured Snowflake, BigQuery,
+    Databricks, or Redshift destination.
     """
-    tenant_id = getattr(req.state, "tenant_id", None)
-    if not tenant_id:
-        raise HTTPException(
-            status_code=status.HTTP_401_UNAUTHORIZED, detail="Tenant required"
-        )
-
     import time
 
     start = time.perf_counter()
@@ -323,10 +292,7 @@ async def sync_to_warehouse(
 
     try:
         result = await db.execute(
-            text(
-                "SELECT COUNT(*) as c FROM campaigns WHERE tenant_id = :t AND is_deleted = FALSE"
-            ),
-            {"t": tenant_id},
+            text("SELECT COUNT(*) as c FROM campaigns WHERE is_deleted = FALSE"),
         )
         campaign_count = result.mappings().first()["c"]
     except SQLAlchemyError as exc:
@@ -338,9 +304,8 @@ async def sync_to_warehouse(
     try:
         result = await db.execute(
             text(
-                "SELECT COUNT(*) as c FROM campaign_metrics WHERE tenant_id = :t AND date >= CURRENT_DATE - INTERVAL '30 days'"
+                "SELECT COUNT(*) as c FROM campaign_metrics WHERE date >= CURRENT_DATE - INTERVAL '30 days'"
             ),
-            {"t": tenant_id},
         )
         metric_count = result.mappings().first()["c"]
     except SQLAlchemyError as exc:
@@ -375,16 +340,10 @@ async def sync_to_warehouse(
 
 @router.get("/teams", response_model=APIResponse[list[TeamsWebhookConfig]])
 async def list_teams_webhooks(
-    req: Request,
+    current_user: CurrentUserDep,
     db: AsyncSession = Depends(get_async_session),
 ):
     """List configured Microsoft Teams incoming webhooks."""
-    tenant_id = getattr(req.state, "tenant_id", None)
-    if not tenant_id:
-        raise HTTPException(
-            status_code=status.HTTP_401_UNAUTHORIZED, detail="Tenant required"
-        )
-
     configs = [
         TeamsWebhookConfig(
             id="teams_001",
@@ -402,7 +361,7 @@ async def list_teams_webhooks(
 @router.post("/teams/send", response_model=APIResponse[dict])
 async def send_teams_message(
     request: TeamsMessageRequest,
-    req: Request,
+    current_user: CurrentUserDep,
     db: AsyncSession = Depends(get_async_session),
 ):
     """
@@ -410,12 +369,6 @@ async def send_teams_message(
 
     Uses Office 365 Connector Cards format for rich formatting.
     """
-    tenant_id = getattr(req.state, "tenant_id", None)
-    if not tenant_id:
-        raise HTTPException(
-            status_code=status.HTTP_401_UNAUTHORIZED, detail="Tenant required"
-        )
-
     import time
 
     import aiohttp

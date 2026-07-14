@@ -144,11 +144,10 @@ class ReportScheduler:
     MAX_RETRIES = 3
     RETRY_DELAYS = [60, 300, 900]  # 1min, 5min, 15min
 
-    def __init__(self, db: AsyncSession, tenant_id: int):
+    def __init__(self, db: AsyncSession):
         self.db = db
-        self.tenant_id = tenant_id
-        self.report_generator = ReportGenerator(db, tenant_id)
-        self.delivery_service = DeliveryService(db, tenant_id)
+        self.report_generator = ReportGenerator(db)
+        self.delivery_service = DeliveryService(db)
 
     # -------------------------------------------------------------------------
     # Schedule Management
@@ -178,12 +177,11 @@ class ReportScheduler:
 
         # Validate template exists
         template = await self.db.get(ReportTemplate, template_id)
-        if not template or template.tenant_id != self.tenant_id:
+        if not template:
             raise ValueError(f"Template not found: {template_id}")
 
         # Create schedule
         schedule = ScheduledReport(
-            tenant_id=self.tenant_id,
             template_id=template_id,
             name=name,
             description=description,
@@ -218,7 +216,7 @@ class ReportScheduler:
     async def update_schedule(self, schedule_id: UUID, **updates) -> ScheduledReport:
         """Update an existing schedule."""
         schedule = await self.db.get(ScheduledReport, schedule_id)
-        if not schedule or schedule.tenant_id != self.tenant_id:
+        if not schedule:
             raise ValueError(f"Schedule not found: {schedule_id}")
 
         # Apply updates
@@ -251,7 +249,7 @@ class ReportScheduler:
     async def resume_schedule(self, schedule_id: UUID) -> ScheduledReport:
         """Resume a paused schedule."""
         schedule = await self.db.get(ScheduledReport, schedule_id)
-        if not schedule or schedule.tenant_id != self.tenant_id:
+        if not schedule:
             raise ValueError(f"Schedule not found: {schedule_id}")
 
         schedule.is_paused = False
@@ -265,7 +263,7 @@ class ReportScheduler:
     async def delete_schedule(self, schedule_id: UUID) -> bool:
         """Delete a schedule."""
         schedule = await self.db.get(ScheduledReport, schedule_id)
-        if not schedule or schedule.tenant_id != self.tenant_id:
+        if not schedule:
             return False
 
         await self.db.delete(schedule)
@@ -412,7 +410,6 @@ class ReportScheduler:
             .options(selectinload(ScheduledReport.template))
             .where(
                 and_(
-                    ScheduledReport.tenant_id == self.tenant_id,
                     ScheduledReport.is_active == True,
                     ScheduledReport.is_paused == False,
                     ScheduledReport.next_run_at <= now,
@@ -509,7 +506,7 @@ class ReportScheduler:
             schedule_id,
             options=[selectinload(ScheduledReport.template)],
         )
-        if not schedule or schedule.tenant_id != self.tenant_id:
+        if not schedule:
             raise ValueError(f"Schedule not found: {schedule_id}")
 
         return await self.execute_schedule(schedule, triggered_by_user_id)
@@ -562,9 +559,7 @@ class ReportScheduler:
             schedule_id,
             options=[selectinload(ScheduledReport.template)],
         )
-        if schedule and schedule.tenant_id == self.tenant_id:
-            return schedule
-        return None
+        return schedule
 
     async def list_schedules(
         self,
@@ -575,7 +570,7 @@ class ReportScheduler:
         offset: int = 0,
     ) -> Tuple[List[ScheduledReport], int]:
         """List schedules with filtering."""
-        conditions = [ScheduledReport.tenant_id == self.tenant_id]
+        conditions = []
 
         if is_active is not None:
             conditions.append(ScheduledReport.is_active == is_active)
@@ -610,12 +605,7 @@ class ReportScheduler:
         """Get execution history for a schedule."""
         query = (
             select(ReportExecution)
-            .where(
-                and_(
-                    ReportExecution.tenant_id == self.tenant_id,
-                    ReportExecution.schedule_id == schedule_id,
-                )
-            )
+            .where(ReportExecution.schedule_id == schedule_id)
             .order_by(ReportExecution.started_at.desc())
             .limit(limit)
         )
@@ -648,7 +638,7 @@ class SchedulerWorker:
 
         while self._running:
             try:
-                await self._process_all_tenants()
+                await self._process_schedules()
             except (ConnectionError, TimeoutError, OSError, ValueError, KeyError) as e:
                 logger.error(f"Scheduler worker error: {str(e)}")
 
@@ -659,32 +649,14 @@ class SchedulerWorker:
         self._running = False
         logger.info("Scheduler worker stopped")
 
-    async def _process_all_tenants(self):
-        """Process schedules for all tenants."""
+    async def _process_schedules(self):
+        """Process all due schedules."""
         async with self.db_session_factory() as db:
-            # Get all tenant IDs with active schedules
-            query = (
-                select(ScheduledReport.tenant_id)
-                .where(
-                    and_(
-                        ScheduledReport.is_active == True,
-                        ScheduledReport.is_paused == False,
-                        ScheduledReport.next_run_at <= datetime.now(timezone.utc),
-                    )
+            scheduler = ReportScheduler(db)
+            results = await scheduler.process_due_schedules()
+
+            if results["processed"] > 0:
+                logger.info(
+                    f"Processed {results['processed']} schedules, "
+                    f"{results['succeeded']} succeeded, {results['failed']} failed"
                 )
-                .distinct()
-            )
-
-            result = await db.execute(query)
-            tenant_ids = result.scalars().all()
-
-        for tenant_id in tenant_ids:
-            async with self.db_session_factory() as db:
-                scheduler = ReportScheduler(db, tenant_id)
-                results = await scheduler.process_due_schedules()
-
-                if results["processed"] > 0:
-                    logger.info(
-                        f"Tenant {tenant_id}: processed {results['processed']} schedules, "
-                        f"{results['succeeded']} succeeded, {results['failed']} failed"
-                    )

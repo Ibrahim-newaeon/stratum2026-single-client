@@ -17,7 +17,7 @@ pytestmark = pytest.mark.unit
 @pytest.fixture
 def service() -> ForecastingService:
     # Pure helpers don't touch the session; alpha=0.5 for predictable EWMA.
-    return ForecastingService(db=None, tenant_id=1, ewma_alpha=0.5)
+    return ForecastingService(db=None, ewma_alpha=0.5)
 
 
 class TestEwma:

@@ -230,7 +230,7 @@ class TestFindCorpusFiles:
         (tmp_path / "docs" / "04-features" / "cdp.md").write_text("# CDP")
 
         files = find_corpus_files(tmp_path)
-        rel = sorted(str(f.relative_to(tmp_path)) for f in files)
+        rel = sorted(f.relative_to(tmp_path).as_posix() for f in files)
         assert "docs/00-overview/vision.md" in rel
         assert "docs/04-features/cdp.md" in rel
         assert all(".md" in f for f in rel)

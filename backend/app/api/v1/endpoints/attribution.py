@@ -15,14 +15,15 @@ from fastapi import APIRouter, Depends, HTTPException, Query
 from pydantic import BaseModel, Field
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from app.auth.deps import get_current_user
 from app.core.logging import get_logger
-from app.models import AttributionModel, User
+from app.db.session import get_db
+from app.models import AttributionModel
 from app.services.attribution import (
     AttributionCalculator,
     AttributionService,
     JourneyService,
 )
-from app.tenancy.deps import get_current_user, get_db, get_tenant_id
 
 logger = get_logger(__name__)
 router = APIRouter(prefix="/attribution", tags=["attribution"])
@@ -140,8 +141,7 @@ class AssistedConversionsResponse(BaseModel):
 async def attribute_deal(
     request: AttributeDealRequest,
     db: AsyncSession = Depends(get_db),
-    tenant_id: int = Depends(get_tenant_id),
-    current_user: User = Depends(get_current_user),
+    current_user=Depends(get_current_user),
 ):
     """
     Calculate attribution for a single deal.
@@ -149,7 +149,7 @@ async def attribute_deal(
     Applies the specified attribution model and returns the full breakdown
     of credit assigned to each touchpoint.
     """
-    service = AttributionService(db, tenant_id)
+    service = AttributionService(db)
     result = await service.attribute_deal(
         deal_id=request.deal_id,
         model=request.model,
@@ -163,15 +163,14 @@ async def attribute_deal(
 async def batch_attribute_deals(
     request: BatchAttributeRequest,
     db: AsyncSession = Depends(get_db),
-    tenant_id: int = Depends(get_tenant_id),
-    current_user: User = Depends(get_current_user),
+    current_user=Depends(get_current_user),
 ):
     """
     Batch attribute multiple deals.
 
     If deal_ids not provided, attributes all unattributed won deals in the date range.
     """
-    service = AttributionService(db, tenant_id)
+    service = AttributionService(db)
     result = await service.batch_attribute_deals(
         model=request.model,
         deal_ids=request.deal_ids,
@@ -191,8 +190,7 @@ async def compare_attribution_models(
         description="Comma-separated list of models to compare (first_touch,last_touch,linear,position_based,time_decay)",
     ),
     db: AsyncSession = Depends(get_db),
-    tenant_id: int = Depends(get_tenant_id),
-    current_user: User = Depends(get_current_user),
+    current_user=Depends(get_current_user),
 ):
     """
     Compare attribution results across different models.
@@ -209,7 +207,7 @@ async def compare_attribution_models(
             if m.strip() in [e.value for e in AttributionModel]
         ]
 
-    service = AttributionService(db, tenant_id)
+    service = AttributionService(db)
     result = await service.compare_attribution_models(
         start_date=start_date,
         end_date=end_date,
@@ -230,15 +228,14 @@ async def get_attribution_summary(
         "platform", description="Grouping: platform, campaign, adset, day"
     ),
     db: AsyncSession = Depends(get_db),
-    tenant_id: int = Depends(get_tenant_id),
-    current_user: User = Depends(get_current_user),
+    current_user=Depends(get_current_user),
 ):
     """
     Get attribution summary grouped by dimension.
 
     Returns attributed revenue and deal count by platform, campaign, etc.
     """
-    service = AttributionService(db, tenant_id)
+    service = AttributionService(db)
     result = await service.get_attribution_summary(
         start_date=start_date,
         end_date=end_date,
@@ -258,13 +255,12 @@ async def get_campaign_attribution(
         AttributionModel.LAST_TOUCH, description="Attribution model"
     ),
     db: AsyncSession = Depends(get_db),
-    tenant_id: int = Depends(get_tenant_id),
-    current_user: User = Depends(get_current_user),
+    current_user=Depends(get_current_user),
 ):
     """
     Get attribution details for a specific campaign.
     """
-    service = AttributionService(db, tenant_id)
+    service = AttributionService(db)
     result = await service.get_campaign_attribution(
         campaign_id=campaign_id,
         start_date=start_date,
@@ -285,15 +281,14 @@ async def get_contact_journey(
     contact_id: UUID,
     include_deals: bool = Query(True, description="Include deal information"),
     db: AsyncSession = Depends(get_db),
-    tenant_id: int = Depends(get_tenant_id),
-    current_user: User = Depends(get_current_user),
+    current_user=Depends(get_current_user),
 ):
     """
     Get complete journey for a single contact.
 
     Returns timeline of touchpoints and deals with full attribution details.
     """
-    service = JourneyService(db, tenant_id)
+    service = JourneyService(db)
     result = await service.get_contact_journey(
         contact_id=contact_id,
         include_deals=include_deals,
@@ -310,15 +305,14 @@ async def get_top_conversion_paths(
     min_conversions: int = Query(2, ge=1, description="Minimum conversions for path"),
     path_by: str = Query("platform", description="Group path by: platform or campaign"),
     db: AsyncSession = Depends(get_db),
-    tenant_id: int = Depends(get_tenant_id),
-    current_user: User = Depends(get_current_user),
+    current_user=Depends(get_current_user),
 ):
     """
     Get most common paths that lead to conversions.
 
     Shows which channel sequences most frequently result in won deals.
     """
-    service = JourneyService(db, tenant_id)
+    service = JourneyService(db)
     result = await service.get_top_conversion_paths(
         start_date=start_date,
         end_date=end_date,
@@ -336,15 +330,14 @@ async def get_channel_transitions(
     end_date: datetime = Query(..., description="End date"),
     min_transitions: int = Query(5, ge=1, description="Minimum transitions to include"),
     db: AsyncSession = Depends(get_db),
-    tenant_id: int = Depends(get_tenant_id),
-    current_user: User = Depends(get_current_user),
+    current_user=Depends(get_current_user),
 ):
     """
     Get channel transition data for Sankey diagram visualization.
 
     Shows how users move between channels during their journey.
     """
-    service = JourneyService(db, tenant_id)
+    service = JourneyService(db)
     result = await service.get_channel_transitions(
         start_date=start_date,
         end_date=end_date,
@@ -359,15 +352,14 @@ async def get_journey_metrics(
     start_date: datetime = Query(..., description="Start date"),
     end_date: datetime = Query(..., description="End date"),
     db: AsyncSession = Depends(get_db),
-    tenant_id: int = Depends(get_tenant_id),
-    current_user: User = Depends(get_current_user),
+    current_user=Depends(get_current_user),
 ):
     """
-    Get aggregate journey metrics for the tenant.
+    Get aggregate journey metrics.
 
     Includes average touches, time to conversion, channel usage.
     """
-    service = JourneyService(db, tenant_id)
+    service = JourneyService(db)
     result = await service.get_journey_metrics(
         start_date=start_date,
         end_date=end_date,
@@ -384,8 +376,7 @@ async def get_assisted_conversions(
     end_date: datetime = Query(..., description="End date"),
     group_by: str = Query("platform", description="Group by: platform or campaign"),
     db: AsyncSession = Depends(get_db),
-    tenant_id: int = Depends(get_tenant_id),
-    current_user: User = Depends(get_current_user),
+    current_user=Depends(get_current_user),
 ):
     """
     Get assisted conversion metrics.
@@ -393,7 +384,7 @@ async def get_assisted_conversions(
     Shows which channels/campaigns assist conversions (not last touch)
     vs. which directly convert (last touch).
     """
-    service = JourneyService(db, tenant_id)
+    service = JourneyService(db)
     result = await service.get_assisted_conversions(
         start_date=start_date,
         end_date=end_date,
@@ -408,15 +399,14 @@ async def get_time_lag_report(
     start_date: datetime = Query(..., description="Start date"),
     end_date: datetime = Query(..., description="End date"),
     db: AsyncSession = Depends(get_db),
-    tenant_id: int = Depends(get_tenant_id),
-    current_user: User = Depends(get_current_user),
+    current_user=Depends(get_current_user),
 ):
     """
     Get time lag analysis between first touch and conversion.
 
     Shows distribution of how long it takes users to convert.
     """
-    service = JourneyService(db, tenant_id)
+    service = JourneyService(db)
     result = await service.get_time_lag_report(
         start_date=start_date,
         end_date=end_date,
@@ -432,7 +422,7 @@ async def get_time_lag_report(
 
 @router.get("/models")
 async def list_attribution_models(
-    current_user: User = Depends(get_current_user),
+    current_user=Depends(get_current_user),
 ):
     """
     List available attribution models with descriptions.
@@ -485,7 +475,7 @@ async def calculate_weights_preview(
     touchpoint_count: int = Query(
         ..., ge=1, le=50, description="Number of touchpoints"
     ),
-    current_user: User = Depends(get_current_user),
+    current_user=Depends(get_current_user),
 ):
     """
     Preview attribution weights for a given model and touchpoint count.

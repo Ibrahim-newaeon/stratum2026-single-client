@@ -15,7 +15,7 @@ from typing import Optional
 
 from fastapi import APIRouter, Depends, HTTPException, Request, status
 from pydantic import BaseModel, Field
-from sqlalchemy import and_, desc, or_, select
+from sqlalchemy import and_, desc, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.logging import get_logger
@@ -124,26 +124,9 @@ async def list_changelog_entries(
     List changelog entries (public entries only, unless admin).
     """
     user_id = getattr(request.state, "user_id", None)
-
     user_role = getattr(request.state, "role", None)
-    tenant_id = getattr(request.state, "tenant_id", None)
 
     conditions = []
-
-    # Tenant scoping: show global entries (tenant_id IS NULL) + entries for current tenant
-    if user_role == UserRole.OWNER.value:
-        # Owners can optionally filter by tenant; by default see all
-        pass
-    elif tenant_id:
-        conditions.append(
-            or_(
-                ChangelogEntry.tenant_id == tenant_id,
-                ChangelogEntry.tenant_id.is_(None),
-            )
-        )
-    else:
-        # No tenant context — only show global entries
-        conditions.append(ChangelogEntry.tenant_id.is_(None))
 
     # Only admins may view unpublished entries
     if include_unpublished:
@@ -214,26 +197,11 @@ async def get_changelog_summary(
     Get summary of changelog for the current user.
     """
     user_id = getattr(request.state, "user_id", None)
-    tenant_id = getattr(request.state, "tenant_id", None)
-    user_role = getattr(request.state, "role", None)
-
-    # Build tenant-scoped conditions
-    summary_conditions = [ChangelogEntry.is_published == True]
-    if user_role != UserRole.OWNER.value:
-        if tenant_id:
-            summary_conditions.append(
-                or_(
-                    ChangelogEntry.tenant_id == tenant_id,
-                    ChangelogEntry.tenant_id.is_(None),
-                )
-            )
-        else:
-            summary_conditions.append(ChangelogEntry.tenant_id.is_(None))
 
     # Get all published entries
     result = await db.execute(
         select(ChangelogEntry)
-        .where(and_(*summary_conditions))
+        .where(ChangelogEntry.is_published == True)
         .order_by(desc(ChangelogEntry.published_at))
         .limit(1000)
     )
@@ -282,8 +250,6 @@ async def get_changelog_entry(
     Get a specific changelog entry.
     """
     user_id = getattr(request.state, "user_id", None)
-    tenant_id = getattr(request.state, "tenant_id", None)
-    user_role = getattr(request.state, "role", None)
 
     result = await db.execute(
         select(ChangelogEntry).where(ChangelogEntry.id == entry_id)
@@ -295,14 +261,6 @@ async def get_changelog_entry(
             status_code=status.HTTP_404_NOT_FOUND,
             detail="Changelog entry not found",
         )
-
-    # Enforce tenant scoping for non-owners
-    if user_role != UserRole.OWNER.value and entry.tenant_id is not None:
-        if tenant_id != entry.tenant_id:
-            raise HTTPException(
-                status_code=status.HTTP_403_FORBIDDEN,
-                detail="Access denied",
-            )
 
     # Check if user has read this entry
     is_read = False
@@ -347,8 +305,6 @@ async def mark_changelog_read(
     Mark a changelog entry as read for the current user.
     """
     user_id = getattr(request.state, "user_id", None)
-    tenant_id = getattr(request.state, "tenant_id", None)
-    user_role = getattr(request.state, "role", None)
 
     if not user_id:
         raise HTTPException(
@@ -366,12 +322,6 @@ async def mark_changelog_read(
             status_code=status.HTTP_404_NOT_FOUND,
             detail="Changelog entry not found",
         )
-    if user_role != UserRole.OWNER.value and entry.tenant_id is not None:
-        if tenant_id != entry.tenant_id:
-            raise HTTPException(
-                status_code=status.HTTP_403_FORBIDDEN,
-                detail="Access denied",
-            )
 
     # Check if already read
     existing = await db.execute(
@@ -406,8 +356,6 @@ async def mark_all_changelog_read(
     Mark all changelog entries as read for the current user.
     """
     user_id = getattr(request.state, "user_id", None)
-    tenant_id = getattr(request.state, "tenant_id", None)
-    user_role = getattr(request.state, "role", None)
 
     if not user_id:
         raise HTTPException(
@@ -415,21 +363,10 @@ async def mark_all_changelog_read(
             detail="Not authenticated",
         )
 
-    # Build tenant-scoped conditions
-    mark_conditions = [ChangelogEntry.is_published == True]
-    if user_role != UserRole.OWNER.value:
-        if tenant_id:
-            mark_conditions.append(
-                or_(
-                    ChangelogEntry.tenant_id == tenant_id,
-                    ChangelogEntry.tenant_id.is_(None),
-                )
-            )
-        else:
-            mark_conditions.append(ChangelogEntry.tenant_id.is_(None))
-
     # Get all published entries
-    result = await db.execute(select(ChangelogEntry.id).where(and_(*mark_conditions)))
+    result = await db.execute(
+        select(ChangelogEntry.id).where(ChangelogEntry.is_published == True)
+    )
     all_entry_ids = set(result.scalars().all())
 
     # Get already read entries
@@ -486,14 +423,11 @@ async def create_changelog_entry(
     except ValueError:
         entry_type = ChangelogType.FEATURE
 
-    tenant_id = getattr(request.state, "tenant_id", None)
-
     entry = ChangelogEntry(
         version=body.version,
         title=body.title,
         description=body.description,
         type=entry_type,
-        tenant_id=tenant_id,
         image_url=body.image_url,
         video_url=body.video_url,
         docs_url=body.docs_url,
@@ -538,8 +472,6 @@ async def update_changelog_entry(
     Update a changelog entry (admin only).
     """
     user_id = _require_admin(request)
-    tenant_id = getattr(request.state, "tenant_id", None)
-    user_role = getattr(request.state, "role", None)
 
     result = await db.execute(
         select(ChangelogEntry).where(ChangelogEntry.id == entry_id)
@@ -551,14 +483,6 @@ async def update_changelog_entry(
             status_code=status.HTTP_404_NOT_FOUND,
             detail="Changelog entry not found",
         )
-
-    # Enforce tenant scoping for non-owners
-    if user_role != UserRole.OWNER.value and entry.tenant_id is not None:
-        if tenant_id != entry.tenant_id:
-            raise HTTPException(
-                status_code=status.HTTP_403_FORBIDDEN,
-                detail="Access denied",
-            )
 
     # Update fields
     if body.version is not None:
@@ -617,8 +541,6 @@ async def delete_changelog_entry(
     Delete a changelog entry (admin only).
     """
     user_id = _require_admin(request)
-    tenant_id = getattr(request.state, "tenant_id", None)
-    user_role = getattr(request.state, "role", None)
 
     result = await db.execute(
         select(ChangelogEntry).where(ChangelogEntry.id == entry_id)
@@ -630,14 +552,6 @@ async def delete_changelog_entry(
             status_code=status.HTTP_404_NOT_FOUND,
             detail="Changelog entry not found",
         )
-
-    # Enforce tenant scoping for non-owners
-    if user_role != UserRole.OWNER.value and entry.tenant_id is not None:
-        if tenant_id != entry.tenant_id:
-            raise HTTPException(
-                status_code=status.HTTP_403_FORBIDDEN,
-                detail="Access denied",
-            )
 
     await db.delete(entry)
     await db.commit()

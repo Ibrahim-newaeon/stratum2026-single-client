@@ -89,7 +89,6 @@ class TokenPayload(BaseSchema):
     sub: str
     exp: datetime
     type: str
-    tenant_id: Optional[int] = None
     role: Optional[str] = None
 
 
@@ -115,7 +114,6 @@ class LoginResponse(BaseSchema):
     refresh_token: Optional[str] = None
     token_type: str = "bearer"
     expires_in: Optional[int] = None
-    available_tenants: Optional[list] = None
     mfa_required: bool = False
     mfa_token: Optional[str] = None
 
@@ -145,77 +143,6 @@ class RefreshTokenRequest(BaseSchema):
 
 
 # =============================================================================
-# Tenant Schemas
-# =============================================================================
-class TenantBase(BaseSchema):
-    """Base tenant fields."""
-
-    name: str = Field(..., min_length=2, max_length=255)
-    slug: str = Field(..., min_length=2, max_length=100, pattern=r"^[a-z0-9-]+$")
-    domain: Optional[str] = Field(None, max_length=255)
-
-
-class TenantCreate(TenantBase):
-    """Tenant creation request."""
-
-    plan: str = Field(default="free", max_length=50)
-
-
-class TenantUpdate(BaseSchema):
-    """Tenant update request."""
-
-    name: Optional[str] = Field(None, min_length=2, max_length=255)
-    domain: Optional[str] = Field(None, max_length=255)
-    settings: Optional[dict] = None
-    feature_flags: Optional[dict] = None
-
-
-class TenantResponse(TenantBase, TimestampMixin):
-    """Tenant response."""
-
-    id: int
-    plan: str
-    plan_expires_at: Optional[datetime]
-    max_users: int
-    max_campaigns: int
-    settings: dict
-    feature_flags: dict
-
-
-# =============================================================================
-# User-Tenant Membership Schemas (Multi-Account Switcher)
-# =============================================================================
-class TenantMembershipResponse(BaseSchema):
-    """A tenant the user has access to, with their role in that tenant."""
-
-    tenant_id: int
-    tenant_name: str
-    tenant_slug: str
-    tenant_plan: str
-    role: str
-    is_default: bool
-    is_active: bool
-
-
-class SwitchTenantRequest(BaseSchema):
-    """Request to switch active tenant context."""
-
-    tenant_id: int
-
-
-class SwitchTenantResponse(BaseSchema):
-    """Response after switching tenant - includes new tokens."""
-
-    access_token: str
-    refresh_token: str
-    token_type: str = "bearer"
-    expires_in: int
-    tenant_id: int
-    tenant_name: str
-    role: str
-
-
-# =============================================================================
 # User Schemas
 # =============================================================================
 class UserBase(BaseSchema):
@@ -232,7 +159,6 @@ class UserCreate(UserBase):
     """User creation request."""
 
     password: str = Field(..., min_length=8, max_length=128)
-    tenant_id: int
 
     @field_validator("password")
     @classmethod
@@ -265,7 +191,6 @@ class UserResponse(UserBase, TimestampMixin):
     """User response (excludes sensitive fields)."""
 
     id: int
-    tenant_id: int
     # Override EmailStr → str so decrypted-or-raw values pass validation
     email: str
     is_active: bool
@@ -356,7 +281,6 @@ class CampaignResponse(CampaignBase, TimestampMixin):
     """Campaign response."""
 
     id: int
-    tenant_id: int
     external_id: str
     account_id: str
 
@@ -479,7 +403,6 @@ class CreativeAssetResponse(CreativeAssetBase, TimestampMixin):
     """Creative asset response."""
 
     id: int
-    tenant_id: int
     campaign_id: Optional[int]
     file_url: str
     thumbnail_url: Optional[str]
@@ -569,7 +492,6 @@ class RuleResponse(RuleBase, TimestampMixin):
     """Rule response."""
 
     id: int
-    tenant_id: int
     condition_field: str
     condition_operator: RuleOperator
     condition_value: str
@@ -630,7 +552,6 @@ class CompetitorResponse(CompetitorBase, TimestampMixin):
     """Competitor benchmark response."""
 
     id: int
-    tenant_id: int
 
     # Scraped metadata
     meta_title: Optional[str]
@@ -734,7 +655,6 @@ class AuditLogResponse(BaseSchema):
     """Audit log entry response."""
 
     id: int
-    tenant_id: int
     user_id: Optional[int]
     action: AuditAction
     resource_type: str
@@ -888,4 +808,3 @@ class RealtimeEvent(BaseSchema):
     event_type: str  # 'sync_complete', 'rule_triggered', 'metric_update'
     payload: dict
     timestamp: datetime
-    tenant_id: int

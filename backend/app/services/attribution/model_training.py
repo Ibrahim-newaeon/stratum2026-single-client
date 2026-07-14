@@ -47,7 +47,6 @@ class DataDrivenModelType:
 
 def _build_trained_model(
     *,
-    tenant_id: int,
     model_type: str,
     channel_type: str,
     start_date: datetime,
@@ -64,7 +63,6 @@ def _build_trained_model(
     """
     weights = result.get("attribution_weights") or {}
     return TrainedAttributionModel(
-        tenant_id=tenant_id,
         model_name=result.get("model_name"),
         model_type=DDModelTypeEnum(model_type),
         channel_type=channel_type,
@@ -93,9 +91,8 @@ class ModelTrainingService:
     Service for training and managing data-driven attribution models.
     """
 
-    def __init__(self, db: AsyncSession, tenant_id: int):
+    def __init__(self, db: AsyncSession):
         self.db = db
-        self.tenant_id = tenant_id
 
     async def train_model(
         self,
@@ -128,9 +125,9 @@ class ModelTrainingService:
             model-registry CRUD 404'd because nothing was ever stored).
         """
         if model_type == DataDrivenModelType.MARKOV_CHAIN:
-            service = MarkovAttributionService(self.db, self.tenant_id)
+            service = MarkovAttributionService(self.db)
         elif model_type == DataDrivenModelType.SHAPLEY_VALUE:
-            service = ShapleyAttributionService(self.db, self.tenant_id)
+            service = ShapleyAttributionService(self.db)
         else:
             return {
                 "success": False,
@@ -173,7 +170,6 @@ class ModelTrainingService:
     ) -> TrainedAttributionModel:
         """Persist a successful training result and its run history record."""
         model = _build_trained_model(
-            tenant_id=self.tenant_id,
             model_type=model_type,
             channel_type=channel_type,
             start_date=start_date,
@@ -186,7 +182,6 @@ class ModelTrainingService:
         await self.db.flush()
 
         run = ModelTrainingRun(
-            tenant_id=self.tenant_id,
             model_id=model.id,
             model_type=DDModelTypeEnum(model_type),
             channel_type=channel_type,
@@ -312,7 +307,7 @@ class ModelTrainingService:
             AttributionService,
         )
 
-        attribution_service = AttributionService(self.db, self.tenant_id)
+        attribution_service = AttributionService(self.db)
 
         # Get rule-based attribution summaries
         rule_based = {}
@@ -412,7 +407,6 @@ class ModelTrainingService:
         deal_result = await self.db.execute(
             select(CRMDeal).where(
                 and_(
-                    CRMDeal.tenant_id == self.tenant_id,
                     CRMDeal.is_won == True,
                     CRMDeal.won_at >= start_date,
                     CRMDeal.won_at <= end_date,
@@ -503,7 +497,6 @@ class ModelTrainingService:
         deal_result = await self.db.execute(
             select(CRMDeal).where(
                 and_(
-                    CRMDeal.tenant_id == self.tenant_id,
                     CRMDeal.is_won == True,
                     CRMDeal.won_at >= validation_start,
                     CRMDeal.won_at <= validation_end,
@@ -523,10 +516,10 @@ class ModelTrainingService:
         # Load model
         if model_type == DataDrivenModelType.MARKOV_CHAIN:
             model = MarkovChainModel.from_dict(model_data)
-            service = MarkovAttributionService(self.db, self.tenant_id)
+            service = MarkovAttributionService(self.db)
         else:
             model = ShapleyValueModel.from_dict(model_data)
-            service = ShapleyAttributionService(self.db, self.tenant_id)
+            service = ShapleyAttributionService(self.db)
 
         # Calculate accuracy metrics
         correct_attributions = 0

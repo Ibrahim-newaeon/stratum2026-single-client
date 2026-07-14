@@ -69,20 +69,18 @@ class ZohoSyncService:
     - Multi-region support
     """
 
-    def __init__(self, db: AsyncSession, tenant_id: int, region: str = "com"):
+    def __init__(self, db: AsyncSession, region: str = "com"):
         """
         Initialize Zoho sync service.
 
         Args:
             db: Database session
-            tenant_id: Tenant ID
             region: Zoho region (com, eu, in, com.au, jp, com.cn)
         """
         self.db = db
-        self.tenant_id = tenant_id
         self.region = region
-        self.client = ZohoClient(db, tenant_id, region)
-        self.identity_matcher = IdentityMatcher(db, tenant_id)
+        self.client = ZohoClient(db, region)
+        self.identity_matcher = IdentityMatcher(db)
 
     async def sync_all(self, full_sync: bool = False) -> dict[str, Any]:
         """
@@ -164,13 +162,12 @@ class ZohoSyncService:
             results["status"] = "success" if not results["errors"] else "partial"
             logger.info(
                 "zoho_sync_complete",
-                tenant_id=self.tenant_id,
                 contacts=results["contacts_synced"],
                 deals=results["deals_synced"],
             )
 
         except (ConnectionError, TimeoutError, OSError, ValueError) as e:
-            logger.error("zoho_sync_failed", tenant_id=self.tenant_id, error=str(e))
+            logger.error("zoho_sync_failed", error=str(e))
             connection.last_sync_status = "failed"
             await self.db.commit()
             results["status"] = "error"
@@ -439,7 +436,6 @@ class ZohoSyncService:
         else:
             # Create new contact
             contact = CRMContact(
-                tenant_id=self.tenant_id,
                 connection_id=connection_id,
                 crm_contact_id=crm_contact_id,
                 **contact_fields,
@@ -634,7 +630,6 @@ class ZohoSyncService:
         else:
             # Create new deal
             deal = CRMDeal(
-                tenant_id=self.tenant_id,
                 connection_id=connection_id,
                 crm_deal_id=crm_deal_id,
                 **deal_fields,
@@ -712,11 +707,10 @@ class ZohoSyncService:
         await self.db.commit()
 
     async def _get_connection(self) -> Optional[CRMConnection]:
-        """Get Zoho connection for tenant."""
+        """Get Zoho connection."""
         result = await self.db.execute(
             select(CRMConnection).where(
                 and_(
-                    CRMConnection.tenant_id == self.tenant_id,
                     CRMConnection.provider == CRMProvider.ZOHO,
                 )
             )
@@ -742,7 +736,6 @@ class ZohoSyncService:
             result = await self.db.execute(
                 select(CRMDeal).where(
                     and_(
-                        CRMDeal.tenant_id == self.tenant_id,
                         CRMDeal.stage_normalized == stage,
                         CRMDeal.is_closed == False,
                     )
@@ -756,7 +749,6 @@ class ZohoSyncService:
         result = await self.db.execute(
             select(CRMDeal).where(
                 and_(
-                    CRMDeal.tenant_id == self.tenant_id,
                     CRMDeal.is_won == True,
                 )
             )

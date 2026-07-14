@@ -14,6 +14,7 @@ from sqlalchemy import func, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.config import settings
+from app.auth.deps import get_current_user
 from app.core.logging import get_logger
 from app.db.session import get_async_session
 from app.models import Rule, RuleExecution, RuleStatus
@@ -45,7 +46,14 @@ async def require_automation_rules_enabled() -> None:
         )
 
 
-router = APIRouter(dependencies=[Depends(require_automation_rules_enabled)])
+router = APIRouter(
+    # SECURITY (STRAT-SC-001/C3): the old per-org guards this router relied
+    # on were deleted in the de-tenanting sweep; real auth now enforced here.
+    dependencies=[
+        Depends(require_automation_rules_enabled),
+        Depends(get_current_user),
+    ]
+)
 
 
 @router.get("", response_model=APIResponse[PaginatedResponse[RuleResponse]])
@@ -57,10 +65,7 @@ async def list_rules(
     status: Optional[RuleStatus] = None,
 ):
     """List automation rules."""
-    tenant_id = getattr(request.state, "tenant_id", None)
-
     query = select(Rule).where(
-        Rule.tenant_id == tenant_id,
         Rule.is_deleted == False,
     )
 
@@ -98,12 +103,9 @@ async def get_rule(
     db: AsyncSession = Depends(get_async_session),
 ):
     """Get rule details."""
-    tenant_id = getattr(request.state, "tenant_id", None)
-
     result = await db.execute(
         select(Rule).where(
             Rule.id == rule_id,
-            Rule.tenant_id == tenant_id,
             Rule.is_deleted == False,
         )
     )
@@ -127,10 +129,7 @@ async def create_rule(
     db: AsyncSession = Depends(get_async_session),
 ):
     """Create a new automation rule."""
-    tenant_id = getattr(request.state, "tenant_id", None)
-
     rule = Rule(
-        tenant_id=tenant_id,
         **rule_data.model_dump(),
     )
 
@@ -154,12 +153,9 @@ async def update_rule(
     db: AsyncSession = Depends(get_async_session),
 ):
     """Update a rule."""
-    tenant_id = getattr(request.state, "tenant_id", None)
-
     result = await db.execute(
         select(Rule).where(
             Rule.id == rule_id,
-            Rule.tenant_id == tenant_id,
             Rule.is_deleted == False,
         )
     )
@@ -192,12 +188,9 @@ async def delete_rule(
     db: AsyncSession = Depends(get_async_session),
 ):
     """Soft delete a rule."""
-    tenant_id = getattr(request.state, "tenant_id", None)
-
     result = await db.execute(
         select(Rule).where(
             Rule.id == rule_id,
-            Rule.tenant_id == tenant_id,
             Rule.is_deleted == False,
         )
     )
@@ -222,12 +215,9 @@ async def activate_rule(
     db: AsyncSession = Depends(get_async_session),
 ):
     """Activate a rule."""
-    tenant_id = getattr(request.state, "tenant_id", None)
-
     result = await db.execute(
         select(Rule).where(
             Rule.id == rule_id,
-            Rule.tenant_id == tenant_id,
             Rule.is_deleted == False,
         )
     )
@@ -258,12 +248,9 @@ async def pause_rule(
     db: AsyncSession = Depends(get_async_session),
 ):
     """Pause a rule."""
-    tenant_id = getattr(request.state, "tenant_id", None)
-
     result = await db.execute(
         select(Rule).where(
             Rule.id == rule_id,
-            Rule.tenant_id == tenant_id,
             Rule.is_deleted == False,
         )
     )
@@ -294,12 +281,9 @@ async def toggle_rule(
     db: AsyncSession = Depends(get_async_session),
 ):
     """Toggle a rule between active and paused status."""
-    tenant_id = getattr(request.state, "tenant_id", None)
-
     result = await db.execute(
         select(Rule).where(
             Rule.id == rule_id,
-            Rule.tenant_id == tenant_id,
             Rule.is_deleted == False,
         )
     )
@@ -341,12 +325,9 @@ async def duplicate_rule(
     db: AsyncSession = Depends(get_async_session),
 ):
     """Duplicate (copy) an existing rule as a new draft."""
-    tenant_id = getattr(request.state, "tenant_id", None)
-
     result = await db.execute(
         select(Rule).where(
             Rule.id == rule_id,
-            Rule.tenant_id == tenant_id,
             Rule.is_deleted == False,
         )
     )
@@ -360,7 +341,6 @@ async def duplicate_rule(
 
     # Create a copy with draft status and reset counters
     new_rule = Rule(
-        tenant_id=tenant_id,
         name=f"{original.name} (Copy)",
         description=original.description,
         status=RuleStatus.DRAFT,
@@ -408,12 +388,9 @@ async def test_rule(
     Test a rule without executing actions.
     Returns what campaigns would be affected.
     """
-    tenant_id = getattr(request.state, "tenant_id", None)
-
     result = await db.execute(
         select(Rule).where(
             Rule.id == rule_id,
-            Rule.tenant_id == tenant_id,
         )
     )
     rule = result.scalar_one_or_none()
@@ -427,7 +404,7 @@ async def test_rule(
     # Evaluate rule in dry-run mode
     from app.services.rules_engine import RulesEngine
 
-    engine = RulesEngine(db, tenant_id)
+    engine = RulesEngine(db)
     test_results = await engine.evaluate_rule(rule, dry_run=True)
 
     return APIResponse(
@@ -447,11 +424,9 @@ async def get_rule_executions(
     limit: int = Query(50, ge=1, le=200),
 ):
     """Get execution history for a rule."""
-    tenant_id = getattr(request.state, "tenant_id", None)
-
     # Verify rule exists
     rule_result = await db.execute(
-        select(Rule).where(Rule.id == rule_id, Rule.tenant_id == tenant_id)
+        select(Rule).where(Rule.id == rule_id)
     )
     if not rule_result.scalar_one_or_none():
         raise HTTPException(
@@ -461,7 +436,7 @@ async def get_rule_executions(
 
     result = await db.execute(
         select(RuleExecution)
-        .where(RuleExecution.rule_id == rule_id, RuleExecution.tenant_id == tenant_id)
+        .where(RuleExecution.rule_id == rule_id)
         .order_by(RuleExecution.executed_at.desc())
         .limit(limit)
     )

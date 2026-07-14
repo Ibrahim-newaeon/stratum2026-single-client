@@ -26,7 +26,6 @@ from app.models.trust_layer import FactActionsQueue
 def make_action(**overrides) -> FactActionsQueue:
     """Transient action instance with everything action_to_response reads."""
     action = FactActionsQueue(
-        tenant_id=1,
         date=date(2026, 7, 5),
         action_type="budget_increase",
         entity_type="campaign",
@@ -45,7 +44,6 @@ def make_action(**overrides) -> FactActionsQueue:
 def make_approver(**overrides) -> User:
     defaults = dict(
         id=42,
-        tenant_id=1,
         email=encrypt_pii("approver@stratum.ai"),
         email_hash="x" * 64,
         password_hash="hash",
@@ -100,17 +98,6 @@ class TestApproverInfo:
         # while the relationship resolves to no row.
         action = make_action(approved_by_user_id=42, approved_by=None)
         assert _approver_info(action) is None
-
-    def test_cross_tenant_approver_pii_is_not_exposed(self):
-        # An owner from another tenant can approve via the X-Tenant-ID
-        # override; their name/department must never be served to this
-        # tenant. (Tenancy audit finding on PR #519.)
-        approver = make_approver(tenant_id=999)
-        action = make_action(approved_by_user_id=42, approved_by=approver)
-
-        info = _approver_info(action)
-
-        assert info == ApproverInfo(id=42, name="Platform staff", department=None)
 
 
 class TestActionResponseApprover:

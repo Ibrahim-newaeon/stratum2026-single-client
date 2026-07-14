@@ -19,8 +19,9 @@ from fastapi import APIRouter, BackgroundTasks, Depends, HTTPException, Query
 from pydantic import BaseModel, ConfigDict, Field
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from app.auth.deps import CurrentUserDep
 from app.core.logging import get_logger
-from app.models import User
+from app.db.session import get_async_session
 from app.models.reporting import (
     DeliveryChannel,
     ExecutionStatus,
@@ -33,7 +34,6 @@ from app.services.reporting import (
     ReportGenerator,
     ReportScheduler,
 )
-from app.tenancy.deps import get_current_user, get_db
 
 logger = get_logger(__name__)
 router = APIRouter()
@@ -239,15 +239,14 @@ class DeliveryStatusResponse(BaseModel):
 
 @router.post("/templates", response_model=TemplateResponse)
 async def create_template(
+    current_user: CurrentUserDep,
     data: TemplateCreate,
-    db: AsyncSession = Depends(get_db),
-    current_user: User = Depends(get_current_user),
+    db: AsyncSession = Depends(get_async_session),
 ) -> Any:
     """Create a new report template."""
     from app.models.reporting import ReportTemplate
 
     template = ReportTemplate(
-        tenant_id=current_user.tenant_id,
         name=data.name,
         description=data.description,
         report_type=data.report_type,
@@ -268,12 +267,12 @@ async def create_template(
 
 @router.get("/templates", response_model=List[TemplateResponse])
 async def list_templates(
+    current_user: CurrentUserDep,
     report_type: Optional[ReportType] = None,
     is_active: bool = True,
     limit: int = Query(default=50, le=100),
     offset: int = Query(default=0, ge=0),
-    db: AsyncSession = Depends(get_db),
-    current_user: User = Depends(get_current_user),
+    db: AsyncSession = Depends(get_async_session),
 ) -> Any:
     """List report templates."""
     from sqlalchemy import and_, select
@@ -281,7 +280,6 @@ async def list_templates(
     from app.models.reporting import ReportTemplate
 
     conditions = [
-        ReportTemplate.tenant_id == current_user.tenant_id,
         ReportTemplate.is_active == is_active,
     ]
 
@@ -302,15 +300,15 @@ async def list_templates(
 
 @router.get("/templates/{template_id}", response_model=TemplateResponse)
 async def get_template(
+    current_user: CurrentUserDep,
     template_id: UUID,
-    db: AsyncSession = Depends(get_db),
-    current_user: User = Depends(get_current_user),
+    db: AsyncSession = Depends(get_async_session),
 ) -> Any:
     """Get a specific report template."""
     from app.models.reporting import ReportTemplate
 
     template = await db.get(ReportTemplate, template_id)
-    if not template or template.tenant_id != current_user.tenant_id:
+    if not template:
         raise HTTPException(status_code=404, detail="Template not found")
 
     return template
@@ -318,16 +316,16 @@ async def get_template(
 
 @router.patch("/templates/{template_id}", response_model=TemplateResponse)
 async def update_template(
+    current_user: CurrentUserDep,
     template_id: UUID,
     data: TemplateUpdate,
-    db: AsyncSession = Depends(get_db),
-    current_user: User = Depends(get_current_user),
+    db: AsyncSession = Depends(get_async_session),
 ) -> Any:
     """Update a report template."""
     from app.models.reporting import ReportTemplate
 
     template = await db.get(ReportTemplate, template_id)
-    if not template or template.tenant_id != current_user.tenant_id:
+    if not template:
         raise HTTPException(status_code=404, detail="Template not found")
 
     if template.is_system:
@@ -346,15 +344,15 @@ async def update_template(
 
 @router.delete("/templates/{template_id}")
 async def delete_template(
+    current_user: CurrentUserDep,
     template_id: UUID,
-    db: AsyncSession = Depends(get_db),
-    current_user: User = Depends(get_current_user),
+    db: AsyncSession = Depends(get_async_session),
 ) -> Any:
     """Delete a report template."""
     from app.models.reporting import ReportTemplate
 
     template = await db.get(ReportTemplate, template_id)
-    if not template or template.tenant_id != current_user.tenant_id:
+    if not template:
         raise HTTPException(status_code=404, detail="Template not found")
 
     if template.is_system:
@@ -373,12 +371,12 @@ async def delete_template(
 
 @router.post("/schedules", response_model=ScheduleResponse)
 async def create_schedule(
+    current_user: CurrentUserDep,
     data: ScheduleCreate,
-    db: AsyncSession = Depends(get_db),
-    current_user: User = Depends(get_current_user),
+    db: AsyncSession = Depends(get_async_session),
 ) -> Any:
     """Create a new scheduled report."""
-    scheduler = ReportScheduler(db, current_user.tenant_id)
+    scheduler = ReportScheduler(db)
 
     try:
         schedule = await scheduler.create_schedule(
@@ -406,15 +404,15 @@ async def create_schedule(
 
 @router.get("/schedules", response_model=List[ScheduleResponse])
 async def list_schedules(
+    current_user: CurrentUserDep,
     is_active: Optional[bool] = None,
     template_id: Optional[UUID] = None,
     limit: int = Query(default=50, le=100),
     offset: int = Query(default=0, ge=0),
-    db: AsyncSession = Depends(get_db),
-    current_user: User = Depends(get_current_user),
+    db: AsyncSession = Depends(get_async_session),
 ) -> Any:
     """List scheduled reports."""
-    scheduler = ReportScheduler(db, current_user.tenant_id)
+    scheduler = ReportScheduler(db)
 
     schedules, _total = await scheduler.list_schedules(
         is_active=is_active,
@@ -428,12 +426,12 @@ async def list_schedules(
 
 @router.get("/schedules/{schedule_id}", response_model=ScheduleResponse)
 async def get_schedule(
+    current_user: CurrentUserDep,
     schedule_id: UUID,
-    db: AsyncSession = Depends(get_db),
-    current_user: User = Depends(get_current_user),
+    db: AsyncSession = Depends(get_async_session),
 ) -> Any:
     """Get a specific scheduled report."""
-    scheduler = ReportScheduler(db, current_user.tenant_id)
+    scheduler = ReportScheduler(db)
 
     schedule = await scheduler.get_schedule(schedule_id)
     if not schedule:
@@ -444,13 +442,13 @@ async def get_schedule(
 
 @router.patch("/schedules/{schedule_id}", response_model=ScheduleResponse)
 async def update_schedule(
+    current_user: CurrentUserDep,
     schedule_id: UUID,
     data: ScheduleUpdate,
-    db: AsyncSession = Depends(get_db),
-    current_user: User = Depends(get_current_user),
+    db: AsyncSession = Depends(get_async_session),
 ) -> Any:
     """Update a scheduled report."""
-    scheduler = ReportScheduler(db, current_user.tenant_id)
+    scheduler = ReportScheduler(db)
 
     try:
         update_data = data.model_dump(exclude_unset=True)
@@ -462,12 +460,12 @@ async def update_schedule(
 
 @router.post("/schedules/{schedule_id}/pause", response_model=ScheduleResponse)
 async def pause_schedule(
+    current_user: CurrentUserDep,
     schedule_id: UUID,
-    db: AsyncSession = Depends(get_db),
-    current_user: User = Depends(get_current_user),
+    db: AsyncSession = Depends(get_async_session),
 ) -> Any:
     """Pause a scheduled report."""
-    scheduler = ReportScheduler(db, current_user.tenant_id)
+    scheduler = ReportScheduler(db)
 
     try:
         schedule = await scheduler.pause_schedule(schedule_id)
@@ -478,12 +476,12 @@ async def pause_schedule(
 
 @router.post("/schedules/{schedule_id}/resume", response_model=ScheduleResponse)
 async def resume_schedule(
+    current_user: CurrentUserDep,
     schedule_id: UUID,
-    db: AsyncSession = Depends(get_db),
-    current_user: User = Depends(get_current_user),
+    db: AsyncSession = Depends(get_async_session),
 ) -> Any:
     """Resume a paused scheduled report."""
-    scheduler = ReportScheduler(db, current_user.tenant_id)
+    scheduler = ReportScheduler(db)
 
     try:
         schedule = await scheduler.resume_schedule(schedule_id)
@@ -494,13 +492,13 @@ async def resume_schedule(
 
 @router.post("/schedules/{schedule_id}/run-now", response_model=ExecutionResponse)
 async def run_schedule_now(
+    current_user: CurrentUserDep,
     schedule_id: UUID,
     background_tasks: BackgroundTasks,
-    db: AsyncSession = Depends(get_db),
-    current_user: User = Depends(get_current_user),
+    db: AsyncSession = Depends(get_async_session),
 ) -> Any:
     """Manually trigger a scheduled report to run immediately."""
-    scheduler = ReportScheduler(db, current_user.tenant_id)
+    scheduler = ReportScheduler(db)
 
     try:
         execution = await scheduler.run_now(schedule_id, current_user.id)
@@ -514,12 +512,12 @@ async def run_schedule_now(
 
 @router.delete("/schedules/{schedule_id}")
 async def delete_schedule(
+    current_user: CurrentUserDep,
     schedule_id: UUID,
-    db: AsyncSession = Depends(get_db),
-    current_user: User = Depends(get_current_user),
+    db: AsyncSession = Depends(get_async_session),
 ) -> Any:
     """Delete a scheduled report."""
-    scheduler = ReportScheduler(db, current_user.tenant_id)
+    scheduler = ReportScheduler(db)
 
     deleted = await scheduler.delete_schedule(schedule_id)
     if not deleted:
@@ -530,13 +528,13 @@ async def delete_schedule(
 
 @router.get("/schedules/{schedule_id}/history", response_model=List[ExecutionResponse])
 async def get_schedule_history(
+    current_user: CurrentUserDep,
     schedule_id: UUID,
     limit: int = Query(default=20, le=100),
-    db: AsyncSession = Depends(get_db),
-    current_user: User = Depends(get_current_user),
+    db: AsyncSession = Depends(get_async_session),
 ) -> Any:
     """Get execution history for a scheduled report."""
-    scheduler = ReportScheduler(db, current_user.tenant_id)
+    scheduler = ReportScheduler(db)
 
     # Verify schedule exists
     schedule = await scheduler.get_schedule(schedule_id)
@@ -554,13 +552,13 @@ async def get_schedule_history(
 
 @router.post("/generate", response_model=ExecutionResponse)
 async def generate_report(
+    current_user: CurrentUserDep,
     data: GenerateReportRequest,
     background_tasks: BackgroundTasks,
-    db: AsyncSession = Depends(get_db),
-    current_user: User = Depends(get_current_user),
+    db: AsyncSession = Depends(get_async_session),
 ) -> Any:
     """Generate a report on-demand."""
-    generator = ReportGenerator(db, current_user.tenant_id)
+    generator = ReportGenerator(db)
 
     try:
         result = await generator.generate_report(
@@ -575,7 +573,7 @@ async def generate_report(
 
         # Optionally deliver the report
         if data.deliver_to and data.delivery_config:
-            delivery_service = DeliveryService(db, current_user.tenant_id)
+            delivery_service = DeliveryService(db)
             await delivery_service.deliver_report(
                 execution_id=result["execution_id"],
                 channels=data.deliver_to,
@@ -597,22 +595,21 @@ async def generate_report(
 
 @router.get("/executions", response_model=List[ExecutionResponse])
 async def list_executions(
+    current_user: CurrentUserDep,
     status: Optional[ExecutionStatus] = None,
     report_type: Optional[ReportType] = None,
     start_date: Optional[date] = None,
     end_date: Optional[date] = None,
     limit: int = Query(default=50, le=100),
     offset: int = Query(default=0, ge=0),
-    db: AsyncSession = Depends(get_db),
-    current_user: User = Depends(get_current_user),
+    db: AsyncSession = Depends(get_async_session),
 ) -> Any:
     """List report executions."""
     from sqlalchemy import and_, select
 
     from app.models.reporting import ReportExecution
 
-    conditions = [ReportExecution.tenant_id == current_user.tenant_id]
-
+    conditions = []
     if status:
         conditions.append(ReportExecution.status == status)
     if report_type:
@@ -642,15 +639,15 @@ async def list_executions(
 
 @router.get("/executions/{execution_id}", response_model=ExecutionResponse)
 async def get_execution(
+    current_user: CurrentUserDep,
     execution_id: UUID,
-    db: AsyncSession = Depends(get_db),
-    current_user: User = Depends(get_current_user),
+    db: AsyncSession = Depends(get_async_session),
 ) -> Any:
     """Get a specific report execution."""
     from app.models.reporting import ReportExecution
 
     execution = await db.get(ReportExecution, execution_id)
-    if not execution or execution.tenant_id != current_user.tenant_id:
+    if not execution:
         raise HTTPException(status_code=404, detail="Execution not found")
 
     return execution
@@ -658,15 +655,15 @@ async def get_execution(
 
 @router.get("/executions/{execution_id}/download")
 async def download_report(
+    current_user: CurrentUserDep,
     execution_id: UUID,
-    db: AsyncSession = Depends(get_db),
-    current_user: User = Depends(get_current_user),
+    db: AsyncSession = Depends(get_async_session),
 ) -> Any:
     """Get download URL for a generated report."""
     from app.models.reporting import ReportExecution
 
     execution = await db.get(ReportExecution, execution_id)
-    if not execution or execution.tenant_id != current_user.tenant_id:
+    if not execution:
         raise HTTPException(status_code=404, detail="Execution not found")
 
     if execution.status != ExecutionStatus.COMPLETED:
@@ -696,18 +693,18 @@ async def download_report(
     "/executions/{execution_id}/deliveries", response_model=List[DeliveryStatusResponse]
 )
 async def get_delivery_status(
+    current_user: CurrentUserDep,
     execution_id: UUID,
-    db: AsyncSession = Depends(get_db),
-    current_user: User = Depends(get_current_user),
+    db: AsyncSession = Depends(get_async_session),
 ) -> Any:
     """Get delivery status for a report execution."""
-    delivery_service = DeliveryService(db, current_user.tenant_id)
+    delivery_service = DeliveryService(db)
 
     # Verify execution exists
     from app.models.reporting import ReportExecution
 
     execution = await db.get(ReportExecution, execution_id)
-    if not execution or execution.tenant_id != current_user.tenant_id:
+    if not execution:
         raise HTTPException(status_code=404, detail="Execution not found")
 
     deliveries = await delivery_service.get_delivery_status(execution_id)
@@ -716,12 +713,12 @@ async def get_delivery_status(
 
 @router.post("/deliveries/{delivery_id}/retry")
 async def retry_delivery(
+    current_user: CurrentUserDep,
     delivery_id: UUID,
-    db: AsyncSession = Depends(get_db),
-    current_user: User = Depends(get_current_user),
+    db: AsyncSession = Depends(get_async_session),
 ) -> Any:
     """Retry a failed delivery."""
-    delivery_service = DeliveryService(db, current_user.tenant_id)
+    delivery_service = DeliveryService(db)
 
     try:
         result = await delivery_service.retry_delivery(delivery_id)
@@ -740,7 +737,7 @@ async def retry_delivery(
 
 @router.get("/report-types")
 async def get_report_types(
-    current_user: User = Depends(get_current_user),
+    current_user: CurrentUserDep,
 ) -> Any:
     """Get available report types and their configurations."""
     return {

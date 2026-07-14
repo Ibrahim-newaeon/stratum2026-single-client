@@ -99,7 +99,6 @@ def _segment(**overrides: Any) -> SimpleNamespace:
     """Duck-typed CDPSegment with writable computed fields."""
     base = dict(
         id=uuid4(),
-        tenant_id=1,
         name="Seg",
         rules={"logic": "and", "conditions": []},
         segment_type=SegmentType.DYNAMIC.value,
@@ -117,7 +116,7 @@ def _segment(**overrides: Any) -> SimpleNamespace:
 
 @pytest.fixture
 def evaluator() -> SegmentEvaluator:
-    return SegmentEvaluator(db=None, tenant_id=1)
+    return SegmentEvaluator(db=None)
 
 
 # =============================================================================
@@ -336,7 +335,7 @@ class TestIdentifierAndEventValues:
     async def test_event_db_fetch_branch(self) -> None:
         events = [_event(), _event()]
         db = _make_db([_scalars(events)])
-        evaluator = SegmentEvaluator(db=db, tenant_id=1)
+        evaluator = SegmentEvaluator(db=db)
 
         count = await evaluator._get_event_value(
             _profile(), ["Purchase", "count"], None
@@ -354,7 +353,7 @@ class TestIdentifierAndEventValues:
 class TestSegmentCrud:
     async def test_create_segment_defaults_and_slug(self) -> None:
         db = _make_db()
-        service = SegmentService(db=db, tenant_id=1)
+        service = SegmentService(db=db)
 
         segment = await service.create_segment(
             name="High Value Customers!",
@@ -365,7 +364,6 @@ class TestSegmentCrud:
         )
 
         assert segment.slug == "high-value-customers"
-        assert segment.tenant_id == 1
         assert segment.status == SegmentStatus.DRAFT.value
         assert segment.segment_type == SegmentType.DYNAMIC.value
         assert segment.tags == ["vip"]
@@ -374,13 +372,13 @@ class TestSegmentCrud:
 
     async def test_get_segment(self) -> None:
         seg = _segment()
-        service = SegmentService(db=_make_db([_scalar(seg)]), tenant_id=1)
+        service = SegmentService(db=_make_db([_scalar(seg)]))
         assert await service.get_segment(seg.id) is seg
 
     async def test_list_segments_with_filters(self) -> None:
         segs = [_segment(), _segment()]
         db = _make_db([_scalar(3), _scalars(segs)])
-        service = SegmentService(db=db, tenant_id=1)
+        service = SegmentService(db=db)
 
         result, total = await service.list_segments(
             status=SegmentStatus.ACTIVE.value,
@@ -394,14 +392,14 @@ class TestSegmentCrud:
 
     async def test_list_segments_none_count_coerced_to_zero(self) -> None:
         db = _make_db([_scalar(None), _scalars([])])
-        service = SegmentService(db=db, tenant_id=1)
+        service = SegmentService(db=db)
         result, total = await service.list_segments()
         assert (result, total) == ([], 0)
 
     async def test_update_segment_rules_marks_stale(self) -> None:
         seg = _segment(status=SegmentStatus.ACTIVE.value)
         db = _make_db([_scalar(seg)])
-        service = SegmentService(db=db, tenant_id=1)
+        service = SegmentService(db=db)
 
         updated = await service.update_segment(
             seg.id, name="Renamed", rules={"logic": "or"}, not_a_field="ignored"
@@ -416,23 +414,23 @@ class TestSegmentCrud:
 
     async def test_update_segment_without_rules_keeps_status(self) -> None:
         seg = _segment(status=SegmentStatus.ACTIVE.value)
-        service = SegmentService(db=_make_db([_scalar(seg)]), tenant_id=1)
+        service = SegmentService(db=_make_db([_scalar(seg)]))
         await service.update_segment(seg.id, name="Renamed")
         assert seg.status == SegmentStatus.ACTIVE.value
 
     async def test_update_segment_not_found(self) -> None:
-        service = SegmentService(db=_make_db([_scalar(None)]), tenant_id=1)
+        service = SegmentService(db=_make_db([_scalar(None)]))
         assert await service.update_segment(uuid4(), name="x") is None
 
     async def test_delete_segment(self) -> None:
         seg = _segment()
         db = _make_db([_scalar(seg)])
-        service = SegmentService(db=db, tenant_id=1)
+        service = SegmentService(db=db)
         assert await service.delete_segment(seg.id) is True
         db.delete.assert_awaited_once_with(seg)
 
     async def test_delete_segment_not_found(self) -> None:
-        service = SegmentService(db=_make_db([_scalar(None)]), tenant_id=1)
+        service = SegmentService(db=_make_db([_scalar(None)]))
         assert await service.delete_segment(uuid4()) is False
 
 
@@ -443,7 +441,7 @@ class TestSegmentCrud:
 
 class TestComputeSegment:
     async def test_compute_segment_not_found(self) -> None:
-        service = SegmentService(db=_make_db([_scalar(None)]), tenant_id=1)
+        service = SegmentService(db=_make_db([_scalar(None)]))
         assert await service.compute_segment(uuid4()) == (0, 0)
 
     async def test_compute_add_reactivate_keep_remove(self) -> None:
@@ -472,7 +470,7 @@ class TestComputeSegment:
                 _scalar(3),  # final active count
             ]
         )
-        service = SegmentService(db=db, tenant_id=1)
+        service = SegmentService(db=db)
         service.evaluator.evaluate_profile = AsyncMock(
             side_effect=[(True, 0.8), (True, None), (True, 0.9), (False, None)]
         )
@@ -510,7 +508,7 @@ class TestComputeSegment:
                 _scalar(0),
             ]
         )
-        service = SegmentService(db=db, tenant_id=1)
+        service = SegmentService(db=db)
 
         assert await service.compute_segment(seg.id) == (0, 0)
         assert seg.next_refresh_at is None
@@ -519,7 +517,7 @@ class TestComputeSegment:
     async def test_compute_error_marks_stale_and_reraises(self) -> None:
         seg = _segment()
         db = _make_db([_scalar(seg), _scalars([_profile()])])
-        service = SegmentService(db=db, tenant_id=1)
+        service = SegmentService(db=db)
         service.evaluator.evaluate_profile = AsyncMock(side_effect=ValueError("boom"))
 
         with pytest.raises(ValueError, match="boom"):
@@ -544,7 +542,7 @@ class TestPreviewSegment:
                 _scalar(10),  # total profile count
             ]
         )
-        service = SegmentService(db=db, tenant_id=1)
+        service = SegmentService(db=db)
         service.evaluator.evaluate_profile = AsyncMock(
             side_effect=[(True, None), (False, None)]
         )
@@ -562,7 +560,7 @@ class TestPreviewSegment:
                 _scalar(8),  # total count (no second batch needed)
             ]
         )
-        service = SegmentService(db=db, tenant_id=1)
+        service = SegmentService(db=db)
         service.evaluator.evaluate_profile = AsyncMock(return_value=(True, None))
 
         estimated, sample = await service.preview_segment({"logic": "and"}, limit=1)
@@ -573,7 +571,7 @@ class TestPreviewSegment:
         assert service.evaluator.evaluate_profile.await_count == 1
 
     async def test_preview_no_profiles(self) -> None:
-        service = SegmentService(db=_make_db([_scalars([])]), tenant_id=1)
+        service = SegmentService(db=_make_db([_scalars([])]))
         assert await service.preview_segment({"logic": "and"}) == (0, [])
 
 
@@ -586,21 +584,21 @@ class TestMembership:
     async def test_get_segment_profiles(self) -> None:
         profiles = [_profile()]
         db = _make_db([_scalar(7), _scalars(profiles)])
-        service = SegmentService(db=db, tenant_id=1)
+        service = SegmentService(db=db)
         assert await service.get_segment_profiles(uuid4()) == (profiles, 7)
 
     async def test_get_profile_segments(self) -> None:
         segs = [_segment(), _segment()]
-        service = SegmentService(db=_make_db([_scalars(segs)]), tenant_id=1)
+        service = SegmentService(db=_make_db([_scalars(segs)]))
         assert await service.get_profile_segments(uuid4()) == segs
 
     async def test_add_profile_rejects_non_static(self) -> None:
         seg = _segment(segment_type=SegmentType.DYNAMIC.value)
-        service = SegmentService(db=_make_db([_scalar(seg)]), tenant_id=1)
+        service = SegmentService(db=_make_db([_scalar(seg)]))
         assert await service.add_profile_to_segment(seg.id, uuid4()) is False
 
     async def test_add_profile_segment_missing(self) -> None:
-        service = SegmentService(db=_make_db([_scalar(None)]), tenant_id=1)
+        service = SegmentService(db=_make_db([_scalar(None)]))
         assert await service.add_profile_to_segment(uuid4(), uuid4()) is False
 
     async def test_add_profile_existing_active_is_noop(self) -> None:
@@ -609,7 +607,7 @@ class TestMembership:
             is_active=True, removed_at=None, added_by_user_id=None
         )
         service = SegmentService(
-            db=_make_db([_scalar(seg), _scalar(existing)]), tenant_id=1
+            db=_make_db([_scalar(seg), _scalar(existing)])
         )
         assert await service.add_profile_to_segment(seg.id, uuid4()) is True
         assert seg.profile_count == 5
@@ -622,7 +620,7 @@ class TestMembership:
             added_by_user_id=None,
         )
         service = SegmentService(
-            db=_make_db([_scalar(seg), _scalar(existing)]), tenant_id=1
+            db=_make_db([_scalar(seg), _scalar(existing)])
         )
 
         assert (
@@ -638,7 +636,7 @@ class TestMembership:
         seg = _segment(segment_type=SegmentType.STATIC.value, profile_count=0)
         profile_id = uuid4()
         db = _make_db([_scalar(seg), _scalar(None)])
-        service = SegmentService(db=db, tenant_id=1)
+        service = SegmentService(db=db)
 
         assert (
             await service.add_profile_to_segment(seg.id, profile_id, added_by_user_id=9)
@@ -654,7 +652,7 @@ class TestMembership:
         seg = _segment(profile_count=1)
         membership = SimpleNamespace(is_active=True, removed_at=None)
         service = SegmentService(
-            db=_make_db([_scalar(seg), _scalar(membership)]), tenant_id=1
+            db=_make_db([_scalar(seg), _scalar(membership)])
         )
 
         before = datetime.now(UTC)
@@ -667,7 +665,7 @@ class TestMembership:
         seg = _segment(profile_count=0)
         membership = SimpleNamespace(is_active=True, removed_at=None)
         service = SegmentService(
-            db=_make_db([_scalar(seg), _scalar(membership)]), tenant_id=1
+            db=_make_db([_scalar(seg), _scalar(membership)])
         )
         assert await service.remove_profile_from_segment(seg.id, uuid4()) is True
         assert seg.profile_count == 0
@@ -675,10 +673,10 @@ class TestMembership:
     async def test_remove_profile_no_membership(self) -> None:
         seg = _segment()
         service = SegmentService(
-            db=_make_db([_scalar(seg), _scalar(None)]), tenant_id=1
+            db=_make_db([_scalar(seg), _scalar(None)])
         )
         assert await service.remove_profile_from_segment(seg.id, uuid4()) is False
 
     async def test_remove_profile_segment_missing(self) -> None:
-        service = SegmentService(db=_make_db([_scalar(None)]), tenant_id=1)
+        service = SegmentService(db=_make_db([_scalar(None)]))
         assert await service.remove_profile_from_segment(uuid4(), uuid4()) is False

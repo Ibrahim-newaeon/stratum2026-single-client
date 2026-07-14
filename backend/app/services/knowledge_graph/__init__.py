@@ -10,10 +10,10 @@ Usage:
     kg = KnowledgeGraphService(db_session)
 
     # Add a profile node
-    kg.create_profile(tenant_id, profile_id, properties)
+    kg.create_profile(profile_id, properties)
 
     # Query revenue attribution
-    results = kg.get_revenue_attribution(tenant_id, date_range)
+    results = kg.get_revenue_attribution(date_range)
 
     # Trace automation decision
     path = kg.trace_automation_decision(automation_id)

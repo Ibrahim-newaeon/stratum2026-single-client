@@ -69,10 +69,9 @@ class AudienceSyncService:
         SyncPlatform.SNAPCHAT.value: SnapchatAudienceConnector,
     }
 
-    def __init__(self, db: AsyncSession, tenant_id: int):
+    def __init__(self, db: AsyncSession):
         self.db = db
-        self.tenant_id = tenant_id
-        self.logger = logger.bind(tenant_id=tenant_id)
+        self.logger = logger
 
     # =========================================================================
     # Platform Audience Management
@@ -104,7 +103,6 @@ class AudienceSyncService:
 
         # Create platform audience record
         platform_audience = PlatformAudience(
-            tenant_id=self.tenant_id,
             segment_id=segment_id,
             platform=platform,
             platform_audience_name=audience_name,
@@ -123,7 +121,6 @@ class AudienceSyncService:
 
         # Create initial sync job
         sync_job = AudienceSyncJob(
-            tenant_id=self.tenant_id,
             platform_audience_id=platform_audience.id,
             operation=SyncOperation.CREATE.value,
             status=SyncStatus.PENDING.value,
@@ -195,7 +192,6 @@ class AudienceSyncService:
 
         # Create sync job
         sync_job = AudienceSyncJob(
-            tenant_id=self.tenant_id,
             platform_audience_id=platform_audience_id,
             operation=operation.value,
             status=SyncStatus.PENDING.value,
@@ -387,9 +383,7 @@ class AudienceSyncService:
         """
         List platform audiences with optional filtering.
         """
-        query = select(PlatformAudience).where(
-            PlatformAudience.tenant_id == self.tenant_id
-        )
+        query = select(PlatformAudience)
 
         if segment_id:
             query = query.where(PlatformAudience.segment_id == segment_id)
@@ -397,9 +391,7 @@ class AudienceSyncService:
             query = query.where(PlatformAudience.platform == platform)
 
         # Get total count
-        count_query = select(func.count(PlatformAudience.id)).where(
-            PlatformAudience.tenant_id == self.tenant_id
-        )
+        count_query = select(func.count(PlatformAudience.id))
         if segment_id:
             count_query = count_query.where(PlatformAudience.segment_id == segment_id)
         if platform:
@@ -429,7 +421,6 @@ class AudienceSyncService:
             select(AudienceSyncJob)
             .where(
                 AudienceSyncJob.platform_audience_id == platform_audience_id,
-                AudienceSyncJob.tenant_id == self.tenant_id,
             )
             .order_by(AudienceSyncJob.created_at.desc())
             .limit(limit)
@@ -444,7 +435,6 @@ class AudienceSyncService:
         """
         result = await self.db.execute(
             select(AudienceSyncCredential).where(
-                AudienceSyncCredential.tenant_id == self.tenant_id,
                 AudienceSyncCredential.is_active == True,
             )
         )
@@ -475,7 +465,6 @@ class AudienceSyncService:
         result = await self.db.execute(
             select(CDPSegment).where(
                 CDPSegment.id == segment_id,
-                CDPSegment.tenant_id == self.tenant_id,
             )
         )
         return result.scalar_one_or_none()
@@ -487,7 +476,6 @@ class AudienceSyncService:
         result = await self.db.execute(
             select(PlatformAudience).where(
                 PlatformAudience.id == audience_id,
-                PlatformAudience.tenant_id == self.tenant_id,
             )
         )
         return result.scalar_one_or_none()
@@ -500,7 +488,6 @@ class AudienceSyncService:
         """Get credentials for a platform/ad account."""
         result = await self.db.execute(
             select(AudienceSyncCredential).where(
-                AudienceSyncCredential.tenant_id == self.tenant_id,
                 AudienceSyncCredential.platform == platform,
                 AudienceSyncCredential.ad_account_id == ad_account_id,
                 AudienceSyncCredential.is_active == True,
@@ -531,7 +518,6 @@ class AudienceSyncService:
                 .where(
                     CDPSegmentMembership.segment_id == segment_id,
                     CDPSegmentMembership.is_active == True,
-                    CDPProfile.tenant_id == self.tenant_id,
                 )
                 .options(selectinload(CDPProfile.identifiers))
                 .order_by(CDPProfile.id)

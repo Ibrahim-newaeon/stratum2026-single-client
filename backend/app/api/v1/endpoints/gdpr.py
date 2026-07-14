@@ -51,14 +51,12 @@ async def export_user_data(
 
     Returns a JSON file containing all user data.
     """
-    tenant_id = getattr(request.state, "tenant_id", None)
     requesting_user_id = getattr(request.state, "user_id", None)
 
-    # Verify the user exists and belongs to the tenant
+    # Verify the user exists
     result = await db.execute(
         select(User).where(
             User.id == export_request.user_id,
-            User.tenant_id == tenant_id,
         )
     )
     user = result.scalar_one_or_none()
@@ -154,7 +152,6 @@ async def export_user_data(
 
     # Log the export action
     export_log = AuditLog(
-        tenant_id=tenant_id,
         user_id=requesting_user_id,
         action=AuditAction.EXPORT,
         resource_type="user",
@@ -195,7 +192,6 @@ async def anonymize_user_data(
     This permanently removes all PII associated with the user while preserving
     non-personal data for analytics purposes.
     """
-    tenant_id = getattr(request.state, "tenant_id", None)
     requesting_user_id = getattr(request.state, "user_id", None)
 
     # Verify confirmation
@@ -209,7 +205,6 @@ async def anonymize_user_data(
     result = await db.execute(
         select(User).where(
             User.id == anonymize_request.user_id,
-            User.tenant_id == tenant_id,
         )
     )
     user = result.scalar_one_or_none()
@@ -294,7 +289,6 @@ async def anonymize_user_data(
 
     # Create audit log for the anonymization
     anonymization_log = AuditLog(
-        tenant_id=tenant_id,
         user_id=requesting_user_id,
         action=AuditAction.ANONYMIZE,
         resource_type="user",
@@ -347,9 +341,7 @@ async def get_audit_logs(
 
     Filterable by user, action type, resource, and date range.
     """
-    tenant_id = getattr(request.state, "tenant_id", None)
-
-    query = select(AuditLog).where(AuditLog.tenant_id == tenant_id)
+    query = select(AuditLog)
 
     if user_id:
         query = query.where(AuditLog.user_id == user_id)

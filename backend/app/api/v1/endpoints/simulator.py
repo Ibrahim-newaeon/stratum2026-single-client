@@ -33,7 +33,6 @@ router = APIRouter()
 
 @router.post("", response_model=APIResponse[SimulationResponse])
 async def simulate_budget_change(
-    request: Request,
     simulation: SimulationRequest,
     db: AsyncSession = Depends(get_async_session),
 ):
@@ -44,15 +43,12 @@ async def simulate_budget_change(
     - ML_PROVIDER=local: Uses scikit-learn models
     - ML_PROVIDER=vertex: Uses Google Vertex AI
     """
-    tenant_id = getattr(request.state, "tenant_id", None)
-
     # Get campaign data if specified
     campaign_data = None
     if simulation.campaign_id:
         result = await db.execute(
             select(Campaign).where(
                 Campaign.id == simulation.campaign_id,
-                Campaign.tenant_id == tenant_id,
             )
         )
         campaign = result.scalar_one_or_none()
@@ -73,10 +69,9 @@ async def simulate_budget_change(
             "roas": campaign.roas,
         }
     else:
-        # Use aggregated tenant data for portfolio simulation
+        # Use aggregated portfolio data across all campaigns
         result = await db.execute(
             select(Campaign).where(
-                Campaign.tenant_id == tenant_id,
                 Campaign.is_deleted == False,
             )
         )
@@ -128,7 +123,6 @@ async def simulate_budget_change(
 
 @router.post("/forecast/roas", response_model=APIResponse[ROASForecastResponse])
 async def forecast_roas(
-    request: Request,
     forecast_request: ROASForecastRequest,
     db: AsyncSession = Depends(get_async_session),
 ):
@@ -137,11 +131,8 @@ async def forecast_roas(
 
     Uses historical data to forecast ROAS for the specified period.
     """
-    tenant_id = getattr(request.state, "tenant_id", None)
-
     # Get campaigns to forecast
     query = select(Campaign).where(
-        Campaign.tenant_id == tenant_id,
         Campaign.is_deleted == False,
     )
 
@@ -166,7 +157,6 @@ async def forecast_roas(
         campaigns=campaigns,
         days_ahead=forecast_request.days_ahead,
         granularity=forecast_request.granularity,
-        tenant_id=tenant_id,
         db=db,
     )
 
@@ -184,7 +174,6 @@ async def forecast_roas(
     "/predict/conversions", response_model=APIResponse[ConversionPredictionResponse]
 )
 async def predict_conversions(
-    request: Request,
     prediction_request: ConversionPredictionRequest,
     db: AsyncSession = Depends(get_async_session),
 ):
@@ -193,13 +182,10 @@ async def predict_conversions(
 
     Can be used to estimate conversions for different targeting scenarios.
     """
-    tenant_id = getattr(request.state, "tenant_id", None)
-
     # Verify campaign exists
     result = await db.execute(
         select(Campaign).where(
             Campaign.id == prediction_request.campaign_id,
-            Campaign.tenant_id == tenant_id,
         )
     )
     campaign = result.scalar_one_or_none()

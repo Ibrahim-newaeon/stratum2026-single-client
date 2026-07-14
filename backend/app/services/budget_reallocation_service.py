@@ -112,7 +112,6 @@ class ReallocationPlan:
     """A complete budget reallocation plan."""
 
     plan_id: str
-    tenant_id: str
     created_at: datetime
     strategy: ReallocationStrategy
     config: ReallocationConfig
@@ -160,7 +159,6 @@ class BudgetReallocationService:
 
         # Create reallocation plan
         plan = service.create_plan(
-            tenant_id="tenant_123",
             campaigns=campaign_states,
             config=ReallocationConfig(
                 strategy=ReallocationStrategy.ROAS_MAXIMIZATION,
@@ -183,7 +181,6 @@ class BudgetReallocationService:
 
     def create_plan(
         self,
-        tenant_id: str,
         campaigns: List[CampaignBudgetState],
         config: Optional[ReallocationConfig] = None,
     ) -> ReallocationPlan:
@@ -191,7 +188,6 @@ class BudgetReallocationService:
         Create a budget reallocation plan.
 
         Args:
-            tenant_id: Tenant identifier
             campaigns: Current state of campaigns
             config: Reallocation configuration
 
@@ -232,7 +228,6 @@ class BudgetReallocationService:
 
         plan = ReallocationPlan(
             plan_id=plan_id,
-            tenant_id=tenant_id,
             created_at=datetime.now(timezone.utc),
             strategy=config.strategy,
             config=config,
@@ -689,14 +684,10 @@ class BudgetReallocationService:
 
     def list_plans(
         self,
-        tenant_id: Optional[str] = None,
         status: Optional[ReallocationStatus] = None,
     ) -> List[ReallocationPlan]:
         """List reallocation plans with optional filtering."""
         plans = list(self._plans.values())
-
-        if tenant_id:
-            plans = [p for p in plans if p.tenant_id == tenant_id]
 
         if status:
             plans = [p for p in plans if p.status == status]
@@ -714,7 +705,6 @@ reallocation_service = BudgetReallocationService()
 
 
 def create_reallocation_plan(
-    tenant_id: str,
     campaigns: List[Dict[str, Any]],
     strategy: str = "balanced",
     max_change_percent: float = 25.0,
@@ -723,7 +713,6 @@ def create_reallocation_plan(
     Create a budget reallocation plan.
 
     Args:
-        tenant_id: Tenant identifier
         campaigns: List of campaign data dicts
         strategy: Reallocation strategy
         max_change_percent: Maximum budget change per campaign
@@ -762,7 +751,6 @@ def create_reallocation_plan(
     )
 
     plan = reallocation_service.create_plan(
-        tenant_id=tenant_id,
         campaigns=campaign_states,
         config=config,
     )

@@ -85,7 +85,6 @@ class BenchmarkMetric:
 class CompetitorBenchmark:
     """Complete benchmark comparison."""
 
-    tenant_id: str
     industry: Industry
     region: Region
     platform: str
@@ -134,7 +133,6 @@ class CompetitorBenchmarkingService:
 
         # Get benchmark comparison
         benchmark = service.get_benchmark(
-            tenant_id="tenant_123",
             industry=Industry.ECOMMERCE,
             region=Region.NORTH_AMERICA,
             platform="meta",
@@ -285,7 +283,6 @@ class CompetitorBenchmarkingService:
 
     def get_benchmark(
         self,
-        tenant_id: str,
         industry: Industry,
         region: Region,
         platform: str,
@@ -293,10 +290,9 @@ class CompetitorBenchmarkingService:
         period_days: int = 30,
     ) -> CompetitorBenchmark:
         """
-        Get benchmark comparison for a tenant.
+        Get benchmark comparison.
 
         Args:
-            tenant_id: Tenant identifier
             industry: Industry vertical
             region: Geographic region
             platform: Ad platform (meta, google, tiktok, etc.)
@@ -395,7 +391,6 @@ class CompetitorBenchmarkingService:
         )
 
         return CompetitorBenchmark(
-            tenant_id=tenant_id,
             industry=industry,
             region=region,
             platform=platform,
@@ -648,7 +643,6 @@ class CompetitorBenchmarkingService:
 
     def compare_platforms(
         self,
-        tenant_id: str,
         industry: Industry,
         platform_metrics: Dict[str, Dict[str, float]],
     ) -> Dict[str, Any]:
@@ -656,7 +650,6 @@ class CompetitorBenchmarkingService:
         Compare performance across multiple platforms.
 
         Args:
-            tenant_id: Tenant identifier
             industry: Industry vertical
             platform_metrics: Dict of platform -> metrics dict
 
@@ -667,7 +660,6 @@ class CompetitorBenchmarkingService:
 
         for platform, metrics in platform_metrics.items():
             benchmark = self.get_benchmark(
-                tenant_id=tenant_id,
                 industry=industry,
                 region=Region.GLOBAL,
                 platform=platform,
@@ -687,7 +679,6 @@ class CompetitorBenchmarkingService:
         )
 
         return {
-            "tenant_id": tenant_id,
             "industry": industry.value,
             "platforms": comparisons,
             "best_performing_platform": best_platform,
@@ -705,13 +696,12 @@ benchmarking_service = CompetitorBenchmarkingService()
 
 
 def get_benchmark_comparison(
-    tenant_id: str,
     industry: str,
     platform: str,
     metrics: Dict[str, float],
 ) -> Dict[str, Any]:
     """
-    Get benchmark comparison for a tenant.
+    Get benchmark comparison.
 
     Returns:
         Dict with benchmark comparison results
@@ -722,7 +712,6 @@ def get_benchmark_comparison(
         industry_enum = Industry.OTHER
 
     benchmark = benchmarking_service.get_benchmark(
-        tenant_id=tenant_id,
         industry=industry_enum,
         region=Region.GLOBAL,
         platform=platform,
@@ -1029,14 +1018,11 @@ class CompetitivePositionForecaster:
 
     def __init__(self, service: CompetitorBenchmarkingService):
         self.service = service
-        self._position_history: Dict[str, List[Tuple[datetime, float]]] = {}
+        self._position_history: List[Tuple[datetime, float]] = []
 
-    def record_position(self, tenant_id: str, percentile: float):
+    def record_position(self, percentile: float):
         """Record historical position."""
-        if tenant_id not in self._position_history:
-            self._position_history[tenant_id] = []
-
-        self._position_history[tenant_id].append(
+        self._position_history.append(
             (
                 datetime.now(timezone.utc),
                 percentile,
@@ -1045,18 +1031,17 @@ class CompetitivePositionForecaster:
 
         # Keep last 180 days
         cutoff = datetime.now(timezone.utc) - timedelta(days=180)
-        self._position_history[tenant_id] = [
-            (t, p) for t, p in self._position_history[tenant_id] if t > cutoff
+        self._position_history = [
+            (t, p) for t, p in self._position_history if t > cutoff
         ]
 
     def forecast_position(
         self,
-        tenant_id: str,
         current_percentile: float,
         metric_trends: Dict[str, float],  # metric -> monthly change rate
     ) -> CompetitivePositionForecast:
         """Forecast future competitive position."""
-        history = self._position_history.get(tenant_id, [])
+        history = self._position_history
 
         # Calculate momentum
         if len(history) >= 2:
@@ -1110,7 +1095,6 @@ class CompetitivePositionForecaster:
 
     def get_improvement_opportunities(
         self,
-        tenant_id: str,
         current_metrics: Dict[str, float],
         benchmarks: Dict[str, float],
     ) -> List[Dict[str, Any]]:

@@ -2,7 +2,7 @@
 # Stratum AI - Onboarding API Endpoints
 # =============================================================================
 """
-Onboarding wizard endpoints for new tenant setup.
+Onboarding wizard endpoints for initial org setup.
 
 The onboarding flow has 5 steps:
 1. Business Profile - Industry, spend, team size, market
@@ -267,18 +267,14 @@ class StepCompletionResponse(BaseModel):
 
 
 async def get_or_create_onboarding(
-    tenant_id: int,
     db: AsyncSession,
 ) -> TenantOnboarding:
-    """Get or create onboarding record for tenant."""
-    result = await db.execute(
-        select(TenantOnboarding).where(TenantOnboarding.tenant_id == tenant_id)
-    )
+    """Get or create the singleton onboarding record for the org."""
+    result = await db.execute(select(TenantOnboarding).limit(1))
     onboarding = result.scalar_one_or_none()
 
     if not onboarding:
         onboarding = TenantOnboarding(
-            tenant_id=tenant_id,
             status=OnboardingStatus.NOT_STARTED,
             current_step=OnboardingStep.BUSINESS_PROFILE,
             completed_steps=[],
@@ -329,7 +325,7 @@ async def get_onboarding_status(
 
     Returns all saved step data along with completion status.
     """
-    onboarding = await get_or_create_onboarding(current_user.tenant_id, db)
+    onboarding = await get_or_create_onboarding(db)
     await db.commit()
 
     # Build step data
@@ -420,7 +416,7 @@ async def save_business_profile(
 
     Captures industry, ad spend, team size, and target markets.
     """
-    onboarding = await get_or_create_onboarding(current_user.tenant_id, db)
+    onboarding = await get_or_create_onboarding(db)
 
     # Save data
     onboarding.industry = data.industry.value
@@ -439,7 +435,6 @@ async def save_business_profile(
     logger.info(
         "onboarding_step_completed",
         step="business_profile",
-        tenant_id=current_user.tenant_id,
         user_id=current_user.id,
     )
 
@@ -466,7 +461,7 @@ async def save_platform_selection(
 
     Captures which ad platforms the tenant wants to use.
     """
-    onboarding = await get_or_create_onboarding(current_user.tenant_id, db)
+    onboarding = await get_or_create_onboarding(db)
 
     # Save data
     onboarding.selected_platforms = data.platforms
@@ -480,7 +475,6 @@ async def save_platform_selection(
     logger.info(
         "onboarding_step_completed",
         step="platform_selection",
-        tenant_id=current_user.tenant_id,
         platforms=data.platforms,
     )
 
@@ -507,7 +501,7 @@ async def save_goals_setup(
 
     Captures KPIs, targets, currency, and timezone.
     """
-    onboarding = await get_or_create_onboarding(current_user.tenant_id, db)
+    onboarding = await get_or_create_onboarding(db)
 
     # Save data (convert dollars to cents for storage)
     onboarding.primary_kpi = data.primary_kpi.value
@@ -530,7 +524,6 @@ async def save_goals_setup(
     logger.info(
         "onboarding_step_completed",
         step="goals_setup",
-        tenant_id=current_user.tenant_id,
         primary_kpi=data.primary_kpi.value,
     )
 
@@ -559,7 +552,7 @@ async def save_automation_preferences(
 
     Captures automation mode and notification settings.
     """
-    onboarding = await get_or_create_onboarding(current_user.tenant_id, db)
+    onboarding = await get_or_create_onboarding(db)
 
     # Save data
     onboarding.automation_mode = data.automation_mode.value
@@ -586,7 +579,6 @@ async def save_automation_preferences(
     logger.info(
         "onboarding_step_completed",
         step="automation_preferences",
-        tenant_id=current_user.tenant_id,
         automation_mode=data.automation_mode.value,
     )
 
@@ -614,7 +606,7 @@ async def save_trust_gate_config(
     Captures trust thresholds and action limits.
     This is the final step of onboarding.
     """
-    onboarding = await get_or_create_onboarding(current_user.tenant_id, db)
+    onboarding = await get_or_create_onboarding(db)
 
     # Save data (convert dollars to cents for storage)
     onboarding.trust_threshold_autopilot = data.trust_threshold_autopilot
@@ -628,25 +620,22 @@ async def save_trust_gate_config(
     mark_step_completed(onboarding, OnboardingStep.TRUST_GATE_CONFIG)
     onboarding.completed_by_user_id = current_user.id
 
-    # Update tenant settings with trust thresholds
-    from app.models import Tenant
+    # Update org settings with trust thresholds
+    from app.base_models import get_organization
 
-    result = await db.execute(select(Tenant).where(Tenant.id == current_user.tenant_id))
-    tenant = result.scalar_one_or_none()
-    if tenant:
-        settings = tenant.settings or {}
-        settings["trust_threshold_autopilot"] = data.trust_threshold_autopilot
-        settings["trust_threshold_alert"] = data.trust_threshold_alert
-        settings["max_daily_actions"] = data.max_daily_actions
-        settings["automation_mode"] = onboarding.automation_mode
-        settings["onboarding_completed"] = True
-        tenant.settings = settings
+    org = await get_organization(db)
+    settings = org.settings or {}
+    settings["trust_threshold_autopilot"] = data.trust_threshold_autopilot
+    settings["trust_threshold_alert"] = data.trust_threshold_alert
+    settings["max_daily_actions"] = data.max_daily_actions
+    settings["automation_mode"] = onboarding.automation_mode
+    org.settings = settings
+    org.is_onboarded = True
 
     await db.commit()
 
     logger.info(
         "onboarding_completed",
-        tenant_id=current_user.tenant_id,
         user_id=current_user.id,
     )
 
@@ -673,27 +662,24 @@ async def skip_onboarding(
     Uses default values for uncompleted steps.
     Not recommended but available for users who want to explore first.
     """
-    onboarding = await get_or_create_onboarding(current_user.tenant_id, db)
+    onboarding = await get_or_create_onboarding(db)
 
     # Mark as skipped
     onboarding.status = OnboardingStatus.SKIPPED
     onboarding.completed_at = datetime.now(UTC)
 
-    # Update tenant settings
-    from app.models import Tenant
+    # Update org settings
+    from app.base_models import get_organization
 
-    result = await db.execute(select(Tenant).where(Tenant.id == current_user.tenant_id))
-    tenant = result.scalar_one_or_none()
-    if tenant:
-        settings = tenant.settings or {}
-        settings["onboarding_skipped"] = True
-        tenant.settings = settings
+    org = await get_organization(db)
+    settings = org.settings or {}
+    settings["onboarding_skipped"] = True
+    org.settings = settings
 
     await db.commit()
 
     logger.info(
         "onboarding_skipped",
-        tenant_id=current_user.tenant_id,
         user_id=current_user.id,
     )
 
@@ -715,11 +701,7 @@ async def reset_onboarding(
 
     Clears all saved preferences and resets to step 1.
     """
-    result = await db.execute(
-        select(TenantOnboarding).where(
-            TenantOnboarding.tenant_id == current_user.tenant_id
-        )
-    )
+    result = await db.execute(select(TenantOnboarding).limit(1))
     onboarding = result.scalar_one_or_none()
 
     if onboarding:
@@ -748,7 +730,6 @@ async def reset_onboarding(
 
     logger.info(
         "onboarding_reset",
-        tenant_id=current_user.tenant_id,
         user_id=current_user.id,
     )
 
@@ -768,7 +749,7 @@ async def check_onboarding_required(
 
     Returns whether to show the onboarding wizard.
     """
-    onboarding = await get_or_create_onboarding(current_user.tenant_id, db)
+    onboarding = await get_or_create_onboarding(db)
     await db.commit()
 
     required = onboarding.status in [

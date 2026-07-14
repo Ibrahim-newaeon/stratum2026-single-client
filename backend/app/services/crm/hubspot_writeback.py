@@ -239,9 +239,8 @@ class HubSpotWritebackService:
     - Touchpoint data
     """
 
-    def __init__(self, db: AsyncSession, tenant_id: int):
+    def __init__(self, db: AsyncSession):
         self.db = db
-        self.tenant_id = tenant_id
 
     async def setup_custom_properties(self) -> Dict[str, Any]:
         """
@@ -252,7 +251,7 @@ class HubSpotWritebackService:
         Returns:
             Summary of created/existing properties
         """
-        async with HubSpotClient(self.db, self.tenant_id) as client:
+        async with HubSpotClient(self.db) as client:
             results = {
                 "property_group": None,
                 "contact_properties": {"created": 0, "existing": 0, "failed": 0},
@@ -343,7 +342,6 @@ class HubSpotWritebackService:
         """
         # Build query for contacts to sync
         conditions = [
-            CRMContact.tenant_id == self.tenant_id,
             CRMContact.provider_contact_id.isnot(None),
         ]
 
@@ -408,7 +406,7 @@ class HubSpotWritebackService:
             }
 
         # Batch update in HubSpot
-        async with HubSpotClient(self.db, self.tenant_id) as client:
+        async with HubSpotClient(self.db) as client:
             response = await client.batch_update_contacts(updates)
 
         synced = len(response.get("results", [])) if response else 0
@@ -421,7 +419,6 @@ class HubSpotWritebackService:
 
         logger.info(
             "hubspot_contact_writeback_complete",
-            tenant_id=self.tenant_id,
             synced=synced,
             failed=failed,
         )
@@ -452,7 +449,6 @@ class HubSpotWritebackService:
         """
         # Build query for deals to sync
         conditions = [
-            CRMDeal.tenant_id == self.tenant_id,
             CRMDeal.provider_deal_id.isnot(None),
         ]
 
@@ -516,7 +512,7 @@ class HubSpotWritebackService:
             }
 
         # Batch update in HubSpot
-        async with HubSpotClient(self.db, self.tenant_id) as client:
+        async with HubSpotClient(self.db) as client:
             response = await client.batch_update_deals(updates)
 
         synced = len(response.get("results", [])) if response else 0
@@ -529,7 +525,6 @@ class HubSpotWritebackService:
 
         logger.info(
             "hubspot_deal_writeback_complete",
-            tenant_id=self.tenant_id,
             synced=synced,
             failed=failed,
         )
@@ -584,10 +579,7 @@ class HubSpotWritebackService:
         # Update connection last sync time
         conn_result = await self.db.execute(
             select(CRMConnection).where(
-                and_(
-                    CRMConnection.tenant_id == self.tenant_id,
-                    CRMConnection.status == CRMConnectionStatus.CONNECTED,
-                )
+                CRMConnection.status == CRMConnectionStatus.CONNECTED,
             )
         )
         connection = conn_result.scalar_one_or_none()
@@ -708,11 +700,7 @@ class HubSpotWritebackService:
     async def get_writeback_status(self) -> Dict[str, Any]:
         """Get current writeback configuration and status."""
         # Get connection
-        result = await self.db.execute(
-            select(CRMConnection).where(
-                CRMConnection.tenant_id == self.tenant_id,
-            )
-        )
+        result = await self.db.execute(select(CRMConnection))
         connection = result.scalar_one_or_none()
 
         if not connection or connection.status != CRMConnectionStatus.CONNECTED:
@@ -724,14 +712,10 @@ class HubSpotWritebackService:
 
         # Count records to sync
         contacts_count = await self.db.execute(
-            select(func.count())
-            .select_from(CRMContact)
-            .where(CRMContact.tenant_id == self.tenant_id)
+            select(func.count()).select_from(CRMContact)
         )
         deals_count = await self.db.execute(
-            select(func.count())
-            .select_from(CRMDeal)
-            .where(CRMDeal.tenant_id == self.tenant_id)
+            select(func.count()).select_from(CRMDeal)
         )
 
         return {

@@ -234,7 +234,6 @@ async def list_templates(
     """List newsletter templates."""
     query = select(NewsletterTemplate).where(
         NewsletterTemplate.is_active == is_active,
-        NewsletterTemplate.tenant_id == current_user.tenant_id,
     )
     if category:
         query = query.where(NewsletterTemplate.category == category)
@@ -259,7 +258,6 @@ async def create_template(
         content_html=data.content_html,
         content_json=data.content_json,
         category=data.category,
-        tenant_id=current_user.tenant_id,
         created_by_user_id=current_user.id,
     )
     db.add(template)
@@ -281,7 +279,6 @@ async def update_template(
     result = await db.execute(
         select(NewsletterTemplate).where(
             NewsletterTemplate.id == template_id,
-            NewsletterTemplate.tenant_id == current_user.tenant_id,
         )
     )
     template = result.scalar_one_or_none()
@@ -306,7 +303,6 @@ async def delete_template(
     result = await db.execute(
         select(NewsletterTemplate).where(
             NewsletterTemplate.id == template_id,
-            NewsletterTemplate.tenant_id == current_user.tenant_id,
         )
     )
     template = result.scalar_one_or_none()
@@ -330,12 +326,8 @@ async def list_campaigns(
     offset: int = Query(default=0, ge=0),
 ) -> CampaignListResponse:
     """List newsletter campaigns with optional status filter."""
-    query = select(NewsletterCampaign).where(
-        NewsletterCampaign.tenant_id == current_user.tenant_id
-    )
-    count_query = select(func.count(NewsletterCampaign.id)).where(
-        NewsletterCampaign.tenant_id == current_user.tenant_id
-    )
+    query = select(NewsletterCampaign)
+    count_query = select(func.count(NewsletterCampaign.id))
 
     if status:
         query = query.where(NewsletterCampaign.status == status)
@@ -376,7 +368,6 @@ async def create_campaign(
         reply_to_email=data.reply_to_email,
         audience_filters=data.audience_filters,
         status=CampaignStatus.DRAFT.value,
-        tenant_id=current_user.tenant_id,
         created_by_user_id=current_user.id,
     )
 
@@ -401,7 +392,6 @@ async def get_campaign(
     result = await db.execute(
         select(NewsletterCampaign).where(
             NewsletterCampaign.id == campaign_id,
-            NewsletterCampaign.tenant_id == current_user.tenant_id,
         )
     )
     campaign = result.scalar_one_or_none()
@@ -423,7 +413,6 @@ async def update_campaign(
     result = await db.execute(
         select(NewsletterCampaign).where(
             NewsletterCampaign.id == campaign_id,
-            NewsletterCampaign.tenant_id == current_user.tenant_id,
         )
     )
     campaign = result.scalar_one_or_none()
@@ -456,7 +445,6 @@ async def delete_campaign(
     result = await db.execute(
         select(NewsletterCampaign).where(
             NewsletterCampaign.id == campaign_id,
-            NewsletterCampaign.tenant_id == current_user.tenant_id,
         )
     )
     campaign = result.scalar_one_or_none()
@@ -489,7 +477,6 @@ async def duplicate_campaign(
     result = await db.execute(
         select(NewsletterCampaign).where(
             NewsletterCampaign.id == campaign_id,
-            NewsletterCampaign.tenant_id == current_user.tenant_id,
         )
     )
     original = result.scalar_one_or_none()
@@ -509,7 +496,6 @@ async def duplicate_campaign(
         audience_filters=original.audience_filters,
         status=CampaignStatus.DRAFT.value,
         total_recipients=original.total_recipients,
-        tenant_id=current_user.tenant_id,
         created_by_user_id=current_user.id,
     )
     db.add(clone)
@@ -528,7 +514,6 @@ async def send_campaign(
     result = await db.execute(
         select(NewsletterCampaign).where(
             NewsletterCampaign.id == campaign_id,
-            NewsletterCampaign.tenant_id == current_user.tenant_id,
         )
     )
     campaign = result.scalar_one_or_none()
@@ -554,7 +539,7 @@ async def send_campaign(
     try:
         from app.workers.newsletter_tasks import send_newsletter_campaign
 
-        send_newsletter_campaign.delay(campaign_id, current_user.tenant_id)
+        send_newsletter_campaign.delay(campaign_id)
     except (ImportError, ConnectionError, TimeoutError, OSError) as exc:
         logger.warning(f"Failed to dispatch newsletter campaign {campaign_id}: {exc}")
         # Worker may not be running in dev; campaign status is already set
@@ -576,7 +561,6 @@ async def schedule_campaign(
     result = await db.execute(
         select(NewsletterCampaign).where(
             NewsletterCampaign.id == campaign_id,
-            NewsletterCampaign.tenant_id == current_user.tenant_id,
         )
     )
     campaign = result.scalar_one_or_none()
@@ -613,7 +597,6 @@ async def cancel_campaign(
     result = await db.execute(
         select(NewsletterCampaign).where(
             NewsletterCampaign.id == campaign_id,
-            NewsletterCampaign.tenant_id == current_user.tenant_id,
         )
     )
     campaign = result.scalar_one_or_none()
@@ -643,7 +626,6 @@ async def send_test_email(
     result = await db.execute(
         select(NewsletterCampaign).where(
             NewsletterCampaign.id == campaign_id,
-            NewsletterCampaign.tenant_id == current_user.tenant_id,
         )
     )
     campaign = result.scalar_one_or_none()
@@ -688,7 +670,6 @@ async def campaign_analytics(
     result = await db.execute(
         select(NewsletterCampaign).where(
             NewsletterCampaign.id == campaign_id,
-            NewsletterCampaign.tenant_id == current_user.tenant_id,
         )
     )
     campaign = result.scalar_one_or_none()

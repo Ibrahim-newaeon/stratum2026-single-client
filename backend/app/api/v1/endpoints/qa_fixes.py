@@ -7,10 +7,10 @@ Provides quick fixes for common quality issues.
 
 Routes:
 - GET /qa-fixes/health - Health check
-- GET /qa-fixes/{tenant_id}/issues - Get detected quality issues
-- GET /qa-fixes/{tenant_id}/playbook - Get fix playbook
-- POST /qa-fixes/{tenant_id}/apply/{fix_id} - Apply a quick fix
-- GET /qa-fixes/{tenant_id}/history - View applied fixes history
+- GET /qa-fixes/issues - Get detected quality issues
+- GET /qa-fixes/playbook - Get fix playbook
+- POST /qa-fixes/apply/{fix_id} - Apply a quick fix
+- GET /qa-fixes/history - View applied fixes history
 """
 
 from datetime import datetime, timezone
@@ -21,13 +21,19 @@ from pydantic import BaseModel, Field
 from sqlalchemy import and_, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from app.auth.deps import get_current_user
 from app.core.logging import get_logger
 from app.db.session import get_async_session
 from app.schemas.response import APIResponse
 
 logger = get_logger(__name__)
 
-router = APIRouter(prefix="/qa-fixes")
+router = APIRouter(
+    prefix="/qa-fixes",
+    # SECURITY (STRAT-SC-001/C3): the old per-org guards this router relied
+    # on were deleted in the de-tenanting sweep; real auth now enforced here.
+    dependencies=[Depends(get_current_user)],
+)
 
 
 # =============================================================================
@@ -58,10 +64,9 @@ async def qa_fixes_health():
 # =============================================================================
 
 
-@router.get("/{tenant_id}/issues", response_model=APIResponse[Dict[str, Any]])
+@router.get("/issues", response_model=APIResponse[Dict[str, Any]])
 async def get_quality_issues(
     request: Request,
-    tenant_id: int,
     platform: Optional[str] = Query(None, description="Filter by platform"),
     severity: Optional[str] = Query(
         None, description="Filter by severity: critical, high, medium, low"
@@ -69,13 +74,10 @@ async def get_quality_issues(
     db: AsyncSession = Depends(get_async_session),
 ):
     """
-    Get detected quality issues for a tenant.
+    Get detected quality issues.
 
     Analyzes EMQ components and returns actionable issues with fix suggestions.
     """
-    if getattr(request.state, "tenant_id", None) != tenant_id:
-        raise HTTPException(status_code=403, detail="Access denied to this tenant")
-
     from app.analytics.logic.emq_calculation import (
         PlatformMetrics,
         calculate_emq_score,
@@ -85,9 +87,7 @@ async def get_quality_issues(
     # Fetch platform connections
     from app.models.campaign_builder import TenantPlatformConnection
 
-    conn_query = select(TenantPlatformConnection).where(
-        TenantPlatformConnection.tenant_id == tenant_id
-    )
+    conn_query = select(TenantPlatformConnection)
     if platform:
         conn_query = conn_query.where(TenantPlatformConnection.platform == platform)
 
@@ -170,7 +170,6 @@ async def get_quality_issues(
         except Exception as e:
             logger.warning(
                 "emq_calculation_failed",
-                tenant_id=tenant_id,
                 platform=conn.platform,
                 error=str(e),
             )
@@ -201,10 +200,9 @@ async def get_quality_issues(
 # =============================================================================
 
 
-@router.get("/{tenant_id}/playbook", response_model=APIResponse[Dict[str, Any]])
+@router.get("/playbook", response_model=APIResponse[Dict[str, Any]])
 async def get_fix_playbook(
     request: Request,
-    tenant_id: int,
     db: AsyncSession = Depends(get_async_session),
 ):
     """
@@ -212,9 +210,6 @@ async def get_fix_playbook(
 
     Returns step-by-step actions ordered by estimated impact.
     """
-    if getattr(request.state, "tenant_id", None) != tenant_id:
-        raise HTTPException(status_code=403, detail="Access denied to this tenant")
-
     # Get issues first
     from app.models.campaign_builder import (
         ConnectionStatus,
@@ -223,10 +218,7 @@ async def get_fix_playbook(
 
     result = await db.execute(
         select(TenantPlatformConnection).where(
-            and_(
-                TenantPlatformConnection.tenant_id == tenant_id,
-                TenantPlatformConnection.status == ConnectionStatus.CONNECTED,
-            )
+            TenantPlatformConnection.status == ConnectionStatus.CONNECTED,
         )
     )
     connections = result.scalars().all()
@@ -318,10 +310,9 @@ async def get_fix_playbook(
 # =============================================================================
 
 
-@router.post("/{tenant_id}/apply/{fix_id}", response_model=APIResponse[Dict[str, Any]])
+@router.post("/apply/{fix_id}", response_model=APIResponse[Dict[str, Any]])
 async def apply_fix(
     request: Request,
-    tenant_id: int,
     fix_id: str,
     body: FixApplication,
     db: AsyncSession = Depends(get_async_session),
@@ -332,9 +323,6 @@ async def apply_fix(
     Some fixes are automated (e.g., toggling CAPI dedup),
     others generate step-by-step instructions.
     """
-    if getattr(request.state, "tenant_id", None) != tenant_id:
-        raise HTTPException(status_code=403, detail="Access denied to this tenant")
-
     if not body.confirm:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
@@ -343,7 +331,6 @@ async def apply_fix(
 
     logger.info(
         "qa_fix_applied",
-        tenant_id=tenant_id,
         fix_id=fix_id,
         notes=body.notes,
     )
@@ -382,10 +369,9 @@ async def apply_fix(
 # =============================================================================
 
 
-@router.get("/{tenant_id}/history", response_model=APIResponse[Dict[str, Any]])
+@router.get("/history", response_model=APIResponse[Dict[str, Any]])
 async def get_fix_history(
     request: Request,
-    tenant_id: int,
     skip: int = Query(0, ge=0),
     limit: int = Query(20, ge=1, le=100),
     db: AsyncSession = Depends(get_async_session),
@@ -393,9 +379,6 @@ async def get_fix_history(
     """
     View history of applied fixes.
     """
-    if getattr(request.state, "tenant_id", None) != tenant_id:
-        raise HTTPException(status_code=403, detail="Access denied to this tenant")
-
     # Query enforcement audit logs for QA fix actions
     from sqlalchemy import text
 
@@ -404,12 +387,11 @@ async def get_fix_history(
             text("""
                 SELECT id, timestamp, action_type, entity_type, entity_id, details
                 FROM enforcement_audit_logs
-                WHERE tenant_id = :tenant_id
-                AND action_type LIKE 'qa_fix%'
+                WHERE action_type LIKE 'qa_fix%'
                 ORDER BY timestamp DESC
                 LIMIT :limit OFFSET :skip
             """),
-            {"tenant_id": tenant_id, "limit": limit, "skip": skip},
+            {"limit": limit, "skip": skip},
         )
         rows = result.fetchall()
 
@@ -425,9 +407,7 @@ async def get_fix_history(
             for row in rows
         ]
     except (ConnectionError, TimeoutError, OSError) as exc:
-        logger.warning(
-            "qa_fix_history_query_failed", error=str(exc), tenant_id=tenant_id
-        )
+        logger.warning("qa_fix_history_query_failed", error=str(exc))
         history = []
 
     return APIResponse(

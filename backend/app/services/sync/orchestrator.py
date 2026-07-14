@@ -47,7 +47,6 @@ class SyncResult:
     """Result of a platform sync operation."""
 
     platform: str
-    tenant_id: int
     campaigns_synced: int = 0
     metrics_upserted: int = 0
     errors: list[str] = field(default_factory=list)
@@ -65,29 +64,25 @@ class PlatformSyncOrchestrator:
 
     async def sync_platform(
         self,
-        tenant_id: int,
         platform: AdPlatform,
         days_back: int = 30,
     ) -> SyncResult:
         """
-        Sync all campaigns and metrics for a tenant+platform.
+        Sync all campaigns and metrics for a platform.
 
         Args:
-            tenant_id: Tenant to sync for
             platform: Which ad platform to sync
             days_back: How many days of historical metrics to fetch
         """
         t0 = time.monotonic()
-        result = SyncResult(platform=platform.value, tenant_id=tenant_id)
+        result = SyncResult(platform=platform.value)
 
         if settings.use_mock_ad_data:
-            logger.info(
-                "sync_skipped_mock_mode", tenant=tenant_id, platform=platform.value
-            )
+            logger.info("sync_skipped_mock_mode", platform=platform.value)
             return result
 
         # 1. Load connection (or fall back to env vars)
-        conn = await self._load_connection(tenant_id, platform)
+        conn = await self._load_connection(platform)
 
         access_token: Optional[str] = None
         account_ids: list[str] = []
@@ -127,15 +122,15 @@ class PlatformSyncOrchestrator:
             try:
                 if platform == AdPlatform.META:
                     synced, metrics = await self._sync_meta_account(
-                        tenant_id, access_token, acct_id, date_start, date_end
+                        access_token, acct_id, date_start, date_end
                     )
                 elif platform == AdPlatform.TIKTOK:
                     synced, metrics = await self._sync_tiktok_account(
-                        tenant_id, access_token, acct_id, date_start, date_end
+                        access_token, acct_id, date_start, date_end
                     )
                 elif platform == AdPlatform.SNAPCHAT:
                     synced, metrics = await self._sync_snapchat_account(
-                        tenant_id, access_token, acct_id, date_start, date_end
+                        access_token, acct_id, date_start, date_end
                     )
                 else:
                     continue
@@ -150,15 +145,15 @@ class PlatformSyncOrchestrator:
                     try:
                         if platform == AdPlatform.META:
                             synced, metrics = await self._sync_meta_account(
-                                tenant_id, access_token, acct_id, date_start, date_end
+                                access_token, acct_id, date_start, date_end
                             )
                         elif platform == AdPlatform.TIKTOK:
                             synced, metrics = await self._sync_tiktok_account(
-                                tenant_id, access_token, acct_id, date_start, date_end
+                                access_token, acct_id, date_start, date_end
                             )
                         elif platform == AdPlatform.SNAPCHAT:
                             synced, metrics = await self._sync_snapchat_account(
-                                tenant_id, access_token, acct_id, date_start, date_end
+                                access_token, acct_id, date_start, date_end
                             )
                         else:
                             continue
@@ -183,7 +178,6 @@ class PlatformSyncOrchestrator:
         result.duration_seconds = round(time.monotonic() - t0, 2)
         logger.info(
             "sync_completed",
-            tenant=tenant_id,
             platform=platform.value,
             campaigns=result.campaigns_synced,
             metrics=result.metrics_upserted,
@@ -230,7 +224,6 @@ class PlatformSyncOrchestrator:
 
     async def _sync_account(
         self,
-        tenant_id: int,
         platform: AdPlatform,
         access_token: str,
         account: TenantAdAccount,
@@ -244,15 +237,15 @@ class PlatformSyncOrchestrator:
 
         if platform == AdPlatform.META:
             campaigns_synced, metrics_upserted = await self._sync_meta_account(
-                tenant_id, access_token, account_id, date_start, date_end
+                access_token, account_id, date_start, date_end
             )
         elif platform == AdPlatform.TIKTOK:
             campaigns_synced, metrics_upserted = await self._sync_tiktok_account(
-                tenant_id, access_token, account_id, date_start, date_end
+                access_token, account_id, date_start, date_end
             )
         elif platform == AdPlatform.SNAPCHAT:
             campaigns_synced, metrics_upserted = await self._sync_snapchat_account(
-                tenant_id, access_token, account_id, date_start, date_end
+                access_token, account_id, date_start, date_end
             )
 
         # Update account sync timestamp
@@ -262,7 +255,6 @@ class PlatformSyncOrchestrator:
 
     async def _sync_meta_account(
         self,
-        tenant_id: int,
         access_token: str,
         account_id: str,
         date_start: date,
@@ -275,7 +267,6 @@ class PlatformSyncOrchestrator:
 
         for mc in raw_campaigns:
             campaign = await self._upsert_campaign(
-                tenant_id=tenant_id,
                 platform=AdPlatform.META,
                 external_id=mc.external_id,
                 account_id=account_id,
@@ -297,7 +288,6 @@ class PlatformSyncOrchestrator:
                 )
                 for row in insights:
                     await self._upsert_metric(
-                        tenant_id=tenant_id,
                         campaign_id=campaign.id,
                         metric_date=row.date,
                         spend_cents=row.spend_cents,
@@ -320,7 +310,6 @@ class PlatformSyncOrchestrator:
 
     async def _sync_tiktok_account(
         self,
-        tenant_id: int,
         access_token: str,
         advertiser_id: str,
         date_start: date,
@@ -338,7 +327,6 @@ class PlatformSyncOrchestrator:
 
         for tc in raw_campaigns:
             campaign = await self._upsert_campaign(
-                tenant_id=tenant_id,
                 platform=AdPlatform.TIKTOK,
                 external_id=tc.external_id,
                 account_id=advertiser_id,
@@ -364,7 +352,6 @@ class PlatformSyncOrchestrator:
                     if not campaign:
                         continue
                     await self._upsert_metric(
-                        tenant_id=tenant_id,
                         campaign_id=campaign.id,
                         metric_date=row.date,
                         spend_cents=row.spend_cents,
@@ -388,7 +375,6 @@ class PlatformSyncOrchestrator:
 
     async def _sync_snapchat_account(
         self,
-        tenant_id: int,
         access_token: str,
         ad_account_id: str,
         date_start: date,
@@ -406,7 +392,6 @@ class PlatformSyncOrchestrator:
 
         for sc in raw_campaigns:
             campaign = await self._upsert_campaign(
-                tenant_id=tenant_id,
                 platform=AdPlatform.SNAPCHAT,
                 external_id=sc.external_id,
                 account_id=ad_account_id,
@@ -434,7 +419,6 @@ class PlatformSyncOrchestrator:
                     if not campaign:
                         continue
                     await self._upsert_metric(
-                        tenant_id=tenant_id,
                         campaign_id=campaign.id,
                         metric_date=row.date,
                         spend_cents=row.spend_cents,
@@ -462,7 +446,6 @@ class PlatformSyncOrchestrator:
 
     async def _upsert_campaign(
         self,
-        tenant_id: int,
         platform: AdPlatform,
         external_id: str,
         account_id: str,
@@ -475,11 +458,10 @@ class PlatformSyncOrchestrator:
         end_date: Optional[datetime] = None,
         raw_data: Optional[dict] = None,
     ) -> Campaign:
-        """Insert or update a campaign by tenant+platform+external_id."""
+        """Insert or update a campaign by platform+external_id."""
         result = await self.db.execute(
             select(Campaign).where(
                 and_(
-                    Campaign.tenant_id == tenant_id,
                     Campaign.platform == platform,
                     Campaign.external_id == external_id,
                 )
@@ -513,7 +495,6 @@ class PlatformSyncOrchestrator:
             campaign.sync_error = None
         else:
             campaign = Campaign(
-                tenant_id=tenant_id,
                 platform=platform,
                 external_id=external_id,
                 account_id=account_id,
@@ -540,7 +521,6 @@ class PlatformSyncOrchestrator:
 
     async def _upsert_metric(
         self,
-        tenant_id: int,
         campaign_id: int,
         metric_date: date,
         spend_cents: int = 0,
@@ -571,7 +551,6 @@ class PlatformSyncOrchestrator:
                 metric.video_views = video_views
         else:
             metric = CampaignMetric(
-                tenant_id=tenant_id,
                 campaign_id=campaign_id,
                 date=metric_date,
                 spend_cents=spend_cents,
@@ -608,12 +587,11 @@ class PlatformSyncOrchestrator:
     # ------------------------------------------------------------------
 
     async def _load_connection(
-        self, tenant_id: int, platform: AdPlatform
+        self, platform: AdPlatform
     ) -> Optional[TenantPlatformConnection]:
         result = await self.db.execute(
             select(TenantPlatformConnection).where(
                 and_(
-                    TenantPlatformConnection.tenant_id == tenant_id,
                     TenantPlatformConnection.platform == platform,
                     TenantPlatformConnection.status == ConnectionStatus.CONNECTED,
                 )

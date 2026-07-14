@@ -12,11 +12,12 @@ Slack integration management:
 from datetime import UTC, datetime
 from typing import Optional
 
-from fastapi import APIRouter, Depends, HTTPException, Request, status
+from fastapi import APIRouter, Depends, HTTPException, status
 from pydantic import BaseModel, Field
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from app.auth.deps import CurrentUserDep
 from app.core.logging import get_logger
 from app.db.session import get_async_session
 from app.models.settings import SlackIntegration
@@ -99,23 +100,13 @@ def mask_webhook_url(url: str) -> str:
 
 @router.get("", response_model=APIResponse[Optional[SlackConfigResponse]])
 async def get_slack_config(
-    request: Request,
+    current_user: CurrentUserDep,
     db: AsyncSession = Depends(get_async_session),
 ) -> APIResponse[Optional[SlackConfigResponse]]:
     """
-    Get Slack integration configuration for the current tenant.
+    Get Slack integration configuration for the org.
     """
-    tenant_id = getattr(request.state, "tenant_id", None)
-
-    if not tenant_id:
-        raise HTTPException(
-            status_code=status.HTTP_401_UNAUTHORIZED,
-            detail="Not authenticated",
-        )
-
-    result = await db.execute(
-        select(SlackIntegration).where(SlackIntegration.tenant_id == tenant_id)
-    )
+    result = await db.execute(select(SlackIntegration))
     integration = result.scalar_one_or_none()
 
     if not integration:
@@ -142,21 +133,13 @@ async def get_slack_config(
 
 @router.post("", response_model=APIResponse[SlackConfigResponse])
 async def configure_slack(
-    request: Request,
+    current_user: CurrentUserDep,
     body: SlackConfigRequest,
     db: AsyncSession = Depends(get_async_session),
 ) -> APIResponse[SlackConfigResponse]:
     """
     Configure or update Slack integration.
     """
-    tenant_id = getattr(request.state, "tenant_id", None)
-
-    if not tenant_id:
-        raise HTTPException(
-            status_code=status.HTTP_401_UNAUTHORIZED,
-            detail="Not authenticated",
-        )
-
     # Validate webhook URL format
     if not body.webhook_url.startswith("https://hooks.slack.com/"):
         raise HTTPException(
@@ -165,9 +148,7 @@ async def configure_slack(
         )
 
     # Check for existing integration
-    result = await db.execute(
-        select(SlackIntegration).where(SlackIntegration.tenant_id == tenant_id)
-    )
+    result = await db.execute(select(SlackIntegration))
     integration = result.scalar_one_or_none()
 
     if integration:
@@ -182,7 +163,6 @@ async def configure_slack(
     else:
         # Create new
         integration = SlackIntegration(
-            tenant_id=tenant_id,
             webhook_url=body.webhook_url,
             channel_name=body.channel_name,
             notify_trust_gate=body.notify_trust_gate,
@@ -195,7 +175,7 @@ async def configure_slack(
 
     await db.commit()
 
-    logger.info(f"Slack integration configured for tenant {tenant_id}")
+    logger.info("Slack integration configured")
 
     return APIResponse(
         success=True,
@@ -219,23 +199,13 @@ async def configure_slack(
 
 @router.post("/test", response_model=APIResponse[SlackTestResponse])
 async def test_slack_connection(
-    request: Request,
+    current_user: CurrentUserDep,
     db: AsyncSession = Depends(get_async_session),
 ) -> APIResponse[SlackTestResponse]:
     """
     Test the Slack webhook connection.
     """
-    tenant_id = getattr(request.state, "tenant_id", None)
-
-    if not tenant_id:
-        raise HTTPException(
-            status_code=status.HTTP_401_UNAUTHORIZED,
-            detail="Not authenticated",
-        )
-
-    result = await db.execute(
-        select(SlackIntegration).where(SlackIntegration.tenant_id == tenant_id)
-    )
+    result = await db.execute(select(SlackIntegration))
     integration = result.scalar_one_or_none()
 
     if not integration:
@@ -288,24 +258,15 @@ async def test_slack_connection(
 
 @router.post("/notify", response_model=APIResponse[SlackTestResponse])
 async def send_slack_notification(
-    request: Request,
+    current_user: CurrentUserDep,
     body: SlackNotifyRequest,
     db: AsyncSession = Depends(get_async_session),
 ) -> APIResponse[SlackTestResponse]:
     """
     Send a manual notification to Slack.
     """
-    tenant_id = getattr(request.state, "tenant_id", None)
-
-    if not tenant_id:
-        raise HTTPException(
-            status_code=status.HTTP_401_UNAUTHORIZED,
-            detail="Not authenticated",
-        )
-
     result = await db.execute(
         select(SlackIntegration).where(
-            SlackIntegration.tenant_id == tenant_id,
             SlackIntegration.is_active == True,
         )
     )
@@ -382,23 +343,13 @@ async def send_slack_notification(
 
 @router.delete("", status_code=status.HTTP_204_NO_CONTENT)
 async def disconnect_slack(
-    request: Request,
+    current_user: CurrentUserDep,
     db: AsyncSession = Depends(get_async_session),
 ) -> None:
     """
     Disconnect Slack integration.
     """
-    tenant_id = getattr(request.state, "tenant_id", None)
-
-    if not tenant_id:
-        raise HTTPException(
-            status_code=status.HTTP_401_UNAUTHORIZED,
-            detail="Not authenticated",
-        )
-
-    result = await db.execute(
-        select(SlackIntegration).where(SlackIntegration.tenant_id == tenant_id)
-    )
+    result = await db.execute(select(SlackIntegration))
     integration = result.scalar_one_or_none()
 
     if not integration:
@@ -410,29 +361,19 @@ async def disconnect_slack(
     await db.delete(integration)
     await db.commit()
 
-    logger.info(f"Slack integration disconnected for tenant {tenant_id}")
+    logger.info("Slack integration disconnected")
 
 
 @router.patch("/toggle", response_model=APIResponse[SlackConfigResponse])
 async def toggle_slack(
-    request: Request,
+    current_user: CurrentUserDep,
     is_active: bool,
     db: AsyncSession = Depends(get_async_session),
 ) -> APIResponse[SlackConfigResponse]:
     """
     Enable or disable Slack integration.
     """
-    tenant_id = getattr(request.state, "tenant_id", None)
-
-    if not tenant_id:
-        raise HTTPException(
-            status_code=status.HTTP_401_UNAUTHORIZED,
-            detail="Not authenticated",
-        )
-
-    result = await db.execute(
-        select(SlackIntegration).where(SlackIntegration.tenant_id == tenant_id)
-    )
+    result = await db.execute(select(SlackIntegration))
     integration = result.scalar_one_or_none()
 
     if not integration:

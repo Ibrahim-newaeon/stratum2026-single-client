@@ -3,8 +3,8 @@
 # =============================================================================
 """
 Deep endpoint tests exercising the FULL request/response cycle via
-httpx.AsyncClient.  Requests flow through TenantMiddleware (JWT decode,
-tenant extraction) while services/DB are mocked at the handler level.
+httpx.AsyncClient.  Requests flow through AuthContextMiddleware (JWT decode)
+while services/DB are mocked at the handler level.
 
 Feature 1: Trust Engine  (trust_layer.py, emq_v2.py)
 Feature 2: CDP           (cdp.py)
@@ -26,18 +26,10 @@ pytestmark = [pytest.mark.asyncio, pytest.mark.unit]
 
 
 # ---------------------------------------------------------------------------
-# Trust Layer: Signal Health  GET /api/v1/trust/tenant/{tenant_id}/signal-health
+# Trust Layer: Signal Health  GET /api/v1/trust/signal-health
 # ---------------------------------------------------------------------------
 class TestTrustLayerSignalHealth:
-    URL = "/api/v1/trust/tenant/1/signal-health"
-
-    async def test_no_auth_returns_401(self, api_client):
-        resp = await api_client.get(self.URL)
-        assert resp.status_code == 401
-
-    async def test_wrong_tenant_returns_403(self, api_client, tenant2_headers):
-        resp = await api_client.get(self.URL, headers=tenant2_headers)
-        assert resp.status_code == 403
+    URL = "/api/v1/trust/signal-health"
 
     async def test_happy_path(self, api_client, admin_headers, mock_db):
         with patch(
@@ -87,18 +79,10 @@ class TestTrustLayerSignalHealth:
 
 # ---------------------------------------------------------------------------
 # Trust Layer: Signal Health History
-# GET /api/v1/trust/tenant/{tenant_id}/signal-health/history
+# GET /api/v1/trust/signal-health/history
 # ---------------------------------------------------------------------------
 class TestTrustLayerSignalHealthHistory:
-    URL = "/api/v1/trust/tenant/1/signal-health/history"
-
-    async def test_no_auth_returns_401(self, api_client):
-        resp = await api_client.get(self.URL)
-        assert resp.status_code == 401
-
-    async def test_wrong_tenant_returns_403(self, api_client, tenant2_headers):
-        resp = await api_client.get(self.URL, headers=tenant2_headers)
-        assert resp.status_code == 403
+    URL = "/api/v1/trust/signal-health/history"
 
     async def test_happy_path(self, api_client, admin_headers, mock_db):
         with patch(
@@ -126,18 +110,10 @@ class TestTrustLayerSignalHealthHistory:
 
 # ---------------------------------------------------------------------------
 # Trust Layer: Signal Health By Account
-# GET /api/v1/trust/tenant/{tenant_id}/signal-health/by-account
+# GET /api/v1/trust/signal-health/by-account
 # ---------------------------------------------------------------------------
 class TestTrustLayerSignalHealthByAccount:
-    URL = "/api/v1/trust/tenant/1/signal-health/by-account"
-
-    async def test_no_auth_returns_401(self, api_client):
-        resp = await api_client.get(self.URL)
-        assert resp.status_code == 401
-
-    async def test_wrong_tenant_returns_403(self, api_client, tenant2_headers):
-        resp = await api_client.get(self.URL, headers=tenant2_headers)
-        assert resp.status_code == 403
+    URL = "/api/v1/trust/signal-health/by-account"
 
     async def test_happy_path_empty(self, api_client, admin_headers, mock_db):
         """With no DB records the endpoint returns an empty accounts list."""
@@ -167,18 +143,10 @@ class TestTrustLayerSignalHealthByAccount:
 
 # ---------------------------------------------------------------------------
 # Trust Layer: Attribution Variance
-# GET /api/v1/trust/tenant/{tenant_id}/attribution-variance
+# GET /api/v1/trust/attribution-variance
 # ---------------------------------------------------------------------------
 class TestTrustLayerAttributionVariance:
-    URL = "/api/v1/trust/tenant/1/attribution-variance"
-
-    async def test_no_auth_returns_401(self, api_client):
-        resp = await api_client.get(self.URL)
-        assert resp.status_code == 401
-
-    async def test_wrong_tenant_returns_403(self, api_client, tenant2_headers):
-        resp = await api_client.get(self.URL, headers=tenant2_headers)
-        assert resp.status_code == 403
+    URL = "/api/v1/trust/attribution-variance"
 
     async def test_happy_path(self, api_client, admin_headers, mock_db):
         with patch(
@@ -217,18 +185,10 @@ class TestTrustLayerAttributionVariance:
 
 # ---------------------------------------------------------------------------
 # Trust Layer: Trust Status
-# GET /api/v1/trust/tenant/{tenant_id}/trust-status
+# GET /api/v1/trust/trust-status
 # ---------------------------------------------------------------------------
 class TestTrustLayerTrustStatus:
-    URL = "/api/v1/trust/tenant/1/trust-status"
-
-    async def test_no_auth_returns_401(self, api_client):
-        resp = await api_client.get(self.URL)
-        assert resp.status_code == 401
-
-    async def test_wrong_tenant_returns_403(self, api_client, tenant2_headers):
-        resp = await api_client.get(self.URL, headers=tenant2_headers)
-        assert resp.status_code == 403
+    URL = "/api/v1/trust/trust-status"
 
     async def test_happy_path_both_features_enabled(
         self, api_client, admin_headers, mock_db
@@ -281,18 +241,14 @@ class TestTrustLayerTrustStatus:
 
 
 # ---------------------------------------------------------------------------
-# EMQ v2: Score  GET /api/v1/tenants/{tenant_id}/emq/score
+# EMQ v2: Score  GET /api/v1/emq/score
 # ---------------------------------------------------------------------------
 class TestEmqScore:
-    URL = "/api/v1/tenants/1/emq/score"
+    URL = "/api/v1/emq/score"
 
     async def test_no_auth_returns_401(self, api_client):
         resp = await api_client.get(self.URL)
         assert resp.status_code == 401
-
-    async def test_wrong_tenant_returns_403(self, api_client, tenant2_headers):
-        resp = await api_client.get(self.URL, headers=tenant2_headers)
-        assert resp.status_code == 403
 
     async def test_happy_path(self, api_client, admin_headers, mock_db):
         with patch("app.api.v1.endpoints.emq_v2.EmqService") as MockSvc:
@@ -321,18 +277,14 @@ class TestEmqScore:
 
 
 # ---------------------------------------------------------------------------
-# EMQ v2: Confidence  GET /api/v1/tenants/{tenant_id}/emq/confidence
+# EMQ v2: Confidence  GET /api/v1/emq/confidence
 # ---------------------------------------------------------------------------
 class TestEmqConfidence:
-    URL = "/api/v1/tenants/1/emq/confidence"
+    URL = "/api/v1/emq/confidence"
 
     async def test_no_auth_returns_401(self, api_client):
         resp = await api_client.get(self.URL)
         assert resp.status_code == 401
-
-    async def test_wrong_tenant_returns_403(self, api_client, tenant2_headers):
-        resp = await api_client.get(self.URL, headers=tenant2_headers)
-        assert resp.status_code == 403
 
     async def test_happy_path(self, api_client, admin_headers, mock_db):
         with patch("app.api.v1.endpoints.emq_v2.EmqService") as MockSvc:
@@ -361,18 +313,14 @@ class TestEmqConfidence:
 
 
 # ---------------------------------------------------------------------------
-# EMQ v2: Playbook  GET /api/v1/tenants/{tenant_id}/emq/playbook
+# EMQ v2: Playbook  GET /api/v1/emq/playbook
 # ---------------------------------------------------------------------------
 class TestEmqPlaybook:
-    URL = "/api/v1/tenants/1/emq/playbook"
+    URL = "/api/v1/emq/playbook"
 
     async def test_no_auth_returns_401(self, api_client):
         resp = await api_client.get(self.URL)
         assert resp.status_code == 401
-
-    async def test_wrong_tenant_returns_403(self, api_client, tenant2_headers):
-        resp = await api_client.get(self.URL, headers=tenant2_headers)
-        assert resp.status_code == 403
 
     async def test_happy_path(self, api_client, admin_headers, mock_db):
         with patch("app.api.v1.endpoints.emq_v2.EmqService") as MockSvc:
@@ -417,22 +365,14 @@ class TestEmqPlaybook:
 
 # ---------------------------------------------------------------------------
 # EMQ v2: Playbook Item Update
-# PATCH /api/v1/tenants/{tenant_id}/emq/playbook/{item_id}
+# PATCH /api/v1/emq/playbook/{item_id}
 # ---------------------------------------------------------------------------
 class TestEmqPlaybookUpdate:
-    URL = "/api/v1/tenants/1/emq/playbook/some-item-id"
+    URL = "/api/v1/emq/playbook/some-item-id"
 
     async def test_no_auth_returns_401(self, api_client):
         resp = await api_client.patch(self.URL, json={"status": "in_progress"})
         assert resp.status_code == 401
-
-    async def test_wrong_tenant_returns_403(self, api_client, tenant2_headers):
-        resp = await api_client.patch(
-            self.URL,
-            headers=tenant2_headers,
-            json={"status": "in_progress"},
-        )
-        assert resp.status_code == 403
 
     async def test_unknown_item_returns_404(self, api_client, admin_headers, mock_db):
         """An unknown playbook item_key is rejected with 404. Persisting a real
@@ -447,24 +387,16 @@ class TestEmqPlaybookUpdate:
 
 
 # ---------------------------------------------------------------------------
-# EMQ v2: Incidents  GET /api/v1/tenants/{tenant_id}/emq/incidents
+# EMQ v2: Incidents  GET /api/v1/emq/incidents
 # ---------------------------------------------------------------------------
 class TestEmqIncidents:
-    URL = "/api/v1/tenants/1/emq/incidents"
+    URL = "/api/v1/emq/incidents"
 
     async def test_no_auth_returns_401(self, api_client):
         resp = await api_client.get(
             self.URL, params={"start_date": "2025-01-01", "end_date": "2025-01-31"}
         )
         assert resp.status_code == 401
-
-    async def test_wrong_tenant_returns_403(self, api_client, tenant2_headers):
-        resp = await api_client.get(
-            self.URL,
-            headers=tenant2_headers,
-            params={"start_date": "2025-01-01", "end_date": "2025-01-31"},
-        )
-        assert resp.status_code == 403
 
     async def test_happy_path(self, api_client, admin_headers, mock_db):
         with patch("app.api.v1.endpoints.emq_v2.EmqService") as MockSvc:
@@ -481,10 +413,10 @@ class TestEmqIncidents:
 
 
 # ---------------------------------------------------------------------------
-# EMQ v2: Impact  GET /api/v1/tenants/{tenant_id}/emq/impact
+# EMQ v2: Impact  GET /api/v1/emq/impact
 # ---------------------------------------------------------------------------
 class TestEmqImpact:
-    URL = "/api/v1/tenants/1/emq/impact"
+    URL = "/api/v1/emq/impact"
 
     async def test_no_auth_returns_401(self, api_client):
         resp = await api_client.get(
@@ -513,10 +445,10 @@ class TestEmqImpact:
 
 
 # ---------------------------------------------------------------------------
-# EMQ v2: Volatility  GET /api/v1/tenants/{tenant_id}/emq/volatility
+# EMQ v2: Volatility  GET /api/v1/emq/volatility
 # ---------------------------------------------------------------------------
 class TestEmqVolatility:
-    URL = "/api/v1/tenants/1/emq/volatility"
+    URL = "/api/v1/emq/volatility"
 
     async def test_no_auth_returns_401(self, api_client):
         resp = await api_client.get(self.URL)
@@ -539,18 +471,14 @@ class TestEmqVolatility:
 
 
 # ---------------------------------------------------------------------------
-# EMQ v2: Autopilot State  GET /api/v1/tenants/{tenant_id}/emq/autopilot-state
+# EMQ v2: Autopilot State  GET /api/v1/emq/autopilot-state
 # ---------------------------------------------------------------------------
 class TestEmqAutopilotState:
-    URL = "/api/v1/tenants/1/emq/autopilot-state"
+    URL = "/api/v1/emq/autopilot-state"
 
     async def test_no_auth_returns_401(self, api_client):
         resp = await api_client.get(self.URL)
         assert resp.status_code == 401
-
-    async def test_wrong_tenant_returns_403(self, api_client, tenant2_headers):
-        resp = await api_client.get(self.URL, headers=tenant2_headers)
-        assert resp.status_code == 403
 
     async def test_happy_path(self, api_client, admin_headers, mock_db):
         with patch("app.api.v1.endpoints.emq_v2.EmqService") as MockSvc:
@@ -571,20 +499,14 @@ class TestEmqAutopilotState:
 
 
 # ---------------------------------------------------------------------------
-# EMQ v2: Update Autopilot Mode  PUT /api/v1/tenants/{tenant_id}/emq/autopilot-mode
+# EMQ v2: Update Autopilot Mode  PUT /api/v1/emq/autopilot-mode
 # ---------------------------------------------------------------------------
 class TestEmqUpdateAutopilotMode:
-    URL = "/api/v1/tenants/1/emq/autopilot-mode"
+    URL = "/api/v1/emq/autopilot-mode"
 
     async def test_no_auth_returns_401(self, api_client):
         resp = await api_client.put(self.URL, json={"mode": "limited"})
         assert resp.status_code == 401
-
-    async def test_wrong_tenant_returns_403(self, api_client, tenant2_headers):
-        resp = await api_client.put(
-            self.URL, headers=tenant2_headers, json={"mode": "limited"}
-        )
-        assert resp.status_code == 403
 
     async def test_happy_path(self, api_client, admin_headers, mock_db):
         resp = await api_client.put(
@@ -729,11 +651,6 @@ async def cdp_client(test_app, mock_db):
 # ---------------------------------------------------------------------------
 class TestCdpHealth:
     URL = "/api/v1/cdp/health"
-
-    async def test_no_auth_returns_401(self, api_client):
-        """CDP health requires auth via TenantMiddleware."""
-        resp = await api_client.get(self.URL)
-        assert resp.status_code == 401
 
     async def test_happy_path(self, api_client, admin_headers, mock_db):
         resp = await api_client.get(self.URL, headers=admin_headers)
@@ -935,18 +852,10 @@ class TestCdpIngestEvents:
 
 # ---------------------------------------------------------------------------
 # Enforcement: Get Settings
-# GET /api/v1/tenant/{tenant_id}/autopilot/enforcement/settings
+# GET /api/v1/autopilot/enforcement/settings
 # ---------------------------------------------------------------------------
 class TestEnforcementGetSettings:
-    URL = "/api/v1/tenant/1/autopilot/enforcement/settings"
-
-    async def test_no_auth_returns_401(self, api_client):
-        resp = await api_client.get(self.URL)
-        assert resp.status_code == 401
-
-    async def test_wrong_tenant_returns_403(self, api_client, tenant2_headers):
-        resp = await api_client.get(self.URL, headers=tenant2_headers)
-        assert resp.status_code == 403
+    URL = "/api/v1/autopilot/enforcement/settings"
 
     async def test_happy_path(self, api_client, admin_headers, mock_db):
         with patch(
@@ -984,22 +893,14 @@ class TestEnforcementGetSettings:
 
 # ---------------------------------------------------------------------------
 # Enforcement: Update Settings
-# PUT /api/v1/tenant/{tenant_id}/autopilot/enforcement/settings
+# PUT /api/v1/autopilot/enforcement/settings
 # ---------------------------------------------------------------------------
 class TestEnforcementUpdateSettings:
-    URL = "/api/v1/tenant/1/autopilot/enforcement/settings"
+    URL = "/api/v1/autopilot/enforcement/settings"
 
     async def test_no_auth_returns_401(self, api_client):
         resp = await api_client.put(self.URL, json={"enforcement_enabled": False})
         assert resp.status_code == 401
-
-    async def test_wrong_tenant_returns_403(self, api_client, tenant2_headers):
-        resp = await api_client.put(
-            self.URL,
-            headers=tenant2_headers,
-            json={"enforcement_enabled": False},
-        )
-        assert resp.status_code == 403
 
     async def test_happy_path(self, api_client, admin_headers, mock_db):
         with patch(
@@ -1026,26 +927,16 @@ class TestEnforcementUpdateSettings:
 
 # ---------------------------------------------------------------------------
 # Enforcement: Check Action
-# POST /api/v1/tenant/{tenant_id}/autopilot/enforcement/check
+# POST /api/v1/autopilot/enforcement/check
 # ---------------------------------------------------------------------------
 class TestEnforcementCheckAction:
-    URL = "/api/v1/tenant/1/autopilot/enforcement/check"
+    URL = "/api/v1/autopilot/enforcement/check"
     PAYLOAD = {
         "action_type": "budget_increase",
         "entity_type": "campaign",
         "entity_id": "camp_123",
         "proposed_value": {"budget": 5000},
     }
-
-    async def test_no_auth_returns_401(self, api_client):
-        resp = await api_client.post(self.URL, json=self.PAYLOAD)
-        assert resp.status_code == 401
-
-    async def test_wrong_tenant_returns_403(self, api_client, tenant2_headers):
-        resp = await api_client.post(
-            self.URL, headers=tenant2_headers, json=self.PAYLOAD
-        )
-        assert resp.status_code == 403
 
     async def test_happy_path_allowed(self, api_client, admin_headers, mock_db):
         with patch(
@@ -1072,22 +963,14 @@ class TestEnforcementCheckAction:
 
 # ---------------------------------------------------------------------------
 # Enforcement: Confirm Soft-Blocked Action
-# POST /api/v1/tenant/{tenant_id}/autopilot/enforcement/confirm
+# POST /api/v1/autopilot/enforcement/confirm
 # ---------------------------------------------------------------------------
 class TestEnforcementConfirmAction:
-    URL = "/api/v1/tenant/1/autopilot/enforcement/confirm"
+    URL = "/api/v1/autopilot/enforcement/confirm"
 
     async def test_no_auth_returns_401(self, api_client):
         resp = await api_client.post(self.URL, json={"confirmation_token": "tok_123"})
         assert resp.status_code == 401
-
-    async def test_wrong_tenant_returns_403(self, api_client, tenant2_headers):
-        resp = await api_client.post(
-            self.URL,
-            headers=tenant2_headers,
-            json={"confirmation_token": "tok_123"},
-        )
-        assert resp.status_code == 403
 
     async def test_happy_path(self, api_client, admin_headers, mock_db):
         with patch(
@@ -1124,22 +1007,14 @@ class TestEnforcementConfirmAction:
 
 # ---------------------------------------------------------------------------
 # Enforcement: Kill Switch
-# POST /api/v1/tenant/{tenant_id}/autopilot/enforcement/kill-switch
+# POST /api/v1/autopilot/enforcement/kill-switch
 # ---------------------------------------------------------------------------
 class TestEnforcementKillSwitch:
-    URL = "/api/v1/tenant/1/autopilot/enforcement/kill-switch"
+    URL = "/api/v1/autopilot/enforcement/kill-switch"
 
     async def test_no_auth_returns_401(self, api_client):
         resp = await api_client.post(self.URL, json={"enabled": False})
         assert resp.status_code == 401
-
-    async def test_wrong_tenant_returns_403(self, api_client, tenant2_headers):
-        resp = await api_client.post(
-            self.URL,
-            headers=tenant2_headers,
-            json={"enabled": False},
-        )
-        assert resp.status_code == 403
 
     async def test_happy_path_disable(self, api_client, admin_headers, mock_db):
         with patch(
@@ -1177,18 +1052,10 @@ class TestEnforcementKillSwitch:
 
 # ---------------------------------------------------------------------------
 # Enforcement: Audit Log
-# GET /api/v1/tenant/{tenant_id}/autopilot/enforcement/audit-log
+# GET /api/v1/autopilot/enforcement/audit-log
 # ---------------------------------------------------------------------------
 class TestEnforcementAuditLog:
-    URL = "/api/v1/tenant/1/autopilot/enforcement/audit-log"
-
-    async def test_no_auth_returns_401(self, api_client):
-        resp = await api_client.get(self.URL)
-        assert resp.status_code == 401
-
-    async def test_wrong_tenant_returns_403(self, api_client, tenant2_headers):
-        resp = await api_client.get(self.URL, headers=tenant2_headers)
-        assert resp.status_code == 403
+    URL = "/api/v1/autopilot/enforcement/audit-log"
 
     async def test_happy_path(self, api_client, admin_headers, mock_db):
         with patch(
@@ -1213,10 +1080,10 @@ class TestEnforcementAuditLog:
 
 # ---------------------------------------------------------------------------
 # Enforcement: Add Custom Rule
-# POST /api/v1/tenant/{tenant_id}/autopilot/enforcement/rules
+# POST /api/v1/autopilot/enforcement/rules
 # ---------------------------------------------------------------------------
 class TestEnforcementAddRule:
-    URL = "/api/v1/tenant/1/autopilot/enforcement/rules"
+    URL = "/api/v1/autopilot/enforcement/rules"
 
     async def test_no_auth_returns_401(self, api_client):
         resp = await api_client.post(
@@ -1228,18 +1095,6 @@ class TestEnforcementAddRule:
             },
         )
         assert resp.status_code == 401
-
-    async def test_wrong_tenant_returns_403(self, api_client, tenant2_headers):
-        resp = await api_client.post(
-            self.URL,
-            headers=tenant2_headers,
-            json={
-                "rule_id": "r1",
-                "rule_type": "budget_exceeded",
-                "threshold_value": 1000,
-            },
-        )
-        assert resp.status_code == 403
 
     async def test_happy_path(self, api_client, admin_headers, mock_db):
         # NOTE (STRAT-SC-001 / Task A1): this endpoint no longer performs
@@ -1291,18 +1146,14 @@ class TestEnforcementAddRule:
 
 # ---------------------------------------------------------------------------
 # Enforcement: Delete Custom Rule
-# DELETE /api/v1/tenant/{tenant_id}/autopilot/enforcement/rules/{rule_id}
+# DELETE /api/v1/autopilot/enforcement/rules/{rule_id}
 # ---------------------------------------------------------------------------
 class TestEnforcementDeleteRule:
-    URL = "/api/v1/tenant/1/autopilot/enforcement/rules/r1"
+    URL = "/api/v1/autopilot/enforcement/rules/r1"
 
     async def test_no_auth_returns_401(self, api_client):
         resp = await api_client.delete(self.URL)
         assert resp.status_code == 401
-
-    async def test_wrong_tenant_returns_403(self, api_client, tenant2_headers):
-        resp = await api_client.delete(self.URL, headers=tenant2_headers)
-        assert resp.status_code == 403
 
     async def test_rule_not_found_returns_404(self, api_client, admin_headers, mock_db):
         with patch(
@@ -1322,22 +1173,14 @@ class TestEnforcementDeleteRule:
 
 # ---------------------------------------------------------------------------
 # Autopilot: Status
-# GET /api/v1/tenant/{tenant_id}/autopilot/status
+# GET /api/v1/autopilot/status
 # ---------------------------------------------------------------------------
 class TestAutopilotStatus:
-    URL = "/api/v1/tenant/1/autopilot/status"
-
-    async def test_no_auth_returns_401(self, api_client):
-        resp = await api_client.get(self.URL)
-        assert resp.status_code == 401
-
-    async def test_wrong_tenant_returns_403(self, api_client, tenant2_headers):
-        resp = await api_client.get(self.URL, headers=tenant2_headers)
-        assert resp.status_code == 403
+    URL = "/api/v1/autopilot/status"
 
     async def test_happy_path(self, api_client, admin_headers, mock_db):
         with patch(
-            "app.api.v1.endpoints.autopilot.get_tenant_features",
+            "app.api.v1.endpoints.autopilot.get_org_features",
             new_callable=AsyncMock,
             return_value={"autopilot_level": 1},
         ), patch("app.api.v1.endpoints.autopilot.AutopilotService") as MockSvc, patch(
@@ -1361,18 +1204,10 @@ class TestAutopilotStatus:
 
 # ---------------------------------------------------------------------------
 # Autopilot: List Actions
-# GET /api/v1/tenant/{tenant_id}/autopilot/actions
+# GET /api/v1/autopilot/actions
 # ---------------------------------------------------------------------------
 class TestAutopilotListActions:
-    URL = "/api/v1/tenant/1/autopilot/actions"
-
-    async def test_no_auth_returns_401(self, api_client):
-        resp = await api_client.get(self.URL)
-        assert resp.status_code == 401
-
-    async def test_wrong_tenant_returns_403(self, api_client, tenant2_headers):
-        resp = await api_client.get(self.URL, headers=tenant2_headers)
-        assert resp.status_code == 403
+    URL = "/api/v1/autopilot/actions"
 
     async def test_happy_path(self, api_client, admin_headers, mock_db):
         with patch("app.api.v1.endpoints.autopilot.AutopilotService") as MockSvc:
@@ -1387,18 +1222,10 @@ class TestAutopilotListActions:
 
 # ---------------------------------------------------------------------------
 # Autopilot: Actions Summary
-# GET /api/v1/tenant/{tenant_id}/autopilot/actions/summary
+# GET /api/v1/autopilot/actions/summary
 # ---------------------------------------------------------------------------
 class TestAutopilotActionsSummary:
-    URL = "/api/v1/tenant/1/autopilot/actions/summary"
-
-    async def test_no_auth_returns_401(self, api_client):
-        resp = await api_client.get(self.URL)
-        assert resp.status_code == 401
-
-    async def test_wrong_tenant_returns_403(self, api_client, tenant2_headers):
-        resp = await api_client.get(self.URL, headers=tenant2_headers)
-        assert resp.status_code == 403
+    URL = "/api/v1/autopilot/actions/summary"
 
     async def test_happy_path(self, api_client, admin_headers, mock_db):
         with patch("app.api.v1.endpoints.autopilot.AutopilotService") as MockSvc:
@@ -1420,10 +1247,10 @@ class TestAutopilotActionsSummary:
 
 # ---------------------------------------------------------------------------
 # Autopilot: Queue Action
-# POST /api/v1/tenant/{tenant_id}/autopilot/actions
+# POST /api/v1/autopilot/actions
 # ---------------------------------------------------------------------------
 class TestAutopilotQueueAction:
-    URL = "/api/v1/tenant/1/autopilot/actions"
+    URL = "/api/v1/autopilot/actions"
     PAYLOAD = {
         "action_type": "budget_decrease",
         "entity_type": "campaign",
@@ -1432,16 +1259,6 @@ class TestAutopilotQueueAction:
         "platform": "meta",
         "action_json": {"new_budget": 100},
     }
-
-    async def test_no_auth_returns_401(self, api_client):
-        resp = await api_client.post(self.URL, json=self.PAYLOAD)
-        assert resp.status_code == 401
-
-    async def test_wrong_tenant_returns_403(self, api_client, tenant2_headers):
-        resp = await api_client.post(
-            self.URL, headers=tenant2_headers, json=self.PAYLOAD
-        )
-        assert resp.status_code == 403
 
     async def test_happy_path(self, api_client, admin_headers, mock_db):
         fake_action = MagicMock()
@@ -1463,9 +1280,10 @@ class TestAutopilotQueueAction:
         fake_action.confirmation_token = None
         fake_action.enforcement_confirmed_at = None
         fake_action.enforcement_confirmed_by_user_id = None
+        fake_action.approved_by_user_id = None
 
         with patch(
-            "app.api.v1.endpoints.autopilot.get_tenant_features",
+            "app.api.v1.endpoints.autopilot.get_org_features",
             new_callable=AsyncMock,
             return_value={"autopilot_level": 0},
         ), patch("app.api.v1.endpoints.autopilot.AutopilotService") as MockSvc:
@@ -1485,21 +1303,15 @@ class TestAutopilotQueueAction:
 
 # ---------------------------------------------------------------------------
 # Autopilot: Approve Action
-# POST /api/v1/tenant/{tenant_id}/autopilot/actions/{id}/approve
+# POST /api/v1/autopilot/actions/{id}/approve
 # ---------------------------------------------------------------------------
 class TestAutopilotApproveAction:
     ACTION_ID = str(uuid.uuid4())
-    URL_TEMPLATE = "/api/v1/tenant/1/autopilot/actions/{}/approve"
+    URL_TEMPLATE = "/api/v1/autopilot/actions/{}/approve"
 
     async def test_no_auth_returns_401(self, api_client):
         resp = await api_client.post(self.URL_TEMPLATE.format(self.ACTION_ID))
         assert resp.status_code == 401
-
-    async def test_wrong_tenant_returns_403(self, api_client, tenant2_headers):
-        resp = await api_client.post(
-            self.URL_TEMPLATE.format(self.ACTION_ID), headers=tenant2_headers
-        )
-        assert resp.status_code == 403
 
     async def test_happy_path(self, api_client, admin_headers, mock_db):
         fake_action = MagicMock()
@@ -1521,6 +1333,7 @@ class TestAutopilotApproveAction:
         fake_action.confirmation_token = None
         fake_action.enforcement_confirmed_at = None
         fake_action.enforcement_confirmed_by_user_id = None
+        fake_action.approved_by_user_id = None
 
         with patch("app.api.v1.endpoints.autopilot.AutopilotService") as MockSvc:
             MockSvc.return_value.approve_action = AsyncMock(return_value=fake_action)
@@ -1554,11 +1367,11 @@ class TestAutopilotApproveAction:
 
 # ---------------------------------------------------------------------------
 # Autopilot: Dismiss Action
-# POST /api/v1/tenant/{tenant_id}/autopilot/actions/{id}/dismiss
+# POST /api/v1/autopilot/actions/{id}/dismiss
 # ---------------------------------------------------------------------------
 class TestAutopilotDismissAction:
     ACTION_ID = str(uuid.uuid4())
-    URL_TEMPLATE = "/api/v1/tenant/1/autopilot/actions/{}/dismiss"
+    URL_TEMPLATE = "/api/v1/autopilot/actions/{}/dismiss"
 
     async def test_no_auth_returns_401(self, api_client):
         resp = await api_client.post(self.URL_TEMPLATE.format(self.ACTION_ID))
@@ -1584,6 +1397,7 @@ class TestAutopilotDismissAction:
         fake_action.confirmation_token = None
         fake_action.enforcement_confirmed_at = None
         fake_action.enforcement_confirmed_by_user_id = None
+        fake_action.approved_by_user_id = None
 
         with patch("app.api.v1.endpoints.autopilot.AutopilotService") as MockSvc:
             MockSvc.return_value.dismiss_action = AsyncMock(return_value=fake_action)
@@ -1599,15 +1413,11 @@ class TestAutopilotDismissAction:
 
 # ---------------------------------------------------------------------------
 # Autopilot: Get Single Action
-# GET /api/v1/tenant/{tenant_id}/autopilot/actions/{id}
+# GET /api/v1/autopilot/actions/{id}
 # ---------------------------------------------------------------------------
 class TestAutopilotGetAction:
     ACTION_ID = str(uuid.uuid4())
-    URL_TEMPLATE = "/api/v1/tenant/1/autopilot/actions/{}"
-
-    async def test_no_auth_returns_401(self, api_client):
-        resp = await api_client.get(self.URL_TEMPLATE.format(self.ACTION_ID))
-        assert resp.status_code == 401
+    URL_TEMPLATE = "/api/v1/autopilot/actions/{}"
 
     async def test_not_found(self, api_client, admin_headers, mock_db):
         with patch("app.api.v1.endpoints.autopilot.AutopilotService") as MockSvc:
@@ -1638,6 +1448,7 @@ class TestAutopilotGetAction:
         fake_action.confirmation_token = None
         fake_action.enforcement_confirmed_at = None
         fake_action.enforcement_confirmed_by_user_id = None
+        fake_action.approved_by_user_id = None
 
         with patch("app.api.v1.endpoints.autopilot.AutopilotService") as MockSvc:
             MockSvc.return_value.get_action_by_id = AsyncMock(return_value=fake_action)
@@ -1653,18 +1464,14 @@ class TestAutopilotGetAction:
 
 # ---------------------------------------------------------------------------
 # Autopilot: Approve All Actions
-# POST /api/v1/tenant/{tenant_id}/autopilot/actions/approve-all
+# POST /api/v1/autopilot/actions/approve-all
 # ---------------------------------------------------------------------------
 class TestAutopilotApproveAll:
-    URL = "/api/v1/tenant/1/autopilot/actions/approve-all"
+    URL = "/api/v1/autopilot/actions/approve-all"
 
     async def test_no_auth_returns_401(self, api_client):
         resp = await api_client.post(self.URL)
         assert resp.status_code == 401
-
-    async def test_wrong_tenant_returns_403(self, api_client, tenant2_headers):
-        resp = await api_client.post(self.URL, headers=tenant2_headers)
-        assert resp.status_code == 403
 
     async def test_happy_path(self, api_client, admin_headers, mock_db):
         with patch("app.api.v1.endpoints.autopilot.AutopilotService") as MockSvc:

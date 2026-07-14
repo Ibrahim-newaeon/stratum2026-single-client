@@ -16,7 +16,7 @@ from pydantic import BaseModel, Field
 from sqlalchemy import func, select, text
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from app.auth.deps import require_owner
+from app.auth.deps import CurrentUserDep, require_owner
 from app.core.logging import get_logger
 from app.db.session import get_async_session
 from app.models import Campaign, CampaignMetric
@@ -139,7 +139,6 @@ class SQLQueryResult(BaseModel):
 
 async def _build_funnel(
     db: AsyncSession,
-    tenant_id: int,
     steps: list[str],
     campaign_ids: Optional[list[int]],
     date_from: str,
@@ -177,15 +176,13 @@ async def _build_funnel(
         sql = f"""
         SELECT COALESCE(SUM({metric_col}), 0) as total
         FROM campaign_metrics
-        WHERE tenant_id = :tenant_id
-        AND date BETWEEN :date_from AND :date_to
+        WHERE date BETWEEN :date_from AND :date_to
         {campaign_filter}
         """
 
         result = await db.execute(
             text(sql),
             {
-                "tenant_id": tenant_id,
                 "date_from": date_from_d,
                 "date_to": date_to_d,
             },
@@ -228,7 +225,6 @@ async def _build_funnel(
 
 async def _build_cohorts(
     db: AsyncSession,
-    tenant_id: int,
     metric: str,
     period: str,
     date_from: str,
@@ -243,7 +239,6 @@ async def _build_cohorts(
     result = await db.execute(
         select(Campaign)
         .where(
-            Campaign.tenant_id == tenant_id,
             Campaign.is_deleted == False,
             Campaign.start_date >= datetime.strptime(date_from, "%Y-%m-%d").date(),
             Campaign.start_date <= datetime.strptime(date_to, "%Y-%m-%d").date(),
@@ -292,14 +287,12 @@ async def _build_cohorts(
                 sql = f"""
                 SELECT COALESCE(SUM({metric if metric in ('revenue_cents','spend_cents','conversions') else 'conversions'}), 0) as total
                 FROM campaign_metrics
-                WHERE tenant_id = :tenant_id
-                AND campaign_id IN ({ids_str})
+                WHERE campaign_id IN ({ids_str})
                 AND date >= :period_start AND date <= :period_end
                 """
                 result = await db.execute(
                     text(sql),
                     {
-                        "tenant_id": tenant_id,
                         "period_start": (
                             datetime.strptime(date_from, "%Y-%m-%d")
                             + timedelta(weeks=period)
@@ -383,7 +376,7 @@ def _validate_sql(query: str) -> tuple[bool, str]:
 @router.post("/funnel", response_model=APIResponse[FunnelResult])
 async def analyze_funnel(
     request: FunnelRequest,
-    req: Request,
+    current_user: CurrentUserDep,
     db: AsyncSession = Depends(get_async_session),
 ):
     """
@@ -392,15 +385,8 @@ async def analyze_funnel(
     Track user journey from impression → click → conversion → purchase
     with drop-off rates at each step.
     """
-    tenant_id = getattr(req.state, "tenant_id", None)
-    if not tenant_id:
-        raise HTTPException(
-            status_code=status.HTTP_401_UNAUTHORIZED, detail="Tenant required"
-        )
-
     steps = await _build_funnel(
         db,
-        tenant_id,
         request.steps,
         request.campaign_ids,
         request.date_from,
@@ -456,7 +442,7 @@ async def analyze_funnel(
 @router.post("/cohorts", response_model=APIResponse[CohortResult])
 async def analyze_cohorts(
     request: CohortRequest,
-    req: Request,
+    current_user: CurrentUserDep,
     db: AsyncSession = Depends(get_async_session),
 ):
     """
@@ -465,15 +451,8 @@ async def analyze_cohorts(
     Group campaigns (or users) by start date and track metric performance
     over time periods.
     """
-    tenant_id = getattr(req.state, "tenant_id", None)
-    if not tenant_id:
-        raise HTTPException(
-            status_code=status.HTTP_401_UNAUTHORIZED, detail="Tenant required"
-        )
-
     rows = await _build_cohorts(
         db,
-        tenant_id,
         request.metric,
         request.period,
         request.date_from,
@@ -534,15 +513,14 @@ async def analyze_cohorts(
 )
 async def execute_sql_query(
     request: SQLQueryRequest,
-    req: Request,
+    current_user: CurrentUserDep,
     db: AsyncSession = Depends(get_async_session),
 ):
     """
-    Execute a validated SQL SELECT query against tenant-scoped data.
+    Execute a validated SQL SELECT query.
 
     **Security:**
     - Only SELECT statements allowed
-    - Tenant ID is auto-injected for row-level security
     - Forbidden keywords blocked (INSERT, UPDATE, DELETE, DROP, etc.)
     - Max 1000 rows returned
 
@@ -555,27 +533,12 @@ async def execute_sql_query(
     ORDER BY spend DESC
     ```
     """
-    tenant_id = getattr(req.state, "tenant_id", None)
-    if not tenant_id:
-        raise HTTPException(
-            status_code=status.HTTP_401_UNAUTHORIZED, detail="Tenant required"
-        )
-
     # Validate query
     is_valid, error_msg = _validate_sql(request.query)
     if not is_valid:
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=error_msg)
 
-    # Inject tenant isolation if not present
     query = request.query.strip()
-    if "tenant_id" not in query.lower():
-        # Auto-inject tenant filter on campaigns/campaign_metrics tables
-        if "campaigns" in query.lower() or "campaign_metrics" in query.lower():
-            query = (
-                query.replace("WHERE", f"WHERE tenant_id = {tenant_id} AND", 1)
-                if "WHERE" in query.upper()
-                else query + f" WHERE tenant_id = {tenant_id}"
-            )
 
     import time
 

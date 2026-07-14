@@ -48,7 +48,6 @@ class DeliveryLogEntry:
     """
 
     id: str
-    tenant_id: int
     platform: str
     event_id: Optional[str]
     event_name: str
@@ -68,7 +67,6 @@ class DeliveryLogEntry:
         """Convert to dictionary."""
         return {
             "id": self.id,
-            "tenant_id": self.tenant_id,
             "platform": self.platform,
             "event_id": self.event_id,
             "event_name": self.event_name,
@@ -134,7 +132,6 @@ class DeliveryLogger:
 
     async def log_delivery(
         self,
-        tenant_id: int,
         platform: str,
         event_name: str,
         status: DeliveryStatus,
@@ -153,7 +150,6 @@ class DeliveryLogger:
         Log a CAPI delivery attempt.
 
         Args:
-            tenant_id: Tenant ID
             platform: Platform name
             event_name: Event name
             status: Delivery status
@@ -175,7 +171,6 @@ class DeliveryLogger:
 
         entry = DeliveryLogEntry(
             id=str(uuid4()),
-            tenant_id=tenant_id,
             platform=platform,
             event_id=event_id,
             event_name=event_name,
@@ -231,7 +226,6 @@ class DeliveryLogger:
 
                     db_entry = CAPIDeliveryLog(
                         id=entry.id,
-                        tenant_id=entry.tenant_id,
                         platform=entry.platform,
                         event_id=entry.event_id,
                         event_name=entry.event_name,
@@ -263,7 +257,6 @@ class DeliveryLogger:
 
     async def get_delivery_history(
         self,
-        tenant_id: int,
         platform: Optional[str] = None,
         event_name: Optional[str] = None,
         status: Optional[DeliveryStatus] = None,
@@ -276,7 +269,6 @@ class DeliveryLogger:
         Get delivery history with filters.
 
         Args:
-            tenant_id: Tenant ID
             platform: Filter by platform
             event_name: Filter by event name
             status: Filter by status
@@ -292,9 +284,7 @@ class DeliveryLogger:
             from app.models.capi_delivery import CAPIDeliveryLog
 
             async with async_session_factory() as db:
-                query = select(CAPIDeliveryLog).where(
-                    CAPIDeliveryLog.tenant_id == tenant_id
-                )
+                query = select(CAPIDeliveryLog)
 
                 if platform:
                     query = query.where(CAPIDeliveryLog.platform == platform)
@@ -316,7 +306,6 @@ class DeliveryLogger:
                 return [
                     DeliveryLogEntry(
                         id=str(row.id),
-                        tenant_id=row.tenant_id,
                         platform=row.platform,
                         event_id=row.event_id,
                         event_name=row.event_name,
@@ -345,7 +334,6 @@ class DeliveryLogger:
 
     async def get_metrics(
         self,
-        tenant_id: int,
         start_time: Optional[datetime] = None,
         end_time: Optional[datetime] = None,
     ) -> DeliveryMetrics:
@@ -353,7 +341,6 @@ class DeliveryLogger:
         Get aggregated delivery metrics.
 
         Args:
-            tenant_id: Tenant ID
             start_time: Period start (default: last 24 hours)
             end_time: Period end (default: now)
 
@@ -376,7 +363,6 @@ class DeliveryLogger:
             async with async_session_factory() as db:
                 # Base query
                 base_filter = and_(
-                    CAPIDeliveryLog.tenant_id == tenant_id,
                     CAPIDeliveryLog.delivery_time >= start_time,
                     CAPIDeliveryLog.delivery_time <= end_time,
                 )

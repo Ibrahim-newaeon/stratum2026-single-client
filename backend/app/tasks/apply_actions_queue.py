@@ -1299,7 +1299,6 @@ async def enforce_before_execute(
 
     enforcer = AutopilotEnforcer(db)
     return await enforcer.check_action(
-        tenant_id=action.tenant_id,
         action_type=action.action_type,
         entity_type=action.entity_type,
         entity_id=action.entity_id,

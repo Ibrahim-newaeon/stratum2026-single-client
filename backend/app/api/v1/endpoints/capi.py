@@ -22,40 +22,27 @@ from app.services.capi import CAPIService
 logger = get_logger(__name__)
 router = APIRouter(tags=["capi"])
 
-# Global CAPI service instance cache (per-tenant) with TTL eviction
-# to prevent unbounded memory growth and cross-tenant state leakage.
+# Global CAPI service singleton with TTL-based refresh (single-org deployment —
+# there is only ever one instance, so no per-tenant partitioning is needed).
 _CAPI_SERVICE_TTL_MINUTES = 30
-_CAPI_MAX_SERVICES = 100
-_capi_services: Dict[int, tuple[CAPIService, datetime]] = {}
+_capi_service_cache: Optional[tuple[CAPIService, datetime]] = None
 
 
-def get_capi_service(tenant_id: int) -> CAPIService:
-    """Get or create CAPI service for tenant with TTL eviction."""
+def get_capi_service() -> CAPIService:
+    """Get or create the singleton CAPI service instance with TTL refresh."""
+    global _capi_service_cache
     now = datetime.now(timezone.utc)
-    # Evict expired entries on every access
-    expired = [
-        tid
-        for tid, (_, ts) in _capi_services.items()
-        if now - ts > timedelta(minutes=_CAPI_SERVICE_TTL_MINUTES)
-    ]
-    for tid in expired:
-        del _capi_services[tid]
-        logger.info("capi_service_evicted", tenant_id=tid)
 
-    # Enforce max size: remove oldest if at capacity and tenant not in cache
-    if tenant_id not in _capi_services and len(_capi_services) >= _CAPI_MAX_SERVICES:
-        oldest_tid = min(_capi_services, key=lambda k: _capi_services[k][1])
-        del _capi_services[oldest_tid]
-        logger.warning("capi_service_max_size_evicted", tenant_id=oldest_tid)
+    if _capi_service_cache is not None:
+        svc, ts = _capi_service_cache
+        if now - ts <= timedelta(minutes=_CAPI_SERVICE_TTL_MINUTES):
+            _capi_service_cache = (svc, now)
+            return svc
+        logger.info("capi_service_evicted")
 
-    if tenant_id not in _capi_services:
-        _capi_services[tenant_id] = (CAPIService(tenant_id), now)
-    else:
-        # Refresh timestamp on access
-        svc, _ = _capi_services[tenant_id]
-        _capi_services[tenant_id] = (svc, now)
-
-    return _capi_services[tenant_id][0]
+    svc = CAPIService()
+    _capi_service_cache = (svc, now)
+    return svc
 
 
 # =============================================================================
@@ -150,7 +137,7 @@ async def connect_platform(
     - TikTok - Requires pixel_code, access_token
     - Snapchat - Requires pixel_id, access_token
     """
-    service = get_capi_service(current_user.tenant_id)
+    service = get_capi_service()
 
     result = await service.connect_platform(data.platform, data.credentials)
 
@@ -171,7 +158,7 @@ async def disconnect_platform(
     current_user: CurrentUserDep,
 ):
     """Disconnect from a platform."""
-    service = get_capi_service(current_user.tenant_id)
+    service = get_capi_service()
 
     success = await service.disconnect_platform(platform)
 
@@ -184,7 +171,7 @@ async def disconnect_platform(
 @router.get("/platforms/status", response_model=APIResponse)
 async def get_platforms_status(current_user: CurrentUserDep):
     """Get connection status for all platforms."""
-    service = get_capi_service(current_user.tenant_id)
+    service = get_capi_service()
 
     connected = service.get_connected_platforms()
     setup_status = service.get_setup_status()
@@ -201,7 +188,7 @@ async def get_platforms_status(current_user: CurrentUserDep):
 @router.post("/platforms/test", response_model=APIResponse)
 async def test_connections(current_user: CurrentUserDep):
     """Test all platform connections."""
-    service = get_capi_service(current_user.tenant_id)
+    service = get_capi_service()
 
     results = await service.test_all_connections()
 
@@ -220,7 +207,7 @@ async def test_connections(current_user: CurrentUserDep):
 @router.get("/platforms/{platform}/requirements", response_model=APIResponse)
 async def get_platform_requirements(platform: str, current_user: CurrentUserDep):
     """Get setup requirements for a platform."""
-    service = get_capi_service(current_user.tenant_id)
+    service = get_capi_service()
 
     requirements = await service.get_platform_requirements(platform)
 
@@ -247,7 +234,7 @@ async def stream_event(
     2. Event mapped to platform-specific format
     3. Sent to all connected platforms (or specified ones)
     """
-    service = get_capi_service(current_user.tenant_id)
+    service = get_capi_service()
 
     platform_list = platforms.split(",") if platforms else None
 
@@ -289,7 +276,7 @@ async def stream_batch_events(
     - Aggregated data quality analysis
     - Detailed per-platform results
     """
-    service = get_capi_service(current_user.tenant_id)
+    service = get_capi_service()
 
     events = [
         {
@@ -340,7 +327,7 @@ async def analyze_data_quality(
     - Missing fields that impact match quality
     - Recommendations to improve ROAS
     """
-    service = get_capi_service(current_user.tenant_id)
+    service = get_capi_service()
 
     analysis = service.analyze_data_quality(data.user_data, data.platform)
 
@@ -364,7 +351,7 @@ async def get_quality_report(
     - Top recommendations to fix
     - Estimated ROAS improvement potential
     """
-    service = get_capi_service(current_user.tenant_id)
+    service = get_capi_service()
 
     platform_list = platforms.split(",") if platforms else None
     report = service.get_data_quality_report(platform_list)
@@ -425,7 +412,7 @@ async def get_live_insights(
     - Top gaps to fix immediately
     - ROAS lift potential
     """
-    service = get_capi_service(current_user.tenant_id)
+    service = get_capi_service()
 
     insights = service.get_live_insights(platform)
 
@@ -449,7 +436,7 @@ async def map_event(
 
     Shows how your event will be translated for each platform.
     """
-    service = get_capi_service(current_user.tenant_id)
+    service = get_capi_service()
 
     mapping = service.map_event(event_name, parameters or {})
 
@@ -477,7 +464,7 @@ async def detect_pii(
 
     Identifies what data will be hashed and how.
     """
-    service = get_capi_service(current_user.tenant_id)
+    service = get_capi_service()
 
     detections = service.detect_pii_fields(data.model_dump())
 
@@ -501,7 +488,7 @@ async def hash_user_data(
 
     Automatically detects and hashes PII fields using SHA256.
     """
-    service = get_capi_service(current_user.tenant_id)
+    service = get_capi_service()
 
     hashed = service.hash_user_data(user_data.model_dump())
 

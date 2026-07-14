@@ -23,7 +23,6 @@ from app.models import (
     Campaign,
     CampaignMetric,
     CampaignStatus,
-    Tenant,
 )
 
 logger = structlog.get_logger(__name__)
@@ -84,7 +83,6 @@ class TrainingDataLoader:
     async def load_csv(
         self,
         file_path: str,
-        tenant_id: int,
         platform: AdPlatform = AdPlatform.META,
         dataset_format: str = "generic",
         create_daily_metrics: bool = True,
@@ -94,7 +92,6 @@ class TrainingDataLoader:
 
         Args:
             file_path: Path to CSV file
-            tenant_id: Tenant ID to associate data with
             platform: Ad platform (meta, google, etc.)
             dataset_format: Format hint (facebook_kaggle, google_kaggle, generic)
             create_daily_metrics: Whether to create daily metric records
@@ -118,9 +115,7 @@ class TrainingDataLoader:
         df = self._transform_data(df, platform)
 
         # Load into database
-        stats = await self._load_to_database(
-            df, tenant_id, platform, create_daily_metrics
-        )
+        stats = await self._load_to_database(df, platform, create_daily_metrics)
 
         return {
             "status": "success",
@@ -234,7 +229,6 @@ class TrainingDataLoader:
     async def _load_to_database(
         self,
         df: pd.DataFrame,
-        tenant_id: int,
         platform: AdPlatform,
         create_daily_metrics: bool,
     ) -> Dict[str, int]:
@@ -255,10 +249,9 @@ class TrainingDataLoader:
         for external_id, group in campaign_groups:
             # Aggregate campaign-level metrics
             campaign_data = {
-                "tenant_id": tenant_id,
                 "platform": platform,
                 "external_id": str(external_id),
-                "account_id": f"training_account_{tenant_id}",
+                "account_id": "training_account",
                 "name": (
                     group["name"].iloc[0]
                     if "name" in group.columns
@@ -299,7 +292,6 @@ class TrainingDataLoader:
             # Check if campaign exists
             result = await self.db.execute(
                 select(Campaign).where(
-                    Campaign.tenant_id == tenant_id,
                     Campaign.platform == platform,
                     Campaign.external_id == str(external_id),
                 )
@@ -309,7 +301,7 @@ class TrainingDataLoader:
             if existing:
                 # Update existing campaign
                 for key, value in campaign_data.items():
-                    if key not in ["tenant_id", "platform", "external_id"]:
+                    if key not in ["platform", "external_id"]:
                         setattr(existing, key, value)
                 campaign = existing
             else:
@@ -328,7 +320,6 @@ class TrainingDataLoader:
                         metric_date = metric_date.date()
 
                     metric = CampaignMetric(
-                        tenant_id=tenant_id,
                         campaign_id=campaign.id,
                         date=metric_date,
                         spend_cents=int(row.get("spend_cents", 0)),

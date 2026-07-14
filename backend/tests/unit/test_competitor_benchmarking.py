@@ -10,7 +10,7 @@ industry reports, cross-platform comparison, and the P2 enhancements
 (seasonal adjuster, trend analyzer, position forecaster).
 """
 
-from datetime import datetime, timezone
+from datetime import datetime, timedelta, timezone
 
 import pytest
 
@@ -108,7 +108,6 @@ class TestPerformanceLevel:
 class TestGetBenchmark:
     def test_median_metrics_average_overall(self, svc):
         benchmark = svc.get_benchmark(
-            "t1",
             Industry.ECOMMERCE,
             Region.GLOBAL,
             "meta",
@@ -121,7 +120,6 @@ class TestGetBenchmark:
 
     def test_strengths_and_weaknesses_split(self, svc):
         benchmark = svc.get_benchmark(
-            "t1",
             Industry.ECOMMERCE,
             Region.GLOBAL,
             "meta",
@@ -132,7 +130,6 @@ class TestGetBenchmark:
 
     def test_unknown_industry_falls_back_to_ecommerce(self, svc):
         benchmark = svc.get_benchmark(
-            "t1",
             Industry.TRAVEL,  # no travel benchmarks defined
             Region.GLOBAL,
             "meta",
@@ -146,7 +143,6 @@ class TestGetBenchmark:
 
     def test_unknown_metric_skipped(self, svc):
         benchmark = svc.get_benchmark(
-            "t1",
             Industry.ECOMMERCE,
             Region.GLOBAL,
             "meta",
@@ -157,7 +153,6 @@ class TestGetBenchmark:
 
     def test_unknown_platform_yields_empty_metrics(self, svc):
         benchmark = svc.get_benchmark(
-            "t1",
             Industry.ECOMMERCE,
             Region.GLOBAL,
             "linkedin",
@@ -167,7 +162,6 @@ class TestGetBenchmark:
 
     def test_recommendations_for_weak_metrics(self, svc):
         benchmark = svc.get_benchmark(
-            "t1",
             Industry.ECOMMERCE,
             Region.GLOBAL,
             "meta",
@@ -179,7 +173,6 @@ class TestGetBenchmark:
 
     def test_recommendations_when_all_strong(self, svc):
         benchmark = svc.get_benchmark(
-            "t1",
             Industry.ECOMMERCE,
             Region.GLOBAL,
             "meta",
@@ -221,7 +214,6 @@ class TestReports:
 
     def test_compare_platforms_picks_best(self, svc):
         result = svc.compare_platforms(
-            "t1",
             Industry.ECOMMERCE,
             {
                 "meta": {"ctr": 3.0, "roas": 5.0},  # strong
@@ -242,7 +234,6 @@ class TestReports:
 class TestConvenience:
     def test_invalid_industry_falls_back_to_other(self):
         result = get_benchmark_comparison(
-            "ut_bench_t1",
             "not_an_industry",
             "meta",
             {"ctr": 1.8},
@@ -319,6 +310,15 @@ class TestTrendAnalyzer:
     def _record(self, analyzer, values):
         for v in values:
             analyzer.record_benchmark("ctr", "ecommerce", "meta", v)
+        # Real recordings are days apart; back-to-back calls here can land on
+        # identical timestamps, and analyze_trend's sorted(history) would then
+        # tie-break on the value, scrambling the intended ordering. Spread the
+        # timestamps so ordering is unambiguous.
+        key = "ctr:ecommerce:meta"
+        analyzer._historical_benchmarks[key] = [
+            (t + timedelta(seconds=i), v)
+            for i, (t, v) in enumerate(analyzer._historical_benchmarks[key])
+        ]
 
     def test_insufficient_history(self):
         trend = BenchmarkTrendAnalyzer().analyze_trend("ctr", "ecommerce", "meta")
@@ -363,35 +363,36 @@ class TestPositionForecaster:
         return CompetitivePositionForecaster(CompetitorBenchmarkingService())
 
     def test_stable_without_signals(self):
-        forecast = self._forecaster().forecast_position("t1", 50.0, {})
+        forecast = self._forecaster().forecast_position(50.0, {})
         assert forecast.trajectory == "maintaining"
         assert forecast.forecast_1m_percentile == 50.0
         assert forecast.key_drivers == ["Performance is stable"]
 
     def test_gaining_with_improving_metrics(self):
-        forecast = self._forecaster().forecast_position("t1", 50.0, {"ctr": 0.5})
+        forecast = self._forecaster().forecast_position(50.0, {"ctr": 0.5})
         assert forecast.trajectory == "gaining"
         assert forecast.forecast_1m_percentile == 60.0  # 50 + (1/3)*30
         assert forecast.forecast_6m_percentile == 99.0  # capped
         assert "Improving ctr" in forecast.key_drivers
 
     def test_losing_with_declining_metrics(self):
-        forecast = self._forecaster().forecast_position("t1", 50.0, {"roas": -0.5})
+        forecast = self._forecaster().forecast_position(50.0, {"roas": -0.5})
         assert forecast.trajectory == "losing"
         assert "Declining roas - needs attention" in forecast.key_drivers
 
     def test_momentum_from_position_history(self):
+        # _position_history is singleton state on the forecaster instance
         forecaster = self._forecaster()
         for p in [40.0, 45.0, 50.0, 55.0, 60.0]:
-            forecaster.record_position("t1", p)
-        forecast = forecaster.forecast_position("t1", 60.0, {})
+            forecaster.record_position(p)
+        assert len(forecaster._position_history) == 5
+        forecast = forecaster.forecast_position(60.0, {})
         # momentum (60-40)/5 = 4 -> combined 1.33 -> gaining
         assert forecast.trajectory == "gaining"
 
     def test_improvement_opportunities(self):
         forecaster = self._forecaster()
         opportunities = forecaster.get_improvement_opportunities(
-            "t1",
             current_metrics={"ctr": 1.0, "roas": 3.0, "mystery": 5.0},
             benchmarks={"ctr": 2.0, "roas": 3.0},
         )
@@ -405,7 +406,6 @@ class TestPositionForecaster:
     def test_opportunities_sorted_by_gain(self):
         forecaster = self._forecaster()
         opportunities = forecaster.get_improvement_opportunities(
-            "t1",
             current_metrics={"ctr": 1.6, "cvr": 1.0},
             benchmarks={"ctr": 2.0, "cvr": 4.0},  # 20% vs 75% gaps
         )

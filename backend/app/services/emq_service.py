@@ -48,14 +48,12 @@ class EmqService:
 
     async def get_emq_score(
         self,
-        tenant_id: int,
         target_date: Optional[date] = None,
     ) -> Dict[str, Any]:
         """
-        Get EMQ score for a tenant.
+        Get the organization's EMQ score.
 
         Args:
-            tenant_id: Tenant ID
             target_date: Target date (defaults to today)
 
         Returns:
@@ -69,12 +67,7 @@ class EmqService:
         # Fetch current day's signal health records
         current_query = (
             select(FactSignalHealthDaily)
-            .where(
-                and_(
-                    FactSignalHealthDaily.tenant_id == tenant_id,
-                    FactSignalHealthDaily.date == target_date,
-                )
-            )
+            .where(FactSignalHealthDaily.date == target_date)
             .limit(1000)
         )
         current_result = await self.session.execute(current_query)
@@ -83,12 +76,7 @@ class EmqService:
         # Fetch previous day's records for comparison
         previous_query = (
             select(FactSignalHealthDaily)
-            .where(
-                and_(
-                    FactSignalHealthDaily.tenant_id == tenant_id,
-                    FactSignalHealthDaily.date == previous_date,
-                )
-            )
+            .where(FactSignalHealthDaily.date == previous_date)
             .limit(1000)
         )
         previous_result = await self.session.execute(previous_query)
@@ -97,7 +85,7 @@ class EmqService:
         # If no records, return calculated from available data
         if not current_records:
             # Check if we have attribution variance data instead
-            return await self._calculate_emq_from_variance(tenant_id, target_date)
+            return await self._calculate_emq_from_variance(target_date)
 
         # Calculate EMQ from signal health records
         return self._calculate_emq_from_records(current_records, previous_records)
@@ -226,7 +214,6 @@ class EmqService:
 
     async def _calculate_emq_from_variance(
         self,
-        tenant_id: int,
         target_date: date,
     ) -> Dict[str, Any]:
         """Calculate EMQ from attribution variance data when signal health is not available."""
@@ -234,12 +221,7 @@ class EmqService:
         # Fetch attribution variance data
         query = (
             select(FactAttributionVarianceDaily)
-            .where(
-                and_(
-                    FactAttributionVarianceDaily.tenant_id == tenant_id,
-                    FactAttributionVarianceDaily.date == target_date,
-                )
-            )
+            .where(FactAttributionVarianceDaily.date == target_date)
             .limit(1000)
         )
         result = await self.session.execute(query)
@@ -342,12 +324,11 @@ class EmqService:
 
     async def get_confidence_data(
         self,
-        tenant_id: int,
         target_date: Optional[date] = None,
     ) -> Dict[str, Any]:
-        """Get confidence band details for a tenant."""
+        """Get confidence band details for the organization."""
 
-        emq_data = await self.get_emq_score(tenant_id, target_date)
+        emq_data = await self.get_emq_score(target_date)
         score = emq_data["score"]
 
         # Calculate confidence factors from drivers
@@ -381,7 +362,6 @@ class EmqService:
 
     async def get_incidents(
         self,
-        tenant_id: int,
         start_date: date,
         end_date: date,
     ) -> List[Dict[str, Any]]:
@@ -392,7 +372,6 @@ class EmqService:
             select(FactSignalHealthDaily)
             .where(
                 and_(
-                    FactSignalHealthDaily.tenant_id == tenant_id,
                     FactSignalHealthDaily.date >= start_date,
                     FactSignalHealthDaily.date <= end_date,
                     FactSignalHealthDaily.status != SignalHealthStatus.OK,
@@ -445,7 +424,6 @@ class EmqService:
 
     async def get_volatility(
         self,
-        tenant_id: int,
         weeks: int = 8,
     ) -> Dict[str, Any]:
         """Get signal volatility index and weekly data."""
@@ -463,7 +441,6 @@ class EmqService:
             )
             .where(
                 and_(
-                    FactSignalHealthDaily.tenant_id == tenant_id,
                     FactSignalHealthDaily.date >= start_date,
                     FactSignalHealthDaily.date <= end_date,
                 )
@@ -535,11 +512,10 @@ class EmqService:
 
     async def get_autopilot_state(
         self,
-        tenant_id: int,
     ) -> Dict[str, Any]:
         """Get autopilot state based on current EMQ score."""
 
-        emq_data = await self.get_emq_score(tenant_id)
+        emq_data = await self.get_emq_score()
         score = emq_data["score"]
 
         # Fail closed: when there is no real EMQ/signal data the numeric
@@ -555,12 +531,7 @@ class EmqService:
             mode, reason = determine_autopilot_mode(score)
 
         # Calculate budget at risk from pending actions
-        query = select(func.count()).where(
-            and_(
-                FactActionsQueue.tenant_id == tenant_id,
-                FactActionsQueue.status == "queued",
-            )
-        )
+        query = select(func.count()).where(FactActionsQueue.status == "queued")
         result = await self.session.execute(query)
         pending_count = result.scalar() or 0
 
@@ -629,7 +600,6 @@ class EmqService:
 
     async def get_impact(
         self,
-        tenant_id: int,
         start_date: date,
         end_date: date,
     ) -> Dict[str, Any]:
@@ -638,7 +608,6 @@ class EmqService:
         # Query attribution variance for the period
         query = select(FactAttributionVarianceDaily).where(
             and_(
-                FactAttributionVarianceDaily.tenant_id == tenant_id,
                 FactAttributionVarianceDaily.date >= start_date,
                 FactAttributionVarianceDaily.date <= end_date,
             )
@@ -856,13 +825,15 @@ class EmqAdminService:
         if target_date is None:
             target_date = date.today()
 
-        # Count tenants by band
+        # Single-org deployment: count signal-health records (one per
+        # platform per day) by confidence band rather than distinct tenants
+        # (the per-tenant column/table no longer exists — STRAT-SC-001).
         query = select(
-            func.count(func.distinct(FactSignalHealthDaily.tenant_id)).label("total"),
-            func.count(func.distinct(FactSignalHealthDaily.tenant_id))
+            func.count(FactSignalHealthDaily.id).label("total"),
+            func.count(FactSignalHealthDaily.id)
             .filter(FactSignalHealthDaily.emq_score >= 80)
             .label("reliable"),
-            func.count(func.distinct(FactSignalHealthDaily.tenant_id))
+            func.count(FactSignalHealthDaily.id)
             .filter(
                 and_(
                     FactSignalHealthDaily.emq_score >= 60,
@@ -870,7 +841,7 @@ class EmqAdminService:
                 )
             )
             .label("directional"),
-            func.count(func.distinct(FactSignalHealthDaily.tenant_id))
+            func.count(FactSignalHealthDaily.id)
             .filter(FactSignalHealthDaily.emq_score < 60)
             .label("unsafe"),
             func.avg(FactSignalHealthDaily.emq_score).label("avg_score"),

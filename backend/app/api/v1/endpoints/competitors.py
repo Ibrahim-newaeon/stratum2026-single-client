@@ -13,6 +13,7 @@ from fastapi import APIRouter, Depends, HTTPException, Query, Request, status
 from sqlalchemy import func, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from app.auth.deps import CurrentUserDep
 from app.core.config import settings
 from app.core.logging import get_logger
 from app.db.session import get_async_session
@@ -50,7 +51,7 @@ router = APIRouter(dependencies=[Depends(require_competitor_intel_enabled)])
 
 @router.get("", response_model=APIResponse[List[CompetitorResponse]])
 async def list_competitors(
-    request: Request,
+    current_user: CurrentUserDep,
     db: AsyncSession = Depends(get_async_session),
     is_primary: Optional[bool] = None,
     skip: int = Query(0, ge=0, description="Number of records to skip"),
@@ -59,11 +60,7 @@ async def list_competitors(
     ),
 ):
     """List tracked competitors."""
-    tenant_id = getattr(request.state, "tenant_id", None)
-
-    query = select(CompetitorBenchmark).where(
-        CompetitorBenchmark.tenant_id == tenant_id,
-    )
+    query = select(CompetitorBenchmark)
 
     if is_primary is not None:
         query = query.where(CompetitorBenchmark.is_primary == is_primary)
@@ -86,17 +83,14 @@ async def list_competitors(
     "/share-of-voice", response_model=APIResponse[CompetitorShareOfVoiceResponse]
 )
 async def get_share_of_voice(
-    request: Request,
+    current_user: CurrentUserDep,
     db: AsyncSession = Depends(get_async_session),
 ):
     """
     Get share of voice comparison across all tracked competitors.
     """
-    tenant_id = getattr(request.state, "tenant_id", None)
-
     result = await db.execute(
         select(CompetitorBenchmark)
-        .where(CompetitorBenchmark.tenant_id == tenant_id)
         .order_by(CompetitorBenchmark.share_of_voice.desc().nullslast())
         .limit(1000)
     )
@@ -131,17 +125,14 @@ async def get_share_of_voice(
 
 @router.get("/{competitor_id}", response_model=APIResponse[CompetitorResponse])
 async def get_competitor(
-    request: Request,
+    current_user: CurrentUserDep,
     competitor_id: int,
     db: AsyncSession = Depends(get_async_session),
 ):
     """Get detailed competitor information."""
-    tenant_id = getattr(request.state, "tenant_id", None)
-
     result = await db.execute(
         select(CompetitorBenchmark).where(
             CompetitorBenchmark.id == competitor_id,
-            CompetitorBenchmark.tenant_id == tenant_id,
         )
     )
     competitor = result.scalar_one_or_none()
@@ -164,17 +155,14 @@ async def get_competitor(
     status_code=status.HTTP_201_CREATED,
 )
 async def add_competitor(
-    request: Request,
+    current_user: CurrentUserDep,
     competitor_data: CompetitorCreate,
     db: AsyncSession = Depends(get_async_session),
 ):
     """Add a new competitor to track."""
-    tenant_id = getattr(request.state, "tenant_id", None)
-
     # Check for duplicate domain
     existing = await db.execute(
         select(CompetitorBenchmark).where(
-            CompetitorBenchmark.tenant_id == tenant_id,
             CompetitorBenchmark.domain == competitor_data.domain.lower(),
         )
     )
@@ -185,7 +173,6 @@ async def add_competitor(
         )
 
     competitor = CompetitorBenchmark(
-        tenant_id=tenant_id,
         domain=competitor_data.domain.lower(),
         name=competitor_data.name,
         is_primary=competitor_data.is_primary,
@@ -196,9 +183,12 @@ async def add_competitor(
     await db.refresh(competitor)
 
     # Queue initial data fetch
+    # TODO(C4): fetch_competitor_data (app/workers/tasks/competitors.py) still
+    # expects the old per-org first positional arg — dropped here; the worker
+    # body is rewritten in Task C4 (workers de-fan-out).
     from app.workers.tasks import fetch_competitor_data
 
-    fetch_competitor_data.delay(tenant_id, competitor.id)
+    fetch_competitor_data.delay(competitor.id)
 
     logger.info(
         "competitor_added", competitor_id=competitor.id, domain=competitor.domain
@@ -213,18 +203,15 @@ async def add_competitor(
 
 @router.patch("/{competitor_id}", response_model=APIResponse[CompetitorResponse])
 async def update_competitor(
-    request: Request,
+    current_user: CurrentUserDep,
     competitor_id: int,
     update_data: CompetitorUpdate,
     db: AsyncSession = Depends(get_async_session),
 ):
     """Update competitor details."""
-    tenant_id = getattr(request.state, "tenant_id", None)
-
     result = await db.execute(
         select(CompetitorBenchmark).where(
             CompetitorBenchmark.id == competitor_id,
-            CompetitorBenchmark.tenant_id == tenant_id,
         )
     )
     competitor = result.scalar_one_or_none()
@@ -250,17 +237,14 @@ async def update_competitor(
 
 @router.delete("/{competitor_id}", status_code=status.HTTP_204_NO_CONTENT)
 async def remove_competitor(
-    request: Request,
+    current_user: CurrentUserDep,
     competitor_id: int,
     db: AsyncSession = Depends(get_async_session),
 ):
     """Remove a competitor from tracking."""
-    tenant_id = getattr(request.state, "tenant_id", None)
-
     result = await db.execute(
         select(CompetitorBenchmark).where(
             CompetitorBenchmark.id == competitor_id,
-            CompetitorBenchmark.tenant_id == tenant_id,
         )
     )
     competitor = result.scalar_one_or_none()
@@ -279,19 +263,16 @@ async def remove_competitor(
 
 @router.post("/{competitor_id}/refresh")
 async def refresh_competitor_data(
-    request: Request,
+    current_user: CurrentUserDep,
     competitor_id: int,
     db: AsyncSession = Depends(get_async_session),
 ):
     """
     Trigger a manual refresh of competitor data.
     """
-    tenant_id = getattr(request.state, "tenant_id", None)
-
     result = await db.execute(
         select(CompetitorBenchmark).where(
             CompetitorBenchmark.id == competitor_id,
-            CompetitorBenchmark.tenant_id == tenant_id,
         )
     )
     competitor = result.scalar_one_or_none()
@@ -303,9 +284,11 @@ async def refresh_competitor_data(
         )
 
     # Queue refresh task
+    # TODO(C3): see note in add_competitor — fetch_competitor_data is not yet
+    # de-tenanted.
     from app.workers.tasks import fetch_competitor_data
 
-    task = fetch_competitor_data.delay(tenant_id, competitor_id)
+    task = fetch_competitor_data.delay(competitor_id)
 
     return APIResponse(
         success=True,
@@ -316,7 +299,7 @@ async def refresh_competitor_data(
 
 @router.get("/{competitor_id}/keywords")
 async def get_competitor_keywords(
-    request: Request,
+    current_user: CurrentUserDep,
     competitor_id: int,
     db: AsyncSession = Depends(get_async_session),
     keyword_type: str = Query("all", pattern="^(all|paid|organic)$"),
@@ -325,12 +308,9 @@ async def get_competitor_keywords(
     """
     Get top keywords for a competitor.
     """
-    tenant_id = getattr(request.state, "tenant_id", None)
-
     result = await db.execute(
         select(CompetitorBenchmark).where(
             CompetitorBenchmark.id == competitor_id,
-            CompetitorBenchmark.tenant_id == tenant_id,
         )
     )
     competitor = result.scalar_one_or_none()

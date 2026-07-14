@@ -40,7 +40,6 @@ from app.models import (
     AuditLog,
     Campaign,
     CampaignStatus,
-    Tenant,
 )
 from app.models.campaign_builder import ConnectionStatus, TenantPlatformConnection
 from app.models.onboarding import OnboardingStatus, TenantOnboarding
@@ -456,12 +455,10 @@ async def get_dashboard_overview(
     Returns key metrics, signal health, platform breakdown, and quick stats.
     Pass period=custom with start_date and end_date for custom date ranges.
     """
-    tenant_id = current_user.tenant_id
-
     # Get date range — wrapped to handle database errors gracefully
     try:
         return await _build_dashboard_overview(
-            tenant_id, period, custom_start, custom_end, db
+            period, custom_start, custom_end, db
         )
     except (
         SQLAlchemyError,
@@ -471,7 +468,7 @@ async def get_dashboard_overview(
         ZeroDivisionError,
         OSError,
     ) as e:
-        logger.error("dashboard_overview_error", error=str(e), tenant_id=tenant_id)
+        logger.error("dashboard_overview_error", error=str(e))
         # Return safe empty dashboard so the frontend can still render
         start_date, end_date = get_date_range(period, custom_start, custom_end)
         zero_metric = MetricValue(
@@ -523,7 +520,6 @@ async def get_dashboard_overview(
 
 
 async def _build_dashboard_overview(
-    tenant_id: int,
     period: TimePeriod,
     custom_start,
     custom_end,
@@ -534,9 +530,7 @@ async def _build_dashboard_overview(
     prev_start, prev_end = get_previous_period(start_date, end_date)
 
     # Check onboarding status
-    onboarding_result = await db.execute(
-        select(TenantOnboarding).where(TenantOnboarding.tenant_id == tenant_id)
-    )
+    onboarding_result = await db.execute(select(TenantOnboarding))
     onboarding = onboarding_result.scalar_one_or_none()
     onboarding_complete = bool(
         onboarding and onboarding.status == OnboardingStatus.COMPLETED
@@ -545,10 +539,7 @@ async def _build_dashboard_overview(
     # Get connected platforms
     platforms_result = await db.execute(
         select(TenantPlatformConnection).where(
-            and_(
-                TenantPlatformConnection.tenant_id == tenant_id,
-                TenantPlatformConnection.status == ConnectionStatus.CONNECTED,
-            )
+            TenantPlatformConnection.status == ConnectionStatus.CONNECTED,
         )
     )
     connected_platforms = platforms_result.scalars().all()
@@ -560,12 +551,7 @@ async def _build_dashboard_overview(
 
     # Get campaigns and aggregate metrics
     campaigns_result = await db.execute(
-        select(Campaign).where(
-            and_(
-                Campaign.tenant_id == tenant_id,
-                Campaign.is_deleted == False,
-            )
-        )
+        select(Campaign).where(Campaign.is_deleted == False)
     )
     campaigns = campaigns_result.scalars().all()
     has_campaigns = len(campaigns) > 0
@@ -583,7 +569,6 @@ async def _build_dashboard_overview(
             func.coalesce(func.sum(CampaignMetric.clicks), 0).label("clicks"),
         ).where(
             and_(
-                CampaignMetric.tenant_id == tenant_id,
                 CampaignMetric.date >= start_date,
                 CampaignMetric.date <= end_date,
             )
@@ -614,9 +599,9 @@ async def _build_dashboard_overview(
                 "COALESCE(SUM(impressions), 0) as impressions, "
                 "COALESCE(SUM(clicks), 0) as clicks "
                 "FROM fact_platform_daily "
-                "WHERE tenant_id = :tenant_id AND date BETWEEN :start AND :end"
+                "WHERE date BETWEEN :start AND :end"
             ),
-            {"tenant_id": tenant_id, "start": prev_start, "end": prev_end},
+            {"start": prev_start, "end": prev_end},
         )
         prev_row = prev_result.mappings().first()
         if prev_row and prev_row["spend"] > 0:
@@ -759,10 +744,11 @@ async def _build_dashboard_overview(
     # Campaign stats
     active_campaigns = len([c for c in campaigns if c.status == CampaignStatus.ACTIVE])
 
-    # Load tenant's hidden_metrics setting
-    tenant_result = await db.execute(select(Tenant).where(Tenant.id == tenant_id))
-    tenant = tenant_result.scalar_one_or_none()
-    hidden_metrics = (tenant.settings or {}).get("hidden_metrics", []) if tenant else []
+    # Load organization's hidden_metrics setting
+    from app.base_models import get_organization
+
+    org = await get_organization(db)
+    hidden_metrics = (org.settings or {}).get("hidden_metrics", [])
 
     # Period label
     period_labels = {
@@ -819,15 +805,8 @@ async def get_campaign_performance(
 
     Returns paginated list of campaigns with key metrics and recommendations.
     """
-    tenant_id = current_user.tenant_id
-
     # Build query
-    query = select(Campaign).where(
-        and_(
-            Campaign.tenant_id == tenant_id,
-            Campaign.is_deleted == False,
-        )
-    )
+    query = select(Campaign).where(Campaign.is_deleted == False)
 
     # Apply filters
     if platform:
@@ -925,14 +904,11 @@ async def get_recommendations(
 
     Returns prioritized recommendations for campaigns that need attention.
     """
-    tenant_id = current_user.tenant_id
-
     # Get campaigns to generate recommendations
     result = await db.execute(
         select(Campaign)
         .where(
             and_(
-                Campaign.tenant_id == tenant_id,
                 Campaign.is_deleted == False,
                 Campaign.status == CampaignStatus.ACTIVE,
             )
@@ -1032,7 +1008,6 @@ async def approve_recommendation(
         "recommendation_approved",
         recommendation_id=recommendation_id,
         user_id=current_user.id,
-        tenant_id=current_user.tenant_id,
     )
 
     # Parse recommendation to identify action and target
@@ -1044,15 +1019,14 @@ async def approve_recommendation(
         await db.execute(
             text("""
                 INSERT INTO enforcement_audit_logs
-                (id, tenant_id, timestamp, action_type, entity_type, entity_id,
+                (id, timestamp, action_type, entity_type, entity_id,
                  violation_type, intervention_action, enforcement_mode, details, user_id)
                 VALUES
-                (gen_random_uuid(), :tenant_id, NOW(), :action_type, 'campaign', :entity_id,
+                (gen_random_uuid(), NOW(), :action_type, 'campaign', :entity_id,
                  'budget_exceeded', 'override_logged', 'advisory',
                  :details, :user_id)
             """),
             {
-                "tenant_id": current_user.tenant_id,
                 "action_type": f"recommendation_{rec_type}_approved",
                 "entity_id": campaign_id or recommendation_id,
                 "details": json.dumps(
@@ -1076,7 +1050,12 @@ async def approve_recommendation(
         from app.autopilot.service import AutopilotService
 
         autopilot = AutopilotService(db)
-        can_execute = await autopilot.can_execute(current_user.tenant_id)
+        # NOTE: pre-existing phantom call — AutopilotService has no
+        # can_execute() method (can_auto_execute exists with a different
+        # contract); the AttributeError is swallowed by the broad except
+        # below, leaving action_status == "approved". Behavior preserved
+        # verbatim through STRAT-SC-001/C3; needs a real wiring fix later.
+        can_execute = await autopilot.can_execute()
 
         if can_execute and campaign_id:
             action_status = "queued_for_execution"
@@ -1113,7 +1092,6 @@ async def reject_recommendation(
         "recommendation_rejected",
         recommendation_id=recommendation_id,
         user_id=current_user.id,
-        tenant_id=current_user.tenant_id,
     )
 
     # Record rejection in audit log
@@ -1121,15 +1099,14 @@ async def reject_recommendation(
         await db.execute(
             text("""
                 INSERT INTO enforcement_audit_logs
-                (id, tenant_id, timestamp, action_type, entity_type, entity_id,
+                (id, timestamp, action_type, entity_type, entity_id,
                  violation_type, intervention_action, enforcement_mode, details, user_id)
                 VALUES
-                (gen_random_uuid(), :tenant_id, NOW(), 'recommendation_rejected', 'campaign', :entity_id,
+                (gen_random_uuid(), NOW(), 'recommendation_rejected', 'campaign', :entity_id,
                  'budget_exceeded', 'override_logged', 'advisory',
                  :details, :user_id)
             """),
             {
-                "tenant_id": current_user.tenant_id,
                 "entity_id": recommendation_id,
                 "details": json.dumps(
                     {
@@ -1167,12 +1144,9 @@ async def get_activity_feed(
 
     Returns recent actions, alerts, and system events.
     """
-    tenant_id = current_user.tenant_id
-
     # Get audit logs for activity
     result = await db.execute(
         select(AuditLog)
-        .where(AuditLog.tenant_id == tenant_id)
         .order_by(desc(AuditLog.created_at))
         .offset(offset)
         .limit(limit + 1)  # Get one extra to check has_more
@@ -1225,9 +1199,7 @@ async def get_activity_feed(
         )
 
     # Get total count
-    count_result = await db.execute(
-        select(func.count()).where(AuditLog.tenant_id == tenant_id)
-    )
+    count_result = await db.execute(select(func.count()).select_from(AuditLog))
     total = count_result.scalar() or 0
 
     return APIResponse(
@@ -1250,14 +1222,10 @@ async def get_quick_actions(
 
     Returns contextual actions based on the current state.
     """
-    tenant_id = current_user.tenant_id
-
     actions = []
 
     # Check onboarding status
-    onboarding_result = await db.execute(
-        select(TenantOnboarding).where(TenantOnboarding.tenant_id == tenant_id)
-    )
+    onboarding_result = await db.execute(select(TenantOnboarding))
     onboarding = onboarding_result.scalar_one_or_none()
 
     if not onboarding or onboarding.status != OnboardingStatus.COMPLETED:
@@ -1273,10 +1241,7 @@ async def get_quick_actions(
     # Check for connected platforms
     platforms_result = await db.execute(
         select(TenantPlatformConnection).where(
-            and_(
-                TenantPlatformConnection.tenant_id == tenant_id,
-                TenantPlatformConnection.status == ConnectionStatus.CONNECTED,
-            )
+            TenantPlatformConnection.status == ConnectionStatus.CONNECTED,
         )
     )
     connected = platforms_result.scalars().all()
@@ -1296,12 +1261,7 @@ async def get_quick_actions(
 
     # Check for campaigns
     campaigns_result = await db.execute(
-        select(func.count()).where(
-            and_(
-                Campaign.tenant_id == tenant_id,
-                Campaign.is_deleted == False,
-            )
-        )
+        select(func.count()).where(Campaign.is_deleted == False).select_from(Campaign)
     )
     campaign_count = campaigns_result.scalar() or 0
 
@@ -1356,10 +1316,8 @@ async def get_signal_health(
     Returns the current trust gate status including EMQ, data freshness,
     and any issues that may affect autopilot.
     """
-    tenant_id = current_user.tenant_id
-
     try:
-        return await _build_signal_health(tenant_id, db)
+        return await _build_signal_health(db)
     except (
         SQLAlchemyError,
         ValueError,
@@ -1368,7 +1326,7 @@ async def get_signal_health(
         ZeroDivisionError,
         OSError,
     ) as e:
-        logger.error("signal_health_error", error=str(e), tenant_id=tenant_id)
+        logger.error("signal_health_error", error=str(e))
         return APIResponse(
             success=True,
             data=SignalHealthSummary(
@@ -1383,22 +1341,17 @@ async def get_signal_health(
         )
 
 
-async def _build_signal_health(tenant_id: int, db: AsyncSession):
+async def _build_signal_health(db: AsyncSession):
     """Build signal health response (extracted for error handling)."""
     # Get onboarding settings for thresholds
-    onboarding_result = await db.execute(
-        select(TenantOnboarding).where(TenantOnboarding.tenant_id == tenant_id)
-    )
+    onboarding_result = await db.execute(select(TenantOnboarding))
     onboarding = onboarding_result.scalar_one_or_none()
 
     # Get connected platforms count
     platforms_result = await db.execute(
-        select(func.count()).where(
-            and_(
-                TenantPlatformConnection.tenant_id == tenant_id,
-                TenantPlatformConnection.status == ConnectionStatus.CONNECTED,
-            )
-        )
+        select(func.count())
+        .where(TenantPlatformConnection.status == ConnectionStatus.CONNECTED)
+        .select_from(TenantPlatformConnection)
     )
     connected_count = platforms_result.scalar() or 0
 
@@ -1409,9 +1362,7 @@ async def _build_signal_health(tenant_id: int, db: AsyncSession):
 
     # Also check if campaigns exist (synced via env credentials)
     campaign_count_result = await db.execute(
-        select(func.count()).where(
-            and_(Campaign.tenant_id == tenant_id, Campaign.is_deleted == False)
-        )
+        select(func.count()).where(Campaign.is_deleted == False)
     )
     has_campaigns = (campaign_count_result.scalar() or 0) > 0
 
@@ -1439,11 +1390,7 @@ async def _build_signal_health(tenant_id: int, db: AsyncSession):
     try:
         # Check data freshness from fact_platform_daily
         freshness_result = await db.execute(
-            text(
-                "SELECT MAX(date) as latest_date "
-                "FROM fact_platform_daily WHERE tenant_id = :tenant_id"
-            ),
-            {"tenant_id": tenant_id},
+            text("SELECT MAX(date) as latest_date FROM fact_platform_daily"),
         )
         latest_row = freshness_result.mappings().first()
         latest_date = latest_row["latest_date"] if latest_row else None
@@ -1460,12 +1407,10 @@ async def _build_signal_health(tenant_id: int, db: AsyncSession):
         emq_result = await db.execute(
             text(
                 "SELECT COUNT(*) as degraded_count "
-                "FROM fact_alerts WHERE tenant_id = :tenant_id "
-                "AND alert_type = 'emq_degraded' "
+                "FROM fact_alerts WHERE alert_type = 'emq_degraded' "
                 "AND (resolved = false OR resolved IS NULL) "
                 "AND date >= CURRENT_DATE - INTERVAL '7 days'"
             ),
-            {"tenant_id": tenant_id},
         )
         emq_row = emq_result.mappings().first()
         emq_degraded = emq_row["degraded_count"] if emq_row else 0
@@ -1544,19 +1489,12 @@ async def export_dashboard(
 
     Returns a file download with campaigns, metrics, and recommendations.
     """
-    tenant_id = current_user.tenant_id
-
     # Get date range
     start_date, end_date = get_date_range(request.period)
 
     # Get campaigns with their metrics filtered by the selected date range
     campaigns_result = await db.execute(
-        select(Campaign).where(
-            and_(
-                Campaign.tenant_id == tenant_id,
-                Campaign.is_deleted == False,
-            )
-        )
+        select(Campaign).where(Campaign.is_deleted == False)
     )
     campaigns = campaigns_result.scalars().all()
 
@@ -1575,7 +1513,6 @@ async def export_dashboard(
         )
         .where(
             and_(
-                CampaignMetric.tenant_id == tenant_id,
                 CampaignMetric.date >= start_date,
                 CampaignMetric.date <= end_date,
             )
@@ -1813,13 +1750,12 @@ async def get_metric_visibility(
     current_user: CurrentUserDep,
     db: AsyncSession = Depends(get_async_session),
 ):
-    """Get current metric visibility settings for the tenant."""
-    tenant_result = await db.execute(
-        select(Tenant).where(Tenant.id == current_user.tenant_id)
-    )
-    tenant = tenant_result.scalar_one_or_none()
+    """Get current metric visibility settings for the organization."""
+    from app.base_models import get_organization
 
-    hidden = (tenant.settings or {}).get("hidden_metrics", []) if tenant else []
+    org = await get_organization(db)
+
+    hidden = (org.settings or {}).get("hidden_metrics", [])
 
     return APIResponse(
         success=True,
@@ -1844,14 +1780,9 @@ async def update_metric_visibility(
     Accepts a list of metric keys to hide. Pass an empty list to show all.
     Valid keys: cpc, cpm, cpv, cpa, spend, roas, ctr, impressions, clicks, conversions, revenue
     """
-    tenant_result = await db.execute(
-        select(Tenant).where(Tenant.id == current_user.tenant_id)
-    )
-    tenant = tenant_result.scalar_one_or_none()
-    if not tenant:
-        raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND, detail="Tenant not found"
-        )
+    from app.base_models import get_organization
+
+    org = await get_organization(db)
 
     # Validate metric keys
     valid_keys = {m["key"] for m in AVAILABLE_METRICS}
@@ -1862,16 +1793,15 @@ async def update_metric_visibility(
             detail=f"Invalid metric keys: {invalid}",
         )
 
-    # Update tenant settings JSONB
-    current_settings = dict(tenant.settings or {})
+    # Update organization settings JSONB
+    current_settings = dict(org.settings or {})
     current_settings["hidden_metrics"] = request_data.hidden_metrics
-    tenant.settings = current_settings
+    org.settings = current_settings
 
     await db.commit()
 
     logger.info(
         "metric_visibility_updated",
-        tenant_id=current_user.tenant_id,
         hidden=request_data.hidden_metrics,
     )
 
@@ -1901,15 +1831,6 @@ async def get_morning_briefing(
     Aggregates overnight changes, signal health, recommendations,
     and top actions into a single glanceable briefing card.
     """
-    # NOTE(STRAT-SC-001/C2): the auth/deps.py tenant-id helper this used to
-    # call was deleted with the tenancy layer. Inlined equivalent
-    # fail-closed check; full tenant_id removal from this file is C3 scope.
-    tenant_id = user.tenant_id
-    if not tenant_id:
-        raise HTTPException(
-            status_code=status.HTTP_401_UNAUTHORIZED,
-            detail="Tenant context required",
-        )
     today = date.today()
     yesterday = today - timedelta(days=1)
 
@@ -1922,12 +1843,7 @@ async def get_morning_briefing(
                 func.coalesce(func.sum(Campaign.revenue_cents), 0).label("revenue"),
                 func.coalesce(func.sum(Campaign.conversions), 0).label("conversions"),
                 func.count(Campaign.id).label("total"),
-            ).where(
-                and_(
-                    Campaign.tenant_id == tenant_id,
-                    Campaign.is_deleted == False,
-                )
-            )
+            ).where(Campaign.is_deleted == False)
         )
         current = current_result.first()
 
@@ -1941,7 +1857,6 @@ async def get_morning_briefing(
         active_result = await db.execute(
             select(func.count(Campaign.id)).where(
                 and_(
-                    Campaign.tenant_id == tenant_id,
                     Campaign.is_deleted == False,
                     Campaign.status == CampaignStatus.ACTIVE,
                 )
@@ -2112,7 +2027,6 @@ async def get_morning_briefing(
         rec_result = await db.execute(
             select(func.count(AuditLog.id)).where(
                 and_(
-                    AuditLog.tenant_id == tenant_id,
                     AuditLog.action == AuditAction.UPDATE,
                     AuditLog.created_at >= yesterday,
                 )
@@ -2151,7 +2065,7 @@ async def get_morning_briefing(
         fix_candidates=fix_candidates,
     )
 
-    logger.info("morning_briefing_generated", tenant_id=tenant_id, user=first_name)
+    logger.info("morning_briefing_generated", user=first_name)
 
     return APIResponse(
         success=True,
@@ -2186,15 +2100,6 @@ async def get_anomaly_narratives(
     with likely causes and recommended actions, identifies cross-metric
     correlations, and provides an executive summary with portfolio risk level.
     """
-    # NOTE(STRAT-SC-001/C2): the auth/deps.py tenant-id helper this used to
-    # call was deleted with the tenancy layer. Inlined equivalent
-    # fail-closed check; full tenant_id removal from this file is C3 scope.
-    tenant_id = user.tenant_id
-    if not tenant_id:
-        raise HTTPException(
-            status_code=status.HTTP_401_UNAUTHORIZED,
-            detail="Tenant context required",
-        )
     today = date.today()
 
     # --- Build metric histories from campaign data (last 14 days) ---
@@ -2222,7 +2127,6 @@ async def get_anomaly_narratives(
                     ),
                 ).where(
                     and_(
-                        Campaign.tenant_id == tenant_id,
                         Campaign.is_deleted == False,
                         func.date(Campaign.created_at) <= target_date,
                     )
@@ -2282,7 +2186,6 @@ async def get_anomaly_narratives(
 
     logger.info(
         "anomaly_narratives_generated",
-        tenant_id=tenant_id,
         total=response.total_anomalies,
         risk=response.portfolio_risk,
     )
@@ -2316,26 +2219,13 @@ async def get_signal_recovery(
     Analyzes EMQ score, event loss rate, API connectivity, and data
     freshness to identify degradation and recommend recovery steps.
     """
-    # NOTE(STRAT-SC-001/C2): the auth/deps.py tenant-id helper this used to
-    # call was deleted with the tenancy layer. Inlined equivalent
-    # fail-closed check; full tenant_id removal from this file is C3 scope.
-    tenant_id = user.tenant_id
-    if not tenant_id:
-        raise HTTPException(
-            status_code=status.HTTP_401_UNAUTHORIZED,
-            detail="Tenant context required",
-        )
-
     try:
         # ── Gather signal health indicators ──────────────────────────
 
         # 1. Connected platforms
         platforms_result = await db.execute(
             select(TenantPlatformConnection.platform).where(
-                and_(
-                    TenantPlatformConnection.tenant_id == tenant_id,
-                    TenantPlatformConnection.status == ConnectionStatus.CONNECTED,
-                )
+                TenantPlatformConnection.status == ConnectionStatus.CONNECTED,
             )
         )
         connected_platforms = [str(row[0]) for row in platforms_result.fetchall()]
@@ -2355,11 +2245,7 @@ async def get_signal_recovery(
         data_freshness_hours: float | None = None
         try:
             freshness_result = await db.execute(
-                text(
-                    "SELECT MAX(date) as latest_date "
-                    "FROM fact_platform_daily WHERE tenant_id = :tenant_id"
-                ),
-                {"tenant_id": tenant_id},
+                text("SELECT MAX(date) as latest_date FROM fact_platform_daily"),
             )
             latest_row = freshness_result.mappings().first()
             latest_date = latest_row["latest_date"] if latest_row else None
@@ -2376,12 +2262,10 @@ async def get_signal_recovery(
             emq_result = await db.execute(
                 text(
                     "SELECT COUNT(*) as degraded_count "
-                    "FROM fact_alerts WHERE tenant_id = :tenant_id "
-                    "AND alert_type = 'emq_degraded' "
+                    "FROM fact_alerts WHERE alert_type = 'emq_degraded' "
                     "AND (resolved = false OR resolved IS NULL) "
                     "AND date >= CURRENT_DATE - INTERVAL '7 days'"
                 ),
-                {"tenant_id": tenant_id},
             )
             emq_row = emq_result.mappings().first()
             emq_degraded = emq_row["degraded_count"] if emq_row else 0
@@ -2401,10 +2285,9 @@ async def get_signal_recovery(
             loss_result = await db.execute(
                 text(
                     "SELECT AVG(event_loss_pct) as avg_loss "
-                    "FROM fact_platform_daily WHERE tenant_id = :tenant_id "
-                    "AND date >= CURRENT_DATE - INTERVAL '3 days'"
+                    "FROM fact_platform_daily "
+                    "WHERE date >= CURRENT_DATE - INTERVAL '3 days'"
                 ),
-                {"tenant_id": tenant_id},
             )
             loss_row = loss_result.mappings().first()
             if loss_row and loss_row["avg_loss"] is not None:
@@ -2466,7 +2349,6 @@ async def get_signal_recovery(
 
     logger.info(
         "signal_recovery_generated",
-        tenant_id=tenant_id,
         status=response.status,
         issues=len(response.issues),
         actions=len(response.recovery_actions),
@@ -2502,16 +2384,6 @@ async def get_predictive_budget(
     to recommend which campaigns to scale, reduce, or pause.
     Only auto-executes when signal health passes AND confidence > 85%.
     """
-    # NOTE(STRAT-SC-001/C2): the auth/deps.py tenant-id helper this used to
-    # call was deleted with the tenancy layer. Inlined equivalent
-    # fail-closed check; full tenant_id removal from this file is C3 scope.
-    tenant_id = user.tenant_id
-    if not tenant_id:
-        raise HTTPException(
-            status_code=status.HTTP_401_UNAUTHORIZED,
-            detail="Tenant context required",
-        )
-
     try:
         # ── Fetch campaign data ──────────────────────────────────
         result = await db.execute(
@@ -2525,7 +2397,6 @@ async def get_predictive_budget(
                 Campaign.conversions,
             ).where(
                 and_(
-                    Campaign.tenant_id == tenant_id,
                     Campaign.is_deleted == False,
                 )
             )
@@ -2559,12 +2430,10 @@ async def get_predictive_budget(
             emq_result = await db.execute(
                 text(
                     "SELECT COUNT(*) as degraded_count "
-                    "FROM fact_alerts WHERE tenant_id = :tenant_id "
-                    "AND alert_type = 'emq_degraded' "
+                    "FROM fact_alerts WHERE alert_type = 'emq_degraded' "
                     "AND (resolved = false OR resolved IS NULL) "
                     "AND date >= CURRENT_DATE - INTERVAL '7 days'"
                 ),
-                {"tenant_id": tenant_id},
             )
             emq_row = emq_result.mappings().first()
             emq_degraded = emq_row["degraded_count"] if emq_row else 0
@@ -2599,7 +2468,6 @@ async def get_predictive_budget(
 
     logger.info(
         "predictive_budget_generated",
-        tenant_id=tenant_id,
         campaigns=len(campaigns),
         scale=response.scale_candidates,
         reduce=response.reduce_candidates,
@@ -2633,16 +2501,6 @@ async def get_ai_report(
     with narrative insights, platform breakdowns, campaign highlights,
     trend analysis, and actionable recommendations.
     """
-    # NOTE(STRAT-SC-001/C2): the auth/deps.py tenant-id helper this used to
-    # call was deleted with the tenancy layer. Inlined equivalent
-    # fail-closed check; full tenant_id removal from this file is C3 scope.
-    tenant_id = user.tenant_id
-    if not tenant_id:
-        raise HTTPException(
-            status_code=status.HTTP_401_UNAUTHORIZED,
-            detail="Tenant context required",
-        )
-
     try:
         # ── Fetch current period campaigns ─────────────────────────
         result = await db.execute(
@@ -2656,7 +2514,6 @@ async def get_ai_report(
                 Campaign.conversions,
             ).where(
                 and_(
-                    Campaign.tenant_id == tenant_id,
                     Campaign.is_deleted == False,
                 )
             )
@@ -2704,7 +2561,6 @@ async def get_ai_report(
 
     logger.info(
         "ai_report_generated",
-        tenant_id=tenant_id,
         campaigns=len(campaigns),
         grade=response.health_grade,
         sections=len(response.sections),
@@ -2738,16 +2594,6 @@ async def get_churn_prevention(
     recommendations. Scores each campaign across performance, spend trend,
     and engagement dimensions.
     """
-    # NOTE(STRAT-SC-001/C2): the auth/deps.py tenant-id helper this used to
-    # call was deleted with the tenancy layer. Inlined equivalent
-    # fail-closed check; full tenant_id removal from this file is C3 scope.
-    tenant_id = user.tenant_id
-    if not tenant_id:
-        raise HTTPException(
-            status_code=status.HTTP_401_UNAUTHORIZED,
-            detail="Tenant context required",
-        )
-
     try:
         # ── Fetch campaigns with sync status ───────────────────────
         result = await db.execute(
@@ -2762,7 +2608,6 @@ async def get_churn_prevention(
                 Campaign.last_synced_at,
             ).where(
                 and_(
-                    Campaign.tenant_id == tenant_id,
                     Campaign.is_deleted == False,
                 )
             )
@@ -2817,7 +2662,6 @@ async def get_churn_prevention(
 
     logger.info(
         "churn_prevention_generated",
-        tenant_id=tenant_id,
         campaigns=len(campaigns),
         at_risk=response.at_risk_count,
         critical=response.critical_count,
@@ -2855,16 +2699,6 @@ async def get_notifications_prioritized(
     is scored by urgency, impact, and actionability to produce a
     priority-ranked feed with suggested actions.
     """
-    # NOTE(STRAT-SC-001/C2): the auth/deps.py tenant-id helper this used to
-    # call was deleted with the tenancy layer. Inlined equivalent
-    # fail-closed check; full tenant_id removal from this file is C3 scope.
-    tenant_id = user.tenant_id
-    if not tenant_id:
-        raise HTTPException(
-            status_code=status.HTTP_401_UNAUTHORIZED,
-            detail="Tenant context required",
-        )
-
     try:
         # ── Fetch campaigns ─────────────────────────────────────────
         result = await db.execute(
@@ -2878,7 +2712,6 @@ async def get_notifications_prioritized(
                 Campaign.conversions,
             ).where(
                 and_(
-                    Campaign.tenant_id == tenant_id,
                     Campaign.is_deleted == False,
                 )
             )
@@ -2908,12 +2741,10 @@ async def get_notifications_prioritized(
             emq_result = await db.execute(
                 text(
                     "SELECT COUNT(*) as degraded_count "
-                    "FROM fact_alerts WHERE tenant_id = :tenant_id "
-                    "AND alert_type = 'emq_degraded' "
+                    "FROM fact_alerts WHERE alert_type = 'emq_degraded' "
                     "AND (resolved = false OR resolved IS NULL) "
                     "AND date >= CURRENT_DATE - INTERVAL '7 days'"
                 ),
-                {"tenant_id": tenant_id},
             )
             emq_row = emq_result.mappings().first()
             emq_degraded = emq_row["degraded_count"] if emq_row else 0
@@ -2933,11 +2764,10 @@ async def get_notifications_prioritized(
                 text(
                     "SELECT id, title, message, type, category, "
                     "is_read, action_url, action_label, extra_data, created_at "
-                    "FROM notifications WHERE tenant_id = :tenant_id "
-                    "AND (expires_at IS NULL OR expires_at > NOW()) "
+                    "FROM notifications "
+                    "WHERE (expires_at IS NULL OR expires_at > NOW()) "
                     "ORDER BY created_at DESC LIMIT 20"
                 ),
-                {"tenant_id": tenant_id},
             )
             for row in notif_result.mappings():
                 existing_notifications.append(dict(row))
@@ -2969,7 +2799,6 @@ async def get_notifications_prioritized(
 
     logger.info(
         "notifications_prioritized_generated",
-        tenant_id=tenant_id,
         total=response.total_count,
         critical=response.critical_count,
         high=response.high_count,
@@ -3009,16 +2838,6 @@ async def get_cross_platform_optimizer(
     connected platforms and recommends optimal budget distribution based on
     the selected strategy (roas_max, balanced, volume_max).
     """
-    # NOTE(STRAT-SC-001/C2): the auth/deps.py tenant-id helper this used to
-    # call was deleted with the tenancy layer. Inlined equivalent
-    # fail-closed check; full tenant_id removal from this file is C3 scope.
-    tenant_id = user.tenant_id
-    if not tenant_id:
-        raise HTTPException(
-            status_code=status.HTTP_401_UNAUTHORIZED,
-            detail="Tenant context required",
-        )
-
     # Validate strategy
     valid_strategies = ("roas_max", "balanced", "volume_max")
     if strategy not in valid_strategies:
@@ -3037,7 +2856,6 @@ async def get_cross_platform_optimizer(
                 Campaign.conversions,
             ).where(
                 and_(
-                    Campaign.tenant_id == tenant_id,
                     Campaign.is_deleted == False,
                 )
             )
@@ -3084,7 +2902,6 @@ async def get_cross_platform_optimizer(
 
     logger.info(
         "cross_platform_optimizer_generated",
-        tenant_id=tenant_id,
         strategy=strategy,
         platforms=response.platforms_count,
         campaigns=response.total_campaigns,
@@ -3120,16 +2937,6 @@ async def get_audience_lifecycle(
     distribution and generates automated audience sync recommendations
     based on stage transitions (anonymous → known → customer → churned).
     """
-    # NOTE(STRAT-SC-001/C2): the auth/deps.py tenant-id helper this used to
-    # call was deleted with the tenancy layer. Inlined equivalent
-    # fail-closed check; full tenant_id removal from this file is C3 scope.
-    tenant_id = user.tenant_id
-    if not tenant_id:
-        raise HTTPException(
-            status_code=status.HTTP_401_UNAUTHORIZED,
-            detail="Tenant context required",
-        )
-
     try:
         # ── Fetch CDP profiles ──────────────────────────────────────
         profiles = []
@@ -3139,10 +2946,9 @@ async def get_audience_lifecycle(
                     "SELECT id, lifecycle_stage, total_revenue, total_events, "
                     "total_purchases, total_sessions, "
                     "last_seen_at, first_seen_at, computed_traits "
-                    "FROM cdp_profiles WHERE tenant_id = :tenant_id "
+                    "FROM cdp_profiles "
                     "ORDER BY last_seen_at DESC LIMIT 5000"
                 ),
-                {"tenant_id": tenant_id},
             )
             for row in profile_result.mappings():
                 # Determine if profile was recently active (last 7 days)
@@ -3184,10 +2990,7 @@ async def get_audience_lifecycle(
         try:
             plat_result = await db.execute(
                 select(TenantPlatformConnection.platform).where(
-                    and_(
-                        TenantPlatformConnection.tenant_id == tenant_id,
-                        TenantPlatformConnection.status == ConnectionStatus.CONNECTED,
-                    )
+                    TenantPlatformConnection.status == ConnectionStatus.CONNECTED,
                 )
             )
             for row in plat_result.scalars():
@@ -3215,10 +3018,8 @@ async def get_audience_lifecycle(
                 text(
                     "SELECT id, platform, platform_audience_name, auto_sync, "
                     "last_sync_at, match_rate "
-                    "FROM platform_audiences WHERE tenant_id = :tenant_id "
-                    "AND is_active = true"
+                    "FROM platform_audiences WHERE is_active = true"
                 ),
-                {"tenant_id": tenant_id},
             )
             for row in aud_result.mappings():
                 existing_audiences.append(dict(row))
@@ -3247,7 +3048,6 @@ async def get_audience_lifecycle(
 
     logger.info(
         "audience_lifecycle_generated",
-        tenant_id=tenant_id,
         profiles=response.total_profiles,
         rules=response.active_rules,
         health=response.lifecycle_health,
@@ -3312,16 +3112,6 @@ async def get_goal_tracking(
     ROAS, and conversion targets with pacing status, EOM projections,
     milestones, and AI-generated insights.
     """
-    # NOTE(STRAT-SC-001/C2): the auth/deps.py tenant-id helper this used to
-    # call was deleted with the tenancy layer. Inlined equivalent
-    # fail-closed check; full tenant_id removal from this file is C3 scope.
-    tenant_id = user.tenant_id
-    if not tenant_id:
-        raise HTTPException(
-            status_code=status.HTTP_401_UNAUTHORIZED,
-            detail="Tenant context required",
-        )
-
     try:
         # ── Fetch campaigns ─────────────────────────────────────────
         result = await db.execute(
@@ -3335,7 +3125,6 @@ async def get_goal_tracking(
                 Campaign.conversions,
             ).where(
                 and_(
-                    Campaign.tenant_id == tenant_id,
                     Campaign.is_deleted == False,
                 )
             )
@@ -3358,16 +3147,15 @@ async def get_goal_tracking(
                 }
             )
 
-        # ── Fetch targets from tenant settings ──────────────────────
+        # ── Fetch targets from organization settings ────────────────
         targets = None
         try:
-            tenant_result = await db.execute(
-                select(Tenant).where(Tenant.id == tenant_id)
-            )
-            tenant = tenant_result.scalar_one_or_none()
-            if tenant and tenant.settings:
-                targets = tenant.settings.get("goals") or tenant.settings.get("targets")
-        except (SQLAlchemyError, TypeError, KeyError):
+            from app.base_models import get_organization
+
+            org = await get_organization(db)
+            if org and org.settings:
+                targets = org.settings.get("goals") or org.settings.get("targets")
+        except (SQLAlchemyError, TypeError, KeyError, RuntimeError):
             pass
 
         # Also try pacing targets table
@@ -3376,12 +3164,10 @@ async def get_goal_tracking(
                 target_result = await db.execute(
                     text(
                         "SELECT metric, target_value FROM targets "
-                        "WHERE tenant_id = :tenant_id "
-                        "AND period = 'monthly' "
+                        "WHERE period = 'monthly' "
                         "AND is_active = true "
                         "ORDER BY created_at DESC"
                     ),
-                    {"tenant_id": tenant_id},
                 )
                 rows_t = target_result.mappings().all()
                 if rows_t:
@@ -3414,7 +3200,6 @@ async def get_goal_tracking(
 
     logger.info(
         "goal_tracking_generated",
-        tenant_id=tenant_id,
         goals=len(response.goals),
         overall_pacing=response.overall_pacing,
     )
@@ -3445,17 +3230,12 @@ async def get_attribution_confidence(
     Returns attribution confidence analysis across channels and models.
     Evaluates data quality, model agreement, and channel-level confidence.
     """
-    tenant_id = user.tenant_id
-    if not tenant_id:
-        raise HTTPException(status_code=400, detail="No active tenant")
-
     campaigns: list[dict] = []
 
     try:
         result = await db.execute(
             select(Campaign).where(
                 and_(
-                    Campaign.tenant_id == tenant_id,
                     Campaign.is_deleted == False,
                 )
             )
@@ -3494,7 +3274,6 @@ async def get_attribution_confidence(
 
     logger.info(
         "attribution_confidence_generated",
-        tenant_id=tenant_id,
         channels=response.channels_tracked,
         overall_confidence=response.overall_confidence,
     )
@@ -3525,17 +3304,12 @@ async def get_ltv_forecast(
     Returns customer LTV forecasting by cohort and segment.
     Projects lifetime value, analyzes unit economics, and identifies risk.
     """
-    tenant_id = user.tenant_id
-    if not tenant_id:
-        raise HTTPException(status_code=400, detail="No active tenant")
-
     campaigns: list[dict] = []
 
     try:
         result = await db.execute(
             select(Campaign).where(
                 and_(
-                    Campaign.tenant_id == tenant_id,
                     Campaign.is_deleted == False,
                 )
             )
@@ -3574,7 +3348,6 @@ async def get_ltv_forecast(
 
     logger.info(
         "ltv_forecast_generated",
-        tenant_id=tenant_id,
         customers=response.total_customers,
         avg_ltv=response.overall_avg_ltv,
         ltv_health=response.ltv_health,
@@ -3606,17 +3379,12 @@ async def get_creative_scoring(
     Returns creative performance scoring across campaigns.
     Grades creatives A-F, detects fatigue, identifies winners.
     """
-    tenant_id = user.tenant_id
-    if not tenant_id:
-        raise HTTPException(status_code=400, detail="No active tenant")
-
     campaigns: list[dict] = []
 
     try:
         result = await db.execute(
             select(Campaign).where(
                 and_(
-                    Campaign.tenant_id == tenant_id,
                     Campaign.is_deleted == False,
                 )
             )
@@ -3662,7 +3430,6 @@ async def get_creative_scoring(
 
     logger.info(
         "creative_scoring_generated",
-        tenant_id=tenant_id,
         total_creatives=response.total_creatives,
         overall_grade=response.overall_grade,
     )
@@ -3693,17 +3460,12 @@ async def get_competitor_intel(
     Returns competitive intelligence from market signals.
     Estimates SOV, competitor profiles, platform competition, opportunities.
     """
-    tenant_id = user.tenant_id
-    if not tenant_id:
-        raise HTTPException(status_code=400, detail="No active tenant")
-
     campaigns: list[dict] = []
 
     try:
         result = await db.execute(
             select(Campaign).where(
                 and_(
-                    Campaign.tenant_id == tenant_id,
                     Campaign.is_deleted == False,
                 )
             )
@@ -3746,7 +3508,6 @@ async def get_competitor_intel(
 
     logger.info(
         "competitor_intel_generated",
-        tenant_id=tenant_id,
         platforms=response.platforms_tracked,
         market_position=response.market_position,
     )
@@ -3774,14 +3535,12 @@ async def get_ab_test_analysis(
     db: AsyncSession = Depends(get_async_session),
 ):
     """Automated A/B test detection and statistical analysis."""
-    tenant_id = current_user.tenant_id
     campaigns: list[dict] = []
 
     try:
         result = await db.execute(
             select(Campaign).where(
                 and_(
-                    Campaign.tenant_id == tenant_id,
                     Campaign.is_deleted == False,
                 )
             )
@@ -3825,7 +3584,6 @@ async def get_ab_test_analysis(
 
     logger.info(
         "ab_test_analysis_generated",
-        tenant_id=tenant_id,
         total_tests=response.total_tests,
     )
 
@@ -3852,7 +3610,6 @@ async def get_collaborative_annotations(
     db: AsyncSession = Depends(get_async_session),
 ):
     """Team annotations and notes on dashboard metrics."""
-    tenant_id = current_user.tenant_id
     campaigns: list[dict] = []
     user_name = ""
     user_id = current_user.id
@@ -3870,7 +3627,6 @@ async def get_collaborative_annotations(
             select(Campaign)
             .where(
                 and_(
-                    Campaign.tenant_id == tenant_id,
                     Campaign.is_deleted == False,
                 )
             )
@@ -3914,7 +3670,6 @@ async def get_collaborative_annotations(
 
     logger.info(
         "annotations_generated",
-        tenant_id=tenant_id,
         total=response.stats.total,
     )
 
@@ -3941,14 +3696,12 @@ async def get_knowledge_graph(
     db: AsyncSession = Depends(get_async_session),
 ):
     """Cross-metric relationship discovery and pattern detection."""
-    tenant_id = current_user.tenant_id
     campaigns: list[dict] = []
 
     try:
         result = await db.execute(
             select(Campaign).where(
                 and_(
-                    Campaign.tenant_id == tenant_id,
                     Campaign.is_deleted == False,
                 )
             )
@@ -3990,7 +3743,6 @@ async def get_knowledge_graph(
 
     logger.info(
         "knowledge_graph_generated",
-        tenant_id=tenant_id,
         patterns=response.patterns_discovered,
     )
 
@@ -4017,14 +3769,12 @@ async def get_journey_map(
     db: AsyncSession = Depends(get_async_session),
 ):
     """Map customer journeys across advertising platforms."""
-    tenant_id = current_user.tenant_id
     campaigns: list[dict] = []
 
     try:
         result = await db.execute(
             select(Campaign).where(
                 and_(
-                    Campaign.tenant_id == tenant_id,
                     Campaign.is_deleted == False,
                 )
             )
@@ -4066,7 +3816,6 @@ async def get_journey_map(
 
     logger.info(
         "journey_map_generated",
-        tenant_id=tenant_id,
         journeys=response.total_journeys_analyzed,
     )
 
@@ -4094,7 +3843,6 @@ async def get_nl_filter(
     db: AsyncSession = Depends(get_async_session),
 ):
     """Parse natural language queries into structured dashboard filters."""
-    tenant_id = current_user.tenant_id
     campaigns: list[dict] = []
 
     try:
@@ -4102,7 +3850,6 @@ async def get_nl_filter(
             select(Campaign)
             .where(
                 and_(
-                    Campaign.tenant_id == tenant_id,
                     Campaign.is_deleted == False,
                 )
             )
@@ -4153,7 +3900,6 @@ async def get_nl_filter(
 
     logger.info(
         "nl_filter_processed",
-        tenant_id=tenant_id,
         query=query[:100],
         intent=response.interpretation.intent,
         filters_count=len(response.interpretation.parsed_filters),
@@ -4173,7 +3919,7 @@ async def get_nl_filter(
 # audit — see task-C2-report.md). That file's /overview and /recommendations
 # routes were dropped as duplicates of this file's own (richer) /overview and
 # /recommendations above; these three route groups were unique to it and are
-# carried across, with require_tenant("tenant_id") replaced by the
+# carried across, with the per-org path guard replaced by the
 # current-user pattern already used throughout this file, and the deleted
 # Tenant model replaced by the Organization singleton (STRAT-SC-001 Task C1).
 

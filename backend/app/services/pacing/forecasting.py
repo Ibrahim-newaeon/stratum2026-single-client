@@ -49,11 +49,9 @@ class ForecastingService:
     def __init__(
         self,
         db: AsyncSession,
-        tenant_id: int,
         ewma_alpha: float = DEFAULT_EWMA_ALPHA,
     ):
         self.db = db
-        self.tenant_id = tenant_id
         self.ewma_alpha = ewma_alpha
 
     async def forecast_metric(
@@ -280,7 +278,6 @@ class ForecastingService:
 
         # Build conditions
         conditions = [
-            DailyKPI.tenant_id == self.tenant_id,
             DailyKPI.date >= start_date,
             DailyKPI.date <= as_of_date,
         ]
@@ -403,7 +400,6 @@ class ForecastingService:
     ) -> float:
         """Get month-to-date actual for a metric."""
         conditions = [
-            DailyKPI.tenant_id == self.tenant_id,
             DailyKPI.date >= month_start,
             DailyKPI.date <= as_of_date,
         ]
@@ -449,7 +445,6 @@ class ForecastingService:
             forecast_date = date.fromisoformat(daily["date"])
 
             forecast = Forecast(
-                tenant_id=self.tenant_id,
                 forecast_date=today,
                 forecast_for_date=forecast_date,
                 forecast_type="daily",

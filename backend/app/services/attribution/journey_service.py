@@ -112,9 +112,8 @@ class JourneyService:
     Service for analyzing customer journeys and conversion paths.
     """
 
-    def __init__(self, db: AsyncSession, tenant_id: int):
+    def __init__(self, db: AsyncSession):
         self.db = db
-        self.tenant_id = tenant_id
 
     async def get_contact_journey(
         self,
@@ -126,12 +125,7 @@ class JourneyService:
         """
         # Get contact
         contact_result = await self.db.execute(
-            select(CRMContact).where(
-                and_(
-                    CRMContact.id == contact_id,
-                    CRMContact.tenant_id == self.tenant_id,
-                )
-            )
+            select(CRMContact).where(CRMContact.id == contact_id)
         )
         contact = contact_result.scalar_one_or_none()
 
@@ -141,12 +135,7 @@ class JourneyService:
         # Get touchpoints
         touchpoint_result = await self.db.execute(
             select(Touchpoint)
-            .where(
-                and_(
-                    Touchpoint.contact_id == contact_id,
-                    Touchpoint.tenant_id == self.tenant_id,
-                )
-            )
+            .where(Touchpoint.contact_id == contact_id)
             .order_by(Touchpoint.event_ts)
             .limit(1000)
         )
@@ -181,12 +170,7 @@ class JourneyService:
         if include_deals:
             deal_result = await self.db.execute(
                 select(CRMDeal)
-                .where(
-                    and_(
-                        CRMDeal.contact_id == contact_id,
-                        CRMDeal.tenant_id == self.tenant_id,
-                    )
-                )
+                .where(CRMDeal.contact_id == contact_id)
                 .order_by(CRMDeal.crm_created_at)
                 .limit(1000)
             )
@@ -278,7 +262,6 @@ class JourneyService:
             select(CRMDeal)
             .where(
                 and_(
-                    CRMDeal.tenant_id == self.tenant_id,
                     CRMDeal.is_won == True,
                     CRMDeal.won_at >= start_date,
                     CRMDeal.won_at <= end_date,
@@ -380,7 +363,6 @@ class JourneyService:
         contact_result = await self.db.execute(
             select(CRMContact.id).where(
                 and_(
-                    CRMContact.tenant_id == self.tenant_id,
                     CRMContact.touch_count > 1,
                     CRMContact.first_touch_ts >= start_date,
                     CRMContact.last_touch_ts <= end_date,
@@ -396,12 +378,7 @@ class JourneyService:
         for contact_id in contact_ids:
             touchpoint_result = await self.db.execute(
                 select(Touchpoint)
-                .where(
-                    and_(
-                        Touchpoint.contact_id == contact_id,
-                        Touchpoint.tenant_id == self.tenant_id,
-                    )
-                )
+                .where(Touchpoint.contact_id == contact_id)
                 .order_by(Touchpoint.event_ts)
                 .limit(1000)
             )
@@ -455,14 +432,13 @@ class JourneyService:
         end_date: datetime,
     ) -> Dict[str, Any]:
         """
-        Get aggregate journey metrics for the tenant.
+        Get aggregate journey metrics.
         """
         # Get won deals in date range
         deal_result = await self.db.execute(
             select(CRMDeal)
             .where(
                 and_(
-                    CRMDeal.tenant_id == self.tenant_id,
                     CRMDeal.is_won == True,
                     CRMDeal.won_at >= start_date,
                     CRMDeal.won_at <= end_date,
@@ -561,7 +537,6 @@ class JourneyService:
             select(CRMDeal)
             .where(
                 and_(
-                    CRMDeal.tenant_id == self.tenant_id,
                     CRMDeal.is_won == True,
                     CRMDeal.won_at >= start_date,
                     CRMDeal.won_at <= end_date,
@@ -661,7 +636,6 @@ class JourneyService:
             select(CRMDeal)
             .where(
                 and_(
-                    CRMDeal.tenant_id == self.tenant_id,
                     CRMDeal.is_won == True,
                     CRMDeal.won_at >= start_date,
                     CRMDeal.won_at <= end_date,

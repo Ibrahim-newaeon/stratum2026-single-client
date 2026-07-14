@@ -114,11 +114,10 @@ class EnforcementRule(BaseModel):
 
 
 class EnforcementSettings(BaseModel):
-    """Tenant-level enforcement configuration."""
+    """Enforcement configuration (singleton)."""
 
     model_config = ConfigDict(use_enum_values=True)
 
-    tenant_id: int
     enforcement_enabled: bool = True  # Guardrails toggle (False = checks off)
     autopilot_frozen: bool = False  # Emergency stop — True halts all execution
     # Fail safe (TRUST-003): an unconfigured tenant defaults to SOFT_BLOCK, so a
@@ -177,7 +176,6 @@ class EnforcementResult:
 class InterventionLog:
     """Log entry for enforcement intervention."""
 
-    tenant_id: int
     timestamp: datetime
     action_type: str
     entity_type: str
@@ -205,32 +203,29 @@ class AutopilotEnforcer:
 
     def __init__(self, db: Optional[AsyncSession] = None):
         self.db = db
-        self._settings_cache: Dict[int, EnforcementSettings] = {}
+        self._settings_cache: Optional[EnforcementSettings] = None
         self._pending_confirmations: Dict[str, Dict[str, Any]] = {}
 
-    async def get_settings(self, tenant_id: int) -> EnforcementSettings:
-        """Get enforcement settings for tenant.
+    async def get_settings(self) -> EnforcementSettings:
+        """Get enforcement settings (global singleton).
 
         Uses in-memory cache as fast-path. On cache miss, loads from the
         database. If no database row exists yet, creates one with defaults
         and persists it.
 
-        Args:
-            tenant_id: Tenant ID to retrieve settings for.
-
         Returns:
-            EnforcementSettings Pydantic model for the tenant.
+            EnforcementSettings Pydantic model.
         """
         # Fast-path: return from cache
-        if tenant_id in self._settings_cache:
-            return self._settings_cache[tenant_id]
+        if self._settings_cache is not None:
+            return self._settings_cache
 
         # Load from database
         if self.db is not None:
             result = await self.db.execute(
-                select(TenantEnforcementSettingsDB)
-                .options(selectinload(TenantEnforcementSettingsDB.rules))
-                .where(TenantEnforcementSettingsDB.tenant_id == tenant_id)
+                select(TenantEnforcementSettingsDB).options(
+                    selectinload(TenantEnforcementSettingsDB.rules)
+                )
             )
             db_settings = result.scalars().first()
 
@@ -260,7 +255,6 @@ class AutopilotEnforcer:
                     )
 
                 settings = EnforcementSettings(
-                    tenant_id=tenant_id,
                     enforcement_enabled=db_settings.enforcement_enabled,
                     autopilot_frozen=db_settings.autopilot_frozen,
                     default_mode=EnforcementMode(db_settings.default_mode),
@@ -273,12 +267,11 @@ class AutopilotEnforcer:
                     min_hours_between_changes=db_settings.min_hours_between_changes,
                     rules=rules,
                 )
-                self._settings_cache[tenant_id] = settings
+                self._settings_cache = settings
                 return settings
 
             # No row exists -- create with defaults and persist
             new_db_settings = TenantEnforcementSettingsDB(
-                tenant_id=tenant_id,
                 enforcement_enabled=True,
                 # Fail safe on first use (TRUST-003) — see EnforcementSettings.
                 default_mode=DBEnforcementMode.SOFT_BLOCK,
@@ -292,36 +285,34 @@ class AutopilotEnforcer:
             await self.db.flush()
 
         # Return defaults (either just persisted or no DB session)
-        settings = EnforcementSettings(tenant_id=tenant_id)
-        self._settings_cache[tenant_id] = settings
+        settings = EnforcementSettings()
+        self._settings_cache = settings
         return settings
 
     async def update_settings(
         self,
-        tenant_id: int,
         updates: Dict[str, Any],
     ) -> EnforcementSettings:
-        """Update enforcement settings for tenant.
+        """Update enforcement settings (global singleton).
 
         Applies updates to both the in-memory Pydantic model and the
         corresponding database row.
 
         Args:
-            tenant_id: Tenant whose settings to update.
             updates: Dictionary of field names to new values. Only fields
                      present on EnforcementSettings are applied.
 
         Returns:
             Updated EnforcementSettings Pydantic model.
         """
-        settings = await self.get_settings(tenant_id)
+        settings = await self.get_settings()
 
         # Apply updates to Pydantic model
         for key, value in updates.items():
             if hasattr(settings, key):
                 setattr(settings, key, value)
 
-        self._settings_cache[tenant_id] = settings
+        self._settings_cache = settings
 
         # Persist to database
         if self.db is not None:
@@ -352,9 +343,9 @@ class AutopilotEnforcer:
 
             # Load or create the DB settings row
             result = await self.db.execute(
-                select(TenantEnforcementSettingsDB)
-                .options(selectinload(TenantEnforcementSettingsDB.rules))
-                .where(TenantEnforcementSettingsDB.tenant_id == tenant_id)
+                select(TenantEnforcementSettingsDB).options(
+                    selectinload(TenantEnforcementSettingsDB.rules)
+                )
             )
             db_settings = result.scalars().first()
 
@@ -365,10 +356,7 @@ class AutopilotEnforcer:
                     await self.db.flush()
                 else:
                     # Create a new row if missing (edge case)
-                    new_row = TenantEnforcementSettingsDB(
-                        tenant_id=tenant_id,
-                        **db_updates,
-                    )
+                    new_row = TenantEnforcementSettingsDB(**db_updates)
                     self.db.add(new_row)
                     await self.db.flush()
                     db_settings = new_row
@@ -389,7 +377,6 @@ class AutopilotEnforcer:
                     )
                     db_rule = TenantEnforcementRuleDB(
                         settings_id=db_settings.id,
-                        tenant_id=tenant_id,
                         rule_id=rule_dict["rule_id"],
                         rule_type=DBViolationType(rule_dict["rule_type"]),
                         threshold_value=rule_dict["threshold_value"],
@@ -412,7 +399,6 @@ class AutopilotEnforcer:
 
     async def check_action(
         self,
-        tenant_id: int,
         action_type: str,
         entity_type: str,
         entity_id: str,
@@ -424,7 +410,6 @@ class AutopilotEnforcer:
         Check if proposed action is allowed under enforcement rules.
 
         Args:
-            tenant_id: Tenant ID
             action_type: Type of action (budget_increase, pause_campaign, etc.)
             entity_type: Type of entity (campaign, adset, creative)
             entity_id: Platform entity ID
@@ -435,14 +420,14 @@ class AutopilotEnforcer:
         Returns:
             EnforcementResult with allowed status and any violations
         """
-        settings = await self.get_settings(tenant_id)
+        settings = await self.get_settings()
 
         # Check kill switch
         if not settings.enforcement_enabled:
             return EnforcementResult(
                 allowed=True,
                 mode=EnforcementMode.ADVISORY,
-                warnings=["Enforcement is disabled for this tenant"],
+                warnings=["Enforcement is disabled"],
             )
 
         violations = []
@@ -463,9 +448,7 @@ class AutopilotEnforcer:
             violations.extend(roas_violations)
 
         # Check frequency limits
-        freq_violations = await self._check_frequency_rules(
-            settings, tenant_id, entity_id
-        )
+        freq_violations = await self._check_frequency_rules(settings, entity_id)
         violations.extend(freq_violations)
 
         # Check custom rules
@@ -487,7 +470,6 @@ class AutopilotEnforcer:
                 and settings.default_mode != EnforcementMode.ADVISORY
             ):
                 return await self._soft_block_result(
-                    tenant_id=tenant_id,
                     action_type=action_type,
                     entity_id=entity_id,
                     violations=[
@@ -522,7 +504,6 @@ class AutopilotEnforcer:
 
         elif strictest_mode == EnforcementMode.SOFT_BLOCK:
             return await self._soft_block_result(
-                tenant_id=tenant_id,
                 action_type=action_type,
                 entity_id=entity_id,
                 violations=violations,
@@ -532,7 +513,6 @@ class AutopilotEnforcer:
         else:  # HARD_BLOCK
             # Log the blocked attempt
             await self._log_intervention(
-                tenant_id=tenant_id,
                 action_type=action_type,
                 entity_type=entity_type,
                 entity_id=entity_id,
@@ -551,7 +531,6 @@ class AutopilotEnforcer:
 
     async def confirm_action(
         self,
-        tenant_id: int,
         confirmation_token: str,
         user_id: int,
         override_reason: Optional[str] = None,
@@ -560,7 +539,6 @@ class AutopilotEnforcer:
         Confirm a soft-blocked action.
 
         Args:
-            tenant_id: Tenant ID
             confirmation_token: Token from EnforcementResult
             user_id: User confirming the action
             override_reason: Optional reason for override
@@ -582,7 +560,6 @@ class AutopilotEnforcer:
             db_token = result.scalars().first()
             if db_token is not None:
                 confirmation = {
-                    "tenant_id": db_token.tenant_id,
                     "action_type": db_token.action_type,
                     "entity_id": db_token.entity_id,
                     "violations": db_token.violations,
@@ -594,12 +571,8 @@ class AutopilotEnforcer:
         if confirmation is None:
             return False, "Invalid or expired confirmation token"
 
-        if confirmation["tenant_id"] != tenant_id:
-            return False, "Token does not belong to this tenant"
-
         # Log the override
         await self._log_intervention(
-            tenant_id=tenant_id,
             action_type=confirmation["action_type"],
             entity_type="campaign",
             entity_id=confirmation["entity_id"],
@@ -618,7 +591,6 @@ class AutopilotEnforcer:
 
     async def auto_pause_campaign(
         self,
-        tenant_id: int,
         campaign_id: str,
         reason: str,
         metrics: Dict[str, Any],
@@ -637,7 +609,7 @@ class AutopilotEnforcer:
 
         Returns True if campaign was paused successfully.
         """
-        settings = await self.get_settings(tenant_id)
+        settings = await self.get_settings()
 
         if not settings.enforcement_enabled:
             return False
@@ -647,7 +619,6 @@ class AutopilotEnforcer:
 
         # Log the auto-pause intervention regardless of execution outcome
         await self._log_intervention(
-            tenant_id=tenant_id,
             action_type="auto_pause",
             entity_type="campaign",
             entity_id=campaign_id,
@@ -684,9 +655,7 @@ class AutopilotEnforcer:
             )
 
             if exec_result.get("success"):
-                logger.info(
-                    f"Auto-paused campaign {campaign_id} for tenant {tenant_id}: {reason}"
-                )
+                logger.info(f"Auto-paused campaign {campaign_id}: {reason}")
                 return True
             else:
                 logger.error(
@@ -711,31 +680,25 @@ class AutopilotEnforcer:
 
     async def set_kill_switch(
         self,
-        tenant_id: int,
         enabled: bool,
         user_id: int,
         reason: Optional[str] = None,
     ) -> EnforcementSettings:
         """
-        Enable/disable enforcement kill switch for tenant.
+        Enable/disable the enforcement kill switch.
 
         Args:
-            tenant_id: Tenant ID
             enabled: True to enable enforcement, False to disable
             user_id: User making the change
             reason: Optional reason for change
         """
-        settings = await self.update_settings(
-            tenant_id,
-            {"enforcement_enabled": enabled},
-        )
+        settings = await self.update_settings({"enforcement_enabled": enabled})
 
         # Log the change
         await self._log_intervention(
-            tenant_id=tenant_id,
             action_type="kill_switch",
-            entity_type="tenant",
-            entity_id=str(tenant_id),
+            entity_type="global",
+            entity_id="global",
             violation_type=ViolationType.BUDGET_EXCEEDED,
             intervention_action=InterventionAction.WARNED,
             enforcement_mode=settings.default_mode,
@@ -747,12 +710,11 @@ class AutopilotEnforcer:
 
     async def set_freeze(
         self,
-        tenant_id: int,
         frozen: bool,
         user_id: int,
         reason: Optional[str] = None,
     ) -> EnforcementSettings:
-        """Freeze or unfreeze all autopilot execution for a tenant.
+        """Freeze or unfreeze all autopilot execution.
 
         This is the true emergency stop. When ``frozen`` is True the
         execution paths (apply_actions_queue worker + approve/confirm
@@ -762,25 +724,20 @@ class AutopilotEnforcer:
         *loosens* control), the frozen state is strictly restrictive.
 
         Args:
-            tenant_id: Tenant ID.
             frozen: True to halt execution, False to resume.
             user_id: User making the change (audited).
             reason: Optional reason for the change.
         """
-        settings = await self.update_settings(
-            tenant_id,
-            {"autopilot_frozen": frozen},
-        )
+        settings = await self.update_settings({"autopilot_frozen": frozen})
 
         # violation_type is not meaningful for an operator toggle (there is no
         # rule violation); BUDGET_EXCEEDED is the shared placeholder the sibling
         # set_kill_switch uses. The intervention_action, however, has an exact
         # fit — KILL_SWITCH_CHANGED — so the audit log reads correctly.
         await self._log_intervention(
-            tenant_id=tenant_id,
             action_type="autopilot_freeze",
-            entity_type="tenant",
-            entity_id=str(tenant_id),
+            entity_type="global",
+            entity_id="global",
             violation_type=ViolationType.BUDGET_EXCEEDED,
             intervention_action=DBInterventionAction.KILL_SWITCH_CHANGED,
             enforcement_mode=settings.default_mode,
@@ -790,28 +747,26 @@ class AutopilotEnforcer:
 
         return settings
 
-    async def is_frozen(self, tenant_id: int) -> bool:
-        """Return True when autopilot execution is frozen for the tenant.
+    async def is_frozen(self) -> bool:
+        """Return True when autopilot execution is frozen.
 
         Cheap read used by the execution paths (worker + approve/confirm
         endpoints) to gate every action behind the emergency stop.
         """
-        settings = await self.get_settings(tenant_id)
+        settings = await self.get_settings()
         return bool(settings.autopilot_frozen)
 
     async def get_intervention_log(
         self,
-        tenant_id: int,
         days: int = 30,
         limit: int = 100,
     ) -> List[Dict[str, Any]]:
-        """Get intervention audit log for tenant.
+        """Get intervention audit log.
 
         Queries the enforcement_audit_logs table for entries within the
         specified lookback window, ordered by most recent first.
 
         Args:
-            tenant_id: Tenant ID to query.
             days: Number of days to look back (default 30).
             limit: Maximum number of entries to return (default 100).
 
@@ -827,10 +782,7 @@ class AutopilotEnforcer:
 
         result = await self.db.execute(
             select(EnforcementAuditLogDB)
-            .where(
-                EnforcementAuditLogDB.tenant_id == tenant_id,
-                EnforcementAuditLogDB.timestamp >= cutoff,
-            )
+            .where(EnforcementAuditLogDB.timestamp >= cutoff)
             .order_by(EnforcementAuditLogDB.timestamp.desc())
             .limit(limit)
         )
@@ -914,7 +866,6 @@ class AutopilotEnforcer:
     async def _check_frequency_rules(
         self,
         settings: EnforcementSettings,
-        tenant_id: int,
         entity_id: str,
     ) -> List[Dict[str, Any]]:
         """Check action frequency rules against recent DB records.
@@ -924,8 +875,7 @@ class AutopilotEnforcer:
         today and checks the minimum time gap between changes.
 
         Args:
-            settings: Current enforcement settings for the tenant.
-            tenant_id: Tenant ID.
+            settings: Current enforcement settings.
             entity_id: Platform entity ID being acted upon.
 
         Returns:
@@ -945,7 +895,6 @@ class AutopilotEnforcer:
 
         count_result = await self.db.execute(
             select(func.count(EnforcementAuditLogDB.id)).where(
-                EnforcementAuditLogDB.tenant_id == tenant_id,
                 EnforcementAuditLogDB.entity_id == entity_id,
                 EnforcementAuditLogDB.timestamp >= day_start,
                 EnforcementAuditLogDB.action_type.in_(
@@ -979,7 +928,6 @@ class AutopilotEnforcer:
         recent_result = await self.db.execute(
             select(EnforcementAuditLogDB.timestamp)
             .where(
-                EnforcementAuditLogDB.tenant_id == tenant_id,
                 EnforcementAuditLogDB.entity_id == entity_id,
                 EnforcementAuditLogDB.timestamp >= min_gap_cutoff,
                 EnforcementAuditLogDB.action_type.in_(
@@ -1058,7 +1006,6 @@ class AutopilotEnforcer:
 
     async def _soft_block_result(
         self,
-        tenant_id: int,
         action_type: str,
         entity_id: str,
         violations: List[Dict[str, Any]],
@@ -1076,7 +1023,6 @@ class AutopilotEnforcer:
         expires = now + timedelta(seconds=3600)
 
         self._pending_confirmations[token] = {
-            "tenant_id": tenant_id,
             "action_type": action_type,
             "entity_id": entity_id,
             "violations": violations,
@@ -1086,7 +1032,6 @@ class AutopilotEnforcer:
 
         if self.db is not None:
             db_token = PendingConfirmationTokenDB(
-                tenant_id=tenant_id,
                 token=token,
                 action_type=action_type,
                 entity_id=entity_id,
@@ -1126,7 +1071,6 @@ class AutopilotEnforcer:
 
     async def _log_intervention(
         self,
-        tenant_id: int,
         action_type: str,
         entity_type: str,
         entity_id: str,
@@ -1144,7 +1088,6 @@ class AutopilotEnforcer:
         triggers a notification for blocking interventions.
 
         Args:
-            tenant_id: Tenant ID.
             action_type: Type of action being checked.
             entity_type: Entity type (campaign, adset, etc.).
             entity_id: Platform entity ID.
@@ -1158,7 +1101,6 @@ class AutopilotEnforcer:
         now = datetime.now(timezone.utc)
 
         log_entry = InterventionLog(
-            tenant_id=tenant_id,
             timestamp=now,
             action_type=action_type,
             entity_type=entity_type,
@@ -1182,7 +1124,7 @@ class AutopilotEnforcer:
             else enforcement_mode
         )
         logger.info(
-            f"Enforcement intervention: tenant={tenant_id} action={_action_val} "
+            f"Enforcement intervention: action={_action_val} "
             f"entity={entity_type}/{entity_id} mode={_mode_val}"
         )
 
@@ -1230,7 +1172,6 @@ class AutopilotEnforcer:
                 outcome_confidence = None
 
             db_log = EnforcementAuditLogDB(
-                tenant_id=tenant_id,
                 timestamp=now,
                 action_type=action_type,
                 entity_type=entity_type,
@@ -1267,7 +1208,6 @@ class AutopilotEnforcer:
         ):
             try:
                 await send_enforcement_notification(
-                    tenant_id=tenant_id,
                     intervention=log_entry,
                     notification_channels=["email"],
                     db=self.db,
@@ -1285,7 +1225,6 @@ class AutopilotEnforcer:
 
 
 async def send_enforcement_notification(
-    tenant_id: int,
     intervention: InterventionLog,
     notification_channels: Optional[List[str]] = None,
     db: Optional[AsyncSession] = None,
@@ -1293,12 +1232,11 @@ async def send_enforcement_notification(
     """
     Send notification for enforcement intervention via email and/or Slack.
 
-    Queries the database for tenant admin users so their email addresses
-    can be used for email notifications. For Slack, uses the
-    SlackNotificationService with the tenant's configured webhook.
+    Queries the database for admin users so their email addresses can be
+    used for email notifications. For Slack, uses the
+    SlackNotificationService with the configured webhook.
 
     Args:
-        tenant_id: Tenant ID.
         intervention: Intervention log entry with full context.
         notification_channels: Channels to use (email, slack). Defaults to email.
         db: Optional AsyncSession for looking up admin emails.
@@ -1329,20 +1267,11 @@ async def send_enforcement_notification(
     # ---- Email Channel ----
     if "email" in channels and db is not None:
         try:
-            from app.base_models import Tenant, User, UserRole
+            from app.base_models import User, UserRole
 
-            # Get tenant name
-            tenant_result = await db.execute(
-                select(Tenant.name).where(Tenant.id == tenant_id)
-            )
-            tenant_name: str = (
-                tenant_result.scalar_one_or_none() or f"Tenant {tenant_id}"
-            )
-
-            # Find admin/manager users for this tenant
+            # Find admin/manager users to notify
             admin_result = await db.execute(
                 select(User.email, User.full_name).where(
-                    User.tenant_id == tenant_id,
                     User.is_active.is_(True),
                     User.role.in_([UserRole.ADMIN, UserRole.MANAGER]),
                 )
@@ -1369,8 +1298,6 @@ async def send_enforcement_notification(
               padding: 30px; margin-bottom: 20px;">
     <h2 style="margin-top: 0; color: #dc2626;">Enforcement Intervention</h2>
     <table style="width: 100%; border-collapse: collapse;">
-      <tr><td style="padding: 6px 0; font-weight: 600;">Tenant</td>
-          <td style="padding: 6px 0;">{tenant_name}</td></tr>
       <tr><td style="padding: 6px 0; font-weight: 600;">Action</td>
           <td style="padding: 6px 0;">{action_label}</td></tr>
       <tr><td style="padding: 6px 0; font-weight: 600;">Mode</td>
@@ -1392,7 +1319,6 @@ async def send_enforcement_notification(
 
                 text_content = (
                     f"Stratum AI Enforcement Intervention\n\n"
-                    f"Tenant: {tenant_name}\n"
                     f"Action: {action_label}\n"
                     f"Mode: {mode_label}\n"
                     f"Violation: {violation_label}\n"
@@ -1444,7 +1370,7 @@ async def send_enforcement_notification(
             # Build a simple Slack alert
             sent = await slack_svc.send_message(
                 text=(
-                    f"Enforcement {action_label} for tenant {tenant_id}: "
+                    f"Enforcement {action_label}: "
                     f"{violation_label} on {intervention.entity_type}/{intervention.entity_id}"
                 ),
             )
@@ -1455,8 +1381,7 @@ async def send_enforcement_notification(
             logger.error(f"Failed to send Slack enforcement notification: {slack_exc}")
 
     logger.info(
-        f"Enforcement notification result: tenant={tenant_id} "
-        f"channels={channels} any_sent={any_sent}"
+        f"Enforcement notification result: channels={channels} any_sent={any_sent}"
     )
 
     return any_sent

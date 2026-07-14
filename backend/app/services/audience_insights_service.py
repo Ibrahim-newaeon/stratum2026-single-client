@@ -101,7 +101,6 @@ class Audience:
     """Represents an audience for analysis."""
 
     audience_id: str
-    tenant_id: str
     platform: str
     name: str
     audience_type: AudienceType
@@ -174,7 +173,7 @@ class AudienceInsightsService:
         insights = service.get_insights(audience_id)
 
         # Get expansion recommendations
-        recommendations = service.get_recommendations(tenant_id)
+        recommendations = service.get_recommendations()
 
         # Predict performance
         prediction = service.predict_performance(audience_config)
@@ -182,12 +181,10 @@ class AudienceInsightsService:
 
     def __init__(self):
         self._audiences: Dict[str, Audience] = {}
-        self._by_tenant: Dict[str, List[str]] = {}
 
     def register_audience(
         self,
         audience_id: str,
-        tenant_id: str,
         platform: str,
         name: str,
         audience_type: AudienceType,
@@ -197,7 +194,6 @@ class AudienceInsightsService:
         """Register an audience for tracking."""
         audience = Audience(
             audience_id=audience_id,
-            tenant_id=tenant_id,
             platform=platform,
             name=name,
             audience_type=audience_type,
@@ -206,10 +202,6 @@ class AudienceInsightsService:
         )
 
         self._audiences[audience_id] = audience
-
-        if tenant_id not in self._by_tenant:
-            self._by_tenant[tenant_id] = []
-        self._by_tenant[tenant_id].append(audience_id)
 
         return audience
 
@@ -464,14 +456,10 @@ class AudienceInsightsService:
 
     def get_recommendations(
         self,
-        tenant_id: str,
         limit: int = 10,
     ) -> List[AudienceRecommendation]:
-        """Get audience recommendations for a tenant."""
-        audience_ids = self._by_tenant.get(tenant_id, [])
-        audiences = [
-            self._audiences[aid] for aid in audience_ids if aid in self._audiences
-        ]
+        """Get audience recommendations."""
+        audiences = list(self._audiences.values())
 
         recommendations = []
 
@@ -748,12 +736,9 @@ class AudienceInsightsService:
         """Get an audience by ID."""
         return self._audiences.get(audience_id)
 
-    def get_summary(self, tenant_id: str) -> Dict[str, Any]:
-        """Get summary of audiences for a tenant."""
-        audience_ids = self._by_tenant.get(tenant_id, [])
-        audiences = [
-            self._audiences[aid] for aid in audience_ids if aid in self._audiences
-        ]
+    def get_summary(self) -> Dict[str, Any]:
+        """Get summary of audiences."""
+        audiences = list(self._audiences.values())
 
         by_type = {}
         by_quality = {}
@@ -820,9 +805,9 @@ def predict_audience_performance(
     )
 
 
-def get_audience_recommendations(tenant_id: str) -> List[Dict[str, Any]]:
-    """Get audience recommendations for a tenant."""
-    recommendations = audience_service.get_recommendations(tenant_id)
+def get_audience_recommendations() -> List[Dict[str, Any]]:
+    """Get audience recommendations."""
+    recommendations = audience_service.get_recommendations()
 
     return [
         {
@@ -902,21 +887,20 @@ class AudienceLTVPredictor:
     }
 
     def __init__(self):
-        self._baseline_ltv: Dict[str, float] = {}
+        self._baseline_ltv: float = 100
 
-    def set_baseline_ltv(self, tenant_id: str, baseline: float):
-        """Set baseline LTV for a tenant."""
-        self._baseline_ltv[tenant_id] = baseline
+    def set_baseline_ltv(self, baseline: float):
+        """Set baseline LTV."""
+        self._baseline_ltv = baseline
 
     def predict(
         self,
         audience_id: str,
         audience_type: AudienceType,
-        tenant_id: str,
         historical_performance: Optional[Dict[str, float]] = None,
     ) -> AudienceLTVPrediction:
         """Predict LTV for an audience."""
-        baseline = self._baseline_ltv.get(tenant_id, 100)
+        baseline = self._baseline_ltv
 
         # Apply type multiplier
         multiplier = self.LTV_MULTIPLIERS.get(audience_type, 1.0)

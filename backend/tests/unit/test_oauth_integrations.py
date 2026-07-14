@@ -66,7 +66,6 @@ NOW = datetime(2026, 4, 9, 12, 0, 0, tzinfo=UTC)
 def _make_state(platform: str = "meta", **kw) -> OAuthState:
     defaults = dict(
         state_token="test_state_abc123",
-        tenant_id=1,
         user_id=42,
         platform=platform,
         redirect_uri="https://app.stratum.ai/oauth/callback",
@@ -144,7 +143,6 @@ class TestOAuthState:
     def test_create_state(self) -> None:
         state = _make_state()
         assert state.state_token == "test_state_abc123"
-        assert state.tenant_id == 1
         assert state.user_id == 42
         assert state.platform == "meta"
 
@@ -153,14 +151,13 @@ class TestOAuthState:
         json_str = state.to_json()
         parsed = json.loads(json_str)
         assert parsed["state_token"] == state.state_token
-        assert parsed["tenant_id"] == 1
+        assert parsed["user_id"] == 42
 
     def test_from_json_roundtrip(self) -> None:
         original = _make_state()
         json_str = original.to_json()
         restored = OAuthState.from_json(json_str)
         assert restored.state_token == original.state_token
-        assert restored.tenant_id == original.tenant_id
         assert restored.user_id == original.user_id
         assert restored.platform == original.platform
         assert restored.redirect_uri == original.redirect_uri
@@ -168,7 +165,6 @@ class TestOAuthState:
     def test_default_created_at(self) -> None:
         state = OAuthState(
             state_token="abc",
-            tenant_id=1,
             user_id=1,
             platform="meta",
             redirect_uri="http://test",
@@ -307,11 +303,8 @@ class TestOAuthStateManagement:
         mock_redis = _mock_redis()
 
         with patch.object(svc, "_get_redis_client", return_value=mock_redis):
-            state = await svc.create_state(
-                tenant_id=1, user_id=42, redirect_uri="http://test"
-            )
+            state = await svc.create_state(user_id=42, redirect_uri="http://test")
 
-        assert state.tenant_id == 1
         assert state.user_id == 42
         assert state.platform == "meta"
         assert len(state.state_token) > 20
@@ -329,7 +322,7 @@ class TestOAuthStateManagement:
             result = await svc.validate_state("test_state_abc123")
 
         assert result is not None
-        assert result.tenant_id == 1
+        assert result.user_id == 42
         assert result.platform == "meta"
         mock_redis.close.assert_awaited_once()
 
@@ -364,9 +357,7 @@ class TestOAuthStateManagement:
 
         with patch.object(svc, "_get_redis_client", return_value=mock_redis):
             with pytest.raises(ConnectionError):
-                await svc.create_state(
-                    tenant_id=1, user_id=1, redirect_uri="http://test"
-                )
+                await svc.create_state(user_id=1, redirect_uri="http://test")
 
     @pytest.mark.asyncio
     async def test_validate_state_redis_error_returns_none(self) -> None:

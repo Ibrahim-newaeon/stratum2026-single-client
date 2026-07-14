@@ -12,7 +12,11 @@ from celery.utils.log import get_task_logger
 from sqlalchemy import select
 
 from app.db.session import SyncSessionLocal
-from app.models import Campaign, Tenant
+# NOTE(STRAT-SC-001/C3): dead `Tenant` import removed so `app.main` can
+# import (endpoints import worker task functions at module load). Task
+# bodies below still reference the old per-org fan-out and are rewritten
+# in Task C4 — they were already runtime-broken since the model deletion.
+from app.models import Campaign
 from app.workers.locks import with_distributed_lock
 
 logger = get_task_logger(__name__)

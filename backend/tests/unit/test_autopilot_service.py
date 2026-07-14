@@ -80,7 +80,6 @@ def _iter_rows(rows: List[Any]) -> MagicMock:
 def _make_action(status: str = "queued", **overrides: Any) -> FactActionsQueue:
     """Construct an in-memory FactActionsQueue row (no DB needed)."""
     action = FactActionsQueue(
-        tenant_id=1,
         date=date.today(),
         action_type="budget_decrease",
         entity_type="campaign",
@@ -139,7 +138,6 @@ class TestQueueAction:
 
         with pytest.raises(ValueError, match="critical"):
             await service.queue_action(
-                tenant_id=1,
                 action_type="budget_increase",
                 entity_type="campaign",
                 entity_id="camp_123",
@@ -159,7 +157,6 @@ class TestQueueAction:
         stub_signal_health("degraded")
 
         action = await service.queue_action(
-            tenant_id=1,
             action_type="budget_increase",
             entity_type="campaign",
             entity_id="camp_123",
@@ -183,7 +180,6 @@ class TestQueueAction:
         stub_signal_health("ok")
 
         action = await service.queue_action(
-            tenant_id=1,
             action_type="budget_decrease",
             entity_type="adset",
             entity_id="adset_5",
@@ -205,7 +201,6 @@ class TestQueueAction:
         stub_signal_health(None)
 
         action = await service.queue_action(
-            tenant_id=1,
             action_type="pause_creative",
             entity_type="creative",
             entity_id="cr_1",
@@ -233,7 +228,6 @@ class TestReadPaths:
         service = AutopilotService(db=db)
 
         actions = await service.get_queued_actions(
-            tenant_id=1,
             target_date=date.today(),
             status=ActionStatus.QUEUED.value,
             platform="meta",
@@ -249,7 +243,7 @@ class TestReadPaths:
         db = _make_db([_scalars_all([])])
         service = AutopilotService(db=db)
 
-        actions = await service.get_queued_actions(tenant_id=1)
+        actions = await service.get_queued_actions()
 
         assert actions == []
 
@@ -260,7 +254,7 @@ class TestReadPaths:
         db = _make_db([_scalar_one_or_none(action)])
         service = AutopilotService(db=db)
 
-        found = await service.get_action_by_id(action.id, tenant_id=1)
+        found = await service.get_action_by_id(action.id)
 
         assert found is action
 
@@ -270,7 +264,7 @@ class TestReadPaths:
         db = _make_db([_scalar_one_or_none(None)])
         service = AutopilotService(db=db)
 
-        assert await service.get_action_by_id(uuid4(), tenant_id=1) is None
+        assert await service.get_action_by_id(uuid4()) is None
 
 
 # =============================================================================
@@ -288,7 +282,7 @@ class TestApprovalWorkflow:
         db = _make_db([_scalar_one_or_none(action)])
         service = AutopilotService(db=db)
 
-        approved = await service.approve_action(action.id, tenant_id=1, user_id=5)
+        approved = await service.approve_action(action.id, user_id=5)
 
         assert approved is action
         assert approved.status == ActionStatus.APPROVED.value
@@ -303,7 +297,7 @@ class TestApprovalWorkflow:
         db = _make_db([_scalar_one_or_none(None)])
         service = AutopilotService(db=db)
 
-        result = await service.approve_action(uuid4(), tenant_id=1, user_id=5)
+        result = await service.approve_action(uuid4(), user_id=5)
 
         assert result is None
         db.commit.assert_not_awaited()
@@ -315,7 +309,7 @@ class TestApprovalWorkflow:
         db = _make_db([_scalar_one_or_none(action)])
         service = AutopilotService(db=db)
 
-        result = await service.approve_action(action.id, tenant_id=1, user_id=5)
+        result = await service.approve_action(action.id, user_id=5)
 
         assert result is None
         assert action.status == ActionStatus.APPLIED.value
@@ -327,7 +321,7 @@ class TestApprovalWorkflow:
         db = _make_db([MagicMock(rowcount=3)])
         service = AutopilotService(db=db)
 
-        count = await service.approve_all_queued(tenant_id=1, user_id=5)
+        count = await service.approve_all_queued(user_id=5)
 
         assert count == 3
         db.commit.assert_awaited_once()
@@ -338,8 +332,7 @@ class TestApprovalWorkflow:
         db = _make_db([MagicMock(rowcount=2)])
         service = AutopilotService(db=db)
 
-        count = await service.approve_all_queued(
-            tenant_id=1, user_id=5, action_ids=[uuid4(), uuid4()]
+        count = await service.approve_all_queued( user_id=5, action_ids=[uuid4(), uuid4()]
         )
 
         assert count == 2
@@ -351,7 +344,7 @@ class TestApprovalWorkflow:
         db = _make_db([_scalar_one_or_none(action)])
         service = AutopilotService(db=db)
 
-        dismissed = await service.dismiss_action(action.id, tenant_id=1, user_id=5)
+        dismissed = await service.dismiss_action(action.id, user_id=5)
 
         assert dismissed is action
         assert dismissed.status == ActionStatus.DISMISSED.value
@@ -365,7 +358,7 @@ class TestApprovalWorkflow:
         db = _make_db([_scalar_one_or_none(action)])
         service = AutopilotService(db=db)
 
-        dismissed = await service.dismiss_action(action.id, tenant_id=1, user_id=5)
+        dismissed = await service.dismiss_action(action.id, user_id=5)
 
         assert dismissed is action
         assert dismissed.status == ActionStatus.DISMISSED.value
@@ -377,7 +370,7 @@ class TestApprovalWorkflow:
         db = _make_db([_scalar_one_or_none(action)])
         service = AutopilotService(db=db)
 
-        result = await service.dismiss_action(action.id, tenant_id=1, user_id=5)
+        result = await service.dismiss_action(action.id, user_id=5)
 
         assert result is None
         assert action.status == ActionStatus.APPLIED.value
@@ -388,7 +381,7 @@ class TestApprovalWorkflow:
         db = _make_db([_scalar_one_or_none(None)])
         service = AutopilotService(db=db)
 
-        assert await service.dismiss_action(uuid4(), tenant_id=1, user_id=5) is None
+        assert await service.dismiss_action(uuid4(), user_id=5) is None
 
 
 # =============================================================================
@@ -499,7 +492,7 @@ class TestActionSummary:
         )
         service = AutopilotService(db=db)
 
-        summary = await service.get_action_summary(tenant_id=1, days=7)
+        summary = await service.get_action_summary(days=7)
 
         assert summary["days"] == 7
         assert summary["start_date"] == (date.today() - timedelta(days=7)).isoformat()
@@ -517,7 +510,7 @@ class TestActionSummary:
         db = _make_db([_iter_rows([]), _iter_rows([]), _iter_rows([])])
         service = AutopilotService(db=db)
 
-        summary = await service.get_action_summary(tenant_id=1, days=30)
+        summary = await service.get_action_summary(days=30)
 
         assert summary["total"] == 0
         assert summary["pending_approval"] == 0

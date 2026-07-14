@@ -12,7 +12,7 @@ import json
 from datetime import date, datetime, timedelta, timezone
 from typing import Any, Dict, List, Optional
 
-from sqlalchemy import and_, func, select
+from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.analytics.logic.attribution import attribution_variance, get_attribution_health
@@ -37,14 +37,12 @@ class SignalHealthService:
 
     async def get_signal_health(
         self,
-        tenant_id: int,
         target_date: Optional[date] = None,
     ) -> Dict[str, Any]:
         """
-        Get signal health summary for a tenant.
+        Get the organization's signal health summary.
 
         Args:
-            tenant_id: Tenant ID
             target_date: Date to query (defaults to today)
 
         Returns:
@@ -56,12 +54,7 @@ class SignalHealthService:
         # Get records for the date
         result = await self.db.execute(
             select(FactSignalHealthDaily)
-            .where(
-                and_(
-                    FactSignalHealthDaily.tenant_id == tenant_id,
-                    FactSignalHealthDaily.date == target_date,
-                )
-            )
+            .where(FactSignalHealthDaily.date == target_date)
             .limit(1000)
         )
         records = result.scalars().all()
@@ -297,14 +290,12 @@ class AttributionVarianceService:
 
     async def get_attribution_variance(
         self,
-        tenant_id: int,
         target_date: Optional[date] = None,
     ) -> Dict[str, Any]:
         """
-        Get attribution variance summary for a tenant.
+        Get the organization's attribution variance summary.
 
         Args:
-            tenant_id: Tenant ID
             target_date: Date to query (defaults to today)
 
         Returns:
@@ -316,12 +307,7 @@ class AttributionVarianceService:
         # Get records for the date
         result = await self.db.execute(
             select(FactAttributionVarianceDaily)
-            .where(
-                and_(
-                    FactAttributionVarianceDaily.tenant_id == tenant_id,
-                    FactAttributionVarianceDaily.date == target_date,
-                )
-            )
+            .where(FactAttributionVarianceDaily.date == target_date)
             .limit(1000)
         )
         records = result.scalars().all()

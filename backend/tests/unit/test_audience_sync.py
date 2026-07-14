@@ -644,10 +644,9 @@ def _make_scalar_count(value):
     return result
 
 
-def _make_platform_audience(tenant_id=1, platform="meta"):
+def _make_platform_audience(platform="meta"):
     pa = MagicMock(spec=PlatformAudience)
     pa.id = uuid4()
-    pa.tenant_id = tenant_id
     pa.segment_id = uuid4()
     pa.platform = platform
     pa.platform_audience_id = "aud_ext_123"
@@ -673,7 +672,6 @@ def _make_platform_audience(tenant_id=1, platform="meta"):
 def _make_sync_job(status=SyncStatus.COMPLETED.value, operation="update"):
     job = MagicMock(spec=AudienceSyncJob)
     job.id = uuid4()
-    job.tenant_id = 1
     job.platform_audience_id = uuid4()
     job.operation = operation
     job.status = status
@@ -697,7 +695,6 @@ def _make_sync_job(status=SyncStatus.COMPLETED.value, operation="update"):
 def _make_credential(platform="meta"):
     cred = MagicMock(spec=AudienceSyncCredential)
     cred.id = uuid4()
-    cred.tenant_id = 1
     cred.platform = platform
     cred.ad_account_id = "act_123"
     cred.ad_account_name = "Main Account"
@@ -710,7 +707,6 @@ def _make_credential(platform="meta"):
 def _make_segment():
     segment = MagicMock()
     segment.id = uuid4()
-    segment.tenant_id = 1
     segment.name = "High Value"
     return segment
 
@@ -723,7 +719,7 @@ class TestAudienceSyncServiceConnectorFactory:
         from app.services.cdp.audience_sync.service import AudienceSyncService
 
         db = _make_async_db()
-        service = AudienceSyncService(db, tenant_id=1)
+        service = AudienceSyncService(db)
         cred = _make_credential(platform="meta")
         cred.config = {"app_secret": "test_secret"}
 
@@ -737,7 +733,7 @@ class TestAudienceSyncServiceConnectorFactory:
         from app.services.cdp.audience_sync.service import AudienceSyncService
 
         db = _make_async_db()
-        service = AudienceSyncService(db, tenant_id=1)
+        service = AudienceSyncService(db)
         cred = _make_credential(platform="google")
         cred.config = {"developer_token": "dev_tok", "login_customer_id": "cust_123"}
 
@@ -748,7 +744,7 @@ class TestAudienceSyncServiceConnectorFactory:
         from app.services.cdp.audience_sync.service import AudienceSyncService
 
         db = _make_async_db()
-        service = AudienceSyncService(db, tenant_id=1)
+        service = AudienceSyncService(db)
         cred = _make_credential()
 
         with pytest.raises(ValueError, match="Unknown platform"):
@@ -761,19 +757,19 @@ class TestAudienceSyncServiceIdentifierMapping:
     def test_email_mapping(self):
         from app.services.cdp.audience_sync.service import AudienceSyncService
 
-        service = AudienceSyncService(_make_async_db(), 1)
+        service = AudienceSyncService(_make_async_db())
         assert service._map_identifier_type("email") == IdentifierType.EMAIL
 
     def test_phone_mapping(self):
         from app.services.cdp.audience_sync.service import AudienceSyncService
 
-        service = AudienceSyncService(_make_async_db(), 1)
+        service = AudienceSyncService(_make_async_db())
         assert service._map_identifier_type("phone") == IdentifierType.PHONE
 
     def test_device_id_mapping(self):
         from app.services.cdp.audience_sync.service import AudienceSyncService
 
-        service = AudienceSyncService(_make_async_db(), 1)
+        service = AudienceSyncService(_make_async_db())
         assert (
             service._map_identifier_type("device_id")
             == IdentifierType.MOBILE_ADVERTISER_ID
@@ -782,7 +778,7 @@ class TestAudienceSyncServiceIdentifierMapping:
     def test_unknown_mapping_returns_none(self):
         from app.services.cdp.audience_sync.service import AudienceSyncService
 
-        service = AudienceSyncService(_make_async_db(), 1)
+        service = AudienceSyncService(_make_async_db())
         assert service._map_identifier_type("address") is None
 
 
@@ -793,7 +789,7 @@ class TestAudienceSyncServiceProfilesToUsers:
     async def test_converts_profiles_with_identifiers(self):
         from app.services.cdp.audience_sync.service import AudienceSyncService
 
-        service = AudienceSyncService(_make_async_db(), 1)
+        service = AudienceSyncService(_make_async_db())
 
         identifier = MagicMock()
         identifier.identifier_type = "email"
@@ -812,7 +808,7 @@ class TestAudienceSyncServiceProfilesToUsers:
     async def test_skips_profiles_without_identifiers(self):
         from app.services.cdp.audience_sync.service import AudienceSyncService
 
-        service = AudienceSyncService(_make_async_db(), 1)
+        service = AudienceSyncService(_make_async_db())
 
         profile = MagicMock()
         profile.id = uuid4()
@@ -825,7 +821,7 @@ class TestAudienceSyncServiceProfilesToUsers:
     async def test_skips_unknown_identifier_types(self):
         from app.services.cdp.audience_sync.service import AudienceSyncService
 
-        service = AudienceSyncService(_make_async_db(), 1)
+        service = AudienceSyncService(_make_async_db())
 
         identifier = MagicMock()
         identifier.identifier_type = "unknown_type"
@@ -842,7 +838,7 @@ class TestAudienceSyncServiceProfilesToUsers:
     async def test_multiple_identifiers_per_profile(self):
         from app.services.cdp.audience_sync.service import AudienceSyncService
 
-        service = AudienceSyncService(_make_async_db(), 1)
+        service = AudienceSyncService(_make_async_db())
 
         id1 = MagicMock()
         id1.identifier_type = "email"
@@ -870,7 +866,7 @@ class TestAudienceSyncServiceCreatePlatformAudience:
 
         db = _make_async_db()
         db.execute.return_value = _make_scalar_result(None)
-        service = AudienceSyncService(db, 1)
+        service = AudienceSyncService(db)
 
         with pytest.raises(ValueError, match="not found"):
             await service.create_platform_audience(
@@ -891,7 +887,7 @@ class TestAudienceSyncServiceCreatePlatformAudience:
             _make_scalar_result(segment),
             _make_scalar_result(None),
         ]
-        service = AudienceSyncService(db, 1)
+        service = AudienceSyncService(db)
 
         with pytest.raises(ValueError, match="No credentials"):
             await service.create_platform_audience(
@@ -911,7 +907,7 @@ class TestAudienceSyncServiceSyncPlatformAudience:
 
         db = _make_async_db()
         db.execute.return_value = _make_scalar_result(None)
-        service = AudienceSyncService(db, 1)
+        service = AudienceSyncService(db)
 
         with pytest.raises(ValueError, match="not found"):
             await service.sync_platform_audience(uuid4())
@@ -926,7 +922,7 @@ class TestAudienceSyncServiceSyncPlatformAudience:
             _make_scalar_result(pa),
             _make_scalar_result(None),  # segment not found
         ]
-        service = AudienceSyncService(db, 1)
+        service = AudienceSyncService(db)
 
         with pytest.raises(ValueError, match=r"Segment.*not found"):
             await service.sync_platform_audience(pa.id)
@@ -943,7 +939,7 @@ class TestAudienceSyncServiceSyncPlatformAudience:
             _make_scalar_result(segment),
             _make_scalar_result(None),  # no credentials
         ]
-        service = AudienceSyncService(db, 1)
+        service = AudienceSyncService(db)
 
         with pytest.raises(ValueError, match="No credentials"):
             await service.sync_platform_audience(pa.id)
@@ -958,7 +954,7 @@ class TestAudienceSyncServiceDeletePlatformAudience:
 
         db = _make_async_db()
         db.execute.return_value = _make_scalar_result(None)
-        service = AudienceSyncService(db, 1)
+        service = AudienceSyncService(db)
 
         result = await service.delete_platform_audience(uuid4())
         assert result is False
@@ -970,7 +966,7 @@ class TestAudienceSyncServiceDeletePlatformAudience:
         pa = _make_platform_audience()
         db = _make_async_db()
         db.execute.return_value = _make_scalar_result(pa)
-        service = AudienceSyncService(db, 1)
+        service = AudienceSyncService(db)
 
         result = await service.delete_platform_audience(
             pa.id, delete_from_platform=False
@@ -994,7 +990,7 @@ class TestAudienceSyncServiceListPlatformAudiences:
             _make_scalar_count(2),
             _make_scalars_result(audiences),
         ]
-        service = AudienceSyncService(db, 1)
+        service = AudienceSyncService(db)
 
         result, total = await service.list_platform_audiences()
         assert total == 2
@@ -1009,7 +1005,7 @@ class TestAudienceSyncServiceListPlatformAudiences:
             _make_scalar_count(0),
             _make_scalars_result([]),
         ]
-        service = AudienceSyncService(db, 1)
+        service = AudienceSyncService(db)
 
         result, total = await service.list_platform_audiences()
         assert total == 0
@@ -1026,7 +1022,7 @@ class TestAudienceSyncServiceGetSyncHistory:
         jobs = [_make_sync_job(), _make_sync_job()]
         db = _make_async_db()
         db.execute.return_value = _make_scalars_result(jobs)
-        service = AudienceSyncService(db, 1)
+        service = AudienceSyncService(db)
 
         result = await service.get_sync_history(uuid4())
         assert len(result) == 2
@@ -1053,7 +1049,7 @@ class TestAudienceSyncServiceGetConnectedPlatforms:
 
         db = _make_async_db()
         db.execute.return_value = _make_scalars_result([cred1, cred2, cred3])
-        service = AudienceSyncService(db, 1)
+        service = AudienceSyncService(db)
 
         platforms = await service.get_connected_platforms()
         assert len(platforms) == 2
@@ -1066,7 +1062,7 @@ class TestAudienceSyncServiceGetConnectedPlatforms:
 
         db = _make_async_db()
         db.execute.return_value = _make_scalars_result([])
-        service = AudienceSyncService(db, 1)
+        service = AudienceSyncService(db)
 
         platforms = await service.get_connected_platforms()
         assert platforms == []
@@ -1080,7 +1076,7 @@ class TestAudienceSyncServiceExecuteSyncJob:
         from app.services.cdp.audience_sync.service import AudienceSyncService
 
         db = _make_async_db()
-        service = AudienceSyncService(db, 1)
+        service = AudienceSyncService(db)
 
         pa = _make_platform_audience()
         pa.platform_audience_id = None  # No platform ID
@@ -1102,7 +1098,7 @@ class TestAudienceSyncServiceExecuteSyncJob:
         from app.services.cdp.audience_sync.service import AudienceSyncService
 
         db = _make_async_db()
-        service = AudienceSyncService(db, 1)
+        service = AudienceSyncService(db)
 
         pa = _make_platform_audience()
         pa.platform_audience_id = None
@@ -1123,7 +1119,7 @@ class TestAudienceSyncServiceExecuteSyncJob:
         from app.services.cdp.audience_sync.service import AudienceSyncService
 
         db = _make_async_db()
-        service = AudienceSyncService(db, 1)
+        service = AudienceSyncService(db)
 
         pa = _make_platform_audience()
         pa.platform_audience_id = None
@@ -1144,7 +1140,7 @@ class TestAudienceSyncServiceExecuteSyncJob:
         from app.services.cdp.audience_sync.service import AudienceSyncService
 
         db = _make_async_db()
-        service = AudienceSyncService(db, 1)
+        service = AudienceSyncService(db)
 
         pa = _make_platform_audience()
         cred = _make_credential()
@@ -1164,7 +1160,7 @@ class TestAudienceSyncServiceExecuteSyncJob:
         from app.services.cdp.audience_sync.service import AudienceSyncService
 
         db = _make_async_db()
-        service = AudienceSyncService(db, 1)
+        service = AudienceSyncService(db)
 
         pa = _make_platform_audience()
         cred = _make_credential()
@@ -1197,7 +1193,7 @@ class TestAudienceSyncServiceExecuteSyncJob:
         from app.services.cdp.audience_sync.service import AudienceSyncService
 
         db = _make_async_db()
-        service = AudienceSyncService(db, 1)
+        service = AudienceSyncService(db)
 
         pa = _make_platform_audience()
         cred = _make_credential()
@@ -1228,7 +1224,7 @@ class TestAudienceSyncServiceExecuteSyncJob:
         from app.services.cdp.audience_sync.service import AudienceSyncService
 
         db = _make_async_db()
-        service = AudienceSyncService(db, 1)
+        service = AudienceSyncService(db)
 
         pa = _make_platform_audience()
         cred = _make_credential()

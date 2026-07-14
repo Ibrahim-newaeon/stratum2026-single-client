@@ -34,13 +34,17 @@ from app.analytics.logic.types import (
     ScoringParams,
     SignalHealthParams,
 )
+from app.auth.deps import CurrentUserDep, get_current_user
 from app.core.logging import get_logger
 from app.db.session import get_async_session
 from app.models import Campaign, CreativeAsset
 from app.schemas import APIResponse
 
 logger = get_logger(__name__)
-router = APIRouter()
+# SECURITY (STRAT-SC-001/C3): the old per-org request guards were the only
+# auth on these routes; deleted in the de-tenanting sweep, so real auth is
+# enforced router-wide here.
+router = APIRouter(dependencies=[Depends(get_current_user)])
 
 
 # =============================================================================
@@ -258,12 +262,12 @@ async def check_signal_health(
 
 @router.get("/recommendations", response_model=APIResponse)
 async def get_ai_recommendations(
-    request: Request,
+    current_user: CurrentUserDep,
     db: AsyncSession = Depends(get_async_session),
     date: Optional[str] = Query(None, description="Date in YYYY-MM-DD format"),
 ):
     """
-    Get AI-powered recommendations for the tenant's campaigns.
+    Get AI-powered recommendations for the organization's campaigns.
 
     Returns:
     - Recommendations (prioritized actions)
@@ -271,17 +275,9 @@ async def get_ai_recommendations(
     - Alerts (anomalies and issues)
     - Insights (opportunities)
     """
-    tenant_id = getattr(request.state, "tenant_id", None)
-    if tenant_id is None:
-        raise HTTPException(
-            status_code=status.HTTP_401_UNAUTHORIZED,
-            detail="Tenant context required",
-        )
-
     # Get campaigns
     result = await db.execute(
         select(Campaign).where(
-            Campaign.tenant_id == tenant_id,
             Campaign.is_deleted == False,
         )
     )
@@ -361,23 +357,15 @@ async def get_ai_recommendations(
 
 @router.get("/kpis", response_model=APIResponse)
 async def get_analytics_kpis(
-    request: Request,
+    current_user: CurrentUserDep,
     db: AsyncSession = Depends(get_async_session),
 ):
     """
     Get analytics KPIs summary for the dashboard.
     """
-    tenant_id = getattr(request.state, "tenant_id", None)
-    if tenant_id is None:
-        raise HTTPException(
-            status_code=status.HTTP_401_UNAUTHORIZED,
-            detail="Tenant context required",
-        )
-
     # Get campaigns
     result = await db.execute(
         select(Campaign).where(
-            Campaign.tenant_id == tenant_id,
             Campaign.is_deleted == False,
         )
     )

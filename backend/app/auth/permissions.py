@@ -727,7 +727,6 @@ async def enforce_client_access(
     user_id: int,
     user_role: str,
     client_id: int,
-    tenant_id: int,
     db: "AsyncSession",
     user_client_id: Optional[int] = None,
 ) -> None:
@@ -750,7 +749,6 @@ async def enforce_client_access(
     accessible = await get_accessible_client_ids(
         user_id=user_id,
         user_role=user_role,
-        tenant_id=tenant_id,
         db=db,
         client_id=user_client_id,
     )
@@ -771,7 +769,6 @@ async def get_accessible_client_ids(
     *,
     user_id: int,
     user_role: str,
-    tenant_id: int,
     db: "AsyncSession",
     client_id: Optional[int] = None,
 ) -> Optional[List[int]]:

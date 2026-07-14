@@ -48,11 +48,9 @@ class IdentityMatcher:
     def __init__(
         self,
         db: AsyncSession,
-        tenant_id: int,
         lookback_days: int = DEFAULT_LOOKBACK_DAYS,
     ):
         self.db = db
-        self.tenant_id = tenant_id
         self.lookback_days = min(lookback_days, MAX_LOOKBACK_DAYS)
 
     async def match_contacts_to_touchpoints(self) -> Dict[str, Any]:
@@ -91,7 +89,6 @@ class IdentityMatcher:
 
         logger.info(
             "identity_matching_complete",
-            tenant_id=self.tenant_id,
             processed=results["contacts_processed"],
             matched=results["contacts_matched"],
         )
@@ -102,12 +99,7 @@ class IdentityMatcher:
         """Get contacts that haven't been matched to touchpoints."""
         result = await self.db.execute(
             select(CRMContact)
-            .where(
-                and_(
-                    CRMContact.tenant_id == self.tenant_id,
-                    CRMContact.first_touch_campaign_id.is_(None),
-                )
-            )
+            .where(CRMContact.first_touch_campaign_id.is_(None))
             .limit(1000)  # Process in batches
         )
         return result.scalars().all()
@@ -237,12 +229,7 @@ class IdentityMatcher:
         column = getattr(Touchpoint, click_id_field)
         result = await self.db.execute(
             select(Touchpoint)
-            .where(
-                and_(
-                    Touchpoint.tenant_id == self.tenant_id,
-                    column == click_id_value,
-                )
-            )
+            .where(column == click_id_value)
             .order_by(Touchpoint.event_ts)
             .limit(1000)
         )
@@ -269,7 +256,6 @@ class IdentityMatcher:
             select(Touchpoint)
             .where(
                 and_(
-                    Touchpoint.tenant_id == self.tenant_id,
                     column == identity_value,
                     Touchpoint.event_ts >= lookback_start,
                     Touchpoint.event_ts
@@ -305,7 +291,6 @@ class IdentityMatcher:
             lookback_start = lookback_end - timedelta(days=utm_lookback_days)
 
         conditions = [
-            Touchpoint.tenant_id == self.tenant_id,
             Touchpoint.utm_campaign == utm_campaign,
             Touchpoint.event_ts >= lookback_start,
             Touchpoint.event_ts <= lookback_end,
@@ -479,7 +464,6 @@ class IdentityMatcher:
             select(CRMDeal)
             .where(
                 and_(
-                    CRMDeal.tenant_id == self.tenant_id,
                     CRMDeal.is_won == True,
                     CRMDeal.won_at >= start_date,
                     CRMDeal.won_at <= end_date,
@@ -530,7 +514,6 @@ class IdentityMatcher:
 
 async def create_touchpoint_from_click(
     db: AsyncSession,
-    tenant_id: int,
     click_data: Dict[str, Any],
 ) -> Touchpoint:
     """
@@ -538,14 +521,12 @@ async def create_touchpoint_from_click(
 
     Args:
         db: Database session
-        tenant_id: Tenant ID
         click_data: Click event data with UTMs, click IDs, etc.
 
     Returns:
         Created touchpoint
     """
     touchpoint = Touchpoint(
-        tenant_id=tenant_id,
         event_ts=click_data.get("timestamp", datetime.now(timezone.utc)),
         event_type=click_data.get("event_type", "click"),
         source=click_data.get("source", "unknown"),

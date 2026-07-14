@@ -860,7 +860,6 @@ class OfflineConversionService:
 
     def list_batches(
         self,
-        tenant_id: str,
         platform: Optional[str] = None,
         status: Optional[str] = None,
         limit: int = 50,
@@ -869,7 +868,6 @@ class OfflineConversionService:
         List offline conversion batches.
 
         Args:
-            tenant_id: Tenant ID (for filtering in production)
             platform: Filter by platform
             status: Filter by status
             limit: Maximum number of results

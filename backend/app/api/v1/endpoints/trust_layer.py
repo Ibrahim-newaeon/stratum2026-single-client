@@ -11,11 +11,12 @@ API endpoints for Trust Layer features:
 from datetime import date
 from typing import Any, Dict, List, Optional
 
-from fastapi import APIRouter, Depends, HTTPException, Query, Request
+from fastapi import APIRouter, Depends, HTTPException, Query
 from pydantic import BaseModel, Field
 from sqlalchemy import func, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from app.auth.deps import get_current_user
 from app.db.session import get_async_session
 from app.features.service import can_access_feature
 from app.models.trust_layer import FactSignalHealthDaily, SignalHealthStatus
@@ -25,7 +26,13 @@ from app.quality.trust_layer_service import (
 )
 from app.schemas.response import APIResponse
 
-router = APIRouter(prefix="/tenant/{tenant_id}", tags=["trust-layer"])
+# SECURITY (STRAT-SC-001/C3): the old per-org request guards were the only
+# auth on these routes; deleted in the de-tenanting sweep, so real auth is
+# enforced router-wide here.
+router = APIRouter(
+    tags=["trust-layer"],
+    dependencies=[Depends(get_current_user)],
+)
 
 
 # =============================================================================
@@ -35,13 +42,11 @@ router = APIRouter(prefix="/tenant/{tenant_id}", tags=["trust-layer"])
 
 @router.get("/signal-health", response_model=APIResponse[Dict[str, Any]])
 async def get_signal_health(
-    request: Request,
-    tenant_id: int,
     target_date: Optional[date] = Query(default=None, alias="date"),
     db: AsyncSession = Depends(get_async_session),
 ):
     """
-    Get signal health status and metrics for the tenant.
+    Get signal health status and metrics for the organization.
 
     Returns:
     - status: Overall health status (ok/risk/degraded/critical)
@@ -50,27 +55,21 @@ async def get_signal_health(
     - platform_rows: Per-platform breakdown
     - banners: Trust banners to display
     """
-    # Enforce tenant context
-    if getattr(request.state, "tenant_id", None) != tenant_id:
-        raise HTTPException(status_code=403, detail="Access denied to this tenant")
-
     # Check feature flag
-    if not await can_access_feature(db, tenant_id, "signal_health"):
+    if not await can_access_feature(db, "signal_health"):
         raise HTTPException(
             status_code=403,
-            detail="Signal health feature is not enabled for this tenant",
+            detail="Signal health feature is not enabled",
         )
 
     service = SignalHealthService(db)
-    data = await service.get_signal_health(tenant_id, target_date)
+    data = await service.get_signal_health(target_date)
 
     return APIResponse(success=True, data=data)
 
 
 @router.get("/signal-health/history", response_model=APIResponse[Dict[str, Any]])
 async def get_signal_health_history(
-    request: Request,
-    tenant_id: int,
     days: int = Query(default=7, ge=1, le=30),
     platform: Optional[str] = None,
     db: AsyncSession = Depends(get_async_session),
@@ -79,10 +78,7 @@ async def get_signal_health_history(
     Get signal health history for the past N days.
     Useful for trend analysis and reporting.
     """
-    if getattr(request.state, "tenant_id", None) != tenant_id:
-        raise HTTPException(status_code=403, detail="Access denied to this tenant")
-
-    if not await can_access_feature(db, tenant_id, "signal_health"):
+    if not await can_access_feature(db, "signal_health"):
         raise HTTPException(status_code=403, detail="Feature not enabled")
 
     # For now, return empty history - will be populated by rollup tasks
@@ -104,8 +100,6 @@ async def get_signal_health_history(
 
 @router.get("/signal-health/by-account", response_model=APIResponse[Dict[str, Any]])
 async def get_signal_health_by_account(
-    request: Request,
-    tenant_id: int,
     target_date: Optional[date] = Query(default=None, alias="date"),
     platform: Optional[str] = Query(default=None, description="Filter by platform"),
     db: AsyncSession = Depends(get_async_session),
@@ -116,10 +110,7 @@ async def get_signal_health_by_account(
     Returns per-account signal health metrics grouped by platform and account_id.
     Useful for identifying which specific ad accounts have degraded signals.
     """
-    if getattr(request.state, "tenant_id", None) != tenant_id:
-        raise HTTPException(status_code=403, detail="Access denied to this tenant")
-
-    if not await can_access_feature(db, tenant_id, "signal_health"):
+    if not await can_access_feature(db, "signal_health"):
         raise HTTPException(
             status_code=403, detail="Signal health feature is not enabled"
         )
@@ -129,7 +120,6 @@ async def get_signal_health_by_account(
 
     # Query signal health records grouped by platform + account_id
     conditions = [
-        FactSignalHealthDaily.tenant_id == tenant_id,
         FactSignalHealthDaily.date == target_date,
         FactSignalHealthDaily.account_id.isnot(None),
     ]
@@ -155,7 +145,7 @@ async def get_signal_health_by_account(
             TenantAdAccount.platform_account_id,
             TenantAdAccount.name,
             TenantAdAccount.business_name,
-        ).where(TenantAdAccount.tenant_id == tenant_id)
+        )
     )
     account_lookup = {
         row.platform_account_id: {
@@ -224,8 +214,6 @@ async def get_signal_health_by_account(
 
 @router.get("/attribution-variance", response_model=APIResponse[Dict[str, Any]])
 async def get_attribution_variance(
-    request: Request,
-    tenant_id: int,
     target_date: Optional[date] = Query(default=None, alias="date"),
     db: AsyncSession = Depends(get_async_session),
 ):
@@ -239,17 +227,14 @@ async def get_attribution_variance(
     - platform_rows: Per-platform breakdown
     - banners: Attribution variance banners
     """
-    if getattr(request.state, "tenant_id", None) != tenant_id:
-        raise HTTPException(status_code=403, detail="Access denied to this tenant")
-
-    if not await can_access_feature(db, tenant_id, "attribution_variance"):
+    if not await can_access_feature(db, "attribution_variance"):
         raise HTTPException(
             status_code=403,
-            detail="Attribution variance feature is not enabled for this tenant",
+            detail="Attribution variance feature is not enabled",
         )
 
     service = AttributionVarianceService(db)
-    data = await service.get_attribution_variance(tenant_id, target_date)
+    data = await service.get_attribution_variance(target_date)
 
     return APIResponse(success=True, data=data)
 
@@ -261,8 +246,6 @@ async def get_attribution_variance(
 
 @router.get("/trust-status", response_model=APIResponse[Dict[str, Any]])
 async def get_trust_status(
-    request: Request,
-    tenant_id: int,
     target_date: Optional[date] = Query(default=None, alias="date"),
     db: AsyncSession = Depends(get_async_session),
 ):
@@ -277,9 +260,6 @@ async def get_trust_status(
     - attribution_variance: Attribution variance summary (if enabled)
     - banners: Combined banners to display
     """
-    if getattr(request.state, "tenant_id", None) != tenant_id:
-        raise HTTPException(status_code=403, detail="Access denied to this tenant")
-
     result = {
         "date": (target_date or date.today()).isoformat(),
         "overall_status": "ok",
@@ -290,9 +270,9 @@ async def get_trust_status(
     }
 
     # Get signal health if enabled
-    if await can_access_feature(db, tenant_id, "signal_health"):
+    if await can_access_feature(db, "signal_health"):
         service = SignalHealthService(db)
-        signal_data = await service.get_signal_health(tenant_id, target_date)
+        signal_data = await service.get_signal_health(target_date)
         result["signal_health"] = signal_data
 
         if signal_data["status"] in ["degraded", "critical"]:
@@ -304,9 +284,9 @@ async def get_trust_status(
             result["banners"].extend(signal_data["banners"])
 
     # Get attribution variance if enabled
-    if await can_access_feature(db, tenant_id, "attribution_variance"):
+    if await can_access_feature(db, "attribution_variance"):
         service = AttributionVarianceService(db)
-        attr_data = await service.get_attribution_variance(tenant_id, target_date)
+        attr_data = await service.get_attribution_variance(target_date)
         result["attribution_variance"] = attr_data
 
         # Add attribution banners (don't block automation for attribution issues)
@@ -320,7 +300,7 @@ async def get_trust_status(
 # =============================================================================
 # The TrustGate/SignalHealthCalculator pair in app/stratum/core is the
 # documented Trust Engine (CLAUDE.md "Trust Engine Rules") but was never
-# reachable from the API. These endpoints adapt the tenant's rolled-up
+# reachable from the API. These endpoints adapt the organization's rolled-up
 # FactSignalHealthDaily rows into the engine's SignalHealth model and expose
 # gate decisions, thresholds, and the derived autopilot mode.
 
@@ -337,14 +317,13 @@ class TrustGateEvaluateRequest(BaseModel):
 
 
 async def _latest_health_rows(
-    db: AsyncSession, tenant_id: int, target_date: Optional[date]
+    db: AsyncSession, target_date: Optional[date]
 ) -> List[FactSignalHealthDaily]:
-    """Fetch the tenant's platform health rows for the most recent rollup
-    date at or before ``target_date`` (default today)."""
+    """Fetch the organization's platform health rows for the most recent
+    rollup date at or before ``target_date`` (default today)."""
     upper = target_date or date.today()
     latest = await db.execute(
         select(func.max(FactSignalHealthDaily.date)).where(
-            FactSignalHealthDaily.tenant_id == tenant_id,
             FactSignalHealthDaily.date <= upper,
         )
     )
@@ -354,7 +333,6 @@ async def _latest_health_rows(
 
     result = await db.execute(
         select(FactSignalHealthDaily).where(
-            FactSignalHealthDaily.tenant_id == tenant_id,
             FactSignalHealthDaily.date == as_of,
         )
     )
@@ -382,7 +360,7 @@ def _signal_health_from_rows(rows: List[FactSignalHealthDaily]):
             variance_score=0.0,
             anomaly_score=0.0,
             status="critical",
-            issues=["No signal health data for this tenant — run the rollup"],
+            issues=["No signal health data available — run the rollup"],
         )
 
     emq_scores = [
@@ -405,43 +383,39 @@ def _signal_health_from_rows(rows: List[FactSignalHealthDaily]):
     )
 
 
-async def _trust_gate_for_tenant(db: AsyncSession, tenant_id: int):
-    """Build a TrustGate using the tenant's configured thresholds (TRUST-007).
+async def _trust_gate_for_org(db: AsyncSession):
+    """Build a TrustGate using the organization's configured thresholds
+    (TRUST-007).
 
-    Reads the per-tenant thresholds onboarding stored on ``tenant.settings``
-    (falling back to the global defaults) instead of always using the defaults.
+    Reads the org-level thresholds onboarding stored on
+    ``organization.settings`` (falling back to the global defaults) instead
+    of always using the defaults.
     """
-    from app.base_models import Tenant
+    from app.base_models import get_organization
     from app.stratum.core.trust_gate import TrustGate, TrustGateConfig
 
-    row = await db.execute(select(Tenant.settings).where(Tenant.id == tenant_id))
-    tenant_settings = row.scalar_one_or_none()
-    return TrustGate(TrustGateConfig.from_tenant_settings(tenant_settings))
+    org = await get_organization(db)
+    return TrustGate(TrustGateConfig.from_org_settings(org.settings))
 
 
 @router.get("/trust-gate", response_model=APIResponse[Dict[str, Any]])
 async def get_trust_gate_status(
-    request: Request,
-    tenant_id: int,
     target_date: Optional[date] = Query(default=None, alias="date"),
     db: AsyncSession = Depends(get_async_session),
 ):
     """
-    Get the trust gate's current posture for this tenant.
+    Get the trust gate's current posture.
 
     Returns the composite signal health (engine-weighted), the configured
     gate thresholds, the derived autopilot mode, and which automation
     action types are currently allowed vs restricted.
     """
-    if getattr(request.state, "tenant_id", None) != tenant_id:
-        raise HTTPException(status_code=403, detail="Access denied to this tenant")
-
     from app.stratum.core.trust_gate import TrustGate, get_autopilot_mode
 
-    rows = await _latest_health_rows(db, tenant_id, target_date)
+    rows = await _latest_health_rows(db, target_date)
     health = _signal_health_from_rows(rows)
 
-    gate = await _trust_gate_for_tenant(db, tenant_id)
+    gate = await _trust_gate_for_org(db)
     allowed, restricted = gate.get_allowed_actions(health)
     mode, mode_reason = get_autopilot_mode(health)
 
@@ -472,8 +446,6 @@ async def get_trust_gate_status(
 
 @router.post("/trust-gate/evaluate", response_model=APIResponse[Dict[str, Any]])
 async def evaluate_trust_gate(
-    request: Request,
-    tenant_id: int,
     body: TrustGateEvaluateRequest,
     db: AsyncSession = Depends(get_async_session),
 ):
@@ -484,9 +456,6 @@ async def evaluate_trust_gate(
     decision contract the autopilot uses, exposed for the dashboard's
     "would this run right now?" preview.
     """
-    if getattr(request.state, "tenant_id", None) != tenant_id:
-        raise HTTPException(status_code=403, detail="Access denied to this tenant")
-
     from app.stratum.core.trust_gate import TrustGate
     from app.stratum.models import AutomationAction, Platform
 
@@ -497,7 +466,7 @@ async def evaluate_trust_gate(
             status_code=400, detail=f"Unknown platform: {body.platform}"
         )
 
-    rows = await _latest_health_rows(db, tenant_id, None)
+    rows = await _latest_health_rows(db, None)
     health = _signal_health_from_rows(rows)
 
     action = AutomationAction(
@@ -509,7 +478,7 @@ async def evaluate_trust_gate(
         parameters=body.parameters,
     )
 
-    gate = await _trust_gate_for_tenant(db, tenant_id)
+    gate = await _trust_gate_for_org(db)
     result = gate.evaluate(health, action)
     payload = result.to_dict()
     payload["data_available"] = bool(rows)

@@ -40,7 +40,6 @@ async def test_add_failed_event_persists_to_postgres():
         new=_fake_session_factory(db),
     ):
         entry = await dlq.add_failed_event(
-            tenant_id=42,
             platform="meta",
             event_name="Purchase",
             event_data={"event_id": "evt-1", "event_name": "Purchase"},
@@ -50,7 +49,6 @@ async def test_add_failed_event_persists_to_postgres():
     db.merge.assert_awaited_once()
     db.commit.assert_awaited_once()
     persisted = db.merge.call_args.args[0]
-    assert persisted.tenant_id == 42
     assert persisted.platform == "meta"
     assert persisted.event_id == "evt-1"
     assert persisted.status == "pending"
@@ -72,18 +70,17 @@ async def test_persist_failure_does_not_raise():
     ):
         # Must not raise even though Postgres write fails.
         entry = await dlq.add_failed_event(
-            tenant_id=1,
             platform="google",
             event_name="Lead",
             event_data={},
             error_message="boom",
         )
-    assert entry.tenant_id == 1
+    assert entry.platform == "google"
 
 
 @pytest.mark.asyncio
 async def test_dlq_failed_events_enqueues_only_failures():
-    svc = CAPIService(tenant_id=7)
+    svc = CAPIService()
     events = [{"event_name": "Purchase", "event_id": "a"}]
     results = [
         ("meta", CAPIResponse(True, 1, 1, [], "meta"), 12.0),
@@ -106,13 +103,12 @@ async def test_dlq_failed_events_enqueues_only_failures():
     fake_dlq.add_failed_event.assert_awaited_once()
     kwargs = fake_dlq.add_failed_event.call_args.kwargs
     assert kwargs["platform"] == "google"
-    assert kwargs["tenant_id"] == 7
     assert "auth expired" in kwargs["error_message"]
 
 
 @pytest.mark.asyncio
 async def test_dlq_capture_never_raises():
-    svc = CAPIService(tenant_id=7)
+    svc = CAPIService()
     events = [{"event_name": "Purchase"}]
     results = [("meta", CAPIResponse(False, 1, 0, [], "meta"), 1.0)]
 

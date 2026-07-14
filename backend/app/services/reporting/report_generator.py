@@ -32,9 +32,8 @@ class ReportDataCollector:
     Collects data for different report types.
     """
 
-    def __init__(self, db: AsyncSession, tenant_id: int):
+    def __init__(self, db: AsyncSession):
         self.db = db
-        self.tenant_id = tenant_id
 
     async def collect_campaign_performance(
         self,
@@ -50,12 +49,7 @@ class ReportDataCollector:
         platforms = config.get("filters", {}).get("platforms")
 
         # Query campaigns
-        query = select(Campaign).where(
-            and_(
-                Campaign.tenant_id == self.tenant_id,
-                Campaign.is_deleted == False,
-            )
-        )
+        query = select(Campaign).where(Campaign.is_deleted == False)
         if platforms:
             query = query.where(Campaign.platform.in_(platforms))
 
@@ -134,7 +128,6 @@ class ReportDataCollector:
             select(CRMDeal)
             .where(
                 and_(
-                    CRMDeal.tenant_id == self.tenant_id,
                     CRMDeal.is_won == True,
                     CRMDeal.won_at
                     >= datetime.combine(
@@ -197,12 +190,7 @@ class ReportDataCollector:
 
         # Get active targets
         target_result = await self.db.execute(
-            select(Target).where(
-                and_(
-                    Target.tenant_id == self.tenant_id,
-                    Target.is_active == True,
-                )
-            )
+            select(Target).where(Target.is_active == True)
         )
         targets = list(target_result.scalars().all())
 
@@ -210,11 +198,8 @@ class ReportDataCollector:
         alert_result = await self.db.execute(
             select(PacingAlert)
             .where(
-                and_(
-                    PacingAlert.tenant_id == self.tenant_id,
-                    PacingAlert.created_at
-                    >= datetime.combine(start_date, datetime.min.time()),
-                )
+                PacingAlert.created_at
+                >= datetime.combine(start_date, datetime.min.time()),
             )
             .order_by(PacingAlert.created_at.desc())
             .limit(10)
@@ -276,7 +261,6 @@ class ReportDataCollector:
             select(DailyProfitMetrics)
             .where(
                 and_(
-                    DailyProfitMetrics.tenant_id == self.tenant_id,
                     DailyProfitMetrics.date >= start_date,
                     DailyProfitMetrics.date <= end_date,
                 )
@@ -360,7 +344,6 @@ class ReportDataCollector:
             select(DailyPipelineMetrics)
             .where(
                 and_(
-                    DailyPipelineMetrics.tenant_id == self.tenant_id,
                     DailyPipelineMetrics.date >= start_date,
                     DailyPipelineMetrics.date <= end_date,
                 )
@@ -477,10 +460,9 @@ class ReportGenerator:
     Main service for generating reports.
     """
 
-    def __init__(self, db: AsyncSession, tenant_id: int):
+    def __init__(self, db: AsyncSession):
         self.db = db
-        self.tenant_id = tenant_id
-        self.collector = ReportDataCollector(db, tenant_id)
+        self.collector = ReportDataCollector(db)
 
     async def generate_report(
         self,
@@ -500,12 +482,7 @@ class ReportGenerator:
         """
         # Get template
         template_result = await self.db.execute(
-            select(ReportTemplate).where(
-                and_(
-                    ReportTemplate.id == template_id,
-                    ReportTemplate.tenant_id == self.tenant_id,
-                )
-            )
+            select(ReportTemplate).where(ReportTemplate.id == template_id)
         )
         template = template_result.scalar_one_or_none()
 
@@ -514,7 +491,6 @@ class ReportGenerator:
 
         # Create execution record
         execution = ReportExecution(
-            tenant_id=self.tenant_id,
             template_id=template_id,
             schedule_id=schedule_id,
             execution_type=execution_type,
@@ -540,7 +516,7 @@ class ReportGenerator:
             if format == ReportFormat.PDF:
                 from app.services.reporting.pdf_generator import PDFGenerator
 
-                pdf_gen = PDFGenerator(self.tenant_id)
+                pdf_gen = PDFGenerator()
                 file_path, file_size = await pdf_gen.generate(
                     template=template,
                     data=data,
@@ -670,7 +646,7 @@ class ReportGenerator:
                     writer.writerow(row.values())
 
         content = output.getvalue()
-        file_path = f"/tmp/reports/{self.tenant_id}/{execution_id}.csv"  # nosec B108
+        file_path = f"/tmp/reports/{execution_id}.csv"  # nosec B108
 
         # Ensure directory exists
         os.makedirs(os.path.dirname(file_path), exist_ok=True)
@@ -690,7 +666,7 @@ class ReportGenerator:
         import os
 
         content = json.dumps(data, indent=2, default=str)
-        file_path = f"/tmp/reports/{self.tenant_id}/{execution_id}.json"  # nosec B108
+        file_path = f"/tmp/reports/{execution_id}.json"  # nosec B108
 
         os.makedirs(os.path.dirname(file_path), exist_ok=True)
 

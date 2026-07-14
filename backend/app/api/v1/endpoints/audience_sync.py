@@ -21,12 +21,10 @@ from pydantic import BaseModel, ConfigDict, Field
 from sqlalchemy.exc import SQLAlchemyError
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from app.auth.deps import get_current_user
+from app.auth.deps import CurrentUserDep
 from app.db.session import get_async_session
-from app.models import User
 from app.models.audience_sync import SyncOperation, SyncPlatform
 from app.services.cdp.audience_sync import AudienceSyncService
-from app.tenancy.deps import get_tenant_id
 
 logger = structlog.get_logger(__name__)
 
@@ -136,11 +134,11 @@ class SyncHistoryResponse(BaseModel):
     description="List all platforms with active credentials for audience sync.",
 )
 async def get_connected_platforms(
+    current_user: CurrentUserDep,
     db: AsyncSession = Depends(get_async_session),
-    tenant_id: int = Depends(get_tenant_id),
 ) -> list[ConnectedPlatformResponse]:
     """Get list of platforms with active credentials."""
-    service = AudienceSyncService(db, tenant_id)
+    service = AudienceSyncService(db)
     platforms = await service.get_connected_platforms()
     return [ConnectedPlatformResponse(**p) for p in platforms]
 
@@ -152,15 +150,15 @@ async def get_connected_platforms(
     description="List all platform audiences with optional filtering.",
 )
 async def list_platform_audiences(
+    current_user: CurrentUserDep,
     segment_id: Optional[UUID] = Query(None, description="Filter by segment ID"),
     platform: Optional[str] = Query(None, description="Filter by platform"),
     limit: int = Query(50, ge=1, le=100),
     offset: int = Query(0, ge=0),
     db: AsyncSession = Depends(get_async_session),
-    tenant_id: int = Depends(get_tenant_id),
 ) -> PlatformAudienceListResponse:
     """List platform audiences."""
-    service = AudienceSyncService(db, tenant_id)
+    service = AudienceSyncService(db)
     audiences, total = await service.list_platform_audiences(
         segment_id=segment_id,
         platform=platform,
@@ -181,10 +179,9 @@ async def list_platform_audiences(
     description="Create a new platform audience linked to a CDP segment.",
 )
 async def create_platform_audience(
+    current_user: CurrentUserDep,
     request: PlatformAudienceCreate,
     db: AsyncSession = Depends(get_async_session),
-    tenant_id: int = Depends(get_tenant_id),
-    current_user: User = Depends(get_current_user),
 ) -> PlatformAudienceResponse:
     """Create a platform audience and sync initial users."""
     # Validate platform
@@ -194,7 +191,7 @@ async def create_platform_audience(
             detail=f"Invalid platform. Supported: {[p.value for p in SyncPlatform]}",
         )
 
-    service = AudienceSyncService(db, tenant_id)
+    service = AudienceSyncService(db)
 
     try:
         platform_audience, _sync_job = await service.create_platform_audience(
@@ -232,11 +229,11 @@ async def create_platform_audience(
 )
 async def get_platform_audience(
     audience_id: UUID,
+    current_user: CurrentUserDep,
     db: AsyncSession = Depends(get_async_session),
-    tenant_id: int = Depends(get_tenant_id),
 ) -> PlatformAudienceResponse:
     """Get platform audience details."""
-    service = AudienceSyncService(db, tenant_id)
+    service = AudienceSyncService(db)
     _audiences, _ = await service.list_platform_audiences(limit=1, offset=0)
 
     # Query directly
@@ -247,7 +244,6 @@ async def get_platform_audience(
     result = await db.execute(
         select(PlatformAudience).where(
             PlatformAudience.id == audience_id,
-            PlatformAudience.tenant_id == tenant_id,
         )
     )
     audience = result.scalar_one_or_none()
@@ -268,11 +264,10 @@ async def get_platform_audience(
     description="Manually trigger a sync for a platform audience.",
 )
 async def trigger_sync(
+    current_user: CurrentUserDep,
     audience_id: UUID,
     request: TriggerSyncRequest,
     db: AsyncSession = Depends(get_async_session),
-    tenant_id: int = Depends(get_tenant_id),
-    current_user: User = Depends(get_current_user),
 ) -> SyncJobResponse:
     """Trigger a manual sync."""
     # Map operation string to enum
@@ -287,7 +282,7 @@ async def trigger_sync(
             detail="Invalid operation. Supported: update, replace",
         )
 
-    service = AudienceSyncService(db, tenant_id)
+    service = AudienceSyncService(db)
 
     try:
         sync_job = await service.sync_platform_audience(
@@ -322,12 +317,12 @@ async def trigger_sync(
 )
 async def get_sync_history(
     audience_id: UUID,
+    current_user: CurrentUserDep,
     limit: int = Query(20, ge=1, le=100),
     db: AsyncSession = Depends(get_async_session),
-    tenant_id: int = Depends(get_tenant_id),
 ) -> SyncHistoryResponse:
     """Get sync history."""
-    service = AudienceSyncService(db, tenant_id)
+    service = AudienceSyncService(db)
     jobs = await service.get_sync_history(audience_id, limit=limit)
     return SyncHistoryResponse(jobs=[SyncJobResponse.model_validate(j) for j in jobs])
 
@@ -339,16 +334,15 @@ async def get_sync_history(
     description="Delete a platform audience mapping.",
 )
 async def delete_platform_audience(
+    current_user: CurrentUserDep,
     audience_id: UUID,
     delete_from_platform: bool = Query(
         True, description="Also delete from ad platform"
     ),
     db: AsyncSession = Depends(get_async_session),
-    tenant_id: int = Depends(get_tenant_id),
-    current_user: User = Depends(get_current_user),
 ):
     """Delete a platform audience."""
-    service = AudienceSyncService(db, tenant_id)
+    service = AudienceSyncService(db)
 
     success = await service.delete_platform_audience(
         platform_audience_id=audience_id,
@@ -377,11 +371,11 @@ async def delete_platform_audience(
 )
 async def get_segment_audiences(
     segment_id: UUID,
+    current_user: CurrentUserDep,
     db: AsyncSession = Depends(get_async_session),
-    tenant_id: int = Depends(get_tenant_id),
 ) -> PlatformAudienceListResponse:
     """Get all platform audiences for a segment."""
-    service = AudienceSyncService(db, tenant_id)
+    service = AudienceSyncService(db)
     audiences, total = await service.list_platform_audiences(
         segment_id=segment_id,
         limit=100,
@@ -400,11 +394,10 @@ async def get_segment_audiences(
     description="Trigger sync for all platform audiences linked to a segment.",
 )
 async def sync_segment_to_all_platforms(
+    current_user: CurrentUserDep,
     segment_id: UUID,
     operation: str = Query("update", description="Operation: update, replace"),
     db: AsyncSession = Depends(get_async_session),
-    tenant_id: int = Depends(get_tenant_id),
-    current_user: User = Depends(get_current_user),
 ) -> list[SyncJobResponse]:
     """Sync a segment to all connected platforms."""
     operation_map = {
@@ -418,7 +411,7 @@ async def sync_segment_to_all_platforms(
             detail="Invalid operation",
         )
 
-    service = AudienceSyncService(db, tenant_id)
+    service = AudienceSyncService(db)
 
     # Get all platform audiences for this segment
     audiences, _ = await service.list_platform_audiences(
