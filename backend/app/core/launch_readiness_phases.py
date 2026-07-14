@@ -267,14 +267,6 @@ LAUNCH_READINESS_PHASES: List[LaunchReadinessPhaseDef] = [
                 "key": "whatsapp_credentials",
                 "title": "WhatsApp Business API tokens stored",
             },
-            {
-                "key": "stripe_live_keys",
-                "title": "Stripe live keys (publishable + secret) stored",
-            },
-            {
-                "key": "stripe_webhook_signing",
-                "title": "Stripe webhook signing secret stored",
-            },
             {"key": "smtp_credentials", "title": "SMTP / SendGrid credentials stored"},
             {"key": "sentry_dsn", "title": "Sentry DSN stored"},
             {
@@ -437,7 +429,7 @@ LAUNCH_READINESS_PHASES: List[LaunchReadinessPhaseDef] = [
             {"key": "mfa_required_admins", "title": "MFA required for admin users"},
             {
                 "key": "csp_headers_verified",
-                "title": "CSP headers verified (Stripe / Meta / GTM allow-lists)",
+                "title": "CSP headers verified (Meta / GTM allow-lists)",
             },
             {
                 "key": "auth_rate_limits",
@@ -481,10 +473,6 @@ LAUNCH_READINESS_PHASES: List[LaunchReadinessPhaseDef] = [
             },
             {"key": "tiktok_app_approved", "title": "TikTok app approval complete"},
             {"key": "snapchat_app_approved", "title": "Snapchat app approval complete"},
-            {
-                "key": "stripe_live_mode",
-                "title": "Stripe account activated + live webhook endpoint registered",
-            },
             {
                 "key": "whatsapp_number_verified",
                 "title": "WhatsApp Business number verified",
@@ -566,12 +554,12 @@ LAUNCH_READINESS_PHASES: List[LaunchReadinessPhaseDef] = [
         "description": "Soft launch, monitoring, and progressive enforcement rollout.",
         "items": [
             {
-                "key": "pilot_tenants_onboarded",
-                "title": "1 to 3 pilot tenants onboarded",
+                "key": "org_onboarded",
+                "title": "Organization onboarded and actively using the platform",
             },
             {
-                "key": "advisory_mode_default",
-                "title": "All tenants start in Advisory enforcement",
+                "key": "launch_advisory_mode_default",
+                "title": "Org starts in Advisory enforcement mode",
             },
             {
                 "key": "two_week_monitor_complete",

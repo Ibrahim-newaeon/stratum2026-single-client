@@ -793,9 +793,20 @@ async def register(
     Register a new user with verified identity.
 
     Requires a verification_token from email or WhatsApp OTP verification.
+
+    Gated by ``ENABLE_PUBLIC_SIGNUP`` (default on, preserving historical
+    behavior). Single-client production deployments should set this to
+    false and add teammates via the owner-only ``POST /users/invite``
+    flow instead.
     """
     from app.base_models import UserRole
     from app.core.security import encrypt_pii
+
+    if not settings.enable_public_signup:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Public signup is disabled. Ask your organization owner for an invite.",
+        )
 
     # 1. Validate verification token from Redis
     try:

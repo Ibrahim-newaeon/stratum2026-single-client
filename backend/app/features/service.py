@@ -16,17 +16,11 @@ from app.base_models import Organization, get_organization
 from app.features.flags import (
     FEATURE_CATEGORIES,
     FEATURE_DESCRIPTIONS,
-    PlanTier,
     FeatureFlags,
     FeatureFlagsUpdate,
     get_default_features,
     merge_features,
 )
-
-# Single-org deployment: there is no subscription tier, so defaults are drawn
-# from the top plan tier rather than a per-org `plan` column (which no longer
-# exists post STRAT-SC-001).
-DEFAULT_PLAN_TIER = PlanTier.PROFESSIONAL.value
 
 
 class FeatureFlagsService:
@@ -43,7 +37,7 @@ class FeatureFlagsService:
             Merged feature flags (defaults + overrides)
         """
         org = await get_organization(self.db)
-        defaults = get_default_features(DEFAULT_PLAN_TIER)
+        defaults = get_default_features()
         return merge_features(defaults, org.feature_flags)
 
     async def get_feature_flags_model(self) -> FeatureFlags:
@@ -91,7 +85,7 @@ class FeatureFlagsService:
 
     async def reset_org_features(self) -> Dict[str, Any]:
         """
-        Reset the organization's features to plan defaults.
+        Reset the organization's features to org defaults.
 
         Returns:
             Default feature flags

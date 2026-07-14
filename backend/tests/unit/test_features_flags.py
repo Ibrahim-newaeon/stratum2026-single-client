@@ -3,14 +3,20 @@
 # =============================================================================
 """Unit tests for app.features.flags.
 
-Pure feature-gating + autopilot-cap logic, no I/O. Covers plan defaults,
+Pure feature-gating + autopilot-cap logic, no I/O. Covers org-level defaults,
 override merging, feature checks, autopilot level/blocking, and action-cap
 validation.
+
+Single-Client conversion (STRAT-SC-001): plan-tier-parameterized defaults
+(``PlanTier``, ``DEFAULT_FEATURES_BY_PLAN``) were removed — there is exactly
+one organization and exactly one set of defaults (``DEFAULT_ORG_FEATURES``),
+so ``get_default_features()`` no longer takes a plan argument.
 """
 
 import pytest
 
 from app.features.flags import (
+    DEFAULT_ORG_FEATURES,
     AutopilotLevel,
     can,
     get_autopilot_caps,
@@ -25,21 +31,20 @@ pytestmark = pytest.mark.unit
 
 
 # =============================================================================
-# Plan defaults
+# Org defaults
 # =============================================================================
 class TestDefaults:
-    def test_known_plan(self):
-        feats = get_default_features("professional")
+    def test_returns_the_org_defaults(self):
+        feats = get_default_features()
         assert isinstance(feats, dict) and feats
-
-    def test_unknown_plan_falls_back_to_starter(self):
-        assert get_default_features("does_not_exist") == get_default_features("starter")
+        assert feats == DEFAULT_ORG_FEATURES
 
     def test_returns_a_copy(self):
-        feats = get_default_features("starter")
+        feats = get_default_features()
         feats["signal_health"] = "MUTATED"
         # original is unaffected
-        assert get_default_features("starter").get("signal_health") != "MUTATED"
+        assert get_default_features().get("signal_health") != "MUTATED"
+        assert DEFAULT_ORG_FEATURES.get("signal_health") != "MUTATED"
 
 
 # =============================================================================

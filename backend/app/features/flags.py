@@ -2,7 +2,16 @@
 # Stratum AI - Feature Flags System
 # =============================================================================
 """
-Multi-tenant feature flag system for gating USP features by plan/tenant.
+Org-level feature flag system for the single-client deployment.
+
+Single-Client conversion (STRAT-SC-001): this module previously keyed
+defaults off a subscription ``PlanTier`` (free/starter/professional/
+enterprise/custom) — tiers and plans no longer exist post-conversion (see
+``app.core.feature_gate`` for the env-driven kill-switch layer that replaced
+tier/402-gating). There is exactly one organization, so there is exactly one
+set of defaults: ``DEFAULT_ORG_FEATURES``. ``Organization.feature_flags``
+(a JSONB column) stores only the *overrides* the owner has made from those
+defaults; ``merge_features()`` combines the two the same way it always did.
 
 Feature Flags:
 - signal_health: Trust layer signal health monitoring
@@ -12,7 +21,7 @@ Feature Flags:
 - creative_fatigue: Intelligence layer creative fatigue detection
 - campaign_builder: Execution layer campaign builder
 - autopilot_level: Execution layer automation level (0-2)
-- owner_profitability: Platform owner profitability views
+- owner_profitability: Owner-only profitability views
 """
 
 from enum import Enum
@@ -29,87 +38,25 @@ class AutopilotLevel(int, Enum):
     APPROVAL_REQUIRED = 2  # All actions require approval before execution
 
 
-class PlanTier(str, Enum):
-    """Subscription plan tiers."""
-
-    FREE = "free"
-    STARTER = "starter"
-    PROFESSIONAL = "professional"
-    ENTERPRISE = "enterprise"
-    CUSTOM = "custom"
-
-
 # =============================================================================
-# Default Feature Flags by Plan
+# Default Org Feature Flags
 # =============================================================================
-
-DEFAULT_FEATURES_BY_PLAN: Dict[str, Dict[str, Any]] = {
-    PlanTier.FREE: {
-        "signal_health": False,
-        "attribution_variance": False,
-        "ai_recommendations": False,
-        "anomaly_alerts": False,
-        "creative_fatigue": False,
-        "campaign_builder": False,
-        "autopilot_level": AutopilotLevel.SUGGEST_ONLY,
-        "owner_profitability": False,
-        "max_campaigns": 5,
-        "max_users": 2,
-        "data_retention_days": 30,
-    },
-    PlanTier.STARTER: {
-        "signal_health": True,
-        "attribution_variance": False,
-        "ai_recommendations": True,
-        "anomaly_alerts": True,
-        "creative_fatigue": False,
-        "campaign_builder": False,
-        "autopilot_level": AutopilotLevel.SUGGEST_ONLY,
-        "owner_profitability": False,
-        "max_campaigns": 20,
-        "max_users": 5,
-        "data_retention_days": 90,
-    },
-    PlanTier.PROFESSIONAL: {
-        "signal_health": True,
-        "attribution_variance": True,
-        "ai_recommendations": True,
-        "anomaly_alerts": True,
-        "creative_fatigue": True,
-        "campaign_builder": True,
-        "autopilot_level": AutopilotLevel.GUARDED_AUTO,
-        "owner_profitability": False,
-        "max_campaigns": 100,
-        "max_users": 20,
-        "data_retention_days": 365,
-    },
-    PlanTier.ENTERPRISE: {
-        "signal_health": True,
-        "attribution_variance": True,
-        "ai_recommendations": True,
-        "anomaly_alerts": True,
-        "creative_fatigue": True,
-        "campaign_builder": True,
-        "autopilot_level": AutopilotLevel.APPROVAL_REQUIRED,
-        "owner_profitability": True,
-        "max_campaigns": -1,  # Unlimited
-        "max_users": -1,  # Unlimited
-        "data_retention_days": -1,  # Unlimited
-    },
-    PlanTier.CUSTOM: {
-        # Custom plans inherit enterprise defaults, overridden per tenant
-        "signal_health": True,
-        "attribution_variance": True,
-        "ai_recommendations": True,
-        "anomaly_alerts": True,
-        "creative_fatigue": True,
-        "campaign_builder": True,
-        "autopilot_level": AutopilotLevel.APPROVAL_REQUIRED,
-        "owner_profitability": True,
-        "max_campaigns": -1,
-        "max_users": -1,
-        "data_retention_days": -1,
-    },
+# The full feature set, enabled by default for the single organization
+# (previously the "professional" tier's defaults — preserved as-is so this
+# refactor changes no runtime behavior, just removes the now-meaningless
+# tier indirection).
+DEFAULT_ORG_FEATURES: Dict[str, Any] = {
+    "signal_health": True,
+    "attribution_variance": True,
+    "ai_recommendations": True,
+    "anomaly_alerts": True,
+    "creative_fatigue": True,
+    "campaign_builder": True,
+    "autopilot_level": AutopilotLevel.GUARDED_AUTO,
+    "owner_profitability": False,
+    "max_campaigns": 100,
+    "max_users": 20,
+    "data_retention_days": 365,
 }
 
 
@@ -119,7 +66,7 @@ DEFAULT_FEATURES_BY_PLAN: Dict[str, Dict[str, Any]] = {
 
 
 class FeatureFlags(BaseModel):
-    """Complete feature flags configuration for a tenant."""
+    """Complete feature flags configuration for the organization."""
 
     model_config = ConfigDict(use_enum_values=True)
 
@@ -176,32 +123,25 @@ class FeatureFlagsUpdate(BaseModel):
 # =============================================================================
 
 
-def get_default_features(plan: str) -> Dict[str, Any]:
+def get_default_features() -> Dict[str, Any]:
     """
-    Get default feature flags for a plan tier.
-
-    Args:
-        plan: Plan tier name (free, starter, professional, enterprise, custom)
+    Get the organization's default feature flags.
 
     Returns:
-        Dict of default feature flags
+        A copy of ``DEFAULT_ORG_FEATURES`` (safe to mutate).
     """
-    plan_lower = plan.lower()
-    if plan_lower in DEFAULT_FEATURES_BY_PLAN:
-        return DEFAULT_FEATURES_BY_PLAN[plan_lower].copy()
-    # Default to starter if unknown plan
-    return DEFAULT_FEATURES_BY_PLAN[PlanTier.STARTER].copy()
+    return DEFAULT_ORG_FEATURES.copy()
 
 
 def merge_features(
     defaults: Dict[str, Any], overrides: Optional[Dict[str, Any]]
 ) -> Dict[str, Any]:
     """
-    Merge default features with tenant-specific overrides.
+    Merge default features with the organization's overrides.
 
     Args:
-        defaults: Default feature flags from plan
-        overrides: Tenant-specific overrides (from feature_flags jsonb)
+        defaults: Default feature flags (see ``DEFAULT_ORG_FEATURES``)
+        overrides: Org-specific overrides (from ``Organization.feature_flags`` jsonb)
 
     Returns:
         Merged feature flags

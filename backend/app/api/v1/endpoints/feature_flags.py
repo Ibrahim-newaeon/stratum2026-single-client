@@ -48,7 +48,7 @@ async def get_org_features_route(
 ):
     """
     Get feature flags for the organization.
-    Returns merged flags (plan defaults + org overrides).
+    Returns merged flags (org defaults + org overrides).
     """
     service = FeatureFlagsService(db)
     features = await service.get_org_features()
@@ -161,7 +161,7 @@ async def owner_reset_org_features(
     db: AsyncSession = Depends(get_async_session),
 ):
     """
-    Reset organization features to plan defaults (owner only).
+    Reset organization features to org defaults (owner only).
     """
     user_role = getattr(request.state, "role", None)
     if user_role != "owner":
@@ -173,7 +173,7 @@ async def owner_reset_org_features(
     return APIResponse(
         success=True,
         data={"features": features},
-        message="Features reset to plan defaults",
+        message="Features reset to org defaults",
     )
 
 
