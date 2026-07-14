@@ -40,9 +40,9 @@ from app.core.websocket import ws_manager
 from app.db.session import async_engine, check_database_health
 from app.middleware.audit import AuditMiddleware
 from app.middleware.csrf import CSRFMiddleware
+from app.middleware.auth_context import AuthContextMiddleware
 from app.middleware.rate_limit import RateLimitMiddleware
 from app.middleware.security import SecurityHeadersMiddleware
-from app.middleware.tenant import TenantMiddleware
 
 # HTTP request metrics come from the prometheus-fastapi-instrumentator wired
 # in create_application() (stratum_http_* series, templated-path labels).
@@ -381,7 +381,7 @@ def create_application() -> FastAPI:
     # -------------------------------------------------------------------------
     # Starlette's add_middleware uses insert(0, ...) so the LAST call
     # becomes the OUTERMOST middleware.  Order below is innermost → outermost.
-    # Execution: CORS → timing → Security → Audit → Tenant → RateLimit
+    # Execution: CORS → timing → Security → Audit → AuthContext → RateLimit
     #            → Gzip → ExceptionMiddleware → Router
     # (HTTP Prometheus metrics are handled by the instrumentator above,
     #  not a hand-rolled middleware.)
@@ -407,8 +407,8 @@ def create_application() -> FastAPI:
     # CSRF protection for state-changing requests
     app.add_middleware(CSRFMiddleware)
 
-    # Tenant extraction and validation
-    app.add_middleware(TenantMiddleware)
+    # Auth context: JWT decode + AUTH-001 token-type/blacklist enforcement
+    app.add_middleware(AuthContextMiddleware)
 
     # Audit logging for state-changing requests
     app.add_middleware(AuditMiddleware)
@@ -445,7 +445,7 @@ def create_application() -> FastAPI:
 
     # CORS — MUST be last add_middleware call so it is the outermost
     # middleware.  This ensures Access-Control-Allow-Origin is set on
-    # ALL responses, including early 401s from TenantMiddleware.
+    # ALL responses, including early 401s from AuthContextMiddleware.
     app.add_middleware(
         CORSMiddleware,
         allow_origins=settings.cors_origins_list,
@@ -455,7 +455,6 @@ def create_application() -> FastAPI:
             "Authorization",
             "Content-Type",
             "X-Request-ID",
-            "X-Tenant-ID",
             "Accept",
             "Origin",
         ],
@@ -775,8 +774,8 @@ def create_application() -> FastAPI:
     # must send "Authorization: Bearer <key>" (see the commented authorization
     # block in infrastructure/prometheus/prometheus.yml). Unset = open, for
     # local/dev scraping only — production MUST set it because /metrics is
-    # tenant-exempt (middleware/tenant.py PUBLIC_ENDPOINTS) and served on the
-    # same port as the public API.
+    # exempt from auth (middleware/auth_context.py PUBLIC_ENDPOINTS) and
+    # served on the same port as the public API.
     METRICS_API_KEY = os.environ.get("METRICS_API_KEY", "")
 
     @app.get("/metrics", include_in_schema=False)
@@ -803,7 +802,7 @@ def create_application() -> FastAPI:
         Clients connect here to receive live notifications.
 
         NOTE: Auth is handled via the Authorization header (processed by
-        TenantMiddleware). Do NOT add a query-string token parameter —
+        AuthContextMiddleware). Do NOT add a query-string token parameter —
         tokens in URLs leak via server logs, Referer headers, and
         browser history.
         """

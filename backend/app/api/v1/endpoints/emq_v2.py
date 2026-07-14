@@ -58,10 +58,12 @@ router = APIRouter(
 # =============================================================================
 def validate_tenant_access(request: Request, tenant_id: int) -> None:
     """Validate that the request has access to the specified tenant."""
-    # Owners operate across all tenants (TenantMiddleware flags them via the
-    # request.state.is_superadmin attribute — name kept until Phase C rewrites
-    # the tenant middleware). They may still carry their own tenant_id, so
-    # check the role explicitly rather than relying on an absent tenant context.
+    # Owners operate across all tenants (previously flagged via the
+    # request.state.is_superadmin attribute set by the now-deleted tenant
+    # middleware — STRAT-SC-001 Task C2 — so this always falls through to
+    # the tenant_id comparison below until C3's endpoint sweep removes it).
+    # They may still carry their own tenant_id, so check the role explicitly
+    # rather than relying on an absent tenant context.
     if getattr(request.state, "is_superadmin", False):
         return
     request_tenant_id = getattr(request.state, "tenant_id", None)

@@ -30,7 +30,8 @@ from sqlalchemy import and_, desc, func, select, text
 from sqlalchemy.exc import SQLAlchemyError
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from app.auth.deps import CurrentUserDep, VerifiedUserDep, require_tenant_id
+from app.auth.deps import CurrentUserDep, VerifiedUserDep
+from app.auth.permissions import Permission, require_permissions
 from app.core.logging import get_logger
 from app.db.session import get_async_session
 from app.models import (
@@ -1900,7 +1901,15 @@ async def get_morning_briefing(
     Aggregates overnight changes, signal health, recommendations,
     and top actions into a single glanceable briefing card.
     """
-    tenant_id = require_tenant_id(user)
+    # NOTE(STRAT-SC-001/C2): the auth/deps.py tenant-id helper this used to
+    # call was deleted with the tenancy layer. Inlined equivalent
+    # fail-closed check; full tenant_id removal from this file is C3 scope.
+    tenant_id = user.tenant_id
+    if not tenant_id:
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Tenant context required",
+        )
     today = date.today()
     yesterday = today - timedelta(days=1)
 
@@ -2177,7 +2186,15 @@ async def get_anomaly_narratives(
     with likely causes and recommended actions, identifies cross-metric
     correlations, and provides an executive summary with portfolio risk level.
     """
-    tenant_id = require_tenant_id(user)
+    # NOTE(STRAT-SC-001/C2): the auth/deps.py tenant-id helper this used to
+    # call was deleted with the tenancy layer. Inlined equivalent
+    # fail-closed check; full tenant_id removal from this file is C3 scope.
+    tenant_id = user.tenant_id
+    if not tenant_id:
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Tenant context required",
+        )
     today = date.today()
 
     # --- Build metric histories from campaign data (last 14 days) ---
@@ -2299,7 +2316,15 @@ async def get_signal_recovery(
     Analyzes EMQ score, event loss rate, API connectivity, and data
     freshness to identify degradation and recommend recovery steps.
     """
-    tenant_id = require_tenant_id(user)
+    # NOTE(STRAT-SC-001/C2): the auth/deps.py tenant-id helper this used to
+    # call was deleted with the tenancy layer. Inlined equivalent
+    # fail-closed check; full tenant_id removal from this file is C3 scope.
+    tenant_id = user.tenant_id
+    if not tenant_id:
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Tenant context required",
+        )
 
     try:
         # ── Gather signal health indicators ──────────────────────────
@@ -2477,7 +2502,15 @@ async def get_predictive_budget(
     to recommend which campaigns to scale, reduce, or pause.
     Only auto-executes when signal health passes AND confidence > 85%.
     """
-    tenant_id = require_tenant_id(user)
+    # NOTE(STRAT-SC-001/C2): the auth/deps.py tenant-id helper this used to
+    # call was deleted with the tenancy layer. Inlined equivalent
+    # fail-closed check; full tenant_id removal from this file is C3 scope.
+    tenant_id = user.tenant_id
+    if not tenant_id:
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Tenant context required",
+        )
 
     try:
         # ── Fetch campaign data ──────────────────────────────────
@@ -2600,7 +2633,15 @@ async def get_ai_report(
     with narrative insights, platform breakdowns, campaign highlights,
     trend analysis, and actionable recommendations.
     """
-    tenant_id = require_tenant_id(user)
+    # NOTE(STRAT-SC-001/C2): the auth/deps.py tenant-id helper this used to
+    # call was deleted with the tenancy layer. Inlined equivalent
+    # fail-closed check; full tenant_id removal from this file is C3 scope.
+    tenant_id = user.tenant_id
+    if not tenant_id:
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Tenant context required",
+        )
 
     try:
         # ── Fetch current period campaigns ─────────────────────────
@@ -2697,7 +2738,15 @@ async def get_churn_prevention(
     recommendations. Scores each campaign across performance, spend trend,
     and engagement dimensions.
     """
-    tenant_id = require_tenant_id(user)
+    # NOTE(STRAT-SC-001/C2): the auth/deps.py tenant-id helper this used to
+    # call was deleted with the tenancy layer. Inlined equivalent
+    # fail-closed check; full tenant_id removal from this file is C3 scope.
+    tenant_id = user.tenant_id
+    if not tenant_id:
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Tenant context required",
+        )
 
     try:
         # ── Fetch campaigns with sync status ───────────────────────
@@ -2806,7 +2855,15 @@ async def get_notifications_prioritized(
     is scored by urgency, impact, and actionability to produce a
     priority-ranked feed with suggested actions.
     """
-    tenant_id = require_tenant_id(user)
+    # NOTE(STRAT-SC-001/C2): the auth/deps.py tenant-id helper this used to
+    # call was deleted with the tenancy layer. Inlined equivalent
+    # fail-closed check; full tenant_id removal from this file is C3 scope.
+    tenant_id = user.tenant_id
+    if not tenant_id:
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Tenant context required",
+        )
 
     try:
         # ── Fetch campaigns ─────────────────────────────────────────
@@ -2952,7 +3009,15 @@ async def get_cross_platform_optimizer(
     connected platforms and recommends optimal budget distribution based on
     the selected strategy (roas_max, balanced, volume_max).
     """
-    tenant_id = require_tenant_id(user)
+    # NOTE(STRAT-SC-001/C2): the auth/deps.py tenant-id helper this used to
+    # call was deleted with the tenancy layer. Inlined equivalent
+    # fail-closed check; full tenant_id removal from this file is C3 scope.
+    tenant_id = user.tenant_id
+    if not tenant_id:
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Tenant context required",
+        )
 
     # Validate strategy
     valid_strategies = ("roas_max", "balanced", "volume_max")
@@ -3055,7 +3120,15 @@ async def get_audience_lifecycle(
     distribution and generates automated audience sync recommendations
     based on stage transitions (anonymous → known → customer → churned).
     """
-    tenant_id = require_tenant_id(user)
+    # NOTE(STRAT-SC-001/C2): the auth/deps.py tenant-id helper this used to
+    # call was deleted with the tenancy layer. Inlined equivalent
+    # fail-closed check; full tenant_id removal from this file is C3 scope.
+    tenant_id = user.tenant_id
+    if not tenant_id:
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Tenant context required",
+        )
 
     try:
         # ── Fetch CDP profiles ──────────────────────────────────────
@@ -3239,7 +3312,15 @@ async def get_goal_tracking(
     ROAS, and conversion targets with pacing status, EOM projections,
     milestones, and AI-generated insights.
     """
-    tenant_id = require_tenant_id(user)
+    # NOTE(STRAT-SC-001/C2): the auth/deps.py tenant-id helper this used to
+    # call was deleted with the tenancy layer. Inlined equivalent
+    # fail-closed check; full tenant_id removal from this file is C3 scope.
+    tenant_id = user.tenant_id
+    if not tenant_id:
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Tenant context required",
+        )
 
     try:
         # ── Fetch campaigns ─────────────────────────────────────────
@@ -4082,4 +4163,408 @@ async def get_nl_filter(
         success=True,
         data=response,
         message="Natural language filter processed",
+    )
+
+
+# =============================================================================
+# Alerts, Settings, Command Center
+# =============================================================================
+# Migrated from endpoints/tenant_dashboard.py (STRAT-SC-001 Task C2 route-merge
+# audit — see task-C2-report.md). That file's /overview and /recommendations
+# routes were dropped as duplicates of this file's own (richer) /overview and
+# /recommendations above; these three route groups were unique to it and are
+# carried across, with require_tenant("tenant_id") replaced by the
+# current-user pattern already used throughout this file, and the deleted
+# Tenant model replaced by the Organization singleton (STRAT-SC-001 Task C1).
+
+
+class AlertItem(BaseModel):
+    """Single alert item."""
+
+    id: int
+    type: str  # anomaly, fatigue, budget, signal, system
+    severity: str  # low, medium, high, critical
+    title: str
+    message: str
+    entity_type: Optional[str] = None
+    entity_id: Optional[str] = None
+    entity_name: Optional[str] = None
+    metric: Optional[str] = None
+    current_value: Optional[float] = None
+    expected_value: Optional[float] = None
+    is_acknowledged: bool = False
+    is_resolved: bool = False
+    acknowledged_by: Optional[int] = None
+    acknowledged_at: Optional[datetime] = None
+    resolved_by: Optional[int] = None
+    resolved_at: Optional[datetime] = None
+    created_at: datetime
+
+
+class OrgSettingsResponse(BaseModel):
+    """Organization settings response."""
+
+    currency: str = "USD"
+    timezone: str = "UTC"
+    date_format: str = "YYYY-MM-DD"
+    fiscal_year_start: int = 1  # Month (1-12)
+
+    alert_roas_drop_pct: float = 20.0
+    alert_cpa_increase_pct: float = 25.0
+    alert_spend_anomaly_threshold: float = 2.5
+    alert_emq_min_score: float = 7.0
+
+    email_notifications: bool = True
+    whatsapp_notifications: bool = False
+    slack_notifications: bool = False
+    notification_frequency: str = "realtime"  # realtime, hourly, daily
+
+    connected_platforms: list[str] = []
+    feature_flags: dict = {}
+
+
+class OrgSettingsUpdate(BaseModel):
+    """Organization settings update request."""
+
+    currency: Optional[str] = None
+    timezone: Optional[str] = None
+    date_format: Optional[str] = None
+    fiscal_year_start: Optional[int] = None
+    alert_roas_drop_pct: Optional[float] = None
+    alert_cpa_increase_pct: Optional[float] = None
+    alert_spend_anomaly_threshold: Optional[float] = None
+    alert_emq_min_score: Optional[float] = None
+    email_notifications: Optional[bool] = None
+    whatsapp_notifications: Optional[bool] = None
+    slack_notifications: Optional[bool] = None
+    notification_frequency: Optional[str] = None
+
+
+@router.get("/alerts", response_model=APIResponse[list[AlertItem]])
+async def get_dashboard_alerts(
+    current_user: CurrentUserDep,
+    db: AsyncSession = Depends(get_async_session),
+    date_str: Optional[str] = Query(None, alias="date"),
+    severity: Optional[str] = Query(None, description="Filter by severity"),
+    type_filter: Optional[str] = Query(
+        None, alias="type", description="Filter by type"
+    ),
+    include_resolved: bool = Query(False),
+    skip: int = Query(0, ge=0),
+    limit: int = Query(50, ge=1, le=200),
+):
+    """
+    Get alerts.
+
+    Filter by severity (low, medium, high, critical) and type (anomaly, fatigue, budget, signal).
+    """
+    # In production, query fact_alerts table
+    # For now, derive alerts from campaign performance thresholds
+    result = await db.execute(
+        select(Campaign).where(Campaign.is_deleted == False)
+    )
+    campaigns = result.scalars().all()
+
+    alerts = []
+    alert_id = 1
+
+    for c in campaigns:
+        roas = c.roas or 0
+        ctr = c.ctr or 0
+
+        if roas > 0 and roas < 1.0:
+            alerts.append(
+                AlertItem(
+                    id=alert_id,
+                    type="budget",
+                    severity="high",
+                    title=f"Low ROAS: {c.name}",
+                    message=f"Campaign ROAS ({roas:.2f}) is below breakeven. Consider pausing or optimizing.",
+                    entity_type="campaign",
+                    entity_id=str(c.id),
+                    entity_name=c.name,
+                    metric="roas",
+                    current_value=roas,
+                    expected_value=None,
+                    is_acknowledged=False,
+                    is_resolved=False,
+                    created_at=datetime.now(UTC) - timedelta(hours=2),
+                )
+            )
+            alert_id += 1
+
+        if ctr > 0 and ctr < 0.5:
+            alerts.append(
+                AlertItem(
+                    id=alert_id,
+                    type="fatigue",
+                    severity="medium",
+                    title=f"Low CTR: {c.name}",
+                    message=f"Click-through rate ({ctr:.2f}%) is below average. Creative may need refresh.",
+                    entity_type="campaign",
+                    entity_id=str(c.id),
+                    entity_name=c.name,
+                    metric="ctr",
+                    current_value=ctr,
+                    expected_value=None,
+                    is_acknowledged=False,
+                    is_resolved=False,
+                    created_at=datetime.now(UTC) - timedelta(hours=5),
+                )
+            )
+            alert_id += 1
+
+    if severity:
+        alerts = [a for a in alerts if a.severity == severity]
+    if type_filter:
+        alerts = [a for a in alerts if a.type == type_filter]
+    if not include_resolved:
+        alerts = [a for a in alerts if not a.is_resolved]
+
+    severity_order = {"critical": 0, "high": 1, "medium": 2, "low": 3}
+    alerts.sort(key=lambda x: (severity_order.get(x.severity, 4), x.created_at))
+
+    return APIResponse(
+        success=True,
+        data=alerts[skip : skip + limit],
+        meta={"total": len(alerts), "skip": skip, "limit": limit},
+    )
+
+
+@router.post("/alerts/{alert_id}/ack", response_model=APIResponse)
+async def acknowledge_alert(
+    alert_id: int,
+    current_user: CurrentUserDep,
+    _: None = Depends(require_permissions([Permission.ALERT_ACKNOWLEDGE])),
+):
+    """Acknowledge an alert (marks as seen, does not resolve it)."""
+    logger.info(f"Alert {alert_id} acknowledged by user {current_user.id}")
+    raise HTTPException(
+        status_code=status.HTTP_501_NOT_IMPLEMENTED,
+        detail="Alert acknowledgement persistence is not yet implemented.",
+    )
+
+
+@router.post("/alerts/{alert_id}/resolve", response_model=APIResponse)
+async def resolve_alert(
+    alert_id: int,
+    current_user: CurrentUserDep,
+    resolution_notes: Optional[str] = Query(None),
+    _: None = Depends(require_permissions([Permission.ALERT_RESOLVE])),
+):
+    """Resolve an alert with optional resolution notes."""
+    logger.info(f"Alert {alert_id} resolved by user {current_user.id}")
+
+    return APIResponse(
+        success=True,
+        message=f"Alert {alert_id} resolved",
+        data={
+            "alert_id": alert_id,
+            "resolved_by": current_user.id,
+            "resolved_at": datetime.now(UTC).isoformat(),
+            "resolution_notes": resolution_notes,
+        },
+    )
+
+
+@router.get("/settings", response_model=APIResponse[OrgSettingsResponse])
+async def get_org_settings(
+    current_user: CurrentUserDep,
+    db: AsyncSession = Depends(get_async_session),
+):
+    """Get organization settings and configuration."""
+    from app.base_models import get_organization
+
+    org = await get_organization(db)
+    org_settings = org.settings or {}
+
+    return APIResponse(
+        success=True,
+        data=OrgSettingsResponse(
+            currency=org_settings.get("currency", "USD"),
+            timezone=org_settings.get("timezone", "UTC"),
+            date_format=org_settings.get("date_format", "YYYY-MM-DD"),
+            fiscal_year_start=org_settings.get("fiscal_year_start", 1),
+            alert_roas_drop_pct=org_settings.get("alert_roas_drop_pct", 20.0),
+            alert_cpa_increase_pct=org_settings.get("alert_cpa_increase_pct", 25.0),
+            alert_spend_anomaly_threshold=org_settings.get(
+                "alert_spend_anomaly_threshold", 2.5
+            ),
+            alert_emq_min_score=org_settings.get("alert_emq_min_score", 7.0),
+            email_notifications=org_settings.get("email_notifications", True),
+            whatsapp_notifications=org_settings.get("whatsapp_notifications", False),
+            slack_notifications=org_settings.get("slack_notifications", False),
+            notification_frequency=org_settings.get(
+                "notification_frequency", "realtime"
+            ),
+            connected_platforms=org_settings.get("connected_platforms", []),
+            feature_flags=org.feature_flags or {},
+        ),
+    )
+
+
+@router.put("/settings", response_model=APIResponse[OrgSettingsResponse])
+async def update_org_settings(
+    update_data: OrgSettingsUpdate,
+    current_user: VerifiedUserDep,
+    db: AsyncSession = Depends(get_async_session),
+):
+    """Update organization settings."""
+    from app.base_models import get_organization
+
+    org = await get_organization(db)
+    org_settings = org.settings or {}
+    update_dict = update_data.model_dump(exclude_unset=True)
+
+    for key, value in update_dict.items():
+        org_settings[key] = value
+
+    org.settings = org_settings
+    await db.commit()
+
+    logger.info(f"Organization settings updated by user {current_user.id}")
+
+    return APIResponse(
+        success=True,
+        data=OrgSettingsResponse(
+            currency=org_settings.get("currency", "USD"),
+            timezone=org_settings.get("timezone", "UTC"),
+            date_format=org_settings.get("date_format", "YYYY-MM-DD"),
+            fiscal_year_start=org_settings.get("fiscal_year_start", 1),
+            alert_roas_drop_pct=org_settings.get("alert_roas_drop_pct", 20.0),
+            alert_cpa_increase_pct=org_settings.get("alert_cpa_increase_pct", 25.0),
+            alert_spend_anomaly_threshold=org_settings.get(
+                "alert_spend_anomaly_threshold", 2.5
+            ),
+            alert_emq_min_score=org_settings.get("alert_emq_min_score", 7.0),
+            email_notifications=org_settings.get("email_notifications", True),
+            whatsapp_notifications=org_settings.get("whatsapp_notifications", False),
+            slack_notifications=org_settings.get("slack_notifications", False),
+            notification_frequency=org_settings.get(
+                "notification_frequency", "realtime"
+            ),
+            connected_platforms=org_settings.get("connected_platforms", []),
+            feature_flags=org.feature_flags or {},
+        ),
+        message="Settings updated successfully",
+    )
+
+
+@router.get("/command-center", response_model=APIResponse)
+async def get_command_center(
+    current_user: CurrentUserDep,
+    db: AsyncSession = Depends(get_async_session),
+    action_filter: Optional[str] = Query(None, description="scale, watch, fix, pause"),
+    platform: Optional[str] = Query(None),
+    limit: int = Query(50, ge=1, le=200),
+):
+    """
+    Get Command Center data with scaling scores and recommended actions.
+
+    Returns campaigns grouped by recommended action (scale, watch, fix, pause).
+    """
+    from app.analytics.logic.scoring import scaling_score
+    from app.analytics.logic.types import (
+        BaselineMetrics,
+        EntityLevel,
+        EntityMetrics,
+    )
+    from app.analytics.logic.types import Platform as PlatformEnum
+
+    campaigns_query = select(Campaign).where(Campaign.is_deleted == False)
+    if platform:
+        campaigns_query = campaigns_query.where(Campaign.platform == platform)
+
+    result = await db.execute(campaigns_query)
+    campaigns = result.scalars().all()
+
+    command_center_data = []
+
+    for c in campaigns:
+        spend = c.total_spend_cents / 100 if c.total_spend_cents else 0
+        revenue = c.revenue_cents / 100 if c.revenue_cents else 0
+        impressions = c.impressions or 0
+        clicks = c.clicks or 0
+        conversions = c.conversions or 0
+
+        entity = EntityMetrics(
+            entity_id=str(c.id),
+            entity_name=c.name,
+            entity_level=EntityLevel.CAMPAIGN,
+            platform=PlatformEnum(c.platform.value if c.platform else "meta"),
+            date=datetime.now(UTC),
+            spend=spend,
+            impressions=impressions,
+            clicks=clicks,
+            conversions=conversions,
+            revenue=revenue,
+            ctr=c.ctr or 0,
+            cvr=(conversions / max(clicks, 1) * 100) if clicks > 0 else 0,
+            cpa=(spend / max(conversions, 1)) if conversions > 0 else 0,
+            roas=c.roas or 0,
+        )
+
+        baseline = BaselineMetrics(
+            spend=spend * 0.9,
+            impressions=int(impressions * 0.95),
+            clicks=int(clicks * 0.95),
+            conversions=int(conversions * 0.95),
+            revenue=revenue * 0.9,
+            ctr=c.ctr * 0.95 if c.ctr else 0,
+            cvr=0,
+            cpa=0,
+            roas=c.roas * 0.9 if c.roas else 0,
+        )
+
+        score_result = scaling_score(entity, baseline)
+
+        if score_result.score >= 0.25:
+            action = "scale"
+        elif score_result.score <= -0.25:
+            action = "fix"
+        else:
+            action = "watch"
+
+        if action_filter and action != action_filter:
+            continue
+
+        command_center_data.append(
+            {
+                "campaign_id": c.id,
+                "campaign_name": c.name,
+                "platform": c.platform.value if c.platform else "unknown",
+                "status": c.status.value if c.status else "unknown",
+                "spend": round(spend, 2),
+                "revenue": round(revenue, 2),
+                "roas": round(c.roas or 0, 2),
+                "cpa": round(
+                    (spend / max(conversions, 1)) if conversions > 0 else 0, 2
+                ),
+                "ctr": round(c.ctr or 0, 2),
+                "conversions": conversions,
+                "scaling_score": round(score_result.score, 2),
+                "action": action,
+                "signals": {
+                    "roas_momentum": round(score_result.roas_delta, 4),
+                    "cpa_delta": round(score_result.cpa_delta, 4),
+                    "cvr_delta": round(score_result.cvr_delta, 4),
+                    "ctr_delta": round(score_result.ctr_delta, 4),
+                },
+                "recommendations": score_result.recommendations,
+            }
+        )
+
+    command_center_data.sort(key=lambda x: abs(x["scaling_score"]), reverse=True)
+
+    return APIResponse(
+        success=True,
+        data={
+            "items": command_center_data[:limit],
+            "summary": {
+                "total": len(command_center_data),
+                "scale": sum(1 for x in command_center_data if x["action"] == "scale"),
+                "watch": sum(1 for x in command_center_data if x["action"] == "watch"),
+                "fix": sum(1 for x in command_center_data if x["action"] == "fix"),
+            },
+        },
     )

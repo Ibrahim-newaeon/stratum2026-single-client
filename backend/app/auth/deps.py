@@ -245,28 +245,24 @@ def require_owner():
     return require_role(UserRole.OWNER)
 
 
-def require_tenant_id(user: CurrentUser) -> int:
-    """
-    Return the authenticated user's tenant_id, failing closed.
+async def get_tenant_id(
+    current_user: Annotated[CurrentUser, Depends(get_current_user)],
+) -> int:
+    """FastAPI dependency: the authenticated user's tenant_id, or 401.
 
-    Use this instead of ``getattr(user, "tenant_id", None) or <default>``:
-    a missing tenant context must raise 401, never silently resolve to a
-    default tenant (which would leak that tenant's data across accounts).
+    NOTE(STRAT-SC-001/C2): this used to delegate to a small fail-closed
+    tenant-id helper in this module, deleted along with the rest of the
+    tenancy layer (app/middleware/tenant.py, app/tenancy/). Body inlined
+    here, failing closed exactly as before. Full removal of tenant_id from
+    CurrentUser/callers is C3 scope.
     """
-    tenant_id = getattr(user, "tenant_id", None)
+    tenant_id = getattr(current_user, "tenant_id", None)
     if not tenant_id:
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
             detail="Tenant context required",
         )
     return tenant_id
-
-
-async def get_tenant_id(
-    current_user: Annotated[CurrentUser, Depends(get_current_user)],
-) -> int:
-    """FastAPI dependency: the authenticated user's tenant_id, or 401."""
-    return require_tenant_id(current_user)
 
 
 # =============================================================================

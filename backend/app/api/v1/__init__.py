@@ -65,8 +65,6 @@ from app.api.v1.endpoints import (  # Previously unregistered endpoints; Gap end
     sendgrid_webhook,
     simulator,
     slack,
-    tenant_dashboard,
-    tenants,
     trust_layer,
     users,
     webhooks,
@@ -89,13 +87,6 @@ api_router.include_router(
     users.router,
     prefix="/users",
     tags=["Users"],
-)
-
-# Tenant management
-api_router.include_router(
-    tenants.router,
-    prefix="/tenants",
-    tags=["Tenants"],
 )
 
 # Campaigns (Module B)
@@ -229,12 +220,6 @@ api_router.include_router(
     tags=["Dashboard"],
 )
 
-# Tenant Dashboard (Tenant-scoped analytics and settings)
-api_router.include_router(
-    tenant_dashboard.router,
-    prefix="/tenant",
-    tags=["Tenant Dashboard"],
-)
 
 # Owner Analytics (Platform-wide analytics)
 api_router.include_router(
@@ -244,17 +229,17 @@ api_router.include_router(
 )
 
 # Autopilot (Automated campaign optimization)
-# Note: autopilot.router already declares prefix="/tenant/{tenant_id}/autopilot",
-# so it must be mounted WITHOUT an extra prefix (matching autopilot_enforcement
-# below). Adding "/autopilot" here double-prefixed every route and 404'd the
-# frontend, which calls /tenant/{id}/autopilot/*.
+# Note (STRAT-SC-001/C2): autopilot.router already declares prefix="/autopilot"
+# (de-tenanted from "/tenant/{tenant_id}/autopilot"), so it must be mounted
+# WITHOUT an extra prefix (matching autopilot_enforcement below).
 api_router.include_router(
     autopilot.router,
     tags=["Autopilot"],
 )
 
 # Autopilot Enforcement (Budget/ROAS restrictions)
-# Note: autopilot_enforcement.router already has prefix="/tenant/{tenant_id}/autopilot/enforcement"
+# Note (STRAT-SC-001/C2): autopilot_enforcement.router already has prefix
+# "/autopilot/enforcement" (de-tenanted from "/tenant/{tenant_id}/...")
 api_router.include_router(
     autopilot_enforcement.router,
     tags=["Autopilot Enforcement"],
@@ -268,7 +253,9 @@ api_router.include_router(
 )
 
 # Feature Flags (Feature toggles and rollouts)
-# Note: feature_flags.router already has /tenant/{tenant_id} and /console prefixes
+# Note (STRAT-SC-001/C2): feature_flags.tenant_router is now un-prefixed
+# (de-tenanted from "/tenant/{tenant_id}"); feature_flags.owner_router keeps
+# its "/console" prefix (renamed from "/superadmin" in B1).
 api_router.include_router(
     feature_flags.router,
     tags=["Feature Flags"],

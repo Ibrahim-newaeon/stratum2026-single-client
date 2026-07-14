@@ -28,8 +28,12 @@ from app.autopilot.enforcer import (
 from app.db.session import get_async_session
 from app.schemas.response import APIResponse
 
+# NOTE(STRAT-SC-001/C2): de-tenanted from "/tenant/{tenant_id}/autopilot/enforcement"
+# — see task-C2-report.md. Route bodies still take/use tenant_id internally
+# (full removal is the C3 endpoint sweep); with no {tenant_id} path segment
+# left in the prefix, any such parameter binds as a query param instead.
 router = APIRouter(
-    prefix="/tenant/{tenant_id}/autopilot/enforcement", tags=["autopilot-enforcement"]
+    prefix="/autopilot/enforcement", tags=["autopilot-enforcement"]
 )
 
 

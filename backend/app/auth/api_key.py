@@ -89,10 +89,11 @@ async def get_api_key_principal(
         logger.warning("api_key_last_used_update_failed", error=str(exc))
 
     # Populate request state for downstream middleware / audit logging.
-    # /programmatic/* bypasses TenantMiddleware (it authenticates by API key, not
-    # JWT), so this dependency is the single place tenant/role context is set for
-    # those requests — mirror the fields TenantMiddleware would otherwise set so
-    # shared services reading request.state.role / is_superadmin don't trip.
+    # /programmatic/* bypasses AuthContextMiddleware (it authenticates by API
+    # key, not JWT), so this dependency is the single place tenant/role
+    # context is set for those requests — mirror the fields the old tenant
+    # middleware used to set so shared services reading request.state.role /
+    # is_superadmin don't trip.
     request.state.tenant_id = record.tenant_id
     request.state.user_id = record.user_id
     request.state.role = "api_key"

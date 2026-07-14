@@ -37,7 +37,11 @@ logger = get_logger(__name__)
 # Tenant Routes
 # =============================================================================
 
-tenant_router = APIRouter(prefix="/tenant/{tenant_id}", tags=["feature-flags"])
+# NOTE(STRAT-SC-001/C2): de-tenanted from "/tenant/{tenant_id}" — see
+# task-C2-report.md. Route bodies still take/use tenant_id internally (full
+# removal is the C3 endpoint sweep); with no {tenant_id} path segment left in
+# the prefix, the tenant_id function param below binds as a query param.
+tenant_router = APIRouter(prefix="", tags=["feature-flags"])
 
 
 @tenant_router.get("/features", response_model=APIResponse[Dict[str, Any]])

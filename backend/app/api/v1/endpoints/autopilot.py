@@ -24,7 +24,11 @@ from app.schemas.response import APIResponse
 
 logger = logging.getLogger(__name__)
 
-router = APIRouter(prefix="/tenant/{tenant_id}/autopilot", tags=["autopilot"])
+# NOTE(STRAT-SC-001/C2): de-tenanted from "/tenant/{tenant_id}/autopilot" — see
+# task-C2-report.md. Route bodies still take/use tenant_id internally
+# (full removal is the C3 endpoint sweep); with no {tenant_id} path segment
+# left in the prefix, any such parameter binds as a query param instead.
+router = APIRouter(prefix="/autopilot", tags=["autopilot"])
 
 
 def _dispatch_single_action(action_id: str, user_id: Optional[int]) -> None:
@@ -183,7 +187,7 @@ def _approver_info(action) -> Optional[ApproverInfo]:
     if approver is None:  # user row deleted (FK is SET NULL on hard delete)
         return None
 
-    # Cross-tenant approver (only reachable via the owner X-Tenant-ID
+    # Cross-tenant approver (only reachable via the owner cross-tenant
     # override): never serialize another tenant's user PII to this tenant.
     # Label it as platform staff instead of exposing name/department.
     if approver.tenant_id != action.tenant_id:

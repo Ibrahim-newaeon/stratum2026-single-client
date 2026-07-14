@@ -1,9 +1,18 @@
 # =============================================================================
-# Stratum AI - Multi-Tenant Middleware
+# Stratum AI - Auth Context Middleware
 # =============================================================================
 """
-Middleware that extracts and validates tenant context from requests.
-Implements Row-Level Security at the application level.
+Middleware that decodes the request's JWT (if any) and establishes the
+authenticated-user context for downstream handlers.
+
+STRAT-SC-001 (single-client conversion, Task C2): this replaces
+TenantMiddleware. All tenant extraction (JWT tenant_id claim, X-Tenant-ID
+header, subdomain lookup, request.state.tenant_id/is_superadmin) is gone —
+there is exactly one organization now, so there is nothing to disambiguate.
+What's preserved verbatim from TenantMiddleware.dispatch(): the
+PUBLIC_ENDPOINTS allowlist + _is_public_endpoint prefix rules, the JWT decode,
+and the AUTH-001 token-type/blacklist enforcement (failing OPEN if Redis is
+down, but still rejecting non-"access" token types regardless of Redis).
 """
 
 import re
@@ -21,7 +30,7 @@ from app.core.logging import get_logger
 
 logger = get_logger(__name__)
 
-# Endpoints that don't require tenant context
+# Endpoints that don't require auth context
 PUBLIC_ENDPOINTS = {
     "/health",
     "/health/ready",
@@ -34,7 +43,7 @@ PUBLIC_ENDPOINTS = {
     "/openapi.json",
     "/api/v1/auth/login",
     # MFA second step: the client only holds the challenge mfa_token from the
-    # login response body (no tenant-scoped bearer yet) — the endpoint
+    # login response body (no bearer token yet) — the endpoint
     # self-authenticates by decoding that token.
     "/api/v1/auth/login/mfa",
     "/api/v1/auth/register",
@@ -51,23 +60,18 @@ PUBLIC_ENDPOINTS = {
 }
 
 
-class TenantMiddleware(BaseHTTPMiddleware):
+class AuthContextMiddleware(BaseHTTPMiddleware):
     """
-    Middleware that ensures tenant isolation for all requests.
+    Middleware that decodes the JWT (if present) and enforces token validity.
 
-    Extracts tenant_id from:
-    1. JWT token claims
-    2. X-Tenant-ID header (for API key auth)
-    3. Subdomain (e.g., acme.stratum.ai)
-
-    Sets request.state.tenant_id for downstream handlers.
+    Sets request.state.user_id/role/cms_role for downstream handlers.
     """
 
     def __init__(self, app: ASGIApp):
         super().__init__(app)
 
     async def dispatch(self, request: Request, call_next: Callable) -> Response:
-        """Extract and validate tenant context."""
+        """Decode the JWT once, enforce AUTH-001, and set the user context."""
 
         # Always allow CORS preflight requests through (they carry no auth)
         if request.method == "OPTIONS":
@@ -84,7 +88,7 @@ class TenantMiddleware(BaseHTTPMiddleware):
         # *access* token and must not have been revoked (logout / password
         # reset / forced sign-out add the token's jti to the Redis blacklist).
         # Without this, a revoked or refresh token sails through until it
-        # naturally expires. Reject before any tenant context is established.
+        # naturally expires.
         if jwt_payload is not None:
             if jwt_payload.get("type") != "access":
                 return self._reject(
@@ -99,8 +103,6 @@ class TenantMiddleware(BaseHTTPMiddleware):
 
         request.state._jwt_payload = jwt_payload
 
-        # Try to extract tenant context
-        tenant_id = await self._extract_tenant_id(request)
         user_id = jwt_payload.get("sub") if jwt_payload else None
         if user_id is not None:
             try:
@@ -110,41 +112,15 @@ class TenantMiddleware(BaseHTTPMiddleware):
         role = jwt_payload.get("role") if jwt_payload else None
         cms_role = jwt_payload.get("cms_role") if jwt_payload else None
 
-        if tenant_id is None:
-            # Owners operate across all tenants and may not carry a
-            # tenant_id in their JWT.  Let them through so platform-wide
-            # endpoints (e.g. /console/*, /emq/benchmarks) can be reached.
-            # NOTE(B1/STRAT-SC-001): this file is otherwise on the Phase-C
-            # skip list (deleted/rewritten wholesale in C2) — only the role
-            # string literal is updated here, not renamed, because the
-            # global-scope bypass must behave identically after the
-            # superadmin->owner rename (brief requirement), and the rest of
-            # the unit suite depends on it functioning for owner-role tokens.
-            if role == "owner":
-                logger.debug("owner_bypass_tenant_check", user_id=user_id)
-            else:
-                return JSONResponse(
-                    status_code=status.HTTP_401_UNAUTHORIZED,
-                    content={
-                        "success": False,
-                        "error": "Tenant context required",
-                        "message": "Please provide a valid authentication token",
-                    },
-                )
-
-        # Set tenant, user, and role context on request state
-        request.state.tenant_id = tenant_id
+        # Set user and role context on request state
         request.state.user_id = user_id
         request.state.role = role or "analyst"  # Default role if not in token
-        request.state.is_superadmin = role == "owner"
         request.state.cms_role = cms_role  # CMS role (None if not a CMS user)
 
         # Bind to structured logging context
         import structlog
 
-        structlog.contextvars.bind_contextvars(
-            tenant_id=tenant_id, user_id=user_id, role=role
-        )
+        structlog.contextvars.bind_contextvars(user_id=user_id, role=role)
 
         return await call_next(request)
 
@@ -195,14 +171,14 @@ class TenantMiddleware(BaseHTTPMiddleware):
             return False
 
     def _is_public_endpoint(self, path: str) -> bool:
-        """Check if the endpoint is public (no tenant context needed)."""
+        """Check if the endpoint is public (no auth context needed)."""
         if path in PUBLIC_ENDPOINTS:
             return True
         if path.startswith("/docs") or path.startswith("/redoc"):
             return True
         # OAuth provider callbacks arrive as browser redirects from the ad
-        # platform with no JWT/X-Tenant-ID header; tenant context comes from
-        # the Redis-stored state token the endpoint validates (CSRF check).
+        # platform with no JWT header; auth comes from the Redis-stored
+        # state token the endpoint validates (CSRF check).
         if re.fullmatch(r"/api/v1/oauth/[^/]+/callback", path):
             return True
         # Allow webhook endpoints (they authenticate via signature/verify-token, not JWT)
@@ -216,123 +192,15 @@ class TenantMiddleware(BaseHTTPMiddleware):
         if path.startswith("/api/v1/stripe/webhooks/"):
             return True
         # Programmatic API — authenticates via the X-API-Key header, not a JWT.
-        # The api-key dependency (get_api_key_principal) validates the key and
-        # sets request.state.tenant_id from the key's tenant, so JWT-based tenant
-        # extraction here would only ever 401 a legitimate key before auth runs.
+        # The api-key dependency (get_api_key_principal) validates the key.
         # Every /programmatic/* route MUST depend on APIKeyPrincipalDep /
-        # require_api_key_scope so tenant context is always established downstream.
+        # require_api_key_scope so auth context is always established downstream.
         if path.startswith("/api/v1/programmatic/"):
             return True
-        # CMS public endpoints — content is global, not tenant-scoped
+        # CMS public endpoints — content is global, read-only
         if path.startswith("/api/v1/cms/") and "/admin/" not in path:
             return True
         # Landing CMS — public, read-only published marketing content
         if path.startswith("/api/v1/landing-cms"):
             return True
         return False
-
-    async def _extract_tenant_id(self, request: Request) -> Optional[int]:
-        """
-        Extract tenant_id from various sources.
-
-        Priority:
-        1. JWT token claims
-        2. X-Tenant-ID header
-        3. Subdomain
-        """
-        # Try JWT token first
-        tenant_id = await self._extract_from_jwt(request)
-        if tenant_id:
-            return tenant_id
-
-        # Try X-Tenant-ID header ONLY when a VALID JWT token is present.
-        # SECURITY: Never trust X-Tenant-ID without a successfully decoded JWT,
-        # as an unauthenticated client could spoof any tenant.
-        tenant_header = request.headers.get("X-Tenant-ID")
-        jwt_payload = getattr(request.state, "_jwt_payload", None)
-        if tenant_header and jwt_payload is not None:
-            try:
-                header_tenant_id = int(tenant_header)
-                jwt_tenant_id = jwt_payload.get("tenant_id")
-                # Allow if the header tenant matches the JWT tenant claim,
-                # or if the user is an owner (cross-tenant access).
-                if jwt_tenant_id and header_tenant_id == jwt_tenant_id:
-                    return header_tenant_id
-                if jwt_payload.get("role") == "owner":
-                    return header_tenant_id
-            except ValueError:
-                pass
-
-        # Try subdomain
-        return self._extract_from_subdomain(request)
-
-    async def _extract_from_jwt(self, request: Request) -> Optional[int]:
-        """Extract tenant_id from the cached JWT payload."""
-        payload = getattr(request.state, "_jwt_payload", None)
-        if payload is None:
-            return None
-        return payload.get("tenant_id")
-
-    # _extract_user_id, _extract_role, _extract_cms_role are now handled
-    # inline in dispatch() using the cached JWT payload from _decode_jwt_once().
-
-    def _extract_from_subdomain(self, request: Request) -> Optional[int]:
-        """
-        Extract tenant from subdomain.
-
-        Example: acme.stratum.ai -> lookup tenant by slug 'acme'
-        """
-        host = request.headers.get("Host", "")
-        parts = host.split(".")
-
-        # Expecting format: {tenant}.stratum.ai or {tenant}.localhost
-        if len(parts) >= 2:
-            subdomain = parts[0]
-            if subdomain not in {"www", "api", "app"}:
-                # In production, this would lookup the tenant by slug
-                # For now, we'll return None and rely on JWT
-                logger.debug("subdomain_detected", subdomain=subdomain)
-
-        return None
-
-
-class TenantContext:
-    """
-    Context manager for tenant-scoped database operations.
-    Ensures all queries are filtered by tenant_id.
-    """
-
-    def __init__(self, tenant_id: int):
-        self.tenant_id = tenant_id
-
-    def filter_query(self, query, model):
-        """Add tenant filter to a SQLAlchemy query."""
-        if hasattr(model, "tenant_id"):
-            return query.filter(model.tenant_id == self.tenant_id)
-        return query
-
-    def set_tenant_on_model(self, instance):
-        """Set tenant_id on a model instance before insert."""
-        if hasattr(instance, "tenant_id"):
-            instance.tenant_id = self.tenant_id
-        return instance
-
-
-def get_tenant_context(request: Request) -> TenantContext:
-    """
-    FastAPI dependency to get the current tenant context.
-
-    Usage:
-        @router.get("/items")
-        async def get_items(tenant: TenantContext = Depends(get_tenant_context)):
-            ...
-    """
-    tenant_id = getattr(request.state, "tenant_id", None)
-    if tenant_id is None:
-        from fastapi import HTTPException
-
-        raise HTTPException(
-            status_code=status.HTTP_401_UNAUTHORIZED,
-            detail="Tenant context not found",
-        )
-    return TenantContext(tenant_id)
