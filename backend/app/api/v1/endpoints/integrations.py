@@ -961,6 +961,10 @@ async def get_writeback_history(
     "/hubspot/writeback/config",
     response_model=APIResponse[Dict[str, Any]],
     summary="Update writeback config",
+    # SECURITY (STRAT-SC-001/E1 router-auth audit): this route mutates CRM
+    # writeback config and was missing the owner-only gate its sibling
+    # /hubspot/* routes all carry — closing the fail-open gap.
+    dependencies=_owner_deps,
 )
 async def update_writeback_config(
     request: Request,

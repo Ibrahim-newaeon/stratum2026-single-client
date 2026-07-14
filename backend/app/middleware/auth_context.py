@@ -184,12 +184,13 @@ class AuthContextMiddleware(BaseHTTPMiddleware):
         # Allow webhook endpoints (they authenticate via signature/verify-token, not JWT)
         # Platform webhooks live under /api/v1/<platform>/webhooks/, generic ones under
         # /api/v1/webhooks/. Each handler is responsible for verifying the request
-        # (HMAC signature for Meta/Stripe/SendGrid, hub.verify_token for WhatsApp).
+        # (HMAC signature for Meta/SendGrid, hub.verify_token for WhatsApp).
+        # STRAT-SC-001 (E1): a prior allowance here for a since-removed billing
+        # provider's webhook path was dead code (no such router is mounted) and
+        # has been dropped.
         if path.startswith("/api/v1/webhooks/"):
             return True
         if path.startswith("/api/v1/whatsapp/webhooks/"):
-            return True
-        if path.startswith("/api/v1/stripe/webhooks/"):
             return True
         # Programmatic API — authenticates via the X-API-Key header, not a JWT.
         # The api-key dependency (get_api_key_principal) validates the key.

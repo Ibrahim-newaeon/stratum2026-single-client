@@ -19,6 +19,55 @@ env:
 
 jobs:
   # ===========================================================================
+  # Removed-Scope Residue Gate (STRAT-SC-001 single-client conversion)
+  # ===========================================================================
+  # Guards against tenant_id / X-Tenant-ID / Stripe / tenant-namespaced-key
+  # residue creeping back into the source tree now that multi-tenancy and
+  # billing have been fully removed.
+  residue-gate:
+    name: Removed-scope residue gate
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+      - name: No tenant/stripe residue in source
+        run: |
+          set -e
+          # Historical artifacts (docs, datasets, audit reports, changelogs) are
+          # excluded — they record what USED to exist, not current behavior.
+          # Two narrow per-file exclusions (STRAT-SC-001/D3-review handoff),
+          # both coordinator-reviewed and pre-ruled — never widen these beyond
+          # the exact files below:
+          #   - frontend/src/api/client.test.ts: the negative test asserting
+          #     X-Tenant-ID is ABSENT necessarily names the header string.
+          #   - frontend/src/components/routing/LegacyTenantRedirect.(tsx|test.tsx):
+          #     the legacy-bookmark redirect's whole job is parsing the old
+          #     /app/${tenantId} path shape to bounce it somewhere valid.
+          # Additional narrow exclusions found + documented at E1 time (all
+          # tooling/vendor/dead-code, not application source):
+          #   - .github/workflows/ci.yml: this step's own detection literals
+          #     ('tenant_id', 'X-Tenant-ID', 'stripe') otherwise self-match.
+          #   - .claude/hooks/rule-check.sh: a dev-tooling lint hook whose job
+          #     is to WARN when tenant_id reappears in Pydantic schemas — it
+          #     necessarily contains the string it's guarding against.
+          #   - .secrets.baseline: detect-secrets' auto-generated plugin list
+          #     always includes "StripeDetector" (a stock plugin), regardless
+          #     of whether the app integrates Stripe.
+          #   - .scratch: a vendored third-party reference bundle (external
+          #     landing-page export, "bombon"), not Stratum application source.
+          #   - test.css: a vendored/misplaced WordPress core stylesheet at
+          #     repo root; its `.is-style-stripes` table classes false-positive
+          #     on the "stripe" substring. Unrelated to payments.
+          #   - backend/alembic: orphaned pre-conversion Alembic chain —
+          #     alembic.ini's script_location is "migrations", not "alembic",
+          #     confirmed unreferenced at runtime. Flagged for deletion in a
+          #     follow-up task rather than excluded permanently.
+          EXCL=':!*.md :!*.html :!*.txt :!*.xlsx :!*.zip :!*.csv :!datasets :!audit :!superads-dashboard :!docs :!backend/docs :!chat.md :!frontend/src/api/client.test.ts :!frontend/src/components/routing/LegacyTenantRedirect.tsx :!frontend/src/components/routing/LegacyTenantRedirect.test.tsx :!.github/workflows/ci.yml :!.claude/hooks/rule-check.sh :!.secrets.baseline :!.scratch :!test.css :!backend/alembic'
+          if git grep -I -iE 'tenant_id|X-Tenant-ID|stripe' -- . $EXCL; then
+            echo '::error::removed-scope residue found'; exit 1; fi
+          if git grep -I -nE '\{tenant' -- . $EXCL; then
+            echo '::error::tenant-namespaced key builder found'; exit 1; fi
+
+  # ===========================================================================
   # Backend Quality Gates (lint / format / imports / types)
   # ===========================================================================
   # Every gate in the backend jobs runs with continue-on-error and a final
@@ -171,7 +220,7 @@ jobs:
         continue-on-error: true
         run: |
           # Integration tests run on a single session-scoped event loop: the
-          # FastAPI test app uses Starlette BaseHTTPMiddleware (TenantMiddleware),
+          # FastAPI test app uses Starlette BaseHTTPMiddleware (AuthContextMiddleware),
           # which under pytest-asyncio's default per-test loop yields
           # "Future attached to a different loop" / "Event loop is closed".
           # Scoped here (not in pytest.ini) so the unit suite keeps its loops.
@@ -491,19 +540,21 @@ jobs:
   gate:
     name: Release Gate
     runs-on: ubuntu-latest
-    needs: [backend-quality, backend-tests, backend-security, frontend, security, secrets]
+    needs: [residue-gate, backend-quality, backend-tests, backend-security, frontend, security, secrets]
     if: always()
 
     steps:
       - name: Check all required jobs passed
         run: |
+          echo "Residue Gate: ${{ needs.residue-gate.result }}"
           echo "Backend Quality: ${{ needs.backend-quality.result }}"
           echo "Backend Tests: ${{ needs.backend-tests.result }}"
           echo "Backend Security: ${{ needs.backend-security.result }}"
           echo "Frontend: ${{ needs.frontend.result }}"
           echo "Security: ${{ needs.security.result }}"
           echo "Secrets: ${{ needs.secrets.result }}"
-          if [[ "${{ needs.backend-quality.result }}" != "success" ]] || \
+          if [[ "${{ needs.residue-gate.result }}" != "success" ]] || \
+             [[ "${{ needs.backend-quality.result }}" != "success" ]] || \
              [[ "${{ needs.backend-tests.result }}" != "success" ]] || \
              [[ "${{ needs.backend-security.result }}" != "success" ]] || \
              [[ "${{ needs.frontend.result }}" != "success" ]] || \

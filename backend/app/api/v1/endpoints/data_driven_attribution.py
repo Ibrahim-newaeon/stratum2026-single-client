@@ -520,6 +520,7 @@ async def _get_owned_model(
 
 @router.get("/models")
 async def list_trained_models(
+    current_user: CurrentUser = Depends(get_current_user),
     model_type: Optional[str] = Query(None),
     is_active: Optional[bool] = Query(None),
     status: Optional[str] = Query(None),
@@ -547,6 +548,7 @@ async def list_trained_models(
 @router.get("/models/{model_id}")
 async def get_trained_model(
     model_id: UUID,
+    current_user: CurrentUser = Depends(get_current_user),
     db: AsyncSession = Depends(get_db),
 ):
     """Get a trained model with its full weights/effects (its 'results')."""
@@ -557,6 +559,7 @@ async def get_trained_model(
 @router.post("/models/{model_id}/activate")
 async def activate_trained_model(
     model_id: UUID,
+    current_user: CurrentUser = Depends(get_current_user),
     db: AsyncSession = Depends(get_db),
 ):
     """Mark a model as the active one for its (model_type, channel_type)."""
@@ -583,6 +586,7 @@ async def activate_trained_model(
 @router.post("/models/{model_id}/archive")
 async def archive_trained_model(
     model_id: UUID,
+    current_user: CurrentUser = Depends(get_current_user),
     db: AsyncSession = Depends(get_db),
 ):
     """Archive a model, removing it from active use."""
@@ -596,6 +600,7 @@ async def archive_trained_model(
 
 @router.get("/training-runs")
 async def list_training_runs(
+    current_user: CurrentUser = Depends(get_current_user),
     limit: int = Query(50, ge=1, le=200),
     db: AsyncSession = Depends(get_db),
 ):
