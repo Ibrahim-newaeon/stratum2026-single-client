@@ -88,12 +88,6 @@ class PlatformAudience(Base, TimestampMixin):
     __tablename__ = "platform_audiences"
 
     id = Column(UUID(as_uuid=True), primary_key=True, default=uuid4)
-    tenant_id = Column(
-        Integer,
-        ForeignKey("tenants.id", ondelete="CASCADE"),
-        nullable=False,
-        index=True,
-    )
 
     # Link to CDP segment
     segment_id = Column(
@@ -146,12 +140,11 @@ class PlatformAudience(Base, TimestampMixin):
     )
 
     __table_args__ = (
-        Index("ix_platform_audiences_tenant", "tenant_id"),
         Index("ix_platform_audiences_segment", "segment_id"),
-        Index("ix_platform_audiences_platform", "tenant_id", "platform"),
-        Index("ix_platform_audiences_account", "tenant_id", "ad_account_id"),
+        Index("ix_platform_audiences_platform", "platform"),
+        Index("ix_platform_audiences_account", "ad_account_id"),
+        # was tenant-scoped; now global
         UniqueConstraint(
-            "tenant_id",
             "segment_id",
             "platform",
             "ad_account_id",
@@ -177,12 +170,6 @@ class AudienceSyncJob(Base, TimestampMixin):
     __tablename__ = "audience_sync_jobs"
 
     id = Column(UUID(as_uuid=True), primary_key=True, default=uuid4)
-    tenant_id = Column(
-        Integer,
-        ForeignKey("tenants.id", ondelete="CASCADE"),
-        nullable=False,
-        index=True,
-    )
 
     # Link to platform audience
     platform_audience_id = Column(
@@ -225,9 +212,8 @@ class AudienceSyncJob(Base, TimestampMixin):
     platform_audience = relationship("PlatformAudience", back_populates="sync_jobs")
 
     __table_args__ = (
-        Index("ix_audience_sync_jobs_tenant", "tenant_id"),
         Index("ix_audience_sync_jobs_audience", "platform_audience_id"),
-        Index("ix_audience_sync_jobs_status", "tenant_id", "status"),
+        Index("ix_audience_sync_jobs_status", "status"),
         Index("ix_audience_sync_jobs_created", "created_at"),
     )
 
@@ -253,12 +239,6 @@ class AudienceSyncCredential(Base, TimestampMixin):
     __tablename__ = "audience_sync_credentials"
 
     id = Column(UUID(as_uuid=True), primary_key=True, default=uuid4)
-    tenant_id = Column(
-        Integer,
-        ForeignKey("tenants.id", ondelete="CASCADE"),
-        nullable=False,
-        index=True,
-    )
 
     # Platform and account
     platform = Column(String(50), nullable=False)
@@ -339,13 +319,12 @@ class AudienceSyncCredential(Base, TimestampMixin):
     config = Column(JSONB, nullable=False, default=dict)
 
     __table_args__ = (
-        Index("ix_audience_sync_creds_tenant", "tenant_id"),
-        Index("ix_audience_sync_creds_platform", "tenant_id", "platform"),
+        Index("ix_audience_sync_creds_platform", "platform"),
+        # was tenant-scoped; now global
         UniqueConstraint(
-            "tenant_id",
             "platform",
             "ad_account_id",
-            name="uq_audience_sync_creds_tenant_platform_account",
+            name="uq_audience_sync_creds_platform_account",
         ),
     )
 

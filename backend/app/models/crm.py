@@ -90,19 +90,13 @@ class AttributionModel(str, enum.Enum):
 
 class CRMConnection(Base):
     """
-    OAuth connections to CRM providers (per tenant).
+    OAuth connections to CRM providers.
     Stores encrypted tokens for secure API access.
     """
 
     __tablename__ = "crm_connections"
 
     id = Column(UUID(as_uuid=True), primary_key=True, default=uuid4)
-    tenant_id = Column(
-        Integer,
-        ForeignKey("tenants.id", ondelete="CASCADE"),
-        nullable=False,
-        index=True,
-    )
 
     # Provider details
     provider = Column(StrEnumType(CRMProvider), nullable=False)
@@ -152,7 +146,6 @@ class CRMConnection(Base):
     )
 
     # Relationships
-    tenant = relationship("Tenant", foreign_keys=[tenant_id])
     contacts = relationship(
         "CRMContact", back_populates="connection", cascade="all, delete-orphan"
     )
@@ -167,7 +160,7 @@ class CRMConnection(Base):
     )
 
     __table_args__ = (
-        Index("ix_crm_connections_tenant_provider", "tenant_id", "provider"),
+        Index("ix_crm_connections_provider", "provider"),
         Index("ix_crm_connections_status", "status"),
     )
 
@@ -186,12 +179,6 @@ class CRMContact(Base):
     __tablename__ = "crm_contacts"
 
     id = Column(UUID(as_uuid=True), primary_key=True, default=uuid4)
-    tenant_id = Column(
-        Integer,
-        ForeignKey("tenants.id", ondelete="CASCADE"),
-        nullable=False,
-        index=True,
-    )
     connection_id = Column(
         UUID(as_uuid=True),
         ForeignKey("crm_connections.id", ondelete="CASCADE"),
@@ -260,18 +247,17 @@ class CRMContact(Base):
     )
 
     # Relationships
-    tenant = relationship("Tenant", foreign_keys=[tenant_id])
     connection = relationship("CRMConnection", back_populates="contacts")
     deals = relationship("CRMDeal", back_populates="contact")
     touchpoints = relationship("Touchpoint", back_populates="contact")
 
     __table_args__ = (
-        Index("ix_crm_contacts_tenant_email", "tenant_id", "email_hash"),
-        Index("ix_crm_contacts_tenant_phone", "tenant_id", "phone_hash"),
-        Index("ix_crm_contacts_tenant_gclid", "tenant_id", "gclid"),
-        Index("ix_crm_contacts_tenant_fbclid", "tenant_id", "fbclid"),
+        Index("ix_crm_contacts_email", "email_hash"),
+        Index("ix_crm_contacts_phone", "phone_hash"),
+        Index("ix_crm_contacts_gclid", "gclid"),
+        Index("ix_crm_contacts_fbclid", "fbclid"),
         Index("ix_crm_contacts_crm_id", "connection_id", "crm_contact_id"),
-        Index("ix_crm_contacts_lifecycle", "tenant_id", "lifecycle_stage"),
+        Index("ix_crm_contacts_lifecycle", "lifecycle_stage"),
     )
 
 
@@ -289,12 +275,6 @@ class CRMDeal(Base):
     __tablename__ = "crm_deals"
 
     id = Column(UUID(as_uuid=True), primary_key=True, default=uuid4)
-    tenant_id = Column(
-        Integer,
-        ForeignKey("tenants.id", ondelete="CASCADE"),
-        nullable=False,
-        index=True,
-    )
     connection_id = Column(
         UUID(as_uuid=True),
         ForeignKey("crm_connections.id", ondelete="CASCADE"),
@@ -370,7 +350,6 @@ class CRMDeal(Base):
     )
 
     # Relationships
-    tenant = relationship("Tenant", foreign_keys=[tenant_id])
     connection = relationship("CRMConnection", back_populates="deals")
     contact = relationship("CRMContact", back_populates="deals")
     attributed_touchpoint = relationship(
@@ -378,13 +357,11 @@ class CRMDeal(Base):
     )
 
     __table_args__ = (
-        Index("ix_crm_deals_tenant_stage", "tenant_id", "stage_normalized"),
-        Index("ix_crm_deals_tenant_won", "tenant_id", "is_won"),
-        Index("ix_crm_deals_tenant_close_date", "tenant_id", "close_date"),
+        Index("ix_crm_deals_stage", "stage_normalized"),
+        Index("ix_crm_deals_won", "is_won"),
+        Index("ix_crm_deals_close_date", "close_date"),
         Index("ix_crm_deals_crm_id", "connection_id", "crm_deal_id"),
-        Index(
-            "ix_crm_deals_attributed_campaign", "tenant_id", "attributed_campaign_id"
-        ),
+        Index("ix_crm_deals_attributed_campaign", "attributed_campaign_id"),
     )
 
 
@@ -402,12 +379,6 @@ class Touchpoint(Base):
     __tablename__ = "touchpoints"
 
     id = Column(UUID(as_uuid=True), primary_key=True, default=uuid4)
-    tenant_id = Column(
-        Integer,
-        ForeignKey("tenants.id", ondelete="CASCADE"),
-        nullable=False,
-        index=True,
-    )
 
     # Contact link (if matched)
     contact_id = Column(
@@ -489,17 +460,16 @@ class Touchpoint(Base):
     )
 
     # Relationships
-    tenant = relationship("Tenant", foreign_keys=[tenant_id])
     contact = relationship("CRMContact", back_populates="touchpoints")
 
     __table_args__ = (
-        Index("ix_touchpoints_tenant_contact", "tenant_id", "contact_id"),
-        Index("ix_touchpoints_tenant_event_ts", "tenant_id", "event_ts"),
-        Index("ix_touchpoints_tenant_campaign", "tenant_id", "campaign_id"),
-        Index("ix_touchpoints_email_hash", "tenant_id", "email_hash"),
-        Index("ix_touchpoints_click_ids", "tenant_id", "gclid", "fbclid", "ttclid"),
-        Index("ix_touchpoints_tenant_converting", "tenant_id", "is_converting_touch"),
-        Index("ix_touchpoints_visitor", "tenant_id", "visitor_id"),
+        Index("ix_touchpoints_contact", "contact_id"),
+        Index("ix_touchpoints_event_ts", "event_ts"),
+        Index("ix_touchpoints_campaign", "campaign_id"),
+        Index("ix_touchpoints_email_hash", "email_hash"),
+        Index("ix_touchpoints_click_ids", "gclid", "fbclid", "ttclid"),
+        Index("ix_touchpoints_converting", "is_converting_touch"),
+        Index("ix_touchpoints_visitor", "visitor_id"),
     )
 
 
@@ -517,12 +487,6 @@ class DailyPipelineMetrics(Base):
     __tablename__ = "daily_pipeline_metrics"
 
     id = Column(UUID(as_uuid=True), primary_key=True, default=uuid4)
-    tenant_id = Column(
-        Integer,
-        ForeignKey("tenants.id", ondelete="CASCADE"),
-        nullable=False,
-        index=True,
-    )
     date = Column(Date, nullable=False)
 
     # Dimension (optional granularity)
@@ -584,16 +548,14 @@ class DailyPipelineMetrics(Base):
     )
 
     # Relationships
-    tenant = relationship("Tenant", foreign_keys=[tenant_id])
 
     __table_args__ = (
-        Index("ix_daily_pipeline_metrics_tenant_date", "tenant_id", "date"),
+        Index("ix_daily_pipeline_metrics_date", "date"),
         Index(
-            "ix_daily_pipeline_metrics_tenant_platform", "tenant_id", "platform", "date"
+            "ix_daily_pipeline_metrics_platform", "platform", "date"
         ),
         Index(
-            "ix_daily_pipeline_metrics_tenant_campaign",
-            "tenant_id",
+            "ix_daily_pipeline_metrics_campaign",
             "campaign_id",
             "date",
         ),
@@ -629,12 +591,6 @@ class CRMWritebackConfig(Base):
     __tablename__ = "crm_writeback_configs"
 
     id = Column(UUID(as_uuid=True), primary_key=True, default=uuid4)
-    tenant_id = Column(
-        Integer,
-        ForeignKey("tenants.id", ondelete="CASCADE"),
-        nullable=False,
-        index=True,
-    )
     connection_id = Column(
         UUID(as_uuid=True),
         ForeignKey("crm_connections.id", ondelete="CASCADE"),
@@ -684,10 +640,9 @@ class CRMWritebackConfig(Base):
     )
 
     # Relationships
-    tenant = relationship("Tenant", foreign_keys=[tenant_id])
     connection = relationship("CRMConnection", back_populates="writeback_config")
 
-    __table_args__ = (Index("ix_writeback_config_tenant", "tenant_id"),)
+    __table_args__ = ()
 
 
 # =============================================================================
@@ -704,12 +659,6 @@ class CRMWritebackSync(Base):
     __tablename__ = "crm_writeback_syncs"
 
     id = Column(UUID(as_uuid=True), primary_key=True, default=uuid4)
-    tenant_id = Column(
-        Integer,
-        ForeignKey("tenants.id", ondelete="CASCADE"),
-        nullable=False,
-        index=True,
-    )
     connection_id = Column(
         UUID(as_uuid=True),
         ForeignKey("crm_connections.id", ondelete="CASCADE"),
@@ -757,13 +706,12 @@ class CRMWritebackSync(Base):
     )
 
     # Relationships
-    tenant = relationship("Tenant", foreign_keys=[tenant_id])
     connection = relationship("CRMConnection")
     triggered_by = relationship("User", foreign_keys=[triggered_by_user_id])
 
     __table_args__ = (
-        Index("ix_writeback_sync_tenant_date", "tenant_id", "started_at"),
-        Index("ix_writeback_sync_status", "tenant_id", "status"),
+        Index("ix_writeback_sync_date", "started_at"),
+        Index("ix_writeback_sync_status", "status"),
     )
 
 
@@ -772,7 +720,7 @@ class CRMWritebackSync(Base):
 # =============================================================================
 class CRMSyncLog(Base):
     """
-    Tracks CRM synchronization history per tenant/provider.
+    Tracks CRM synchronization history per provider.
 
     Records the result of each sync run (full or incremental) including
     record counts, duration, and any errors encountered.
@@ -781,12 +729,6 @@ class CRMSyncLog(Base):
     __tablename__ = "crm_sync_logs"
 
     id = Column(UUID(as_uuid=True), primary_key=True, default=uuid4)
-    tenant_id = Column(
-        Integer,
-        ForeignKey("tenants.id", ondelete="CASCADE"),
-        nullable=False,
-        index=True,
-    )
     provider = Column(StrEnumType(CRMProvider), nullable=False)
 
     # Sync details
@@ -816,9 +758,8 @@ class CRMSyncLog(Base):
     )
 
     # Relationships
-    tenant = relationship("Tenant", foreign_keys=[tenant_id])
 
     __table_args__ = (
-        Index("ix_crm_sync_log_tenant_provider", "tenant_id", "provider"),
-        Index("ix_crm_sync_log_started", "tenant_id", "started_at"),
+        Index("ix_crm_sync_log_provider", "provider"),
+        Index("ix_crm_sync_log_started", "started_at"),
     )

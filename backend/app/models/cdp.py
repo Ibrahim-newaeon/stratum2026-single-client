@@ -11,7 +11,7 @@ Models:
 - CDPEvent: Append-only event store
 - CDPConsent: Privacy consent records
 
-All models are multi-tenant with tenant_id column.
+All models are scoped to the single organization.
 """
 
 import enum
@@ -96,12 +96,6 @@ class CDPSource(Base, TimestampMixin):
     __tablename__ = "cdp_sources"
 
     id = Column(UUID(as_uuid=True), primary_key=True, default=uuid4)
-    tenant_id = Column(
-        Integer,
-        ForeignKey("tenants.id", ondelete="CASCADE"),
-        nullable=False,
-        index=True,
-    )
 
     # Source identification
     name = Column(String(255), nullable=False)
@@ -120,12 +114,10 @@ class CDPSource(Base, TimestampMixin):
     events = relationship("CDPEvent", back_populates="source", lazy="dynamic")
 
     __table_args__ = (
-        Index("ix_cdp_sources_tenant", "tenant_id"),
         Index("ix_cdp_sources_key", "source_key"),
-        Index("ix_cdp_sources_type", "tenant_id", "source_type"),
-        UniqueConstraint(
-            "tenant_id", "source_key", name="uq_cdp_source_key_per_tenant"
-        ),
+        Index("ix_cdp_sources_type", "source_type"),
+        # was tenant-scoped; now global
+        UniqueConstraint("source_key", name="uq_cdp_source_key"),
     )
 
     def __repr__(self) -> str:
@@ -146,12 +138,6 @@ class CDPProfile(Base, TimestampMixin):
     __tablename__ = "cdp_profiles"
 
     id = Column(UUID(as_uuid=True), primary_key=True, default=uuid4)
-    tenant_id = Column(
-        Integer,
-        ForeignKey("tenants.id", ondelete="CASCADE"),
-        nullable=False,
-        index=True,
-    )
 
     # External reference (client's customer ID)
     external_id = Column(String(255), nullable=True)
@@ -199,8 +185,7 @@ class CDPProfile(Base, TimestampMixin):
     )
 
     __table_args__ = (
-        Index("ix_cdp_profiles_tenant", "tenant_id"),
-        Index("ix_cdp_profiles_lifecycle", "tenant_id", "lifecycle_stage"),
+        Index("ix_cdp_profiles_lifecycle", "lifecycle_stage"),
     )
 
     def __repr__(self) -> str:
@@ -242,12 +227,6 @@ class CDPProfileIdentifier(Base):
     __tablename__ = "cdp_profile_identifiers"
 
     id = Column(UUID(as_uuid=True), primary_key=True, default=uuid4)
-    tenant_id = Column(
-        Integer,
-        ForeignKey("tenants.id", ondelete="CASCADE"),
-        nullable=False,
-        index=True,
-    )
     profile_id = Column(
         UUID(as_uuid=True),
         ForeignKey("cdp_profiles.id", ondelete="CASCADE"),
@@ -286,20 +265,18 @@ class CDPProfileIdentifier(Base):
     profile = relationship("CDPProfile", back_populates="identifiers")
 
     __table_args__ = (
-        Index("ix_cdp_identifiers_tenant", "tenant_id"),
         Index("ix_cdp_identifiers_profile", "profile_id"),
         Index(
             "ix_cdp_identifiers_lookup",
-            "tenant_id",
             "identifier_type",
             "identifier_hash",
         ),
         Index("ix_cdp_identifiers_hash", "identifier_hash"),
+        # was tenant-scoped; now global
         UniqueConstraint(
-            "tenant_id",
             "identifier_type",
             "identifier_hash",
-            name="uq_cdp_identifiers_tenant_type_hash",
+            name="uq_cdp_identifiers_type_hash",
         ),
     )
 
@@ -321,12 +298,6 @@ class CDPEvent(Base):
     __tablename__ = "cdp_events"
 
     id = Column(UUID(as_uuid=True), primary_key=True, default=uuid4)
-    tenant_id = Column(
-        Integer,
-        ForeignKey("tenants.id", ondelete="CASCADE"),
-        nullable=False,
-        index=True,
-    )
     profile_id = Column(
         UUID(as_uuid=True),
         ForeignKey("cdp_profiles.id", ondelete="SET NULL"),
@@ -376,9 +347,8 @@ class CDPEvent(Base):
     source = relationship("CDPSource", back_populates="events")
 
     __table_args__ = (
-        Index("ix_cdp_events_tenant", "tenant_id"),
         Index("ix_cdp_events_profile", "profile_id"),
-        Index("ix_cdp_events_name", "tenant_id", "event_name"),
+        Index("ix_cdp_events_name", "event_name"),
         Index("ix_cdp_events_source", "source_id"),
     )
 
@@ -400,12 +370,6 @@ class CDPConsent(Base, TimestampMixin):
     __tablename__ = "cdp_consents"
 
     id = Column(UUID(as_uuid=True), primary_key=True, default=uuid4)
-    tenant_id = Column(
-        Integer,
-        ForeignKey("tenants.id", ondelete="CASCADE"),
-        nullable=False,
-        index=True,
-    )
     profile_id = Column(
         UUID(as_uuid=True),
         ForeignKey("cdp_profiles.id", ondelete="CASCADE"),
@@ -432,14 +396,13 @@ class CDPConsent(Base, TimestampMixin):
     profile = relationship("CDPProfile", back_populates="consents")
 
     __table_args__ = (
-        Index("ix_cdp_consents_tenant", "tenant_id"),
         Index("ix_cdp_consents_profile", "profile_id"),
-        Index("ix_cdp_consents_type", "tenant_id", "consent_type", "granted"),
+        Index("ix_cdp_consents_type", "consent_type", "granted"),
+        # was tenant-scoped; now global
         UniqueConstraint(
-            "tenant_id",
             "profile_id",
             "consent_type",
-            name="uq_cdp_consents_tenant_profile_type",
+            name="uq_cdp_consents_profile_type",
         ),
     )
 
@@ -488,18 +451,12 @@ class MergeReason(str, enum.Enum):
 class CDPWebhook(Base, TimestampMixin):
     """
     Webhook destination for CDP events.
-    Allows tenants to receive real-time notifications when events occur.
+    Allows the organization to receive real-time notifications when events occur.
     """
 
     __tablename__ = "cdp_webhooks"
 
     id = Column(UUID(as_uuid=True), primary_key=True, default=uuid4)
-    tenant_id = Column(
-        Integer,
-        ForeignKey("tenants.id", ondelete="CASCADE"),
-        nullable=False,
-        index=True,
-    )
 
     # Webhook configuration
     name = Column(String(255), nullable=False)
@@ -523,8 +480,7 @@ class CDPWebhook(Base, TimestampMixin):
     timeout_seconds = Column(Integer, nullable=False, default=30)
 
     __table_args__ = (
-        Index("ix_cdp_webhooks_tenant", "tenant_id"),
-        Index("ix_cdp_webhooks_active", "tenant_id", "is_active"),
+        Index("ix_cdp_webhooks_active", "is_active"),
     )
 
     def __repr__(self) -> str:
@@ -557,12 +513,6 @@ class CDPIdentityLink(Base):
     __tablename__ = "cdp_identity_links"
 
     id = Column(UUID(as_uuid=True), primary_key=True, default=uuid4)
-    tenant_id = Column(
-        Integer,
-        ForeignKey("tenants.id", ondelete="CASCADE"),
-        nullable=False,
-        index=True,
-    )
 
     # Source identifier (the one we're linking FROM)
     source_identifier_id = Column(
@@ -615,13 +565,12 @@ class CDPIdentityLink(Base):
     )
 
     __table_args__ = (
-        Index("ix_cdp_identity_links_tenant", "tenant_id"),
         Index("ix_cdp_identity_links_source", "source_identifier_id"),
         Index("ix_cdp_identity_links_target", "target_identifier_id"),
-        Index("ix_cdp_identity_links_type", "tenant_id", "link_type"),
+        Index("ix_cdp_identity_links_type", "link_type"),
         # Prevent duplicate links
+        # was tenant-scoped; now global
         UniqueConstraint(
-            "tenant_id",
             "source_identifier_id",
             "target_identifier_id",
             name="uq_cdp_identity_links_source_target",
@@ -643,12 +592,6 @@ class CDPProfileMerge(Base):
     __tablename__ = "cdp_profile_merges"
 
     id = Column(UUID(as_uuid=True), primary_key=True, default=uuid4)
-    tenant_id = Column(
-        Integer,
-        ForeignKey("tenants.id", ondelete="CASCADE"),
-        nullable=False,
-        index=True,
-    )
 
     # The surviving profile (the one that remains after merge)
     surviving_profile_id = Column(
@@ -696,10 +639,9 @@ class CDPProfileMerge(Base):
     surviving_profile = relationship("CDPProfile", foreign_keys=[surviving_profile_id])
 
     __table_args__ = (
-        Index("ix_cdp_profile_merges_tenant", "tenant_id"),
         Index("ix_cdp_profile_merges_surviving", "surviving_profile_id"),
         Index("ix_cdp_profile_merges_merged", "merged_profile_id"),
-        Index("ix_cdp_profile_merges_time", "tenant_id", "created_at"),
+        Index("ix_cdp_profile_merges_time", "created_at"),
     )
 
     def __repr__(self) -> str:
@@ -719,12 +661,6 @@ class CDPCanonicalIdentity(Base):
     __tablename__ = "cdp_canonical_identities"
 
     id = Column(UUID(as_uuid=True), primary_key=True, default=uuid4)
-    tenant_id = Column(
-        Integer,
-        ForeignKey("tenants.id", ondelete="CASCADE"),
-        nullable=False,
-        index=True,
-    )
     profile_id = Column(
         UUID(as_uuid=True),
         ForeignKey("cdp_profiles.id", ondelete="CASCADE"),
@@ -769,10 +705,10 @@ class CDPCanonicalIdentity(Base):
     canonical_identifier = relationship("CDPProfileIdentifier")
 
     __table_args__ = (
-        Index("ix_cdp_canonical_tenant", "tenant_id"),
         Index("ix_cdp_canonical_profile", "profile_id"),
         # One canonical identity per profile
-        UniqueConstraint("tenant_id", "profile_id", name="uq_cdp_canonical_profile"),
+        # was tenant-scoped; now global
+        UniqueConstraint("profile_id", name="uq_cdp_canonical_profile"),
     )
 
     def __repr__(self) -> str:
@@ -836,12 +772,6 @@ class CDPSegment(Base, TimestampMixin):
     __tablename__ = "cdp_segments"
 
     id = Column(UUID(as_uuid=True), primary_key=True, default=uuid4)
-    tenant_id = Column(
-        Integer,
-        ForeignKey("tenants.id", ondelete="CASCADE"),
-        nullable=False,
-        index=True,
-    )
 
     # Segment identification
     name = Column(String(255), nullable=False)
@@ -881,10 +811,10 @@ class CDPSegment(Base, TimestampMixin):
     )
 
     __table_args__ = (
-        Index("ix_cdp_segments_tenant", "tenant_id"),
-        Index("ix_cdp_segments_status", "tenant_id", "status"),
-        Index("ix_cdp_segments_type", "tenant_id", "segment_type"),
-        UniqueConstraint("tenant_id", "slug", name="uq_cdp_segments_slug"),
+        Index("ix_cdp_segments_status", "status"),
+        Index("ix_cdp_segments_type", "segment_type"),
+        # was tenant-scoped; now global
+        UniqueConstraint("slug", name="uq_cdp_segments_slug"),
     )
 
     def __repr__(self) -> str:
@@ -902,12 +832,6 @@ class CDPSegmentMembership(Base):
     __tablename__ = "cdp_segment_memberships"
 
     id = Column(UUID(as_uuid=True), primary_key=True, default=uuid4)
-    tenant_id = Column(
-        Integer,
-        ForeignKey("tenants.id", ondelete="CASCADE"),
-        nullable=False,
-        index=True,
-    )
     segment_id = Column(
         UUID(as_uuid=True),
         ForeignKey("cdp_segments.id", ondelete="CASCADE"),
@@ -941,13 +865,12 @@ class CDPSegmentMembership(Base):
     profile = relationship("CDPProfile", backref="segment_memberships")
 
     __table_args__ = (
-        Index("ix_cdp_memberships_tenant", "tenant_id"),
         Index("ix_cdp_memberships_segment", "segment_id"),
         Index("ix_cdp_memberships_profile", "profile_id"),
         Index("ix_cdp_memberships_active", "segment_id", "is_active"),
         # One active membership per profile per segment
+        # was tenant-scoped; now global
         UniqueConstraint(
-            "tenant_id",
             "segment_id",
             "profile_id",
             name="uq_cdp_memberships_segment_profile",
@@ -990,12 +913,6 @@ class CDPComputedTrait(Base, TimestampMixin):
     __tablename__ = "cdp_computed_traits"
 
     id = Column(UUID(as_uuid=True), primary_key=True, default=uuid4)
-    tenant_id = Column(
-        Integer,
-        ForeignKey("tenants.id", ondelete="CASCADE"),
-        nullable=False,
-        index=True,
-    )
 
     # Trait identification
     name = Column(String(100), nullable=False)  # e.g., "total_purchases"
@@ -1022,9 +939,9 @@ class CDPComputedTrait(Base, TimestampMixin):
     last_computed_at = Column(DateTime(timezone=True), nullable=True)
 
     __table_args__ = (
-        Index("ix_cdp_traits_tenant", "tenant_id"),
-        Index("ix_cdp_traits_active", "tenant_id", "is_active"),
-        UniqueConstraint("tenant_id", "name", name="uq_cdp_traits_name"),
+        Index("ix_cdp_traits_active", "is_active"),
+        # was tenant-scoped; now global
+        UniqueConstraint("name", name="uq_cdp_traits_name"),
     )
 
     def __repr__(self) -> str:
@@ -1057,12 +974,6 @@ class CDPFunnel(Base, TimestampMixin):
     __tablename__ = "cdp_funnels"
 
     id = Column(UUID(as_uuid=True), primary_key=True, default=uuid4)
-    tenant_id = Column(
-        Integer,
-        ForeignKey("tenants.id", ondelete="CASCADE"),
-        nullable=False,
-        index=True,
-    )
 
     # Funnel identification
     name = Column(String(255), nullable=False)
@@ -1111,9 +1022,9 @@ class CDPFunnel(Base, TimestampMixin):
     created_by_user_id = Column(Integer, nullable=True)
 
     __table_args__ = (
-        Index("ix_cdp_funnels_tenant", "tenant_id"),
-        Index("ix_cdp_funnels_status", "tenant_id", "status"),
-        UniqueConstraint("tenant_id", "slug", name="uq_cdp_funnels_slug"),
+        Index("ix_cdp_funnels_status", "status"),
+        # was tenant-scoped; now global
+        UniqueConstraint("slug", name="uq_cdp_funnels_slug"),
     )
 
     def __repr__(self) -> str:
@@ -1130,12 +1041,6 @@ class CDPFunnelEntry(Base):
     __tablename__ = "cdp_funnel_entries"
 
     id = Column(UUID(as_uuid=True), primary_key=True, default=uuid4)
-    tenant_id = Column(
-        Integer,
-        ForeignKey("tenants.id", ondelete="CASCADE"),
-        nullable=False,
-        index=True,
-    )
     funnel_id = Column(
         UUID(as_uuid=True),
         ForeignKey("cdp_funnels.id", ondelete="CASCADE"),
@@ -1190,13 +1095,12 @@ class CDPFunnelEntry(Base):
     profile = relationship("CDPProfile", backref="funnel_entries")
 
     __table_args__ = (
-        Index("ix_cdp_funnel_entries_tenant", "tenant_id"),
         Index("ix_cdp_funnel_entries_funnel", "funnel_id"),
         Index("ix_cdp_funnel_entries_profile", "profile_id"),
         Index("ix_cdp_funnel_entries_converted", "funnel_id", "is_converted"),
         # One entry per profile per funnel (for now - could support multiple journeys later)
+        # was tenant-scoped; now global
         UniqueConstraint(
-            "tenant_id",
             "funnel_id",
             "profile_id",
             name="uq_cdp_funnel_entries_funnel_profile",

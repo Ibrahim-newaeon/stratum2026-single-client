@@ -105,12 +105,6 @@ class EMQMeasurement(Base):
     __tablename__ = "emq_measurements"
 
     id = Column(UUID(as_uuid=True), primary_key=True, default=uuid4)
-    tenant_id = Column(
-        Integer,
-        ForeignKey("tenants.id", ondelete="CASCADE"),
-        nullable=False,
-        index=True,
-    )
 
     # Measurement details
     platform = Column(String(50), nullable=False)  # meta, google, tiktok, etc.
@@ -158,13 +152,12 @@ class EMQMeasurement(Base):
     )
 
     # Relationships
-    tenant = relationship("Tenant", foreign_keys=[tenant_id])
 
     __table_args__ = (
-        Index("ix_emq_tenant_date", "tenant_id", "measurement_date"),
-        Index("ix_emq_platform", "tenant_id", "platform", "pixel_id"),
+        Index("ix_emq_date", "measurement_date"),
+        Index("ix_emq_platform", "platform", "pixel_id"),
+        # was tenant-scoped; now global
         UniqueConstraint(
-            "tenant_id",
             "platform",
             "pixel_id",
             "measurement_date",
@@ -187,12 +180,6 @@ class OfflineConversionBatch(Base):
     __tablename__ = "offline_conversion_batches"
 
     id = Column(UUID(as_uuid=True), primary_key=True, default=uuid4)
-    tenant_id = Column(
-        Integer,
-        ForeignKey("tenants.id", ondelete="CASCADE"),
-        nullable=False,
-        index=True,
-    )
 
     # Batch details
     batch_name = Column(String(255), nullable=True)
@@ -237,12 +224,11 @@ class OfflineConversionBatch(Base):
     )
 
     # Relationships
-    tenant = relationship("Tenant", foreign_keys=[tenant_id])
     created_by = relationship("User", foreign_keys=[created_by_user_id])
 
     __table_args__ = (
-        Index("ix_offline_batch_tenant", "tenant_id", "created_at"),
-        Index("ix_offline_batch_status", "tenant_id", "status"),
+        Index("ix_offline_batch_created", "created_at"),
+        Index("ix_offline_batch_status", "status"),
     )
 
 
@@ -254,12 +240,6 @@ class OfflineConversion(Base):
     __tablename__ = "offline_conversions"
 
     id = Column(UUID(as_uuid=True), primary_key=True, default=uuid4)
-    tenant_id = Column(
-        Integer,
-        ForeignKey("tenants.id", ondelete="CASCADE"),
-        nullable=False,
-        index=True,
-    )
     batch_id = Column(
         UUID(as_uuid=True),
         ForeignKey("offline_conversion_batches.id", ondelete="CASCADE"),
@@ -297,13 +277,12 @@ class OfflineConversion(Base):
     uploaded_at = Column(DateTime(timezone=True), nullable=True)
 
     # Relationships
-    tenant = relationship("Tenant", foreign_keys=[tenant_id])
     batch = relationship("OfflineConversionBatch", foreign_keys=[batch_id])
 
     __table_args__ = (
-        Index("ix_offline_conv_tenant", "tenant_id", "event_time"),
+        Index("ix_offline_conv_time", "event_time"),
         Index("ix_offline_conv_batch", "batch_id"),
-        Index("ix_offline_conv_uploaded", "tenant_id", "uploaded"),
+        Index("ix_offline_conv_uploaded", "uploaded"),
     )
 
 
@@ -320,12 +299,6 @@ class ModelExperiment(Base):
     __tablename__ = "model_experiments"
 
     id = Column(UUID(as_uuid=True), primary_key=True, default=uuid4)
-    tenant_id = Column(
-        Integer,
-        ForeignKey("tenants.id", ondelete="CASCADE"),
-        nullable=False,
-        index=True,
-    )
 
     # Experiment details
     name = Column(String(255), nullable=False)
@@ -382,13 +355,11 @@ class ModelExperiment(Base):
     )
 
     # Relationships
-    tenant = relationship("Tenant", foreign_keys=[tenant_id])
     created_by = relationship("User", foreign_keys=[created_by_user_id])
 
     __table_args__ = (
-        Index("ix_model_exp_tenant", "tenant_id"),
-        Index("ix_model_exp_status", "tenant_id", "status"),
-        Index("ix_model_exp_model", "tenant_id", "model_name"),
+        Index("ix_model_exp_status", "status"),
+        Index("ix_model_exp_model", "model_name"),
     )
 
 
@@ -443,12 +414,6 @@ class ConversionLatency(Base):
     __tablename__ = "conversion_latencies"
 
     id = Column(UUID(as_uuid=True), primary_key=True, default=uuid4)
-    tenant_id = Column(
-        Integer,
-        ForeignKey("tenants.id", ondelete="CASCADE"),
-        nullable=False,
-        index=True,
-    )
 
     # Event details
     platform = Column(String(50), nullable=False)
@@ -471,11 +436,10 @@ class ConversionLatency(Base):
     )
 
     # Relationships
-    tenant = relationship("Tenant", foreign_keys=[tenant_id])
 
     __table_args__ = (
-        Index("ix_conv_latency_tenant", "tenant_id", "event_time"),
-        Index("ix_conv_latency_platform", "tenant_id", "platform", "event_type"),
+        Index("ix_conv_latency_time", "event_time"),
+        Index("ix_conv_latency_platform", "platform", "event_type"),
     )
 
 
@@ -487,12 +451,6 @@ class ConversionLatencyStats(Base):
     __tablename__ = "conversion_latency_stats"
 
     id = Column(UUID(as_uuid=True), primary_key=True, default=uuid4)
-    tenant_id = Column(
-        Integer,
-        ForeignKey("tenants.id", ondelete="CASCADE"),
-        nullable=False,
-        index=True,
-    )
 
     # Aggregation period
     period_date = Column(Date, nullable=False)
@@ -522,12 +480,11 @@ class ConversionLatencyStats(Base):
     )
 
     # Relationships
-    tenant = relationship("Tenant", foreign_keys=[tenant_id])
 
     __table_args__ = (
-        Index("ix_latency_stats_tenant", "tenant_id", "period_date"),
+        Index("ix_latency_stats_period", "period_date"),
+        # was tenant-scoped; now global
         UniqueConstraint(
-            "tenant_id",
             "period_date",
             "platform",
             "event_type",
@@ -549,12 +506,6 @@ class Creative(Base):
     __tablename__ = "creatives"
 
     id = Column(UUID(as_uuid=True), primary_key=True, default=uuid4)
-    tenant_id = Column(
-        Integer,
-        ForeignKey("tenants.id", ondelete="CASCADE"),
-        nullable=False,
-        index=True,
-    )
 
     # Creative details
     external_id = Column(String(255), nullable=False)  # Platform's creative ID
@@ -596,12 +547,11 @@ class Creative(Base):
     )
 
     # Relationships
-    tenant = relationship("Tenant", foreign_keys=[tenant_id])
 
     __table_args__ = (
-        Index("ix_creative_tenant", "tenant_id"),
-        Index("ix_creative_external", "tenant_id", "platform", "external_id"),
-        UniqueConstraint("tenant_id", "platform", "external_id", name="uq_creative"),
+        Index("ix_creative_external", "platform", "external_id"),
+        # was tenant-scoped; now global
+        UniqueConstraint("platform", "external_id", name="uq_creative"),
     )
 
 
@@ -616,12 +566,6 @@ class CreativePerformance(Base):
     creative_id = Column(
         UUID(as_uuid=True),
         ForeignKey("creatives.id", ondelete="CASCADE"),
-        nullable=False,
-        index=True,
-    )
-    tenant_id = Column(
-        Integer,
-        ForeignKey("tenants.id", ondelete="CASCADE"),
         nullable=False,
         index=True,
     )
@@ -669,10 +613,9 @@ class CreativePerformance(Base):
 
     # Relationships
     creative = relationship("Creative", foreign_keys=[creative_id])
-    tenant = relationship("Tenant", foreign_keys=[tenant_id])
 
     __table_args__ = (
-        Index("ix_creative_perf_tenant", "tenant_id", "date"),
+        Index("ix_creative_perf_date", "date"),
         Index("ix_creative_perf_creative", "creative_id", "date"),
         UniqueConstraint("creative_id", "date", "campaign_id", name="uq_creative_perf"),
     )
@@ -689,12 +632,6 @@ class CreativeFatigueAlert(Base):
     creative_id = Column(
         UUID(as_uuid=True),
         ForeignKey("creatives.id", ondelete="CASCADE"),
-        nullable=False,
-        index=True,
-    )
-    tenant_id = Column(
-        Integer,
-        ForeignKey("tenants.id", ondelete="CASCADE"),
         nullable=False,
         index=True,
     )
@@ -731,11 +668,10 @@ class CreativeFatigueAlert(Base):
 
     # Relationships
     creative = relationship("Creative", foreign_keys=[creative_id])
-    tenant = relationship("Tenant", foreign_keys=[tenant_id])
     acknowledged_by = relationship("User", foreign_keys=[acknowledged_by_user_id])
 
     __table_args__ = (
-        Index("ix_fatigue_alert_tenant", "tenant_id", "created_at"),
+        Index("ix_fatigue_alert_created", "created_at"),
         Index("ix_fatigue_alert_creative", "creative_id"),
     )
 
@@ -754,12 +690,6 @@ class CompetitorBenchmarkAudit(Base):
     __tablename__ = "competitor_benchmark_audits"
 
     id = Column(UUID(as_uuid=True), primary_key=True, default=uuid4)
-    tenant_id = Column(
-        Integer,
-        ForeignKey("tenants.id", ondelete="CASCADE"),
-        nullable=False,
-        index=True,
-    )
 
     # Benchmark context
     date = Column(Date, nullable=False)
@@ -794,11 +724,10 @@ class CompetitorBenchmarkAudit(Base):
     )
 
     # Relationships
-    tenant = relationship("Tenant", foreign_keys=[tenant_id])
 
     __table_args__ = (
-        Index("ix_benchmark_tenant", "tenant_id", "date"),
-        Index("ix_benchmark_industry", "tenant_id", "industry", "platform"),
+        Index("ix_benchmark_date", "date"),
+        Index("ix_benchmark_industry", "industry", "platform"),
     )
 
 
@@ -815,12 +744,6 @@ class BudgetReallocationPlan(Base):
     __tablename__ = "budget_reallocation_plans"
 
     id = Column(UUID(as_uuid=True), primary_key=True, default=uuid4)
-    tenant_id = Column(
-        Integer,
-        ForeignKey("tenants.id", ondelete="CASCADE"),
-        nullable=False,
-        index=True,
-    )
 
     # Plan details
     name = Column(String(255), nullable=True)
@@ -879,13 +802,12 @@ class BudgetReallocationPlan(Base):
     )
 
     # Relationships
-    tenant = relationship("Tenant", foreign_keys=[tenant_id])
     approved_by = relationship("User", foreign_keys=[approved_by_user_id])
     created_by = relationship("User", foreign_keys=[created_by_user_id])
 
     __table_args__ = (
-        Index("ix_realloc_plan_tenant", "tenant_id", "created_at"),
-        Index("ix_realloc_plan_status", "tenant_id", "status"),
+        Index("ix_realloc_plan_created", "created_at"),
+        Index("ix_realloc_plan_status", "status"),
     )
 
 
@@ -942,12 +864,6 @@ class AudienceRecord(Base):
     __tablename__ = "audience_records"
 
     id = Column(UUID(as_uuid=True), primary_key=True, default=uuid4)
-    tenant_id = Column(
-        Integer,
-        ForeignKey("tenants.id", ondelete="CASCADE"),
-        nullable=False,
-        index=True,
-    )
 
     # Audience details
     external_id = Column(String(255), nullable=False)
@@ -992,12 +908,11 @@ class AudienceRecord(Base):
     )
 
     # Relationships
-    tenant = relationship("Tenant", foreign_keys=[tenant_id])
 
     __table_args__ = (
-        Index("ix_audience_tenant", "tenant_id"),
-        Index("ix_audience_external", "tenant_id", "platform", "external_id"),
-        UniqueConstraint("tenant_id", "platform", "external_id", name="uq_audience"),
+        Index("ix_audience_external", "platform", "external_id"),
+        # was tenant-scoped; now global
+        UniqueConstraint("platform", "external_id", name="uq_audience"),
     )
 
 
@@ -1009,12 +924,6 @@ class AudienceOverlapRecord(Base):
     __tablename__ = "audience_overlaps"
 
     id = Column(UUID(as_uuid=True), primary_key=True, default=uuid4)
-    tenant_id = Column(
-        Integer,
-        ForeignKey("tenants.id", ondelete="CASCADE"),
-        nullable=False,
-        index=True,
-    )
     audience_id_1 = Column(
         UUID(as_uuid=True),
         ForeignKey("audience_records.id", ondelete="CASCADE"),
@@ -1040,12 +949,10 @@ class AudienceOverlapRecord(Base):
     )
 
     # Relationships
-    tenant = relationship("Tenant", foreign_keys=[tenant_id])
     audience_1 = relationship("AudienceRecord", foreign_keys=[audience_id_1])
     audience_2 = relationship("AudienceRecord", foreign_keys=[audience_id_2])
 
     __table_args__ = (
-        Index("ix_overlap_tenant", "tenant_id"),
         Index("ix_overlap_audiences", "audience_id_1", "audience_id_2"),
     )
 
@@ -1063,12 +970,6 @@ class CustomerLTVPrediction(Base):
     __tablename__ = "customer_ltv_predictions"
 
     id = Column(UUID(as_uuid=True), primary_key=True, default=uuid4)
-    tenant_id = Column(
-        Integer,
-        ForeignKey("tenants.id", ondelete="CASCADE"),
-        nullable=False,
-        index=True,
-    )
 
     # Customer identifier
     customer_id = Column(String(255), nullable=False)
@@ -1118,12 +1019,11 @@ class CustomerLTVPrediction(Base):
     )
 
     # Relationships
-    tenant = relationship("Tenant", foreign_keys=[tenant_id])
 
     __table_args__ = (
-        Index("ix_ltv_pred_tenant", "tenant_id", "predicted_at"),
-        Index("ix_ltv_pred_customer", "tenant_id", "customer_id"),
-        Index("ix_ltv_pred_segment", "tenant_id", "segment"),
+        Index("ix_ltv_pred_predicted", "predicted_at"),
+        Index("ix_ltv_pred_customer", "customer_id"),
+        Index("ix_ltv_pred_segment", "segment"),
     )
 
 
@@ -1135,12 +1035,6 @@ class LTVCohortAnalysis(Base):
     __tablename__ = "ltv_cohort_analyses"
 
     id = Column(UUID(as_uuid=True), primary_key=True, default=uuid4)
-    tenant_id = Column(
-        Integer,
-        ForeignKey("tenants.id", ondelete="CASCADE"),
-        nullable=False,
-        index=True,
-    )
 
     # Cohort identifier
     cohort_month = Column(String(7), nullable=False)  # YYYY-MM
@@ -1167,11 +1061,10 @@ class LTVCohortAnalysis(Base):
     )
 
     # Relationships
-    tenant = relationship("Tenant", foreign_keys=[tenant_id])
 
     __table_args__ = (
-        Index("ix_ltv_cohort_tenant", "tenant_id"),
-        UniqueConstraint("tenant_id", "cohort_month", name="uq_ltv_cohort"),
+        # was tenant-scoped; now global
+        UniqueConstraint("cohort_month", name="uq_ltv_cohort"),
     )
 
 
@@ -1188,9 +1081,6 @@ class ModelRetrainingJob(Base):
     __tablename__ = "model_retraining_jobs"
 
     id = Column(UUID(as_uuid=True), primary_key=True, default=uuid4)
-    tenant_id = Column(
-        Integer, ForeignKey("tenants.id", ondelete="CASCADE"), nullable=True
-    )  # Null for global models
 
     # Job details
     model_name = Column(String(100), nullable=False)
@@ -1228,10 +1118,9 @@ class ModelRetrainingJob(Base):
     )
 
     # Relationships
-    tenant = relationship("Tenant", foreign_keys=[tenant_id])
 
     __table_args__ = (
-        Index("ix_retrain_job_tenant", "tenant_id", "created_at"),
+        Index("ix_retrain_job_created", "created_at"),
         Index("ix_retrain_job_model", "model_name", "created_at"),
         Index("ix_retrain_job_status", "status"),
     )

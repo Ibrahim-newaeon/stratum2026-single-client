@@ -118,12 +118,6 @@ class ReportTemplate(Base):
     __tablename__ = "report_templates"
 
     id = Column(UUID(as_uuid=True), primary_key=True, default=uuid4)
-    tenant_id = Column(
-        Integer,
-        ForeignKey("tenants.id", ondelete="CASCADE"),
-        nullable=False,
-        index=True,
-    )
 
     # Template identification
     name = Column(String(255), nullable=False)
@@ -181,7 +175,6 @@ class ReportTemplate(Base):
     )
 
     # Relationships
-    tenant = relationship("Tenant", foreign_keys=[tenant_id])
     created_by = relationship("User", foreign_keys=[created_by_user_id])
     last_modified_by = relationship("User", foreign_keys=[last_modified_by_user_id])
     schedules = relationship(
@@ -189,9 +182,9 @@ class ReportTemplate(Base):
     )
 
     __table_args__ = (
-        Index("ix_report_template_tenant", "tenant_id"),
-        Index("ix_report_template_type", "tenant_id", "report_type"),
-        UniqueConstraint("tenant_id", "name", name="uq_report_template_name"),
+        Index("ix_report_template_type", "report_type"),
+        # was tenant-scoped; now global
+        UniqueConstraint("name", name="uq_report_template_name"),
     )
 
 
@@ -208,12 +201,6 @@ class ScheduledReport(Base):
     __tablename__ = "scheduled_reports"
 
     id = Column(UUID(as_uuid=True), primary_key=True, default=uuid4)
-    tenant_id = Column(
-        Integer,
-        ForeignKey("tenants.id", ondelete="CASCADE"),
-        nullable=False,
-        index=True,
-    )
     template_id = Column(
         UUID(as_uuid=True),
         ForeignKey("report_templates.id", ondelete="CASCADE"),
@@ -300,7 +287,6 @@ class ScheduledReport(Base):
     )
 
     # Relationships
-    tenant = relationship("Tenant", foreign_keys=[tenant_id])
     template = relationship("ReportTemplate", back_populates="schedules")
     created_by = relationship("User", foreign_keys=[created_by_user_id])
     executions = relationship(
@@ -308,7 +294,6 @@ class ScheduledReport(Base):
     )
 
     __table_args__ = (
-        Index("ix_scheduled_report_tenant", "tenant_id"),
         Index(
             "ix_scheduled_report_next_run",
             "next_run_at",
@@ -331,12 +316,6 @@ class ReportExecution(Base):
     __tablename__ = "report_executions"
 
     id = Column(UUID(as_uuid=True), primary_key=True, default=uuid4)
-    tenant_id = Column(
-        Integer,
-        ForeignKey("tenants.id", ondelete="CASCADE"),
-        nullable=False,
-        index=True,
-    )
     template_id = Column(
         UUID(as_uuid=True),
         ForeignKey("report_templates.id", ondelete="SET NULL"),
@@ -393,7 +372,6 @@ class ReportExecution(Base):
     )
 
     # Relationships
-    tenant = relationship("Tenant", foreign_keys=[tenant_id])
     template = relationship("ReportTemplate", foreign_keys=[template_id])
     schedule = relationship("ScheduledReport", back_populates="executions")
     triggered_by = relationship("User", foreign_keys=[triggered_by_user_id])
@@ -402,8 +380,8 @@ class ReportExecution(Base):
     )
 
     __table_args__ = (
-        Index("ix_report_execution_tenant", "tenant_id", "started_at"),
-        Index("ix_report_execution_status", "tenant_id", "status"),
+        Index("ix_report_execution_started", "started_at"),
+        Index("ix_report_execution_status", "status"),
         Index("ix_report_execution_schedule", "schedule_id"),
     )
 
@@ -421,12 +399,6 @@ class ReportDelivery(Base):
     __tablename__ = "report_deliveries"
 
     id = Column(UUID(as_uuid=True), primary_key=True, default=uuid4)
-    tenant_id = Column(
-        Integer,
-        ForeignKey("tenants.id", ondelete="CASCADE"),
-        nullable=False,
-        index=True,
-    )
     execution_id = Column(
         UUID(as_uuid=True),
         ForeignKey("report_executions.id", ondelete="CASCADE"),
@@ -465,13 +437,12 @@ class ReportDelivery(Base):
     last_retry_at = Column(DateTime(timezone=True), nullable=True)
 
     # Relationships
-    tenant = relationship("Tenant", foreign_keys=[tenant_id])
     execution = relationship("ReportExecution", back_populates="deliveries")
 
     __table_args__ = (
         Index("ix_report_delivery_execution", "execution_id"),
-        Index("ix_report_delivery_status", "tenant_id", "status"),
-        Index("ix_report_delivery_channel", "tenant_id", "channel"),
+        Index("ix_report_delivery_status", "status"),
+        Index("ix_report_delivery_channel", "channel"),
     )
 
 
@@ -488,12 +459,6 @@ class DeliveryChannelConfig(Base):
     __tablename__ = "delivery_channel_configs"
 
     id = Column(UUID(as_uuid=True), primary_key=True, default=uuid4)
-    tenant_id = Column(
-        Integer,
-        ForeignKey("tenants.id", ondelete="CASCADE"),
-        nullable=False,
-        index=True,
-    )
 
     # Channel
     channel = Column(StrEnumType(DeliveryChannel), nullable=False)
@@ -552,9 +517,8 @@ class DeliveryChannelConfig(Base):
     )
 
     # Relationships
-    tenant = relationship("Tenant", foreign_keys=[tenant_id])
 
     __table_args__ = (
-        Index("ix_delivery_config_tenant", "tenant_id"),
-        UniqueConstraint("tenant_id", "channel", "name", name="uq_delivery_config"),
+        # was tenant-scoped; now global
+        UniqueConstraint("channel", "name", name="uq_delivery_config"),
     )

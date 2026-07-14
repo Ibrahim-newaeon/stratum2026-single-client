@@ -58,19 +58,13 @@ class AttributionVarianceStatus(str, enum.Enum):
 
 class FactSignalHealthDaily(Base):
     """
-    Daily signal health metrics per tenant/platform.
+    Daily signal health metrics per platform.
     Tracks EMQ scores, event loss, freshness, and API health.
     """
 
     __tablename__ = "fact_signal_health_daily"
 
     id = Column(UUID(as_uuid=True), primary_key=True, default=uuid4)
-    tenant_id = Column(
-        Integer,
-        ForeignKey("tenants.id", ondelete="CASCADE"),
-        nullable=False,
-        index=True,
-    )
     date = Column(Date, nullable=False)
     platform = Column(String(50), nullable=False)  # meta, google, tiktok, snapchat
     account_id = Column(
@@ -106,19 +100,13 @@ class FactSignalHealthDaily(Base):
         nullable=False,
     )
 
-    # Relationships - use foreign_keys to resolve ambiguity
-    tenant = relationship(
-        "Tenant", foreign_keys=[tenant_id], back_populates="signal_health_records"
-    )
-
     __table_args__ = (
-        Index("ix_fact_signal_health_daily_tenant_date", "tenant_id", "date"),
-        Index("ix_fact_signal_health_daily_tenant_platform", "tenant_id", "platform"),
-        Index("ix_fact_signal_health_daily_status", "tenant_id", "status"),
-        Index("ix_fact_signal_health_daily_tenant_account", "tenant_id", "account_id"),
+        Index("ix_fact_signal_health_daily_date", "date"),
+        Index("ix_fact_signal_health_daily_platform", "platform"),
+        Index("ix_fact_signal_health_daily_status", "status"),
+        Index("ix_fact_signal_health_daily_account", "account_id"),
         Index(
-            "ix_fact_signal_health_daily_tenant_platform_account",
-            "tenant_id",
+            "ix_fact_signal_health_daily_platform_account",
             "platform",
             "account_id",
         ),
@@ -134,12 +122,6 @@ class FactAttributionVarianceDaily(Base):
     __tablename__ = "fact_attribution_variance_daily"
 
     id = Column(UUID(as_uuid=True), primary_key=True, default=uuid4)
-    tenant_id = Column(
-        Integer,
-        ForeignKey("tenants.id", ondelete="CASCADE"),
-        nullable=False,
-        index=True,
-    )
     date = Column(Date, nullable=False)
     platform = Column(String(50), nullable=False)
 
@@ -179,18 +161,10 @@ class FactAttributionVarianceDaily(Base):
         nullable=False,
     )
 
-    # Relationships - use foreign_keys to resolve ambiguity
-    tenant = relationship(
-        "Tenant",
-        foreign_keys=[tenant_id],
-        back_populates="attribution_variance_records",
-    )
-
     __table_args__ = (
-        Index("ix_fact_attribution_variance_daily_tenant_date", "tenant_id", "date"),
+        Index("ix_fact_attribution_variance_daily_date", "date"),
         Index(
-            "ix_fact_attribution_variance_daily_tenant_platform",
-            "tenant_id",
+            "ix_fact_attribution_variance_daily_platform",
             "platform",
         ),
     )
@@ -205,12 +179,6 @@ class FactActionsQueue(Base):
     __tablename__ = "fact_actions_queue"
 
     id = Column(UUID(as_uuid=True), primary_key=True, default=uuid4)
-    tenant_id = Column(
-        Integer,
-        ForeignKey("tenants.id", ondelete="CASCADE"),
-        nullable=False,
-        index=True,
-    )
     date = Column(Date, nullable=False)
 
     # Action details
@@ -268,15 +236,12 @@ class FactActionsQueue(Base):
         Integer, ForeignKey("users.id", ondelete="SET NULL"), nullable=True
     )
 
-    # Relationships - use foreign_keys to resolve ambiguity
-    tenant = relationship(
-        "Tenant", foreign_keys=[tenant_id], back_populates="actions_queue"
-    )
+    # Relationships
     created_by = relationship("User", foreign_keys=[created_by_user_id])
     approved_by = relationship("User", foreign_keys=[approved_by_user_id])
     applied_by = relationship("User", foreign_keys=[applied_by_user_id])
 
     __table_args__ = (
-        Index("ix_fact_actions_queue_tenant_date", "tenant_id", "date"),
-        Index("ix_fact_actions_queue_status", "tenant_id", "status"),
+        Index("ix_fact_actions_queue_date", "date"),
+        Index("ix_fact_actions_queue_status", "status"),
     )

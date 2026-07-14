@@ -2,7 +2,7 @@
 # Stratum AI - Settings Models (Webhooks, Notifications, Changelog)
 # =============================================================================
 """
-Models for tenant settings features:
+Models for org-level settings features:
 - Webhooks: Outbound event notifications
 - Notifications: In-app notification system
 - Changelog: Product updates and release notes
@@ -24,7 +24,7 @@ from sqlalchemy import (
 from sqlalchemy.dialects.postgresql import JSONB
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
-from app.db.base_class import Base, StrEnumType, TenantMixin, TimestampMixin
+from app.db.base_class import Base, StrEnumType, TimestampMixin
 from app.db.types import EncryptedString
 
 # =============================================================================
@@ -90,7 +90,7 @@ class ChangelogType(str, Enum):
 # =============================================================================
 
 
-class Webhook(Base, TimestampMixin, TenantMixin):
+class Webhook(Base, TimestampMixin):
     """
     Webhook endpoint configuration for outbound event notifications.
     """
@@ -135,7 +135,7 @@ class Webhook(Base, TimestampMixin, TenantMixin):
         "WebhookDelivery", back_populates="webhook", cascade="all, delete-orphan"
     )
 
-    __table_args__ = (Index("ix_webhooks_tenant_status", "tenant_id", "status"),)
+    __table_args__ = (Index("ix_webhooks_status", "status"),)
 
 
 class WebhookDelivery(Base, TimestampMixin):
@@ -179,7 +179,7 @@ class WebhookDelivery(Base, TimestampMixin):
 # =============================================================================
 
 
-class Notification(Base, TimestampMixin, TenantMixin):
+class Notification(Base, TimestampMixin):
     """
     In-app notifications for users.
     """
@@ -189,7 +189,7 @@ class Notification(Base, TimestampMixin, TenantMixin):
     id: Mapped[int] = mapped_column(Integer, primary_key=True, autoincrement=True)
     user_id: Mapped[Optional[int]] = mapped_column(
         Integer, ForeignKey("users.id", ondelete="CASCADE"), nullable=True, index=True
-    )  # Null = broadcast to all tenant users
+    )  # Null = broadcast to all users
 
     # Content
     title: Mapped[str] = mapped_column(String(255), nullable=False)
@@ -229,7 +229,7 @@ class Notification(Base, TimestampMixin, TenantMixin):
 
     __table_args__ = (
         Index("ix_notifications_user_unread", "user_id", "is_read"),
-        Index("ix_notifications_tenant_created", "tenant_id", "created_at"),
+        Index("ix_notifications_created", "created_at"),
     )
 
 
@@ -240,18 +240,13 @@ class Notification(Base, TimestampMixin, TenantMixin):
 
 class ChangelogEntry(Base, TimestampMixin):
     """
-    Product changelog / What's New entries.
-    Scoped to tenant for isolation; NULL tenant_id = global entry (legacy).
+    Product changelog / What's New entries. Global (single-org: all entries
+    are visible to every user).
     """
 
     __tablename__ = "changelog_entries"
 
     id: Mapped[int] = mapped_column(Integer, primary_key=True, autoincrement=True)
-
-    # Tenant scoping (nullable for backward compatibility with global entries)
-    tenant_id: Mapped[Optional[int]] = mapped_column(
-        Integer, ForeignKey("tenants.id", ondelete="CASCADE"), nullable=True, index=True
-    )
 
     # Version info
     version: Mapped[str] = mapped_column(String(50), nullable=False)  # e.g., "1.2.0"
@@ -318,9 +313,9 @@ class ChangelogReadStatus(Base, TimestampMixin):
 # =============================================================================
 
 
-class SlackIntegration(Base, TimestampMixin, TenantMixin):
+class SlackIntegration(Base, TimestampMixin):
     """
-    Slack workspace integration settings per tenant.
+    Slack workspace integration settings (singleton — one workspace).
     """
 
     __tablename__ = "slack_integrations"
@@ -354,4 +349,3 @@ class SlackIntegration(Base, TimestampMixin, TenantMixin):
     )
     last_test_success: Mapped[Optional[bool]] = mapped_column(Boolean, nullable=True)
 
-    __table_args__ = (Index("ix_slack_integrations_tenant", "tenant_id", unique=True),)

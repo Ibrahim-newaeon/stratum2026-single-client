@@ -3,8 +3,8 @@
 # =============================================================================
 """
 Database models for the Campaign Builder feature:
-- TenantPlatformConnection: OAuth tokens and connection metadata per tenant
-- TenantAdAccount: Ad accounts enabled for use by tenant
+- TenantPlatformConnection: OAuth tokens and connection metadata (per platform)
+- TenantAdAccount: Ad accounts enabled for use
 - CampaignDraft: Campaign drafts with approval workflow
 - CampaignPublishLog: Audit trail for publish attempts
 """
@@ -83,19 +83,13 @@ class PublishResult(str, enum.Enum):
 
 class TenantPlatformConnection(Base):
     """
-    Stores OAuth tokens and connection metadata per tenant.
-    One record per (tenant, platform) pair.
+    Stores OAuth tokens and connection metadata.
+    One record per platform.
     """
 
     __tablename__ = "tenant_platform_connection"
 
     id = Column(UUID(as_uuid=True), primary_key=True, default=uuid4)
-    tenant_id = Column(
-        Integer,
-        ForeignKey("tenants.id", ondelete="CASCADE"),
-        nullable=False,
-        index=True,
-    )
     platform = Column(String(50), nullable=False)
     status = Column(
         String(50), nullable=False, default=ConnectionStatus.DISCONNECTED.value
@@ -135,35 +129,26 @@ class TenantPlatformConnection(Base):
     error_count = Column(Integer, default=0)
 
     # Relationships
-    tenant = relationship(
-        "Tenant", foreign_keys=[tenant_id], back_populates="platform_connections"
-    )
     granted_by = relationship("User", foreign_keys=[granted_by_user_id])
     ad_accounts = relationship(
         "TenantAdAccount", back_populates="connection", cascade="all, delete-orphan"
     )
 
     __table_args__ = (
-        UniqueConstraint("tenant_id", "platform", name="uq_tenant_platform_connection"),
-        Index("ix_tenant_platform_connection_tenant_platform", "tenant_id", "platform"),
+        # was tenant-scoped; now global
+        UniqueConstraint("platform", name="uq_platform_connection"),
     )
 
 
 class TenantAdAccount(Base):
     """
-    Ad accounts that tenant has enabled for use in Stratum AI.
+    Ad accounts enabled for use in Stratum AI.
     Synced from platform after OAuth authorization.
     """
 
     __tablename__ = "tenant_ad_account"
 
     id = Column(UUID(as_uuid=True), primary_key=True, default=uuid4)
-    tenant_id = Column(
-        Integer,
-        ForeignKey("tenants.id", ondelete="CASCADE"),
-        nullable=False,
-        index=True,
-    )
     connection_id = Column(
         UUID(as_uuid=True),
         ForeignKey("tenant_platform_connection.id", ondelete="CASCADE"),
@@ -207,17 +192,15 @@ class TenantAdAccount(Base):
     )
 
     # Relationships
-    tenant = relationship(
-        "Tenant", foreign_keys=[tenant_id], back_populates="ad_accounts"
-    )
     connection = relationship("TenantPlatformConnection", back_populates="ad_accounts")
     campaign_drafts = relationship("CampaignDraft", back_populates="ad_account")
 
     __table_args__ = (
+        # was tenant-scoped; now global
         UniqueConstraint(
-            "tenant_id", "platform", "platform_account_id", name="uq_tenant_ad_account"
+            "platform", "platform_account_id", name="uq_ad_account"
         ),
-        Index("ix_tenant_ad_account_enabled", "tenant_id", "is_enabled"),
+        Index("ix_ad_account_enabled", "is_enabled"),
     )
 
 
@@ -230,12 +213,6 @@ class CampaignDraft(Base):
     __tablename__ = "campaign_draft"
 
     id = Column(UUID(as_uuid=True), primary_key=True, default=uuid4)
-    tenant_id = Column(
-        Integer,
-        ForeignKey("tenants.id", ondelete="CASCADE"),
-        nullable=False,
-        index=True,
-    )
     ad_account_id = Column(
         UUID(as_uuid=True),
         ForeignKey("tenant_ad_account.id", ondelete="SET NULL"),
@@ -288,9 +265,6 @@ class CampaignDraft(Base):
     )
 
     # Relationships
-    tenant = relationship(
-        "Tenant", foreign_keys=[tenant_id], back_populates="campaign_drafts"
-    )
     ad_account = relationship("TenantAdAccount", back_populates="campaign_drafts")
     created_by = relationship("User", foreign_keys=[created_by_user_id])
     submitted_by = relationship("User", foreign_keys=[submitted_by_user_id])
@@ -301,8 +275,8 @@ class CampaignDraft(Base):
     )
 
     __table_args__ = (
-        Index("ix_campaign_draft_tenant_status", "tenant_id", "status"),
-        Index("ix_campaign_draft_platform", "tenant_id", "platform"),
+        Index("ix_campaign_draft_status", "status"),
+        Index("ix_campaign_draft_platform", "platform"),
     )
 
 
@@ -315,12 +289,6 @@ class CampaignPublishLog(Base):
     __tablename__ = "campaign_publish_log"
 
     id = Column(UUID(as_uuid=True), primary_key=True, default=uuid4)
-    tenant_id = Column(
-        Integer,
-        ForeignKey("tenants.id", ondelete="CASCADE"),
-        nullable=False,
-        index=True,
-    )
     draft_id = Column(
         UUID(as_uuid=True),
         ForeignKey("campaign_draft.id", ondelete="SET NULL"),
@@ -358,13 +326,10 @@ class CampaignPublishLog(Base):
     last_retry_at = Column(DateTime(timezone=True), nullable=True)
 
     # Relationships
-    tenant = relationship(
-        "Tenant", foreign_keys=[tenant_id], back_populates="publish_logs"
-    )
     draft = relationship("CampaignDraft", back_populates="publish_logs")
     published_by = relationship("User", foreign_keys=[published_by_user_id])
 
     __table_args__ = (
-        Index("ix_campaign_publish_log_tenant_time", "tenant_id", "event_time"),
+        Index("ix_campaign_publish_log_time", "event_time"),
         Index("ix_campaign_publish_log_draft", "draft_id"),
     )

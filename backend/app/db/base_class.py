@@ -3,6 +3,6 @@
 # =============================================================================
 # Re-exports from base.py for backwards compatibility
 
-from app.db.base import Base, SoftDeleteMixin, StrEnumType, TenantMixin, TimestampMixin
+from app.db.base import Base, SoftDeleteMixin, StrEnumType, TimestampMixin
 
-__all__ = ["Base", "SoftDeleteMixin", "StrEnumType", "TenantMixin", "TimestampMixin"]
+__all__ = ["Base", "SoftDeleteMixin", "StrEnumType", "TimestampMixin"]

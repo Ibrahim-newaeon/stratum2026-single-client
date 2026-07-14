@@ -2,11 +2,11 @@
 # Stratum AI - Database Models
 # =============================================================================
 """
-Complete SQLAlchemy models for the Stratum AI platform.
-Implements multi-tenancy, soft delete, and audit capabilities.
+Complete SQLAlchemy models for the Stratum AI platform (single-client).
+Implements the Organization singleton, soft delete, and audit capabilities.
 
 Models:
-- Tenant: Organization/company entity
+- Organization: Singleton org row (id=1) — identity, branding, thresholds
 - User: User accounts with roles
 - Campaign: Unified campaign model across ad platforms
 - CreativeAsset: Digital Asset Management (DAM)
@@ -38,9 +38,10 @@ from sqlalchemy import (
     func,
 )
 from sqlalchemy.dialects.postgresql import JSONB
+from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
-from app.db.base import Base, SoftDeleteMixin, TenantMixin, TimestampMixin
+from app.db.base import Base, SoftDeleteMixin, TimestampMixin
 
 
 # =============================================================================
@@ -201,9 +202,9 @@ class LandingPageSubscriber(Base, TimestampMixin):
     )
 
     # Conversion
-    converted_to_tenant_id: Mapped[Optional[int]] = mapped_column(
-        Integer, ForeignKey("tenants.id", ondelete="SET NULL"), nullable=True
-    )
+    # NOTE: the old FK to the tenants table was removed with the Tenant model —
+    # single-org deployments have nothing to "convert to". converted_at still
+    # marks when the lead became a customer.
     converted_at: Mapped[Optional[datetime]] = mapped_column(
         DateTime(timezone=True), nullable=True
     )
@@ -241,152 +242,41 @@ class LandingPageSubscriber(Base, TimestampMixin):
 
 
 # =============================================================================
-# Tenant Model (Multi-tenancy Root)
+# Organization Model (Singleton)
 # =============================================================================
-class Tenant(Base, TimestampMixin, SoftDeleteMixin):
-    """
-    Organization/Company entity.
-    All other entities belong to a tenant for multi-tenancy isolation.
-    """
+class Organization(Base, TimestampMixin):
+    """Singleton org row (id=1): identity, branding, thresholds, enforcement, onboarding."""
 
-    __tablename__ = "tenants"
+    __tablename__ = "organization"
+    __table_args__ = (CheckConstraint("id = 1", name="ck_organization_singleton"),)
 
-    id: Mapped[int] = mapped_column(Integer, primary_key=True, autoincrement=True)
+    id: Mapped[int] = mapped_column(Integer, primary_key=True, default=1)
     name: Mapped[str] = mapped_column(String(255), nullable=False)
     slug: Mapped[str] = mapped_column(String(100), unique=True, nullable=False)
-    domain: Mapped[Optional[str]] = mapped_column(String(255), nullable=True)
-
-    # Status & Health (added by migration 009 — SuperAdmin system)
-    status: Mapped[str] = mapped_column(
-        String(20), default="active", server_default="active", nullable=False
-    )
-    health_score: Mapped[Optional[float]] = mapped_column(Float, nullable=True)
-    churn_risk_score: Mapped[Optional[float]] = mapped_column(Float, nullable=True)
-    last_activity_at: Mapped[Optional[datetime]] = mapped_column(
-        DateTime(timezone=True), nullable=True
-    )
-    last_admin_login_at: Mapped[Optional[datetime]] = mapped_column(
-        DateTime(timezone=True), nullable=True
-    )
-    onboarding_completed: Mapped[bool] = mapped_column(
-        Boolean, default=False, server_default="false"
-    )
-
-    # Subscription & Billing
-    plan: Mapped[str] = mapped_column(String(50), default="free", nullable=False)
-    plan_expires_at: Mapped[Optional[datetime]] = mapped_column(
-        DateTime(timezone=True), nullable=True
-    )
-    stripe_customer_id: Mapped[Optional[str]] = mapped_column(
-        String(255), nullable=True
-    )
-    mrr_cents: Mapped[int] = mapped_column(
-        Integer, default=0, server_default="0", nullable=False
-    )
-    trial_ends_at: Mapped[Optional[datetime]] = mapped_column(
-        DateTime(timezone=True), nullable=True
-    )
-    billing_email: Mapped[Optional[str]] = mapped_column(String(255), nullable=True)
-    billing_address: Mapped[Optional[dict]] = mapped_column(JSONB, nullable=True)
-    vat_number: Mapped[Optional[str]] = mapped_column(String(50), nullable=True)
-    timezone: Mapped[str] = mapped_column(
-        String(50), default="UTC", server_default="UTC"
-    )
-    currency: Mapped[str] = mapped_column(
-        String(3), default="USD", server_default="USD"
-    )
-
-    # Settings
-    settings: Mapped[dict] = mapped_column(JSONB, default=dict, nullable=False)
+    branding: Mapped[dict] = mapped_column(JSONB, default=dict, nullable=False)
+    settings: Mapped[dict] = mapped_column(
+        JSONB, default=dict, nullable=False
+    )  # trust thresholds live here
     feature_flags: Mapped[dict] = mapped_column(JSONB, default=dict, nullable=False)
+    enforcement_mode: Mapped[str] = mapped_column(
+        String(20), default="advisory", nullable=False
+    )
+    onboarding_state: Mapped[dict] = mapped_column(JSONB, default=dict, nullable=False)
+    is_onboarded: Mapped[bool] = mapped_column(Boolean, default=False, nullable=False)
 
-    # Limits
-    max_users: Mapped[int] = mapped_column(Integer, default=5, nullable=False)
-    max_campaigns: Mapped[int] = mapped_column(Integer, default=50, nullable=False)
-    max_connectors: Mapped[int] = mapped_column(Integer, default=3, server_default="3")
-    max_refresh_frequency_mins: Mapped[int] = mapped_column(
-        Integer, default=60, server_default="60"
-    )
 
-    # Relationships
-    users: Mapped[List["User"]] = relationship(
-        "User", back_populates="tenant", foreign_keys="[User.tenant_id]"
-    )
-    campaigns: Mapped[List["Campaign"]] = relationship(
-        "Campaign", back_populates="tenant", foreign_keys="[Campaign.tenant_id]"
-    )
-    assets: Mapped[List["CreativeAsset"]] = relationship(
-        "CreativeAsset",
-        back_populates="tenant",
-        foreign_keys="[CreativeAsset.tenant_id]",
-    )
-    rules: Mapped[List["Rule"]] = relationship(
-        "Rule", back_populates="tenant", foreign_keys="[Rule.tenant_id]"
-    )
-    competitors: Mapped[List["CompetitorBenchmark"]] = relationship(
-        "CompetitorBenchmark",
-        back_populates="tenant",
-        foreign_keys="[CompetitorBenchmark.tenant_id]",
-    )
-
-    # Trust Layer relationships (lazy import to avoid circular imports)
-    signal_health_records: Mapped[List["FactSignalHealthDaily"]] = relationship(
-        "FactSignalHealthDaily",
-        back_populates="tenant",
-        foreign_keys="[FactSignalHealthDaily.tenant_id]",
-    )
-    attribution_variance_records: Mapped[List["FactAttributionVarianceDaily"]] = (
-        relationship(
-            "FactAttributionVarianceDaily",
-            back_populates="tenant",
-            foreign_keys="[FactAttributionVarianceDaily.tenant_id]",
-        )
-    )
-    actions_queue: Mapped[List["FactActionsQueue"]] = relationship(
-        "FactActionsQueue",
-        back_populates="tenant",
-        foreign_keys="[FactActionsQueue.tenant_id]",
-    )
-
-    # Multi-tenant memberships
-    tenant_memberships: Mapped[List["UserTenantMembership"]] = relationship(
-        "UserTenantMembership",
-        back_populates="tenant",
-        foreign_keys="[UserTenantMembership.tenant_id]",
-    )
-
-    # Campaign Builder relationships
-    platform_connections: Mapped[List["TenantPlatformConnection"]] = relationship(
-        "TenantPlatformConnection",
-        back_populates="tenant",
-        foreign_keys="[TenantPlatformConnection.tenant_id]",
-    )
-    ad_accounts: Mapped[List["TenantAdAccount"]] = relationship(
-        "TenantAdAccount",
-        back_populates="tenant",
-        foreign_keys="[TenantAdAccount.tenant_id]",
-    )
-    campaign_drafts: Mapped[List["CampaignDraft"]] = relationship(
-        "CampaignDraft",
-        back_populates="tenant",
-        foreign_keys="[CampaignDraft.tenant_id]",
-    )
-    publish_logs: Mapped[List["CampaignPublishLog"]] = relationship(
-        "CampaignPublishLog",
-        back_populates="tenant",
-        foreign_keys="[CampaignPublishLog.tenant_id]",
-    )
-
-    __table_args__ = (
-        Index("ix_tenants_slug", "slug"),
-        Index("ix_tenants_active", "is_deleted", "plan"),
-    )
+async def get_organization(db: AsyncSession) -> "Organization":
+    """Fetch the singleton org row (id=1). Raises if seeding never ran."""
+    org = await db.get(Organization, 1)
+    if org is None:
+        raise RuntimeError("Organization singleton missing — run seed_owner")
+    return org
 
 
 # =============================================================================
 # User Model
 # =============================================================================
-class User(Base, TimestampMixin, SoftDeleteMixin, TenantMixin):
+class User(Base, TimestampMixin, SoftDeleteMixin):
     """
     User accounts with role-based access control.
     PII fields (email, full_name) are encrypted at rest.
@@ -462,7 +352,6 @@ class User(Base, TimestampMixin, SoftDeleteMixin, TenantMixin):
     user_type: Mapped[str] = mapped_column(String(20), default="agency", nullable=False)
 
     # Relationships
-    tenant: Mapped["Tenant"] = relationship("Tenant", back_populates="users")
     client: Mapped[Optional["Client"]] = relationship(
         "Client", back_populates="portal_users", foreign_keys=[client_id]
     )
@@ -470,68 +359,19 @@ class User(Base, TimestampMixin, SoftDeleteMixin, TenantMixin):
         "AuditLog", back_populates="user"
     )
 
-    # Multi-tenant memberships (user can belong to multiple tenants)
-    tenant_memberships: Mapped[List["UserTenantMembership"]] = relationship(
-        "UserTenantMembership",
-        back_populates="user",
-        foreign_keys="[UserTenantMembership.user_id]",
-    )
-
     __table_args__ = (
-        UniqueConstraint("tenant_id", "email_hash", name="uq_user_tenant_email"),
+        # was tenant-scoped; now global
+        UniqueConstraint("email_hash", name="uq_user_email_hash"),
         Index("ix_users_email_hash", "email_hash"),
-        Index("ix_users_tenant_active", "tenant_id", "is_active", "is_deleted"),
+        Index("ix_users_active", "is_active", "is_deleted"),
         Index("ix_users_cms_role", "cms_role"),
-    )
-
-
-# =============================================================================
-# User-Tenant Membership (Multi-Account Switcher)
-# =============================================================================
-class UserTenantMembership(Base, TimestampMixin):
-    """
-    Junction table allowing a user to belong to multiple tenants.
-    Each membership can have a different role per tenant.
-    The is_default flag indicates which tenant to land on after login.
-    """
-
-    __tablename__ = "user_tenant_memberships"
-
-    id: Mapped[int] = mapped_column(Integer, primary_key=True, autoincrement=True)
-    user_id: Mapped[int] = mapped_column(
-        Integer, ForeignKey("users.id", ondelete="CASCADE"), nullable=False
-    )
-    tenant_id: Mapped[int] = mapped_column(
-        Integer, ForeignKey("tenants.id", ondelete="CASCADE"), nullable=False
-    )
-    role: Mapped[UserRole] = mapped_column(
-        Enum(UserRole, values_callable=lambda x: [e.value for e in x]),
-        default=UserRole.ANALYST,
-        nullable=False,
-    )
-    is_default: Mapped[bool] = mapped_column(Boolean, default=False, nullable=False)
-    is_active: Mapped[bool] = mapped_column(Boolean, default=True, nullable=False)
-
-    # Relationships
-    user: Mapped["User"] = relationship(
-        "User", back_populates="tenant_memberships", foreign_keys=[user_id]
-    )
-    tenant: Mapped["Tenant"] = relationship(
-        "Tenant", back_populates="tenant_memberships", foreign_keys=[tenant_id]
-    )
-
-    __table_args__ = (
-        UniqueConstraint("user_id", "tenant_id", name="uq_user_tenant_membership"),
-        Index("ix_utm_user_id", "user_id"),
-        Index("ix_utm_tenant_id", "tenant_id"),
-        Index("ix_utm_user_active", "user_id", "is_active"),
     )
 
 
 # =============================================================================
 # Campaign Model (Unified across Ad Platforms)
 # =============================================================================
-class Campaign(Base, TimestampMixin, SoftDeleteMixin, TenantMixin):
+class Campaign(Base, TimestampMixin, SoftDeleteMixin):
     """
     Unified campaign model that normalizes data from Meta, Google, TikTok, Snapchat.
     Provides a single view across all advertising platforms.
@@ -622,7 +462,6 @@ class Campaign(Base, TimestampMixin, SoftDeleteMixin, TenantMixin):
     sync_error: Mapped[Optional[str]] = mapped_column(Text, nullable=True)
 
     # Relationships
-    tenant: Mapped["Tenant"] = relationship("Tenant", back_populates="campaigns")
     client: Mapped[Optional["Client"]] = relationship(
         "Client", back_populates="campaigns", foreign_keys=[client_id]
     )
@@ -634,17 +473,18 @@ class Campaign(Base, TimestampMixin, SoftDeleteMixin, TenantMixin):
     )
 
     __table_args__ = (
+        # was tenant-scoped; now global
         UniqueConstraint(
-            "tenant_id", "platform", "external_id", name="uq_campaign_platform_external"
+            "platform", "external_id", name="uq_campaign_platform_external"
         ),
-        Index("ix_campaigns_tenant_status", "tenant_id", "status"),
-        Index("ix_campaigns_tenant_deleted", "tenant_id", "is_deleted"),
-        Index("ix_campaigns_tenant_updated", "tenant_id", "updated_at"),
-        Index("ix_campaigns_platform", "tenant_id", "platform"),
-        Index("ix_campaigns_date_range", "tenant_id", "start_date", "end_date"),
-        Index("ix_campaigns_roas", "tenant_id", "roas"),
+        Index("ix_campaigns_status", "status"),
+        Index("ix_campaigns_deleted", "is_deleted"),
+        Index("ix_campaigns_updated", "updated_at"),
+        Index("ix_campaigns_platform", "platform"),
+        Index("ix_campaigns_date_range", "start_date", "end_date"),
+        Index("ix_campaigns_roas", "roas"),
         Index("ix_campaigns_client", "client_id"),
-        Index("ix_campaigns_name_search", "tenant_id", "name"),
+        Index("ix_campaigns_name_search", "name"),
         Index("ix_campaigns_external", "external_id"),
     )
 
@@ -667,7 +507,7 @@ class Campaign(Base, TimestampMixin, SoftDeleteMixin, TenantMixin):
 # =============================================================================
 # Campaign Metrics (Time Series)
 # =============================================================================
-class CampaignMetric(Base, TenantMixin):
+class CampaignMetric(Base):
     """
     Daily time-series metrics for campaigns.
     Used for trend analysis and forecasting.
@@ -703,7 +543,7 @@ class CampaignMetric(Base, TenantMixin):
 
     __table_args__ = (
         UniqueConstraint("campaign_id", "date", name="uq_campaign_metric_date"),
-        Index("ix_campaign_metrics_date", "tenant_id", "date"),
+        Index("ix_campaign_metrics_date", "date"),
         Index("ix_campaign_metrics_campaign_date", "campaign_id", "date"),
     )
 
@@ -711,7 +551,7 @@ class CampaignMetric(Base, TenantMixin):
 # =============================================================================
 # Creative Asset (Digital Asset Management)
 # =============================================================================
-class CreativeAsset(Base, TimestampMixin, SoftDeleteMixin, TenantMixin):
+class CreativeAsset(Base, TimestampMixin, SoftDeleteMixin):
     """
     Digital Asset Management for ad creatives.
     Tracks images, videos, and their performance across campaigns.
@@ -763,22 +603,21 @@ class CreativeAsset(Base, TimestampMixin, SoftDeleteMixin, TenantMixin):
     brand_safety_score: Mapped[Optional[float]] = mapped_column(Float, nullable=True)
 
     # Relationships
-    tenant: Mapped["Tenant"] = relationship("Tenant", back_populates="assets")
     campaign: Mapped[Optional["Campaign"]] = relationship(
         "Campaign", back_populates="assets"
     )
 
     __table_args__ = (
-        Index("ix_assets_tenant_type", "tenant_id", "asset_type"),
-        Index("ix_assets_fatigue", "tenant_id", "fatigue_score"),
-        Index("ix_assets_folder", "tenant_id", "folder"),
+        Index("ix_assets_type", "asset_type"),
+        Index("ix_assets_fatigue", "fatigue_score"),
+        Index("ix_assets_folder", "folder"),
     )
 
 
 # =============================================================================
 # Automation Rule (Rules Engine - Module C)
 # =============================================================================
-class Rule(Base, TimestampMixin, SoftDeleteMixin, TenantMixin):
+class Rule(Base, TimestampMixin, SoftDeleteMixin):
     """
     IFTTT-style automation rules for campaign management.
     Evaluated periodically by Celery workers.
@@ -841,18 +680,17 @@ class Rule(Base, TimestampMixin, SoftDeleteMixin, TenantMixin):
     cooldown_hours: Mapped[int] = mapped_column(Integer, default=24, nullable=False)
 
     # Relationships
-    tenant: Mapped["Tenant"] = relationship("Tenant", back_populates="rules")
     executions: Mapped[List["RuleExecution"]] = relationship(
         "RuleExecution", back_populates="rule", cascade="all, delete-orphan"
     )
 
     __table_args__ = (
-        Index("ix_rules_tenant_status", "tenant_id", "status"),
+        Index("ix_rules_status", "status"),
         Index("ix_rules_evaluation", "status", "last_evaluated_at"),
     )
 
 
-class RuleExecution(Base, TenantMixin):
+class RuleExecution(Base):
     """
     Log of rule executions for audit and debugging.
     """
@@ -885,14 +723,14 @@ class RuleExecution(Base, TenantMixin):
 
     __table_args__ = (
         Index("ix_rule_executions_rule_date", "rule_id", "executed_at"),
-        Index("ix_rule_executions_tenant_date", "tenant_id", "executed_at"),
+        Index("ix_rule_executions_date", "executed_at"),
     )
 
 
 # =============================================================================
 # Competitor Benchmark (Module D)
 # =============================================================================
-class CompetitorBenchmark(Base, TimestampMixin, TenantMixin):
+class CompetitorBenchmark(Base, TimestampMixin):
     """
     Competitor intelligence and market benchmark data.
     Stores scraped metadata and API-sourced market data.
@@ -951,13 +789,11 @@ class CompetitorBenchmark(Base, TimestampMixin, TenantMixin):
     )
     fetch_error: Mapped[Optional[str]] = mapped_column(Text, nullable=True)
 
-    # Relationships
-    tenant: Mapped["Tenant"] = relationship("Tenant", back_populates="competitors")
-
     __table_args__ = (
-        UniqueConstraint("tenant_id", "domain", name="uq_competitor_tenant_domain"),
-        Index("ix_competitors_tenant_primary", "tenant_id", "is_primary"),
-        Index("ix_competitors_sov", "tenant_id", "share_of_voice"),
+        # was tenant-scoped; now global
+        UniqueConstraint("domain", name="uq_competitor_domain"),
+        Index("ix_competitors_primary", "is_primary"),
+        Index("ix_competitors_sov", "share_of_voice"),
     )
 
 
@@ -973,7 +809,6 @@ class AuditLog(Base):
     __tablename__ = "audit_logs"
 
     id: Mapped[int] = mapped_column(Integer, primary_key=True, autoincrement=True)
-    tenant_id: Mapped[int] = mapped_column(Integer, nullable=False, index=True)
     user_id: Mapped[Optional[int]] = mapped_column(
         Integer, ForeignKey("users.id", ondelete="SET NULL"), nullable=True
     )
@@ -1009,17 +844,17 @@ class AuditLog(Base):
     user: Mapped[Optional["User"]] = relationship("User", back_populates="audit_logs")
 
     __table_args__ = (
-        Index("ix_audit_tenant_date", "tenant_id", "created_at"),
+        Index("ix_audit_date", "created_at"),
         Index("ix_audit_user_date", "user_id", "created_at"),
         Index("ix_audit_resource", "resource_type", "resource_id"),
-        Index("ix_audit_action", "tenant_id", "action", "created_at"),
+        Index("ix_audit_action", "action", "created_at"),
     )
 
 
 # =============================================================================
 # ML Predictions Cache
 # =============================================================================
-class MLPrediction(Base, TenantMixin):
+class MLPrediction(Base):
     """
     Cache for ML model predictions to avoid redundant computations.
     """
@@ -1070,7 +905,7 @@ class MLPrediction(Base, TenantMixin):
 
     __table_args__ = (
         Index("ix_predictions_cache", "model_type", "input_hash"),
-        Index("ix_predictions_type", "tenant_id", "prediction_type"),
+        Index("ix_predictions_type", "prediction_type"),
         Index("ix_predictions_expiry", "expires_at"),
     )
 
@@ -1078,7 +913,7 @@ class MLPrediction(Base, TenantMixin):
 # =============================================================================
 # Notification Preferences
 # =============================================================================
-class NotificationPreference(Base, TenantMixin):
+class NotificationPreference(Base):
     """
     User notification preferences for alerts and reports.
     """
@@ -1112,7 +947,7 @@ class NotificationPreference(Base, TenantMixin):
 # =============================================================================
 # API Key Management
 # =============================================================================
-class APIKey(Base, TimestampMixin, TenantMixin):
+class APIKey(Base, TimestampMixin):
     """
     API keys for programmatic access.
     """
@@ -1192,7 +1027,7 @@ class WhatsAppTemplateCategory(str, PyEnum):
     AUTHENTICATION = "AUTHENTICATION"
 
 
-class WhatsAppContact(Base, TimestampMixin, TenantMixin):
+class WhatsAppContact(Base, TimestampMixin):
     """
     WhatsApp contact management with opt-in tracking.
     Required for WhatsApp Business API compliance.
@@ -1272,13 +1107,13 @@ class WhatsAppContact(Base, TimestampMixin, TenantMixin):
     )
 
     __table_args__ = (
-        Index("ix_wa_contacts_tenant_phone", "tenant_id", "phone_number"),
+        Index("ix_wa_contacts_phone", "phone_number"),
         Index("ix_wa_contacts_user", "user_id"),
-        Index("ix_wa_contacts_opt_in", "tenant_id", "opt_in_status"),
+        Index("ix_wa_contacts_opt_in", "opt_in_status"),
     )
 
 
-class WhatsAppTemplate(Base, TimestampMixin, TenantMixin):
+class WhatsAppTemplate(Base, TimestampMixin):
     """
     WhatsApp message templates (require Meta approval).
     """
@@ -1331,12 +1166,12 @@ class WhatsAppTemplate(Base, TimestampMixin, TenantMixin):
     )
 
     __table_args__ = (
-        Index("ix_wa_templates_tenant_status", "tenant_id", "status"),
-        Index("ix_wa_templates_name", "tenant_id", "name"),
+        Index("ix_wa_templates_status", "status"),
+        Index("ix_wa_templates_name", "name"),
     )
 
 
-class WhatsAppMessage(Base, TenantMixin):
+class WhatsAppMessage(Base):
     """
     WhatsApp message tracking and delivery status.
     """
@@ -1419,12 +1254,12 @@ class WhatsAppMessage(Base, TenantMixin):
 
     __table_args__ = (
         Index("ix_wa_messages_contact", "contact_id", "created_at"),
-        Index("ix_wa_messages_status", "tenant_id", "status"),
+        Index("ix_wa_messages_status", "status"),
         Index("ix_wa_messages_wamid", "wamid"),
     )
 
 
-class WhatsAppConversation(Base, TenantMixin):
+class WhatsAppConversation(Base):
     """
     WhatsApp conversation windows (24-hour pricing model).
     """
@@ -1474,5 +1309,5 @@ class WhatsAppConversation(Base, TenantMixin):
 
     __table_args__ = (
         Index("ix_wa_conversations_contact", "contact_id"),
-        Index("ix_wa_conversations_active", "tenant_id", "is_active", "expires_at"),
+        Index("ix_wa_conversations_active", "is_active", "expires_at"),
     )

@@ -51,12 +51,6 @@ class DripSequence(Base):
     __tablename__ = "drip_sequences"
 
     id = Column(String(64), primary_key=True, default=generate_sequence_id)
-    tenant_id = Column(
-        Integer,
-        ForeignKey("tenants.id", ondelete="CASCADE"),
-        nullable=False,
-        index=True,
-    )
 
     name = Column(String(200), nullable=False)
     description = Column(Text, nullable=False, default="", server_default="")
@@ -102,9 +96,7 @@ class DripSequence(Base):
         nullable=False,
     )
 
-    tenant = relationship("Tenant", foreign_keys=[tenant_id])
-
-    __table_args__ = (Index("ix_drip_sequence_tenant_status", "tenant_id", "status"),)
+    __table_args__ = (Index("ix_drip_sequence_status", "status"),)
 
 
 class DripExecutionRecord(Base):
@@ -113,12 +105,6 @@ class DripExecutionRecord(Base):
     __tablename__ = "drip_execution_logs"
 
     id = Column(String(64), primary_key=True, default=generate_execution_id)
-    tenant_id = Column(
-        Integer,
-        ForeignKey("tenants.id", ondelete="CASCADE"),
-        nullable=False,
-        index=True,
-    )
     sequence_id = Column(
         String(64),
         ForeignKey("drip_sequences.id", ondelete="CASCADE"),

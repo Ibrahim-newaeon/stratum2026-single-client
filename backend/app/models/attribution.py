@@ -53,12 +53,6 @@ class DailyAttributedRevenue(Base):
     __tablename__ = "daily_attributed_revenue"
 
     id = Column(UUID(as_uuid=True), primary_key=True, default=uuid4)
-    tenant_id = Column(
-        Integer,
-        ForeignKey("tenants.id", ondelete="CASCADE"),
-        nullable=False,
-        index=True,
-    )
     date = Column(Date, nullable=False)
 
     # Attribution model used
@@ -105,22 +99,20 @@ class DailyAttributedRevenue(Base):
     )
 
     # Relationships
-    tenant = relationship("Tenant", foreign_keys=[tenant_id])
 
     __table_args__ = (
-        Index("ix_daily_attributed_rev_tenant_date", "tenant_id", "date"),
+        Index("ix_daily_attributed_rev_date", "date"),
         Index(
-            "ix_daily_attributed_rev_model", "tenant_id", "attribution_model", "date"
+            "ix_daily_attributed_rev_model", "attribution_model", "date"
         ),
         Index(
             "ix_daily_attributed_rev_dimension",
-            "tenant_id",
             "dimension_type",
             "dimension_id",
             "date",
         ),
+        # was tenant-scoped; now global
         UniqueConstraint(
-            "tenant_id",
             "date",
             "attribution_model",
             "dimension_type",
@@ -145,12 +137,6 @@ class ConversionPath(Base):
     __tablename__ = "conversion_paths"
 
     id = Column(UUID(as_uuid=True), primary_key=True, default=uuid4)
-    tenant_id = Column(
-        Integer,
-        ForeignKey("tenants.id", ondelete="CASCADE"),
-        nullable=False,
-        index=True,
-    )
 
     # Path identifier
     path_hash = Column(String(64), nullable=False)  # SHA256 of path string
@@ -191,21 +177,19 @@ class ConversionPath(Base):
     )
 
     # Relationships
-    tenant = relationship("Tenant", foreign_keys=[tenant_id])
 
     __table_args__ = (
         Index(
-            "ix_conversion_paths_tenant_period",
-            "tenant_id",
+            "ix_conversion_paths_period",
             "period_start",
             "period_end",
         ),
-        Index("ix_conversion_paths_hash", "tenant_id", "path_hash"),
-        Index("ix_conversion_paths_conversions", "tenant_id", "conversions"),
-        Index("ix_conversion_paths_first_channel", "tenant_id", "first_channel"),
-        Index("ix_conversion_paths_last_channel", "tenant_id", "last_channel"),
+        Index("ix_conversion_paths_hash", "path_hash"),
+        Index("ix_conversion_paths_conversions", "conversions"),
+        Index("ix_conversion_paths_first_channel", "first_channel"),
+        Index("ix_conversion_paths_last_channel", "last_channel"),
+        # was tenant-scoped; now global
         UniqueConstraint(
-            "tenant_id",
             "path_hash",
             "path_type",
             "period_start",
@@ -230,12 +214,6 @@ class AttributionSnapshot(Base):
     __tablename__ = "attribution_snapshots"
 
     id = Column(UUID(as_uuid=True), primary_key=True, default=uuid4)
-    tenant_id = Column(
-        Integer,
-        ForeignKey("tenants.id", ondelete="CASCADE"),
-        nullable=False,
-        index=True,
-    )
 
     # Snapshot metadata
     snapshot_date = Column(Date, nullable=False)
@@ -273,18 +251,16 @@ class AttributionSnapshot(Base):
     )
 
     # Relationships
-    tenant = relationship("Tenant", foreign_keys=[tenant_id])
 
     __table_args__ = (
-        Index("ix_attribution_snapshot_tenant_date", "tenant_id", "snapshot_date"),
+        Index("ix_attribution_snapshot_date", "snapshot_date"),
         Index(
             "ix_attribution_snapshot_model",
-            "tenant_id",
             "attribution_model",
             "snapshot_date",
         ),
+        # was tenant-scoped; now global
         UniqueConstraint(
-            "tenant_id",
             "snapshot_date",
             "snapshot_type",
             "attribution_model",
@@ -308,12 +284,6 @@ class ChannelInteraction(Base):
     __tablename__ = "channel_interactions"
 
     id = Column(UUID(as_uuid=True), primary_key=True, default=uuid4)
-    tenant_id = Column(
-        Integer,
-        ForeignKey("tenants.id", ondelete="CASCADE"),
-        nullable=False,
-        index=True,
-    )
 
     # Period
     period_start = Column(Date, nullable=False)
@@ -345,18 +315,16 @@ class ChannelInteraction(Base):
     )
 
     # Relationships
-    tenant = relationship("Tenant", foreign_keys=[tenant_id])
 
     __table_args__ = (
         Index(
-            "ix_channel_interaction_tenant_period",
-            "tenant_id",
+            "ix_channel_interaction_period",
             "period_start",
             "period_end",
         ),
-        Index("ix_channel_interaction_from", "tenant_id", "from_channel"),
+        Index("ix_channel_interaction_from", "from_channel"),
+        # was tenant-scoped; now global
         UniqueConstraint(
-            "tenant_id",
             "period_start",
             "period_end",
             "from_channel",
@@ -404,12 +372,6 @@ class TrainedAttributionModel(Base):
     __tablename__ = "trained_attribution_models"
 
     id = Column(UUID(as_uuid=True), primary_key=True, default=uuid4)
-    tenant_id = Column(
-        Integer,
-        ForeignKey("tenants.id", ondelete="CASCADE"),
-        nullable=False,
-        index=True,
-    )
 
     # Model identification
     model_name = Column(String(255), nullable=False)
@@ -469,13 +431,11 @@ class TrainedAttributionModel(Base):
     )
 
     # Relationships
-    tenant = relationship("Tenant", foreign_keys=[tenant_id])
     created_by = relationship("User", foreign_keys=[created_by_user_id])
 
     __table_args__ = (
-        Index("ix_trained_model_tenant", "tenant_id"),
-        Index("ix_trained_model_active", "tenant_id", "is_active"),
-        Index("ix_trained_model_type", "tenant_id", "model_type"),
+        Index("ix_trained_model_active", "is_active"),
+        Index("ix_trained_model_type", "model_type"),
     )
 
 
@@ -492,12 +452,6 @@ class ModelTrainingRun(Base):
     __tablename__ = "model_training_runs"
 
     id = Column(UUID(as_uuid=True), primary_key=True, default=uuid4)
-    tenant_id = Column(
-        Integer,
-        ForeignKey("tenants.id", ondelete="CASCADE"),
-        nullable=False,
-        index=True,
-    )
     model_id = Column(
         UUID(as_uuid=True),
         ForeignKey("trained_attribution_models.id", ondelete="CASCADE"),
@@ -544,11 +498,10 @@ class ModelTrainingRun(Base):
     )
 
     # Relationships
-    tenant = relationship("Tenant", foreign_keys=[tenant_id])
     model = relationship("TrainedAttributionModel", foreign_keys=[model_id])
     triggered_by = relationship("User", foreign_keys=[triggered_by_user_id])
 
     __table_args__ = (
-        Index("ix_training_run_tenant", "tenant_id", "started_at"),
-        Index("ix_training_run_status", "tenant_id", "status"),
+        Index("ix_training_run_started", "started_at"),
+        Index("ix_training_run_status", "status"),
     )

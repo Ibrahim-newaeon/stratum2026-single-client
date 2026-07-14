@@ -107,12 +107,6 @@ class Target(Base):
     __tablename__ = "targets"
 
     id = Column(UUID(as_uuid=True), primary_key=True, default=uuid4)
-    tenant_id = Column(
-        Integer,
-        ForeignKey("tenants.id", ondelete="CASCADE"),
-        nullable=False,
-        index=True,
-    )
 
     # Target identification
     name = Column(String(255), nullable=False)
@@ -125,7 +119,7 @@ class Target(Base):
     period_start = Column(Date, nullable=False)
     period_end = Column(Date, nullable=False)
 
-    # Scope (optional - null means tenant-wide)
+    # Scope (optional - null means org-wide)
     platform = Column(String(50), nullable=True)  # meta, google, etc.
     account_id = Column(
         String(255), nullable=True
@@ -172,19 +166,18 @@ class Target(Base):
     )
 
     # Relationships
-    tenant = relationship("Tenant", foreign_keys=[tenant_id])
     created_by = relationship("User", foreign_keys=[created_by_user_id])
     alerts = relationship(
         "PacingAlert", back_populates="target", cascade="all, delete-orphan"
     )
 
     __table_args__ = (
-        Index("ix_targets_tenant_period", "tenant_id", "period_start", "period_end"),
-        Index("ix_targets_tenant_metric", "tenant_id", "metric_type"),
-        Index("ix_targets_tenant_active", "tenant_id", "is_active"),
-        Index("ix_targets_tenant_account", "tenant_id", "account_id"),
+        Index("ix_targets_period", "period_start", "period_end"),
+        Index("ix_targets_metric", "metric_type"),
+        Index("ix_targets_active", "is_active"),
+        Index("ix_targets_account", "account_id"),
+        # was tenant-scoped; now global
         UniqueConstraint(
-            "tenant_id",
             "period_start",
             "period_end",
             "metric_type",
@@ -210,12 +203,6 @@ class DailyKPI(Base):
     __tablename__ = "daily_kpis"
 
     id = Column(UUID(as_uuid=True), primary_key=True, default=uuid4)
-    tenant_id = Column(
-        Integer,
-        ForeignKey("tenants.id", ondelete="CASCADE"),
-        nullable=False,
-        index=True,
-    )
     date = Column(Date, nullable=False)
 
     # Scope (for granular tracking)
@@ -282,22 +269,20 @@ class DailyKPI(Base):
     )
 
     # Relationships
-    tenant = relationship("Tenant", foreign_keys=[tenant_id])
 
     __table_args__ = (
-        Index("ix_daily_kpis_tenant_date", "tenant_id", "date"),
-        Index("ix_daily_kpis_tenant_platform_date", "tenant_id", "platform", "date"),
-        Index("ix_daily_kpis_tenant_campaign_date", "tenant_id", "campaign_id", "date"),
-        Index("ix_daily_kpis_tenant_account_date", "tenant_id", "account_id", "date"),
+        Index("ix_daily_kpis_date", "date"),
+        Index("ix_daily_kpis_platform_date", "platform", "date"),
+        Index("ix_daily_kpis_campaign_date", "campaign_id", "date"),
+        Index("ix_daily_kpis_account_date", "account_id", "date"),
         Index(
-            "ix_daily_kpis_tenant_platform_account_date",
-            "tenant_id",
+            "ix_daily_kpis_platform_account_date",
             "platform",
             "account_id",
             "date",
         ),
+        # was tenant-scoped; now global
         UniqueConstraint(
-            "tenant_id",
             "date",
             "platform",
             "account_id",
@@ -321,12 +306,6 @@ class PacingAlert(Base):
     __tablename__ = "pacing_alerts"
 
     id = Column(UUID(as_uuid=True), primary_key=True, default=uuid4)
-    tenant_id = Column(
-        Integer,
-        ForeignKey("tenants.id", ondelete="CASCADE"),
-        nullable=False,
-        index=True,
-    )
     target_id = Column(
         UUID(as_uuid=True),
         ForeignKey("targets.id", ondelete="CASCADE"),
@@ -390,16 +369,15 @@ class PacingAlert(Base):
     )
 
     # Relationships
-    tenant = relationship("Tenant", foreign_keys=[tenant_id])
     target = relationship("Target", back_populates="alerts")
     resolved_by = relationship("User", foreign_keys=[resolved_by_user_id])
 
     __table_args__ = (
-        Index("ix_pacing_alerts_tenant_status", "tenant_id", "status"),
-        Index("ix_pacing_alerts_tenant_date", "tenant_id", "pacing_date"),
-        Index("ix_pacing_alerts_tenant_type", "tenant_id", "alert_type"),
+        Index("ix_pacing_alerts_status", "status"),
+        Index("ix_pacing_alerts_date", "pacing_date"),
+        Index("ix_pacing_alerts_type", "alert_type"),
         Index("ix_pacing_alerts_target", "target_id"),
-        Index("ix_pacing_alerts_tenant_account", "tenant_id", "account_id"),
+        Index("ix_pacing_alerts_account", "account_id"),
     )
 
 
@@ -417,12 +395,6 @@ class Forecast(Base):
     __tablename__ = "forecasts"
 
     id = Column(UUID(as_uuid=True), primary_key=True, default=uuid4)
-    tenant_id = Column(
-        Integer,
-        ForeignKey("tenants.id", ondelete="CASCADE"),
-        nullable=False,
-        index=True,
-    )
 
     # Forecast metadata
     forecast_date = Column(Date, nullable=False)  # Date forecast was made
@@ -463,13 +435,12 @@ class Forecast(Base):
     )
 
     # Relationships
-    tenant = relationship("Tenant", foreign_keys=[tenant_id])
 
     __table_args__ = (
-        Index("ix_forecasts_tenant_date", "tenant_id", "forecast_date"),
-        Index("ix_forecasts_tenant_for_date", "tenant_id", "forecast_for_date"),
-        Index("ix_forecasts_tenant_metric", "tenant_id", "metric_type"),
-        Index("ix_forecasts_tenant_account", "tenant_id", "account_id"),
+        Index("ix_forecasts_date", "forecast_date"),
+        Index("ix_forecasts_for_date", "forecast_for_date"),
+        Index("ix_forecasts_metric", "metric_type"),
+        Index("ix_forecasts_account", "account_id"),
     )
 
 
@@ -487,12 +458,6 @@ class PacingSummary(Base):
     __tablename__ = "pacing_summaries"
 
     id = Column(UUID(as_uuid=True), primary_key=True, default=uuid4)
-    tenant_id = Column(
-        Integer,
-        ForeignKey("tenants.id", ondelete="CASCADE"),
-        nullable=False,
-        index=True,
-    )
     target_id = Column(
         UUID(as_uuid=True),
         ForeignKey("targets.id", ondelete="CASCADE"),
@@ -553,11 +518,10 @@ class PacingSummary(Base):
     )
 
     # Relationships
-    tenant = relationship("Tenant", foreign_keys=[tenant_id])
     target = relationship("Target", foreign_keys=[target_id])
 
     __table_args__ = (
-        Index("ix_pacing_summaries_tenant_date", "tenant_id", "snapshot_date"),
+        Index("ix_pacing_summaries_date", "snapshot_date"),
         Index("ix_pacing_summaries_target", "target_id", "snapshot_date"),
         UniqueConstraint(
             "target_id", "snapshot_date", name="uq_pacing_summary_target_date"

@@ -2,13 +2,13 @@
 # Stratum AI - Client Entity Models
 # =============================================================================
 """
-Client (brand) entity for agency model.
+Client (brand) entity for the agency model.
 
-Each tenant (agency) manages multiple clients (brands). Campaigns, analytics,
-and portal access are scoped to clients.
+The single organization manages multiple clients (brands). Campaigns,
+analytics, and portal access are scoped to clients.
 
 Models:
-- Client: Brand/customer entity owned by a tenant (agency)
+- Client: Brand/customer entity
 - ClientAssignment: Junction table linking agency users to clients
 - ClientRequest: Portal request workflow (v2 placeholder)
 """
@@ -32,7 +32,7 @@ from sqlalchemy import (
 from sqlalchemy.dialects.postgresql import JSONB
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
-from app.db.base import Base, SoftDeleteMixin, TenantMixin, TimestampMixin
+from app.db.base import Base, SoftDeleteMixin, TimestampMixin
 
 if TYPE_CHECKING:
     from app.base_models import Campaign, User
@@ -65,11 +65,11 @@ class ClientRequestType(str, PyEnum):
 # =============================================================================
 # Client Model (Agency → Brand relationship)
 # =============================================================================
-class Client(TimestampMixin, SoftDeleteMixin, TenantMixin, Base):
+class Client(TimestampMixin, SoftDeleteMixin, Base):
     """
-    Represents a brand/customer managed by an agency tenant.
+    Represents a brand/customer managed by the agency.
 
-    This is the AGENCY MODEL: each tenant (agency) manages multiple clients
+    This is the AGENCY MODEL: the organization manages multiple clients
     (brands). Campaigns, users, and analytics can be scoped to a client.
     """
 
@@ -127,9 +127,10 @@ class Client(TimestampMixin, SoftDeleteMixin, TenantMixin, Base):
     )
 
     __table_args__ = (
-        UniqueConstraint("tenant_id", "slug", name="uq_client_tenant_slug"),
-        Index("ix_clients_tenant_active", "tenant_id", "is_active"),
-        Index("ix_clients_tenant_name", "tenant_id", "name"),
+        # was tenant-scoped; now global
+        UniqueConstraint("slug", name="uq_client_slug"),
+        Index("ix_clients_active", "is_active"),
+        Index("ix_clients_name", "name"),
     )
 
 
@@ -181,7 +182,7 @@ class ClientAssignment(TimestampMixin, Base):
 # =============================================================================
 # Client Request (Portal workflow)
 # =============================================================================
-class ClientRequest(TimestampMixin, TenantMixin, Base):
+class ClientRequest(TimestampMixin, Base):
     """
     Portal request workflow: client portal users can submit requests
     that agency users review and execute.
@@ -244,5 +245,4 @@ class ClientRequest(TimestampMixin, TenantMixin, Base):
     __table_args__ = (
         Index("ix_client_requests_client_status", "client_id", "status"),
         Index("ix_client_requests_status", "status", "created_at"),
-        Index("ix_client_requests_tenant", "tenant_id"),
     )

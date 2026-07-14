@@ -49,12 +49,6 @@ class CAPIDeliveryLog(Base):
     __tablename__ = "capi_delivery_logs"
 
     id = Column(UUID(as_uuid=True), primary_key=True, default=uuid4)
-    tenant_id = Column(
-        Integer,
-        ForeignKey("tenants.id", ondelete="CASCADE"),
-        nullable=False,
-        index=True,
-    )
 
     # Event identification
     platform = Column(String(50), nullable=False)  # meta, google, tiktok, etc.
@@ -94,17 +88,16 @@ class CAPIDeliveryLog(Base):
     )
 
     # Relationships
-    tenant = relationship("Tenant", foreign_keys=[tenant_id])
 
     __table_args__ = (
-        # Query by tenant and time range
-        Index("ix_capi_delivery_tenant_time", "tenant_id", "delivery_time"),
+        # Query by time range
+        Index("ix_capi_delivery_time", "delivery_time"),
         # Query by platform
-        Index("ix_capi_delivery_platform", "tenant_id", "platform", "delivery_time"),
+        Index("ix_capi_delivery_platform", "platform", "delivery_time"),
         # Query by status for monitoring
-        Index("ix_capi_delivery_status", "tenant_id", "status", "delivery_time"),
+        Index("ix_capi_delivery_status", "status", "delivery_time"),
         # Query by event_id for deduplication investigation
-        Index("ix_capi_delivery_event_id", "tenant_id", "platform", "event_id"),
+        Index("ix_capi_delivery_event_id", "platform", "event_id"),
     )
 
 
@@ -126,12 +119,6 @@ class CAPIDeadLetterEntry(Base):
     __tablename__ = "capi_dead_letter_queue"
 
     id = Column(UUID(as_uuid=True), primary_key=True, default=uuid4)
-    tenant_id = Column(
-        Integer,
-        ForeignKey("tenants.id", ondelete="CASCADE"),
-        nullable=False,
-        index=True,
-    )
 
     # Event identification
     platform = Column(String(50), nullable=False)
@@ -178,15 +165,14 @@ class CAPIDeadLetterEntry(Base):
     )
 
     # Relationships
-    tenant = relationship("Tenant", foreign_keys=[tenant_id])
 
     __table_args__ = (
         # Query pending entries for retry
-        Index("ix_dlq_pending", "tenant_id", "status", "last_failure_at"),
+        Index("ix_dlq_pending", "status", "last_failure_at"),
         # Query by platform
-        Index("ix_dlq_platform", "tenant_id", "platform", "status"),
+        Index("ix_dlq_platform", "platform", "status"),
         # Query by failure category for analysis
-        Index("ix_dlq_category", "tenant_id", "failure_category", "first_failure_at"),
+        Index("ix_dlq_category", "failure_category", "first_failure_at"),
     )
 
 
@@ -208,12 +194,6 @@ class CAPIEventDedupeRecord(Base):
     __tablename__ = "capi_event_dedupe"
 
     id = Column(UUID(as_uuid=True), primary_key=True, default=uuid4)
-    tenant_id = Column(
-        Integer,
-        ForeignKey("tenants.id", ondelete="CASCADE"),
-        nullable=False,
-        index=True,
-    )
 
     # Deduplication key
     dedupe_key = Column(
@@ -233,8 +213,8 @@ class CAPIEventDedupeRecord(Base):
     event_value_cents = Column(BigInteger, nullable=True)
 
     __table_args__ = (
-        # Unique constraint on dedupe key per tenant
-        Index("ix_dedupe_key", "tenant_id", "dedupe_key", unique=True),
+        # was tenant-scoped; now global
+        Index("ix_dedupe_key", "dedupe_key", unique=True),
         # Query for cleanup
         Index("ix_dedupe_expires", "expires_at"),
     )
@@ -256,12 +236,6 @@ class CAPIDeliveryDailyStats(Base):
     __tablename__ = "capi_delivery_daily_stats"
 
     id = Column(UUID(as_uuid=True), primary_key=True, default=uuid4)
-    tenant_id = Column(
-        Integer,
-        ForeignKey("tenants.id", ondelete="CASCADE"),
-        nullable=False,
-        index=True,
-    )
 
     # Aggregation period
     date = Column(DateTime(timezone=True), nullable=False)
@@ -305,11 +279,10 @@ class CAPIDeliveryDailyStats(Base):
     )
 
     # Relationships
-    tenant = relationship("Tenant", foreign_keys=[tenant_id])
 
     __table_args__ = (
         # Query by date
-        Index("ix_delivery_stats_date", "tenant_id", "date", "platform"),
-        # Unique per tenant/date/platform
-        Index("ix_delivery_stats_unique", "tenant_id", "date", "platform", unique=True),
+        Index("ix_delivery_stats_date", "date", "platform"),
+        # was tenant-scoped; now global
+        Index("ix_delivery_stats_unique", "date", "platform", unique=True),
     )

@@ -5,7 +5,7 @@
 Database models for Autopilot Enforcement settings and audit logging.
 
 Models:
-- TenantEnforcementSettings: Per-tenant enforcement configuration
+- TenantEnforcementSettings: Org-level enforcement configuration (singleton)
 - TenantEnforcementRule: Custom enforcement rules
 - EnforcementAuditLog: Intervention audit log
 """
@@ -71,20 +71,12 @@ class InterventionAction(str, enum.Enum):
 
 class TenantEnforcementSettings(Base, TimestampMixin):
     """
-    Per-tenant enforcement configuration.
-    One row per tenant storing all enforcement settings.
+    Org-level enforcement configuration (singleton).
     """
 
     __tablename__ = "tenant_enforcement_settings"
 
     id = Column(UUID(as_uuid=True), primary_key=True, default=uuid4)
-    tenant_id = Column(
-        Integer,
-        ForeignKey("tenants.id", ondelete="CASCADE"),
-        nullable=False,
-        unique=True,
-        # index=True removed: unique constraint already creates an index
-    )
 
     # Enforcement guardrails toggle. When False, check_action() short-circuits
     # to allow-with-warning — i.e. this DISABLES safety checks. It is NOT an
@@ -118,21 +110,18 @@ class TenantEnforcementSettings(Base, TimestampMixin):
     min_hours_between_changes = Column(Integer, nullable=False, default=4)
 
     # Relationships
-    tenant = relationship("Tenant", backref="enforcement_settings")
     rules = relationship(
         "TenantEnforcementRule",
         back_populates="settings",
         cascade="all, delete-orphan",
     )
 
-    # unique=True on tenant_id already creates an index; no explicit Index needed
     __table_args__ = ()
 
     def to_dict(self) -> dict:
         """Convert to dictionary for API responses."""
         return {
             "id": str(self.id),
-            "tenant_id": self.tenant_id,
             "enforcement_enabled": self.enforcement_enabled,
             "autopilot_frozen": self.autopilot_frozen,
             "default_mode": (
@@ -159,7 +148,7 @@ class TenantEnforcementSettings(Base, TimestampMixin):
 
 class TenantEnforcementRule(Base, TimestampMixin):
     """
-    Custom enforcement rules per tenant.
+    Custom enforcement rules.
     Allows fine-grained control over specific thresholds.
     """
 
@@ -169,11 +158,6 @@ class TenantEnforcementRule(Base, TimestampMixin):
     settings_id = Column(
         UUID(as_uuid=True),
         ForeignKey("tenant_enforcement_settings.id", ondelete="CASCADE"),
-        nullable=False,
-    )
-    tenant_id = Column(
-        Integer,
-        ForeignKey("tenants.id", ondelete="CASCADE"),
         nullable=False,
     )
 
@@ -196,8 +180,8 @@ class TenantEnforcementRule(Base, TimestampMixin):
     settings = relationship("TenantEnforcementSettings", back_populates="rules")
 
     __table_args__ = (
-        UniqueConstraint("tenant_id", "rule_id", name="uq_tenant_rule_id"),
-        Index("ix_tenant_enforcement_rules_tenant_id", "tenant_id"),
+        # was tenant-scoped; now global
+        UniqueConstraint("rule_id", name="uq_rule_id"),
         Index("ix_tenant_enforcement_rules_settings_id", "settings_id"),
     )
 
@@ -236,11 +220,6 @@ class EnforcementAuditLog(Base):
     __tablename__ = "enforcement_audit_logs"
 
     id = Column(UUID(as_uuid=True), primary_key=True, default=uuid4)
-    tenant_id = Column(
-        Integer,
-        ForeignKey("tenants.id", ondelete="CASCADE"),
-        nullable=False,
-    )
 
     # Timestamp
     timestamp = Column(DateTime(timezone=True), nullable=False)
@@ -282,7 +261,6 @@ class EnforcementAuditLog(Base):
     outcome_confidence = Column(String(16), nullable=True)
 
     __table_args__ = (
-        Index("ix_enforcement_audit_logs_tenant_id", "tenant_id"),
         Index("ix_enforcement_audit_logs_timestamp", "timestamp"),
         Index("ix_enforcement_audit_logs_action_type", "action_type"),
     )
@@ -291,7 +269,6 @@ class EnforcementAuditLog(Base):
         """Convert to dictionary for API responses."""
         return {
             "id": str(self.id),
-            "tenant_id": self.tenant_id,
             "timestamp": self.timestamp.isoformat() if self.timestamp else None,
             "action_type": self.action_type,
             "entity_type": self.entity_type,
@@ -331,11 +308,6 @@ class PendingConfirmationToken(Base):
     __tablename__ = "pending_confirmation_tokens"
 
     id = Column(UUID(as_uuid=True), primary_key=True, default=uuid4)
-    tenant_id = Column(
-        Integer,
-        ForeignKey("tenants.id", ondelete="CASCADE"),
-        nullable=False,
-    )
     token = Column(String(64), nullable=False, unique=True)
 
     # Context
@@ -349,6 +321,5 @@ class PendingConfirmationToken(Base):
 
     __table_args__ = (
         # unique=True on token already creates an index; no need for a separate one
-        Index("ix_pending_confirmation_tokens_tenant_id", "tenant_id"),
         Index("ix_pending_confirmation_tokens_expires_at", "expires_at"),
     )

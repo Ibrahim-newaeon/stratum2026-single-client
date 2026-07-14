@@ -118,20 +118,13 @@ class PrimaryKPI(str, enum.Enum):
 
 class TenantOnboarding(Base):
     """
-    Tracks onboarding progress and stores collected preferences.
-    One record per tenant.
+    Tracks onboarding progress and stores collected preferences (singleton —
+    one record for the organization).
     """
 
     __tablename__ = "tenant_onboarding"
 
     id: Mapped[int] = mapped_column(Integer, primary_key=True, autoincrement=True)
-    tenant_id: Mapped[int] = mapped_column(
-        Integer,
-        ForeignKey("tenants.id", ondelete="CASCADE"),
-        nullable=False,
-        unique=True,
-        index=True,
-    )
 
     # Overall status (stored as strings for portability)
     status: Mapped[str] = mapped_column(
@@ -229,7 +222,6 @@ class TenantOnboarding(Base):
     )
 
     # Relationships
-    tenant = relationship("Tenant", foreign_keys=[tenant_id])
     completed_by = relationship("User", foreign_keys=[completed_by_user_id])
 
     __table_args__ = (Index("ix_tenant_onboarding_status", "status"),)

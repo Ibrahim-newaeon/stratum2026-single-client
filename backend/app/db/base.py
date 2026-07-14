@@ -135,30 +135,6 @@ class SoftDeleteMixin:
         self.is_deleted = True
 
 
-class TenantMixin:
-    """
-    Mixin that adds tenant_id for multi-tenancy.
-    Every query MUST filter by tenant_id for row-level security.
-    """
-
-    @declared_attr
-    def tenant_id(cls) -> Mapped[int]:
-        from sqlalchemy import ForeignKey
-
-        return mapped_column(
-            Integer,
-            ForeignKey("tenants.id", ondelete="CASCADE"),
-            nullable=False,
-            index=True,
-        )
-
-    @declared_attr
-    def tenant(cls):
-        from sqlalchemy.orm import relationship
-
-        return relationship("Tenant", foreign_keys=[cls.tenant_id])
-
-
 # =============================================================================
 # Import all models here to ensure they're registered with Base
 # =============================================================================

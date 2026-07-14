@@ -96,12 +96,6 @@ class EmbedWidget(Base, TimestampMixin):
     __tablename__ = "embed_widgets"
 
     id = Column(UUID(as_uuid=True), primary_key=True, default=uuid4)
-    tenant_id = Column(
-        Integer,
-        ForeignKey("tenants.id", ondelete="CASCADE"),
-        nullable=False,
-        index=True,
-    )
 
     # Widget identification
     name = Column(String(255), nullable=False)
@@ -153,9 +147,8 @@ class EmbedWidget(Base, TimestampMixin):
     )
 
     __table_args__ = (
-        Index("ix_embed_widgets_tenant", "tenant_id"),
-        Index("ix_embed_widgets_type", "tenant_id", "widget_type"),
-        Index("ix_embed_widgets_active", "tenant_id", "is_active"),
+        Index("ix_embed_widgets_type", "widget_type"),
+        Index("ix_embed_widgets_active", "is_active"),
     )
 
     def __repr__(self) -> str:
@@ -181,12 +174,6 @@ class EmbedToken(Base, TimestampMixin):
     __tablename__ = "embed_tokens"
 
     id = Column(UUID(as_uuid=True), primary_key=True, default=uuid4)
-    tenant_id = Column(
-        Integer,
-        ForeignKey("tenants.id", ondelete="CASCADE"),
-        nullable=False,
-        index=True,
-    )
 
     # Link to widget
     widget_id = Column(
@@ -230,7 +217,6 @@ class EmbedToken(Base, TimestampMixin):
     widget = relationship("EmbedWidget", back_populates="tokens")
 
     __table_args__ = (
-        Index("ix_embed_tokens_tenant", "tenant_id"),
         Index("ix_embed_tokens_widget", "widget_id"),
         Index("ix_embed_tokens_prefix", "token_prefix"),
         Index("ix_embed_tokens_hash", "token_hash"),
@@ -293,12 +279,6 @@ class EmbedDomainWhitelist(Base, TimestampMixin):
     __tablename__ = "embed_domain_whitelist"
 
     id = Column(UUID(as_uuid=True), primary_key=True, default=uuid4)
-    tenant_id = Column(
-        Integer,
-        ForeignKey("tenants.id", ondelete="CASCADE"),
-        nullable=False,
-        index=True,
-    )
 
     # Domain pattern (supports wildcards)
     domain_pattern = Column(String(255), nullable=False)
@@ -316,11 +296,10 @@ class EmbedDomainWhitelist(Base, TimestampMixin):
     description = Column(Text, nullable=True)
 
     __table_args__ = (
-        Index("ix_embed_domain_whitelist_tenant", "tenant_id"),
+        # was tenant-scoped; now global
         UniqueConstraint(
-            "tenant_id",
             "domain_pattern",
-            name="uq_embed_domain_whitelist_tenant_domain",
+            name="uq_embed_domain_whitelist_domain",
         ),
     )
 
@@ -342,7 +321,6 @@ class EmbedWidgetView(Base):
     __tablename__ = "embed_widget_views"
 
     id = Column(UUID(as_uuid=True), primary_key=True, default=uuid4)
-    tenant_id = Column(Integer, nullable=False, index=True)
     widget_id = Column(UUID(as_uuid=True), nullable=False, index=True)
     token_id = Column(UUID(as_uuid=True), nullable=False, index=True)
 
@@ -361,6 +339,6 @@ class EmbedWidgetView(Base):
     device_type = Column(String(50), nullable=True)  # desktop, mobile, tablet
 
     __table_args__ = (
-        Index("ix_embed_widget_views_tenant_date", "tenant_id", "view_date"),
+        Index("ix_embed_widget_views_date", "view_date"),
         Index("ix_embed_widget_views_widget_date", "widget_id", "view_date"),
     )

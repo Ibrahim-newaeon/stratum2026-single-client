@@ -49,12 +49,6 @@ class PushSubscription(Base):
     __tablename__ = "push_subscriptions"
 
     id = Column(String(64), primary_key=True, default=generate_subscription_id)
-    tenant_id = Column(
-        Integer,
-        ForeignKey("tenants.id", ondelete="CASCADE"),
-        nullable=False,
-        index=True,
-    )
 
     endpoint = Column(Text, nullable=False)
     keys = Column(
@@ -79,10 +73,8 @@ class PushSubscription(Base):
         nullable=False,
     )
 
-    tenant = relationship("Tenant", foreign_keys=[tenant_id])
-
     __table_args__ = (
-        Index("ix_push_subscription_tenant_active", "tenant_id", "is_active"),
+        Index("ix_push_subscription_active", "is_active"),
     )
 
 
@@ -92,12 +84,6 @@ class PushNotificationLog(Base):
     __tablename__ = "push_notification_log"
 
     id = Column(String(64), primary_key=True, default=generate_notification_id)
-    tenant_id = Column(
-        Integer,
-        ForeignKey("tenants.id", ondelete="CASCADE"),
-        nullable=False,
-        index=True,
-    )
 
     title = Column(String(100), nullable=False)
     body = Column(Text, nullable=False)
@@ -117,4 +103,4 @@ class PushNotificationLog(Base):
         nullable=False,
     )
 
-    __table_args__ = (Index("ix_push_notif_tenant_created", "tenant_id", "created_at"),)
+    __table_args__ = (Index("ix_push_notif_created", "created_at"),)

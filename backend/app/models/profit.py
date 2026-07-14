@@ -82,12 +82,6 @@ class ProductCatalog(Base):
     __tablename__ = "product_catalog"
 
     id = Column(UUID(as_uuid=True), primary_key=True, default=uuid4)
-    tenant_id = Column(
-        Integer,
-        ForeignKey("tenants.id", ondelete="CASCADE"),
-        nullable=False,
-        index=True,
-    )
 
     # Product identification
     sku = Column(String(100), nullable=False)
@@ -131,15 +125,15 @@ class ProductCatalog(Base):
     )
 
     # Relationships
-    tenant = relationship("Tenant", foreign_keys=[tenant_id])
     margins = relationship(
         "ProductMargin", back_populates="product", cascade="all, delete-orphan"
     )
 
     __table_args__ = (
-        Index("ix_product_catalog_tenant_sku", "tenant_id", "sku"),
-        Index("ix_product_catalog_tenant_category", "tenant_id", "category"),
-        UniqueConstraint("tenant_id", "sku", name="uq_product_sku"),
+        Index("ix_product_catalog_sku", "sku"),
+        Index("ix_product_catalog_category", "category"),
+        # was tenant-scoped; now global
+        UniqueConstraint("sku", name="uq_product_sku"),
     )
 
 
@@ -157,12 +151,6 @@ class ProductMargin(Base):
     __tablename__ = "product_margins"
 
     id = Column(UUID(as_uuid=True), primary_key=True, default=uuid4)
-    tenant_id = Column(
-        Integer,
-        ForeignKey("tenants.id", ondelete="CASCADE"),
-        nullable=False,
-        index=True,
-    )
     product_id = Column(
         UUID(as_uuid=True),
         ForeignKey("product_catalog.id", ondelete="CASCADE"),
@@ -219,13 +207,12 @@ class ProductMargin(Base):
     )
 
     # Relationships
-    tenant = relationship("Tenant", foreign_keys=[tenant_id])
     product = relationship("ProductCatalog", back_populates="margins")
     created_by = relationship("User", foreign_keys=[created_by_user_id])
 
     __table_args__ = (
         Index("ix_product_margins_product_date", "product_id", "effective_date"),
-        Index("ix_product_margins_tenant_date", "tenant_id", "effective_date"),
+        Index("ix_product_margins_date", "effective_date"),
     )
 
 
@@ -243,12 +230,6 @@ class MarginRule(Base):
     __tablename__ = "margin_rules"
 
     id = Column(UUID(as_uuid=True), primary_key=True, default=uuid4)
-    tenant_id = Column(
-        Integer,
-        ForeignKey("tenants.id", ondelete="CASCADE"),
-        nullable=False,
-        index=True,
-    )
 
     # Rule identification
     name = Column(String(255), nullable=False)
@@ -289,11 +270,10 @@ class MarginRule(Base):
     )
 
     # Relationships
-    tenant = relationship("Tenant", foreign_keys=[tenant_id])
 
     __table_args__ = (
-        Index("ix_margin_rules_tenant_priority", "tenant_id", "priority"),
-        Index("ix_margin_rules_tenant_category", "tenant_id", "category"),
+        Index("ix_margin_rules_priority", "priority"),
+        Index("ix_margin_rules_category", "category"),
     )
 
 
@@ -311,12 +291,6 @@ class DailyProfitMetrics(Base):
     __tablename__ = "daily_profit_metrics"
 
     id = Column(UUID(as_uuid=True), primary_key=True, default=uuid4)
-    tenant_id = Column(
-        Integer,
-        ForeignKey("tenants.id", ondelete="CASCADE"),
-        nullable=False,
-        index=True,
-    )
     date = Column(Date, nullable=False)
 
     # Scope
@@ -395,16 +369,15 @@ class DailyProfitMetrics(Base):
     )
 
     # Relationships
-    tenant = relationship("Tenant", foreign_keys=[tenant_id])
     product = relationship("ProductCatalog", foreign_keys=[product_id])
     margin_rule = relationship("MarginRule", foreign_keys=[margin_rule_id])
 
     __table_args__ = (
-        Index("ix_daily_profit_tenant_date", "tenant_id", "date"),
-        Index("ix_daily_profit_tenant_campaign", "tenant_id", "campaign_id", "date"),
-        Index("ix_daily_profit_tenant_product", "tenant_id", "product_id", "date"),
+        Index("ix_daily_profit_date", "date"),
+        Index("ix_daily_profit_campaign", "campaign_id", "date"),
+        Index("ix_daily_profit_product", "product_id", "date"),
+        # was tenant-scoped; now global
         UniqueConstraint(
-            "tenant_id",
             "date",
             "platform",
             "campaign_id",
@@ -428,12 +401,6 @@ class ProfitROASReport(Base):
     __tablename__ = "profit_roas_reports"
 
     id = Column(UUID(as_uuid=True), primary_key=True, default=uuid4)
-    tenant_id = Column(
-        Integer,
-        ForeignKey("tenants.id", ondelete="CASCADE"),
-        nullable=False,
-        index=True,
-    )
 
     # Report period
     report_type = Column(String(50), nullable=False)  # daily, weekly, monthly, custom
@@ -486,14 +453,13 @@ class ProfitROASReport(Base):
     )
 
     # Relationships
-    tenant = relationship("Tenant", foreign_keys=[tenant_id])
     generated_by = relationship("User", foreign_keys=[generated_by_user_id])
 
     __table_args__ = (
         Index(
-            "ix_profit_reports_tenant_period", "tenant_id", "period_start", "period_end"
+            "ix_profit_reports_period", "period_start", "period_end"
         ),
-        Index("ix_profit_reports_tenant_type", "tenant_id", "report_type"),
+        Index("ix_profit_reports_type", "report_type"),
     )
 
 
@@ -510,12 +476,6 @@ class COGSUpload(Base):
     __tablename__ = "cogs_uploads"
 
     id = Column(UUID(as_uuid=True), primary_key=True, default=uuid4)
-    tenant_id = Column(
-        Integer,
-        ForeignKey("tenants.id", ondelete="CASCADE"),
-        nullable=False,
-        index=True,
-    )
 
     # Upload metadata
     filename = Column(String(500), nullable=True)
@@ -547,7 +507,6 @@ class COGSUpload(Base):
     )
 
     # Relationships
-    tenant = relationship("Tenant", foreign_keys=[tenant_id])
     uploaded_by = relationship("User", foreign_keys=[uploaded_by_user_id])
 
-    __table_args__ = (Index("ix_cogs_uploads_tenant_date", "tenant_id", "uploaded_at"),)
+    __table_args__ = (Index("ix_cogs_uploads_date", "uploaded_at"),)

@@ -12,7 +12,7 @@ static catalog. This module only stores user-driven state:
 - ``LaunchReadinessEvent`` — append-only audit trail of check / uncheck /
   phase-completed / phase-reopened events.
 
-No tenant_id: this is platform-level, scoped to the Stratum team.
+Global (single-org), scoped to the Stratum team — no per-org column.
 """
 
 from datetime import datetime, timezone

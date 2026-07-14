@@ -77,9 +77,6 @@ class NewsletterTemplate(Base):
     __tablename__ = "newsletter_templates"
 
     id: Mapped[int] = mapped_column(Integer, primary_key=True, autoincrement=True)
-    tenant_id: Mapped[Optional[int]] = mapped_column(
-        Integer, ForeignKey("tenants.id", ondelete="CASCADE"), nullable=True, index=True
-    )
 
     # Template content
     name: Mapped[str] = mapped_column(String(255), nullable=False)
@@ -115,7 +112,6 @@ class NewsletterTemplate(Base):
     campaigns = relationship("NewsletterCampaign", back_populates="template")
 
     __table_args__ = (
-        Index("ix_nl_template_tenant", "tenant_id"),
         Index("ix_nl_template_category", "category"),
     )
 
@@ -130,9 +126,6 @@ class NewsletterCampaign(Base):
     __tablename__ = "newsletter_campaigns"
 
     id: Mapped[int] = mapped_column(Integer, primary_key=True, autoincrement=True)
-    tenant_id: Mapped[Optional[int]] = mapped_column(
-        Integer, ForeignKey("tenants.id", ondelete="CASCADE"), nullable=True, index=True
-    )
 
     # Campaign details
     name: Mapped[str] = mapped_column(String(255), nullable=False)
@@ -208,7 +201,6 @@ class NewsletterCampaign(Base):
     )
 
     __table_args__ = (
-        Index("ix_nl_campaign_tenant", "tenant_id"),
         Index("ix_nl_campaign_status", "status"),
         Index("ix_nl_campaign_scheduled", "status", "scheduled_at"),
     )
