@@ -149,7 +149,7 @@ class TestRBAC:
         resp = await authenticated_client.get(f"{_BASE}/rbac/roles")
         assert resp.status_code == 200, resp.text
         ids = {r["id"] for r in resp.json()["data"]}
-        assert "super_admin" in ids
+        assert "owner" in ids  # was super_admin; renamed in B1
 
 
 # =============================================================================
