@@ -1,5 +1,10 @@
 # Stratum AI - Enterprise Plan Tutorial
 
+> **REMOVED (historical) — 2026-07**: subscription tiers/plans were
+> removed in the single-client conversion (STRAT-SC-001) — there is no
+> Enterprise plan to distinguish. Kept for historical reference only —
+> see `docs/single-client-conversion.md`.
+
 **Version:** 1.0.0
 **Last Updated:** January 2026
 **Estimated Time:** 60 minutes

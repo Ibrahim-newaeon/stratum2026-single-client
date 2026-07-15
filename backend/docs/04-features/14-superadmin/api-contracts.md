@@ -1,5 +1,14 @@
 # Superadmin API Contracts
 
+> **STALE — 2026-07 (STRAT-SC-001)**: "Superadmin" was renamed
+> Console/Owner (`endpoints/console.py`, `require_owner`); the
+> cross-tenant management operations described below no longer apply —
+> there is a single `Organization`, not multiple tenants to administer.
+> The console still exists for owner-only platform tooling (feature
+> flags, control tower, credentials) but its scope is not what this doc
+> describes. Not rewritten in this pass — see
+> `docs/single-client-conversion.md` for the current console surface.
+
 ## Overview
 
 API endpoints for platform administration and tenant management.

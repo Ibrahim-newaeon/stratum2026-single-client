@@ -1,5 +1,11 @@
 # Deploy Checklist — Billing & Upgrade Flow Arc
 
+> **OBSOLETE (historical) — 2026-07**: Payments/Stripe, tier-based
+> checkout, and trial/upgrade flows were fully removed in the
+> single-client conversion (STRAT-SC-001). This checklist describes a
+> pre-conversion branch and does not apply to the current codebase —
+> see `docs/single-client-conversion.md`.
+
 The 5-commit billing arc on `claude/fix-overview-404-fallback` is ready
 to merge. This checklist covers everything that needs to happen between
 clicking "Merge" and a working production checkout flow.

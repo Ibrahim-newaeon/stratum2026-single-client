@@ -285,7 +285,12 @@ CORS_ALLOW_CREDENTIALS=true
 
 ---
 
-## Stripe Payments
+## Stripe Payments — REMOVED (historical)
+
+> Payments/Stripe was removed in the single-client conversion
+> (STRAT-SC-001, 2026-07). None of these variables are read by the
+> application anymore — do not configure them. Kept for historical
+> reference only.
 
 | Variable | Type | Required | Description |
 |----------|------|----------|-------------|
@@ -398,6 +403,5 @@ Before deploying to production, ensure:
 - [ ] `DATABASE_URL` uses strong password, not `changeme`
 - [ ] `CORS_ORIGINS` only includes your actual domains
 - [ ] `SENTRY_DSN` is configured for error tracking
-- [ ] All Stripe keys are live keys (not test)
 - [ ] SMTP is configured for real email delivery
 - [ ] Rate limits are appropriate for expected traffic

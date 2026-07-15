@@ -4,6 +4,12 @@
 **Base URL:** `https://api.stratum.ai/api/v1`
 **Last Updated:** January 2026
 
+> **2026-07 note (STRAT-SC-001)**: this reference predates the
+> single-client conversion. Any Payments/billing endpoints, tenant
+> headers (`X-Tenant-ID`), or tier-gated routes described below no
+> longer exist — see `docs/single-client-conversion.md`. Not rewritten
+> in this pass.
+
 ---
 
 ## Table of Contents

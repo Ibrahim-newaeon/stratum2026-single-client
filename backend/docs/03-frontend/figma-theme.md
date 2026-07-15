@@ -116,27 +116,44 @@ the single seam between primitives and the API. It calls the existing
 React Query hooks (`useDashboardOverview`, `useTrustStatus`,
 `useDashboardSignalHealth`, `usePacingSummary`, `useAutopilotActions`)
 in parallel and falls back to deterministic mocks
-(`overview/mockData.ts`) when tenant context is missing or a single
-endpoint is unavailable. The `isMock` flag drives a "Demo data" pill
-in the page header so testers can tell at a glance.
+(`overview/mockData.ts`) when auth/user context is missing (demo /
+unauthenticated) or a single endpoint is unavailable. The `isMock`
+flag drives a "Demo data" pill in the page header so testers can tell
+at a glance.
 
 ## Sidebar IA
 
-The product has 25 dashboard routes; the figma brief asks for 3 sidebar
-items. `dashboardNavGroups` (in `nav/dashboardNav.ts`) reconciles by
-splitting the routes into 3 collapsible groups:
+The product has 25+ dashboard routes; the figma brief asks for a small
+number of sidebar groups. `dashboardNavGroups` (in `nav/dashboardNav.ts`)
+reconciles by splitting the routes into 3 collapsible groups:
 
 ```
 Operate       Overview · Campaigns · Autopilot · Audiences ·
-              Trust Engine · Pacing
-Intelligence  CDP · Attribution · Reporting · Insights · Anomalies
-Account       Integrations · Settings · Billing · Team · (Superadmin)
+              Trust Engine · Pacing · Rules · AB Testing · Profit & ROAS
+Intelligence  CDP · Attribution · Reporting · Knowledge Graph ·
+              AI Insights · Cohort/Funnel Analysis · Predictions ·
+              Benchmarks · Anomalies · Model Explainability · SQL Editor
+Workspace     Integrations · WhatsApp · Newsletter · Drip Campaigns ·
+              Push Notifications · Embed Widgets · Audit Log ·
+              Settings · Team · Billing
 ```
+
+Platform-owner tooling (feature flags, control tower, credentials,
+cross-org analytics) lives in a separate shell at `/console/*`
+(`nav/consoleNav.ts`) — the operator dashboard never surfaces it, so
+non-owner roles never see it.
 
 The Sidebar primitive auto-expands the group containing the active
 route on mount and on route changes — no manual expand needed when
 navigating from an Overview into a CDP sub-page. Collapse state
 persists per-user via `localStorage('stratum-sidebar-groups')`.
+
+> **Known gap**: the `Billing` nav item (`/dashboard/settings/billing`)
+> and its `CreditCard` icon are dead — Payments/Stripe was removed in
+> the single-client conversion and no route or backend endpoint
+> answers it (falls through to the default Settings tab). Not fixed
+> here; tracked as a deferred cleanup in
+> `docs/single-client-conversion.md`.
 
 ## Migrations
 

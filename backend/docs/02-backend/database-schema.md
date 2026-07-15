@@ -2,13 +2,24 @@
 
 Complete reference for Stratum AI database models.
 
+> **STALE — pre single-client-conversion schema (2026-07)**: the
+> `TenantMixin`, `Tenant`/`tenants` table, and every `tenant_id` column
+> shown in the CREATE TABLE reference below were removed by STRAT-SC-001
+> (a single `Organization` row replaces them; the schema is otherwise
+> unchanged). The fresh Alembic chain (1 revision, 139 tables) is the
+> source of truth — this reference has not been regenerated against it
+> yet. Do not use the `tenant_id` columns/indexes below as current
+> schema guidance; see `docs/single-client-conversion.md` for the
+> removal ledger and treat a full regeneration of this doc as follow-up
+> work.
+
 ---
 
 ## Overview
 
 - **Database**: PostgreSQL 16
 - **ORM**: SQLAlchemy 2.x (async)
-- **Migrations**: Alembic
+- **Migrations**: Alembic (fresh single-client chain, 1 revision)
 
 ---
 
@@ -682,3 +693,24 @@ alembic revision --autogenerate -m "Add new_table"
 # Create empty migration for manual changes
 alembic revision -m "Manual data migration"
 ```
+
+> **Load-bearing `render_item` hook (do not remove)**: `migrations/env.py`
+> registers a custom `render_item(type_, obj, autogen_context)` callback
+> (passed to `context.configure(..., render_item=render_item)` in both
+> the online and offline branches) that intercepts `StrEnumType` columns
+> during autogenerate and renders them as native `postgresql.ENUM(...)`
+> DDL instead of the ORM's `StrEnumType` wrapper. Without this hook, any
+> future `alembic revision --autogenerate` that adds or alters a
+> `StrEnumType` column would emit a plain `VARCHAR` in the generated
+> migration — the app would still boot, but every query that filters or
+> compares against that column would 500 at runtime once real enum
+> values didn't match a `VARCHAR` column with no `CHECK`/enum backing.
+> This was verified end-to-end during the single-client conversion's
+> fresh-chain rebuild (C6): with the hook, `up`/`down`/`up` round-trips
+> clean and ORM enum values persist correctly; the failure mode is only
+> visible with the hook removed, so there is no test that would catch a
+> regression here short of a full autogenerate-and-diff on a schema
+> change touching an enum column. When adding a new `StrEnumType`
+> column, always regenerate with autogenerate (don't hand-write the
+> column type) and diff the output for `postgresql.ENUM` before
+> committing.

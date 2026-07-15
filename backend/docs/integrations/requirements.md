@@ -3,6 +3,14 @@
 **Version:** 1.0.0
 **Last Updated:** January 2026
 
+> **2026-07 note**: Stratum AI is a single-client deployment
+> (STRAT-SC-001) — there is no subscription-tier system anymore, so
+> every **"Plan Availability: Starter / Professional / Enterprise"**
+> line below is historical and does not gate anything in the current
+> codebase; all integrations listed are available. The `X-Tenant-ID`
+> header and `tenant_id` payload field in §6 are also historical (no
+> tenant concept remains) — see `docs/single-client-conversion.md`.
+
 This document outlines the requirements, setup steps, and prerequisites for all Stratum AI integrations.
 
 ---
@@ -863,16 +871,13 @@ audience.read
 
 ### API Access
 
-| Plan | Access Level | Rate Limit |
-|------|--------------|------------|
-| Starter | Read | 10,000/month |
-| Professional | Read/Write | 50,000/month |
-| Enterprise | Full | Unlimited |
+Full read/write API access (no tier-gated rate limiting; the
+per-endpoint rate limiter in `middleware/rate_limit.py` is IP/user-keyed,
+not plan-keyed).
 
 ### API Authentication
 ```
 Authorization: Bearer <api_key>
-X-Tenant-ID: <tenant_id>
 ```
 
 ### Webhook Configuration
@@ -901,7 +906,6 @@ autopilot.action_taken
 {
   "event": "profile.created",
   "timestamp": "2026-01-15T10:30:00Z",
-  "tenant_id": "tenant_123",
   "data": {
     "profile_id": "profile_456",
     "email": "user@example.com"

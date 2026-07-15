@@ -1,5 +1,11 @@
 # Superadmin Edge Cases
 
+> **STALE — 2026-07 (STRAT-SC-001)**: "Superadmin" was renamed
+> Console/Owner (`endpoints/console.py`, `require_owner`); cross-tenant
+> edge cases below no longer apply (single `Organization`, no tenants to
+> administer). Not rewritten in this pass — see
+> `docs/single-client-conversion.md`.
+
 ## Overview
 
 This document covers error handling, edge cases, and known limitations for platform administration.

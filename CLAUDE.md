@@ -15,20 +15,6 @@ Signal Health Check → Trust Gate → Automation Decision
    [UNHEALTHY]       [BLOCK]        [MANUAL REQUIRED]
 ```
 
-## Tech Stack
-
-- **Backend**: Python 3.11+, FastAPI 0.109, Pydantic 2.x, SQLAlchemy 2.x (async)
-- **Database**: PostgreSQL 16, Redis 7 (caching/queues)
-- **Queue**: Celery 5.3 + Redis + Celery Beat
-- **ORM**: SQLAlchemy 2.0 with asyncpg driver
-- **Auth**: JWT + OAuth2 + MFA (TOTP)
-- **Frontend**: React 18, TypeScript 5.3, Vite 5.1, Tailwind CSS 3.4
-- **UI**: shadcn/ui + Radix UI, Recharts, Tremor, Framer Motion
-- **State**: Zustand + React Query (TanStack)
-- **Infra**: Docker, AWS (ECS, RDS, ElastiCache)
-- **Monitoring**: Prometheus, Grafana, Sentry, structlog
-- **Migrations**: Alembic
-
 ## Project Structure
 
 ```
@@ -41,8 +27,8 @@ Signal Health Check → Trust Gate → Automation Decision
 │   │   ├── auth/               # JWT, MFA, permissions
 │   │   ├── core/               # Config, security, logging, websocket
 │   │   ├── db/                 # Database session management
-│   │   ├── middleware/         # Tenant, audit, rate limiting
-│   │   ├── models/             # SQLAlchemy models (19 files)
+│   │   ├── middleware/         # Audit, rate limiting, security headers
+│   │   ├── models/             # SQLAlchemy models (23 files)
 │   │   ├── schemas/            # Pydantic schemas
 │   │   ├── services/           # External integrations & business logic
 │   │   │   ├── oauth/          # OAuth provider factory
@@ -52,8 +38,8 @@ Signal Health Check → Trust Gate → Automation Decision
 │   │   │   └── crm/            # CRM integrations
 │   │   ├── stratum/            # Core domain models
 │   │   └── workers/            # Celery tasks
-│   ├── migrations/             # Alembic migrations (41 revisions)
-│   ├── tests/                  # pytest suite (21 test files)
+│   ├── migrations/             # Alembic — fresh single-client chain (1 revision)
+│   ├── tests/                  # pytest suite (unit/ + integration/)
 │   ├── Makefile                # Build automation
 │   └── requirements.txt        # Python dependencies
 ├── frontend/
@@ -72,7 +58,7 @@ Signal Health Check → Trust Gate → Automation Decision
 └── CLAUDE.md
 ```
 
-## Key Features (14)
+## Key Features (12)
 
 | #   | Feature               | Key Files                                                        |
 | --- | --------------------- | ---------------------------------------------------------------- |
@@ -86,10 +72,8 @@ Signal Health Check → Trust Gate → Automation Decision
 | 8   | Integrations          | `services/oauth/` (Meta, Google, TikTok, Snapchat)               |
 | 9   | CMS                   | `models/cms.py`, frontend CMS editor                             |
 | 10  | WhatsApp              | `services/whatsapp_service.py`                                   |
-| 11  | Payments              | Stripe webhooks & subscriptions                                  |
-| 12  | Multi-tenancy         | `middleware/tenant.py`, row-level security                       |
-| 13  | Reporting             | `services/reporting/` (PDF, Slack, email)                        |
-| 14  | SuperAdmin            | `endpoints/superadmin.py`                                        |
+| 11  | Reporting             | `services/reporting/` (PDF, Slack, email)                        |
+| 12  | Console / Owner       | `endpoints/console.py`                                           |
 
 ## Key Commands
 
@@ -141,12 +125,11 @@ cd frontend && npm run test       # Vitest
 | Enforcement Mode | Advisory / Soft-Block / Hard-Block             |
 | ROAS             | Return on Ad Spend                             |
 | Pacing           | Budget spend velocity tracking                 |
-| Tenant           | Isolated customer workspace (multi-tenant)     |
 
 ## Trust Engine Rules
 
 ```python
-# Thresholds are configurable per tenant (see TrustGateConfig)
+# Thresholds are org-configurable (Organization settings; see TrustGateConfig)
 HEALTHY_THRESHOLD = 70      # Green - autopilot enabled
 DEGRADED_THRESHOLD = 40     # Yellow - alert + hold
 # Never auto-execute when signal_health < 70
@@ -184,18 +167,6 @@ Coverage target: 90%+ for `core/`, `autopilot/`, `analytics/`
 - Branch: `feature/STRAT-123-description`
 - Commit: `feat(signals): add anomaly detection [STRAT-123]`
 - Conventional commits: `feat|fix|refactor|test|docs(scope): message`
-
-## Docker Services
-
-| Service   | Port | Description                     |
-| --------- | ---- | ------------------------------- |
-| db        | 5432 | PostgreSQL 16                   |
-| redis     | 6379 | Redis 7 (cache + Celery broker) |
-| api       | 8000 | FastAPI backend                 |
-| worker    | -    | Celery worker (4 concurrency)   |
-| scheduler | -    | Celery Beat                     |
-| frontend  | 5173 | React Vite dev server           |
-| flower    | 5555 | Celery monitoring (optional)    |
 
 ## Design Context
 

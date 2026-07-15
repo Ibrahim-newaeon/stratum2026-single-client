@@ -1,5 +1,9 @@
 # Payments & Billing User Flows
 
+> **REMOVED (historical) — 2026-07**: the Payments feature was fully
+> removed in the single-client conversion (STRAT-SC-001). Kept for
+> historical reference only — see `docs/single-client-conversion.md`.
+
 ## Overview
 
 Step-by-step user journeys for subscription management and billing.

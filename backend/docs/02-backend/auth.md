@@ -4,6 +4,15 @@
 
 Stratum AI uses JWT-based authentication with optional MFA (Multi-Factor Authentication).
 
+> **STALE — 2026-07 (STRAT-SC-001)**: JWT payloads, role names, and the
+> `get_tenant_id` dependency below describe the pre-conversion
+> multi-tenant model. Current state: no `tenant_id` claim (JWTs carry no
+> PII/tenant claims), roles are `owner`/`admin`/`manager`/`analyst`/
+> `viewer` (no `superadmin`), and there is no per-request tenant
+> resolution — `get_tenant_id`/`TenantMixin` no longer exist. Not
+> rewritten line-by-line in this pass — see
+> `docs/single-client-conversion.md`.
+
 ---
 
 ## Authentication Flow

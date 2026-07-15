@@ -1,5 +1,9 @@
 # Payments & Billing Specification
 
+> **REMOVED (historical) — 2026-07**: the Payments feature was fully
+> removed in the single-client conversion (STRAT-SC-001). Kept for
+> historical reference only — see `docs/single-client-conversion.md`.
+
 ## Overview
 
 The Payments & Billing module handles subscription management, usage-based billing, payment processing, and invoicing for the Stratum AI platform.

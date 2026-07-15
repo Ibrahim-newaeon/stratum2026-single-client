@@ -4,6 +4,19 @@ This guide turns every Launch Readiness checklist item into actionable commands,
 
 > **Prerequisites:** GCP billing account, domain name, GitHub repo access, `gcloud` CLI installed and authenticated.
 
+> **2026-07 note (STRAT-SC-001)**: Stratum AI was converted to a
+> single-client deployment — Payments/Stripe and the multi-tenant
+> isolation model referenced below were removed. **Phase 5** below is
+> historical; the equivalent live checklist phase is now titled "Access
+> Control Hardening" (`app/core/launch_readiness_phases.py`, item keys
+> `tenant_filter_audit` → `auth_dependency_audit`,
+> `per_tenant_thresholds` → `configurable_thresholds`, etc.). §6.1/6.2's
+> "per-tenant" thresholds are
+> now **org-configurable** (`Organization` settings, one row). §9.5
+> (Stripe Live Mode) no longer applies — there is no billing surface.
+> §12's "tenant" onboarding language refers to this single organization's
+> rollout, not multiple customers. See `docs/single-client-conversion.md`.
+
 ---
 
 ## Phase 1: Foundation

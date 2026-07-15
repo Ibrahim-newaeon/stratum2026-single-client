@@ -1,5 +1,11 @@
 # Superadmin Specification
 
+> **STALE — 2026-07 (STRAT-SC-001)**: "Superadmin" was renamed
+> Console/Owner (`endpoints/console.py`, `require_owner`); this spec's
+> cross-tenant administration model no longer applies (single
+> `Organization`, no tenants to administer). Not rewritten in this pass
+> — see `docs/single-client-conversion.md`.
+
 ## Overview
 
 The Superadmin module provides platform administrators with tools to manage tenants, monitor system health, configure platform settings, and access cross-tenant analytics.

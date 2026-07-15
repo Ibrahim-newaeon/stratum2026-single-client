@@ -210,7 +210,12 @@ SMTP_TLS=true
 
 ---
 
-## Payment Processing
+## Payment Processing — REMOVED (historical)
+
+> Payments/Stripe was removed in the single-client conversion
+> (STRAT-SC-001, 2026-07). None of these variables are read by the
+> application anymore — do not configure them. Kept for historical
+> reference only; see `docs/single-client-conversion.md`.
 
 ### Stripe
 

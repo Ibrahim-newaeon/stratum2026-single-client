@@ -1,5 +1,10 @@
 # Superadmin User Flows
 
+> **STALE — 2026-07 (STRAT-SC-001)**: "Superadmin" was renamed
+> Console/Owner (`endpoints/console.py`, `require_owner`); flows below
+> that assume multiple tenants no longer apply. Not rewritten in this
+> pass — see `docs/single-client-conversion.md`.
+
 ## Overview
 
 Step-by-step user journeys for platform administration and tenant management.

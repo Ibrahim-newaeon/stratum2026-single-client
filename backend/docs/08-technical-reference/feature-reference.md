@@ -3,6 +3,13 @@
 > **Complete technical reference for all 14 platform features.**  
 > For user-facing guides, see `docs/04-features/{feature}/user-flows.md`.  
 > For API contracts, see `docs/04-features/{feature}/api-contracts.md`.
+>
+> **2026-07 note (STRAT-SC-001)**: this reference predates the
+> single-client conversion. Payments/Multi-tenancy (features 11/12 in
+> the old numbering) were fully removed; Superadmin was renamed
+> Console/Owner and its cross-tenant scope narrowed to single-org
+> platform tooling. The platform is 12 features today, not 14 — see
+> `docs/single-client-conversion.md`. Not rewritten in this pass.
 
 ---
 

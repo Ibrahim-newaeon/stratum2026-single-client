@@ -3,6 +3,11 @@
 
 **Audit Date:** 2026-01-07
 **Auditor Role:** Senior Tracking/Infrastructure Architect
+
+> **2026-07 note (STRAT-SC-001)**: this audit predates the single-client
+> conversion. The `tenant_id`/`/tenants/{id}/...` examples below no
+> longer exist — see `docs/single-client-conversion.md`. Historical
+> snapshot, not rewritten.
 **Scope:** Browser, sGTM, Backend Direct, Dedupe, EMQ Coverage
 
 ---

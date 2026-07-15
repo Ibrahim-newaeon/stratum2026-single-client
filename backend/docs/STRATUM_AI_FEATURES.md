@@ -2,7 +2,14 @@
 
 **Version:** 2.0.0
 **Last Updated:** January 2, 2026
-**Platform:** Multi-Tenant SaaS Marketing Intelligence Platform
+**Platform:** Marketing Intelligence Platform (single-client deployment
+as of the 2026-07 STRAT-SC-001 conversion — was previously "Multi-Tenant
+SaaS")
+
+> **2026-07 note (STRAT-SC-001)**: this document predates the
+> single-client conversion. Payments/Multi-tenancy content below is
+> historical — see `docs/single-client-conversion.md`. Not rewritten in
+> this pass.
 
 ---
 

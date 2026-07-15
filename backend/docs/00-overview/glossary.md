@@ -136,28 +136,32 @@ LTV = Average Order Value × Purchase Frequency × Customer Lifespan
 
 ## Platform & Infrastructure
 
-### Tenant
-An isolated customer account within Stratum AI. Each tenant has:
-- Separate database schema
-- Own user management
-- Independent configurations
-- Isolated analytics data
+### Organization
+The single-org root entity (`app/base_models.py`). Stratum AI is a
+single-client deployment: one `Organization` row holds account-wide
+settings (`feature_flags` jsonb, trust gate thresholds, autopilot
+enforcement mode). There is no per-customer isolation layer — every
+user in the deployment belongs to the same organization.
 
-### Multi-tenancy
-Architecture pattern where a single instance serves multiple customers with complete data isolation.
-
-### Subscription Tier
-Account level determining available features:
-- **Starter**: Basic features, limited platforms
-- **Professional**: Full CDP, all platforms
-- **Enterprise**: Custom rules, dedicated support
+> **Historical**: earlier revisions of this platform were architected
+> as multi-tenant SaaS (a `Tenant` root entity, per-tenant database
+> scoping, subscription tiers gating features). That model was fully
+> removed in the single-client conversion (STRAT-SC-001, 2026-07) —
+> `tenant_id` no longer exists anywhere in the schema, and there is no
+> tier/plan gate. See `docs/single-client-conversion.md` for the
+> removal ledger.
 
 ### Feature Flag
-Configuration toggles that enable/disable functionality:
-- `feature_competitor_intel`
-- `feature_what_if_simulator`
-- `feature_automation_rules`
-- `feature_gdpr_compliance`
+Two independent layers control functionality (see
+`docs/single-client-conversion.md` for the full architecture):
+- **Env-var kill-switches** — process-wide toggles in `core/config.py`
+  (e.g. `feature_knowledge_graph`, `ENABLE_PUBLIC_SIGNUP`).
+- **`Organization.feature_flags`** — org-configurable overrides layered
+  on top of `DEFAULT_ORG_FEATURES` (`app/features/flags.py`):
+  - `feature_competitor_intel`
+  - `feature_what_if_simulator`
+  - `feature_automation_rules`
+  - `feature_gdpr_compliance`
 
 ---
 
@@ -197,9 +201,11 @@ Authentication protocol for connecting to ad platforms. Stratum AI implements OA
 ### JWT (JSON Web Token)
 Token-based authentication for API access. Contains:
 - User ID
-- Tenant ID
-- Permissions
+- Role/Permissions
 - Expiration
+
+No PII and no tenant claim — this is a single-org deployment, so there
+is nothing to scope a claim to.
 
 ### MFA (Multi-Factor Authentication)
 Additional security layer using TOTP (Time-based One-Time Password).
@@ -240,7 +246,6 @@ Error tracking and performance monitoring service.
 ### Structured Logging
 JSON-formatted logs with consistent fields:
 - Request ID
-- Tenant ID
 - User ID
 - Timestamp
 - Event type

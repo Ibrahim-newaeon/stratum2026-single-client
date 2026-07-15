@@ -1,5 +1,9 @@
 # Payments & Billing Edge Cases
 
+> **REMOVED (historical) — 2026-07**: the Payments feature was fully
+> removed in the single-client conversion (STRAT-SC-001). Kept for
+> historical reference only — see `docs/single-client-conversion.md`.
+
 ## Overview
 
 This document covers error handling, edge cases, and known limitations for payments and billing.

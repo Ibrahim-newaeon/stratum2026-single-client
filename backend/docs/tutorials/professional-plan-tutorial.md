@@ -1,5 +1,10 @@
 # Stratum AI - Professional Plan Tutorial
 
+> **REMOVED (historical) — 2026-07**: subscription tiers/plans were
+> removed in the single-client conversion (STRAT-SC-001) — there is no
+> Professional plan to distinguish. Kept for historical reference only
+> — see `docs/single-client-conversion.md`.
+
 **Version:** 1.0.0
 **Last Updated:** January 2026
 **Estimated Time:** 45 minutes

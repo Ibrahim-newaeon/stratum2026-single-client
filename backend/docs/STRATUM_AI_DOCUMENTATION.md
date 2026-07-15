@@ -1,5 +1,11 @@
 # Stratum AI - Platform Documentation
 
+> **2026-07 note (STRAT-SC-001)**: this document predates the
+> single-client conversion. Payments/Multi-tenancy content below is
+> historical — Payments was fully removed and the multi-tenant model
+> was replaced by a single `Organization`. See
+> `docs/single-client-conversion.md`. Not rewritten in this pass.
+
 ---
 
 ## 1. Executive Summary

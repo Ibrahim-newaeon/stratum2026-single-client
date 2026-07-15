@@ -1,5 +1,11 @@
 # Payments & Billing API Contracts
 
+> **REMOVED (historical) — 2026-07**: the Payments feature (Stripe
+> subscriptions, webhooks, tier gating) was fully removed in the
+> single-client conversion (STRAT-SC-001). Nothing in this document
+> reflects the current API surface. Kept for historical reference only
+> — see `docs/single-client-conversion.md`.
+
 ## Overview
 
 API endpoints for subscription and billing management.

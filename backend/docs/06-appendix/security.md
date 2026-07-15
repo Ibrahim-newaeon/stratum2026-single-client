@@ -4,6 +4,14 @@
 
 This document outlines security practices, policies, and guidelines for the Stratum AI platform.
 
+> **STALE — 2026-07 (STRAT-SC-001)**: the "Tenant Isolation" section,
+> JWT `tenant_id` claim examples, `TenantMixin`, and per-tenant Redis/S3
+> key prefixes below describe the pre-conversion multi-tenant
+> architecture and no longer exist in the codebase — verified empty via
+> `git grep -n "tenant_id" -- backend/app`. There is a single
+> `Organization`; no tenant isolation layer is needed. Not rewritten
+> line-by-line in this pass — see `docs/single-client-conversion.md`.
+
 ---
 
 ## Security Architecture

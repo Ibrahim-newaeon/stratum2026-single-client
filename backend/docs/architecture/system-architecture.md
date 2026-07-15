@@ -4,6 +4,16 @@
 > **Last Updated:** 2026-04-26  
 > **Audience:** Engineers, DevOps, Technical PMs  
 > **Scope:** Full-stack architecture from client to database
+>
+> **2026-07 update**: Stratum AI was converted to a **single-client
+> deployment** (STRAT-SC-001) — the multi-tenancy model, subscription
+> tiers, and Stripe billing described below (originally written for the
+> multi-tenant SaaS architecture) were fully removed. One `Organization`
+> row replaces the `tenants` table; there is no per-customer isolation
+> layer. The "Multi-Tenancy Model" section is kept below as **historical
+> reference only** and is annotated accordingly. See
+> `docs/single-client-conversion.md` for the removal ledger and current
+> architecture.
 
 ---
 
@@ -32,7 +42,9 @@ Stratum AI follows three core architectural principles:
 
 2. **Platform Agnostic**: All platform-specific logic (Meta, Google, TikTok) is abstracted behind unified interfaces. The core system never speaks platform API directly.
 
-3. **Tenant-Isolated**: Every customer's data is strictly scoped. No query crosses tenant boundaries without explicit authorization.
+3. **Single-Org, Role-Scoped**: One `Organization` per deployment. Access
+   control is role-based (owner/admin/manager/analyst/viewer), not
+   tenant-based — there is no cross-customer data to isolate.
 
 ---
 
@@ -69,10 +81,10 @@ Stratum AI follows three core architectural principles:
 │                                       │                                      │
 │                              ┌────────▼────────┐                            │
 │                              │  Middleware     │                            │
-│                              │  - Tenant       │                            │
 │                              │  - Rate Limit   │                            │
 │                              │  - Audit Log    │                            │
 │                              │  - Auth/JWT     │                            │
+│                              │  - CSRF         │                            │
 │                              └─────────────────┘                            │
 └─────────────────────────────────────────────────────────────────────────────┘
                                         │
@@ -135,8 +147,8 @@ frontend/src/
 ├── lib/               # Utilities, chart theme, formatters
 ├── types/             # Global TypeScript types
 ├── views/             # Page-level components
-│   ├── tenant/        # Tenant-scoped pages
-│   ├── superadmin/    # Admin pages
+│   ├── operate/       # Operator dashboard pages (renamed from tenant/)
+│   ├── console/       # Owner-only platform tooling (renamed from superadmin/)
 │   ├── pages/         # Marketing/static pages
 │   └── whatsapp/      # WhatsApp module
 └── main.tsx           # Entry point
@@ -207,10 +219,10 @@ core/                 # Cross-cutting concerns
     └── exceptions.py # Custom exceptions
 
 middleware/           # Request/response processing
-    ├── tenant.py     # Tenant isolation
-    ├── rate_limit.py # Throttling
-    ├── audit.py      # Audit logging
-    └── auth.py       # Authentication
+    ├── auth_context.py # Auth context propagation
+    ├── rate_limit.py    # Throttling
+    ├── audit.py         # Audit logging
+    └── csrf.py          # CSRF protection
 ```
 
 ### Request Lifecycle
@@ -222,7 +234,6 @@ Client Request
         → CORS Middleware
         → Rate Limit Middleware
         → Auth Middleware (JWT validation)
-        → Tenant Middleware (scope isolation)
         → Audit Middleware (log request)
         → Router (endpoint handler)
             → Service Layer (business logic)
@@ -240,8 +251,8 @@ Client Request
 
 ```
 ┌─────────────────┐     ┌─────────────────┐     ┌─────────────────┐
-│     tenants     │────→│     users       │────→│   user_roles    │
-│  (workspace)    │     │  (auth+profile) │     │  (permissions)  │
+│  organizations  │────→│     users       │────→│   user_roles    │
+│  (single row)   │     │  (auth+profile) │     │  (permissions)  │
 └─────────────────┘     └─────────────────┘     └─────────────────┘
          │
          ├──────────────→┌─────────────────┐
@@ -270,15 +281,18 @@ Client Request
                          └─────────────────┘
 ```
 
+> `organizations` is a single-row table (STRAT-SC-001) — it replaces the
+> former `tenants` table. No other table carries a `tenant_id` column.
+
 ### Key Design Decisions
 
 | Decision | Rationale |
 |----------|-----------|
-| **Single-schema multi-tenancy** | Simpler ops than schema-per-tenant; `tenant_id` column on every table |
+| **Single Organization row** | Replaced schema-per-tenant/shared-schema multi-tenancy; no `tenant_id` column anywhere in the schema |
 | **Soft deletes** (`is_deleted`) | Recovery from accidental deletion; audit trail |
 | **BigInteger for financials** | Prevents integer overflow on large budgets/revenue |
-| **Indexed FKs** | N+1 prevention; superadmin portfolio queries use batched GROUP BY |
-| **Alembic migrations** | Version-controlled schema changes with downgrade support |
+| **Indexed FKs** | N+1 prevention; owner/console portfolio queries use batched GROUP BY |
+| **Alembic migrations** | Version-controlled schema changes with downgrade support; fresh chain (1 revision) as of the single-client conversion |
 
 ### ClickHouse (Analytics)
 
@@ -317,7 +331,7 @@ Platform Webhook / API Poll
 | Every 1 hour | Attribution variance | Compare platform-reported vs. GA4 revenue |
 | Daily at 00:00 | EMQ score calculation | Event Match Quality scoring |
 | Daily at 06:00 | Autopilot evaluation | Batch review campaigns for actions |
-| Weekly | Churn prediction | ML model inference on tenant health |
+| Weekly | Churn prediction | ML model inference on account health |
 
 ---
 
@@ -390,48 +404,34 @@ class TrustGate:
 
 ---
 
-## Multi-Tenancy Model
+## Multi-Tenancy Model — HISTORICAL (removed 2026-07)
 
-### Isolation Strategy
+> **This entire section describes the pre-conversion architecture and no
+> longer reflects the codebase.** STRAT-SC-001 removed the `Tenant`
+> model, `TenantMiddleware`, `X-Tenant-ID` header handling, and every
+> `tenant_id` column/index in a single pass (verified empty via
+> `git grep -n "tenant_id" -- backend/app`). Kept below for historical
+> context only — see `docs/single-client-conversion.md` for what
+> replaced it.
 
-Stratum uses **single-database, shared-schema** multi-tenancy:
+### Former isolation strategy (removed)
 
-```python
-# Every model includes:
-class Campaign(Base):
-    tenant_id: Mapped[int] = mapped_column(
-        ForeignKey("tenants.id"), 
-        nullable=False, 
-        index=True
-    )
+Stratum used to run **single-database, shared-schema** multi-tenancy:
+every model carried a `tenant_id` FK to a `tenants` table, and every
+query filtered on it. A `TenantMiddleware` read `X-Tenant-ID`, validated
+access, and set `request.state.tenant_id` for downstream services.
+Cross-tenant (superadmin) endpoints used explicit `tenant_id IN (...)`
+filters with batched `GROUP BY`.
 
-# Every query includes:
-query = select(Campaign).where(Campaign.tenant_id == current_tenant_id)
-```
+### Current model
 
-### Tenant Context Propagation
-
-```
-HTTP Request (Header: X-Tenant-ID: 42)
-    → TenantMiddleware
-        → Validates user has access to tenant 42
-        → Sets `request.state.tenant_id = 42`
-            → All downstream services use this ID
-                → Database queries are automatically scoped
-```
-
-### Cross-Tenant Operations (Superadmin Only)
-
-Superadmin endpoints use explicit `tenant_id` filters with `JOIN` validation:
-
-```python
-# N+1 eliminated via batched GROUP BY
-user_counts = await db.execute(
-    select(User.tenant_id, func.count(User.id))
-    .where(User.tenant_id.in_(tenant_ids))
-    .group_by(User.tenant_id)
-)
-```
+One `Organization` row (`app/base_models.py`) holds account-wide
+settings (`feature_flags`, trust gate thresholds, autopilot enforcement
+mode). Authorization is role-based (`owner`/`admin`/`manager`/
+`analyst`/`viewer`) via `require_owner`/`require_admin` dependencies —
+there is no per-request tenant resolution step, and no query needs a
+tenant filter because there is only one organization's data in the
+database.
 
 ---
 
@@ -444,21 +444,25 @@ user_counts = await db.execute(
 | **JWT** | API access, SPAs | RS256 signed, 15-min expiry, refresh tokens |
 | **Session** | Server-rendered pages | Encrypted cookie, Redis-backed |
 | **WhatsApp OTP** | MFA, passwordless login | Twilio Verify, 5-min expiry |
-| **API Keys** | External integrations | HMAC-SHA256, scoped per tenant |
+| **API Keys** | External integrations | HMAC-SHA256, scoped by permission (no tenant scoping) |
 
 ### Authorization (RBAC)
 
 ```
 Role Hierarchy:
 
-superadmin
-    └── tenant_admin
+owner
+    └── admin
             └── manager
                     └── analyst
                             └── viewer
 ```
 
-Permissions are enforced at the **middleware layer** before the endpoint handler executes.
+`owner`-only routes (platform/console tooling, feature flags) use
+`require_owner`; broader admin routes use `require_admin`. Permissions
+are enforced via FastAPI dependencies on the endpoint, not a tenant
+middleware layer (there is no tenant middleware — removed in the
+single-client conversion).
 
 ### Data Protection
 
@@ -466,13 +470,13 @@ Permissions are enforced at the **middleware layer** before the endpoint handler
 |-------|-----------|
 | **In Transit** | TLS 1.3 (Cloudflare → Nginx → FastAPI) |
 | **At Rest** | AES-256 (database volumes) |
-| **PII** | SHA-256 hashing before storage |
+| **PII** | SHA-256 hashing / Fernet encryption before storage |
 | **Secrets** | Environment variables only; no defaults in compose files |
 
 ### Audit Logging
 
 Every state-mutating request is logged:
-- User ID, tenant ID, timestamp
+- User ID, timestamp
 - Action type, resource type, resource ID
 - Before/after state (diff)
 - IP address, user agent
@@ -489,16 +493,11 @@ Every state-mutating request is logged:
 | **Staging** | Vercel Preview | Docker on staging | Staging PostgreSQL |
 | **Local** | Vite Dev Server | Docker Compose | Local PostgreSQL |
 
-### Docker Compose (Editions)
+### Docker Compose
 
-```
-editions/
-├── starter/           # Single-tenant, minimal stack
-├── professional/      # Multi-tenant, full stack
-└── enterprise/        # HA, ClickHouse, ML workers
-```
-
-All editions use `POSTGRES_PASSWORD:?required` pattern — no default passwords.
+There is a single `docker-compose.yml` at the repo root (db, redis, api,
+worker, scheduler, frontend, flower) — no per-tier/per-edition compose
+variants. `POSTGRES_PASSWORD:?required` pattern — no default passwords.
 
 ### CI/CD Pipeline
 

@@ -4,6 +4,11 @@
 **Version:** 1.0.0
 **Production Status:** 100% Validated
 
+> **2026-07 note (STRAT-SC-001)**: this v1.0.0 snapshot predates the
+> single-client conversion. Payments/Multi-tenancy content below is
+> historical — see `docs/single-client-conversion.md`. Not rewritten in
+> this pass.
+
 ---
 
 ## Table of Contents

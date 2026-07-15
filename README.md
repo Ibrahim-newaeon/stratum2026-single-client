@@ -40,8 +40,10 @@ behind a **Trust Gate** that continuously scores the reliability of the
 underlying data and refuses to act when that signal is degraded.
 
 The platform is large and substantially built: **68 API endpoint modules**,
-**~167 frontend views**, **20 SQLAlchemy model modules**, **49 Alembic
-migrations**, and **~1,900 test functions** across 51 test files.
+**~167 frontend views**, **20 SQLAlchemy model modules**, and **~1,900 test
+functions** across 51 test files. Migrations run on a fresh, single-client
+Alembic chain (1 revision) since the STRAT-SC-001 conversion — see
+[`docs/single-client-conversion.md`](docs/single-client-conversion.md).
 
 ---
 
@@ -66,9 +68,9 @@ components:
 | Platform Stability        | 10%    |
 | Data Quality              | 10%    |
 
-Thresholds are **per-tenant configurable** (`TrustGateConfig`); the defaults
-above are the safe baseline. Enforcement runs in one of three modes —
-**Advisory**, **Soft-Block**, or **Hard-Block**.
+Thresholds are **org-configurable** (`TrustGateConfig`, via Organization
+settings); the defaults above are the safe baseline. Enforcement runs in
+one of three modes — **Advisory**, **Soft-Block**, or **Hard-Block**.
 
 Key implementation:
 `backend/app/analytics/logic/signal_health.py`,
@@ -91,10 +93,8 @@ Key implementation:
 | 8   | **Attribution**                 | First/last/linear/time-decay/position + **Markov & Shapley** data-driven     |
 | 9   | **Integrations**                | OAuth for 4 ad platforms; CRM: HubSpot, Pipedrive, Salesforce, Zoho          |
 | 10  | **Pacing**                      | Budget forecasting, EOM projections, pacing alerts                           |
-| 11  | **Payments**                    | Stripe subscriptions + signature-verified webhooks                           |
-| 12  | **Multi-tenancy**               | App-level tenant isolation, fail-closed tenant context                       |
-| 13  | **Reporting**                   | PDF / Slack / email delivery, scheduling                                     |
-| 14  | **CMS / WhatsApp / Newsletter** | Content, WhatsApp Business API, campaign sends                               |
+| 11  | **Reporting**                   | PDF / Slack / email delivery, scheduling                                     |
+| 12  | **CMS / WhatsApp / Newsletter** | Content, WhatsApp Business API, campaign sends                               |
 
 A full, evidence-graded inventory of all 65 features lives in
 [`SYSTEM_FEATURES_AUDIT_2026-06.md`](SYSTEM_FEATURES_AUDIT_2026-06.md).
@@ -130,18 +130,18 @@ ElastiCache) · Prometheus · Grafana · Sentry · structlog (JSON).
 │   │   ├── analytics/logic/    # Signal health, EMQ, attribution, anomalies
 │   │   ├── autopilot/          # Trust-gate enforcement engine
 │   │   ├── auth/               # JWT, MFA, RBAC, dependencies
-│   │   ├── core/               # Config, security, logging, websocket, tiers
+│   │   ├── core/               # Config, security, logging, websocket
 │   │   ├── db/                 # Async/sync sessions, custom column types
-│   │   ├── middleware/         # Tenant, audit, rate limiting, security headers
+│   │   ├── middleware/         # Audit, rate limiting, security headers
 │   │   ├── models/             # SQLAlchemy 2.0 models (20 modules)
 │   │   ├── schemas/            # Pydantic I/O schemas
 │   │   ├── services/           # Integrations & business logic
 │   │   │   ├── oauth/          # Meta · Google · TikTok · Snapchat
 │   │   │   ├── crm/            # HubSpot · Pipedrive · Salesforce · Zoho
-│   │   │   ├── cdp/ pacing/ profit/ reporting/ tenant/
+│   │   │   ├── cdp/ pacing/ profit/ reporting/
 │   │   ├── stratum/            # Core domain: trust gate, adapters, autopilot
 │   │   └── workers/            # Celery tasks + beat schedule
-│   ├── migrations/             # Alembic (49 revisions)
+│   ├── migrations/             # Alembic — fresh single-client chain (1 revision)
 │   ├── tests/                  # pytest: unit/ + integration/ (~1,900 tests)
 │   └── docs/                   # Curated docs (shipped for the Copilot RAG indexer)
 ├── frontend/
@@ -221,13 +221,15 @@ Notable feature flags (default values shown):
 | ------------------------------ | ------- | -------------------------------------------------- |
 | `feature_knowledge_graph`      | `false` | Knowledge Graph is shelved until Apache AGE exists |
 | `enable_campaign_builder_beat` | `false` | Opt-in connector sync / token-refresh beat tasks   |
-| `feature_what_if_simulator`    | `true`  | Enterprise-tier what-if simulator                  |
+| `feature_what_if_simulator`    | `true`  | What-if budget/bid simulator                       |
 | `feature_gdpr_compliance`      | `true`  | GDPR tooling                                       |
 
 Required in non-dev environments: `SECRET_KEY`, `JWT_SECRET_KEY`,
 `PII_ENCRYPTION_KEY`, `LICENSE_SIGNING_SECRET`, plus per-platform OAuth
-credentials and Stripe / SendGrid keys. See
-[`backend/docs/ENVIRONMENT_VARIABLES.md`](backend/docs/ENVIRONMENT_VARIABLES.md).
+credentials and SendGrid keys. See
+[`backend/docs/ENVIRONMENT_VARIABLES.md`](backend/docs/ENVIRONMENT_VARIABLES.md)
+(Stripe entries there are historical — Payments was removed in the
+single-client conversion).
 
 ---
 
@@ -256,18 +258,20 @@ and [`backend/docs/API_EXPLORER.md`](backend/docs/API_EXPLORER.md).
   Redis blacklist, login lockout, no PII in JWT claims.
 - **MFA** — TOTP enforced at login via a stateless challenge-exchange
   (`/auth/login` → `/auth/login/mfa`); backup codes supported.
-- **Tenant isolation** — a shared, fail-closed tenant-context dependency
-  (`require_tenant_id`) raises `401` instead of defaulting to a tenant.
+- **Owner-only routes** — a shared, fail-closed role dependency
+  (`require_owner`/`require_admin`) raises `401`/`403` instead of
+  defaulting to an allow.
 - **API keys** — inbound `X-API-Key` authenticator with scopes, hashed at
   rest, `last_used` tracking.
-- **Tier gating** — `FeatureGate` / `TierGate` enforce subscription tier +
-  active-subscription checks on premium routers.
+- **Feature gating** — `FeatureGate` (`core/feature_gate.py`) enforces
+  `Organization.feature_flags` on gated routers; no subscription/tier
+  concept remains (Payments removed in the single-client conversion).
 - **Secrets at rest** — Fernet-encrypted PII and connector secrets
   (`EncryptedString` column type); production guards on signing secrets.
 - **Audit** — state-changing requests are queued to Redis and persisted by
   a Celery worker; constant-time comparisons via `hmac.compare_digest`.
 - **Transport / app** — security headers, CSRF middleware, webhook
-  signature verification (Stripe, WhatsApp), SSRF guard on outbound webhooks.
+  signature verification (WhatsApp), SSRF guard on outbound webhooks.
 
 Vulnerability reporting: see [`SECURITY.md`](SECURITY.md).
 
@@ -299,9 +303,15 @@ This release folds in a focused security & reliability pass driven by the
 
 The algorithmic cores are real implementations, not stubs — Markov/Shapley
 attribution, sklearn ML, EMQ math, signal-health scoring, identity
-resolution, OAuth token exchange, audience PII hashing, autopilot
-enforcement, and Stripe billing all function. The recurring gap is
-**wiring, enforcement, and persistence** rather than missing logic.
+resolution, OAuth token exchange, audience PII hashing, and autopilot
+enforcement all function. The recurring gap is **wiring, enforcement, and
+persistence** rather than missing logic.
+
+> Payments/Stripe billing and the multi-tenant isolation layer described
+> elsewhere in this assessment were fully removed in the single-client
+> conversion (STRAT-SC-001, 2026-07) — this platform now runs as a
+> single-organization deployment. See
+> [`docs/single-client-conversion.md`](docs/single-client-conversion.md).
 
 Recent work closed the headline security blockers (MFA, tenant isolation,
 audit logging, API-key auth, tier gating, secrets) and the runtime crash
@@ -321,7 +331,8 @@ broader test coverage.
 | Doc                                                                                      | What's in it                                                                |
 | ---------------------------------------------------------------------------------------- | --------------------------------------------------------------------------- |
 | [`CLAUDE.md`](CLAUDE.md)                                                                 | Engineering conventions, design system, trust-engine rules                  |
-| [`SYSTEM_FEATURES_AUDIT_2026-06.md`](SYSTEM_FEATURES_AUDIT_2026-06.md)                   | Current feature audit (supersedes 2026-05)                                  |
+| [`docs/single-client-conversion.md`](docs/single-client-conversion.md)                   | STRAT-SC-001 removal ledger, behavior changes, de-namespacing map           |
+| [`SYSTEM_FEATURES_AUDIT_2026-06.md`](SYSTEM_FEATURES_AUDIT_2026-06.md)                   | Feature audit predating the single-client conversion (see note above)      |
 | [`backend/docs/`](backend/docs/)                                                         | Setup, backend, frontend, features, operations, deploy, technical reference |
 | [`backend/docs/architecture/trust-engine.md`](backend/docs/architecture/trust-engine.md) | Trust Engine architecture                                                   |
 | [`backend/docs/00-overview/glossary.md`](backend/docs/00-overview/glossary.md)           | Domain glossary                                                             |
