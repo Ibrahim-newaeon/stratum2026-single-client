@@ -160,7 +160,6 @@ step "8. Frontend Environment Variables"
 declare -A FRONTEND_VARS=(
     [VITE_API_URL]="$BACKEND_URL"
     [VITE_WS_URL]="wss://${BACKEND_DOMAIN}"
-    [VITE_DEFAULT_LOCALE]=en
 )
 
 for key in "${!FRONTEND_VARS[@]}"; do

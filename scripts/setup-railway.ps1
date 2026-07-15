@@ -206,7 +206,6 @@ step "8. Frontend Environment Variables"
 $frontendVars = @{
     "VITE_API_URL"        = $backendUrl
     "VITE_WS_URL"         = "wss://$backendDomain"
-    "VITE_DEFAULT_LOCALE" = "en"
 }
 
 foreach ($kv in $frontendVars.GetEnumerator()) {

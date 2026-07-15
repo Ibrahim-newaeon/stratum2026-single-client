@@ -348,17 +348,17 @@ async def _get_system_health(db: AsyncSession) -> dict:
     }
 
     try:
-        # Check platform connection health
-        from app.models.campaign_builder import PlatformConnection
+        # Check platform connection health: of all configured connections,
+        # how many are currently CONNECTED. (The model has no is_connected /
+        # is_healthy attributes — status is the source of truth.)
+        from app.models.campaign_builder import ConnectionStatus, PlatformConnection
 
-        result = await db.execute(
-            select(PlatformConnection).where(PlatformConnection.is_connected == True)
-        )
+        result = await db.execute(select(PlatformConnection))
         connections = result.scalars().all()
 
         total_connections = len(connections)
         healthy_connections = sum(
-            1 for c in connections if getattr(c, "is_healthy", True)
+            1 for c in connections if c.status == ConnectionStatus.CONNECTED
         )
 
         if total_connections > 0:

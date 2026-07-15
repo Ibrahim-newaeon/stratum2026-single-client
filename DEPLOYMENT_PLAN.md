@@ -109,19 +109,22 @@ GOOGLE_ADS_CUSTOMER_ID=<copy from stratum-ai.env>
 GOOGLE_ADS_MCC_ID=<copy from stratum-ai.env>
 
 # Ad Platforms - TikTok
+# (config.py reads TIKTOK_APP_ID / TIKTOK_SECRET / TIKTOK_ACCESS_TOKEN /
+#  TIKTOK_ADVERTISER_ID. The old AD_ACCOUNT_ID/PIXEL_ID/CAPI_TOKEN vars are
+#  not read by this codebase — do not set them.)
 TIKTOK_APP_ID=<copy from stratum-ai.env>
+TIKTOK_SECRET=<copy from stratum-ai.env (may be named TIKTOK_APP_SECRET there)>
 TIKTOK_ACCESS_TOKEN=<copy from stratum-ai.env>
-TIKTOK_AD_ACCOUNT_ID=<copy from stratum-ai.env>
 TIKTOK_ADVERTISER_ID=<copy from stratum-ai.env>
-TIKTOK_PIXEL_ID=<copy from stratum-ai.env>
-TIKTOK_CAPI_TOKEN=<copy from stratum-ai.env>
 
 # Ad Platforms - Snapchat
-SNAPCHAT_APP_ID=<copy from stratum-ai.env>
-SNAPCHAT_SECRET=<copy from stratum-ai.env>
-SNAPCHAT_CAPI_TOKEN=<copy from stratum-ai.env>
+# (config.py reads SNAPCHAT_CLIENT_ID / SNAPCHAT_CLIENT_SECRET /
+#  SNAPCHAT_ACCESS_TOKEN / SNAPCHAT_AD_ACCOUNT_ID. The old APP_ID/SECRET/
+#  CAPI_TOKEN/PIXEL_ID names are not read by this codebase.)
+SNAPCHAT_CLIENT_ID=<copy from stratum-ai.env SNAPCHAT_APP_ID>
+SNAPCHAT_CLIENT_SECRET=<copy from stratum-ai.env SNAPCHAT_SECRET>
+SNAPCHAT_ACCESS_TOKEN=<copy from stratum-ai.env>
 SNAPCHAT_AD_ACCOUNT_ID=<copy from stratum-ai.env>
-SNAPCHAT_PIXEL_ID=<copy from stratum-ai.env>
 
 # Google Analytics / GTM
 MIDAS_GTM_SERVER_CONTAINER=<copy from stratum-ai.env>
@@ -153,7 +156,7 @@ LOG_FORMAT=json
 5. Add this environment variable (IMPORTANT - must be set BEFORE the build):
 
 ```env
-VITE_API_BASE_URL=https://api.stratumai.app/api/v1
+VITE_API_URL=https://api.stratumai.app/api/v1
 ```
 
 ### Step 5: Add Custom Domain (3 min)

@@ -29,9 +29,14 @@ FROM node:26-alpine AS build
 
 WORKDIR /app
 
-# VITE_API_URL must match what the frontend code reads via import.meta.env
+# VITE_* args must match what the frontend code reads via import.meta.env
+# (VITE_API_URL includes the /api/v1 path; VITE_WS_URL includes the /ws path)
 ARG VITE_API_URL=https://api.stratumai.app/api/v1
 ENV VITE_API_URL=$VITE_API_URL
+ARG VITE_WS_URL=
+ENV VITE_WS_URL=$VITE_WS_URL
+ARG VITE_SENTRY_DSN=
+ENV VITE_SENTRY_DSN=$VITE_SENTRY_DSN
 
 COPY package*.json ./
 RUN npm ci --legacy-peer-deps

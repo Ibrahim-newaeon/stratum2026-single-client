@@ -147,7 +147,7 @@ cd frontend
 npm install
 
 # Set environment variables (or create .env)
-export VITE_API_BASE_URL="http://localhost:8000"
+export VITE_API_URL="http://localhost:8000/api/v1"
 export VITE_WS_URL="ws://localhost:8000"
 
 # Start development server
@@ -195,9 +195,8 @@ ML_PROVIDER=local
 Create `.env` in the frontend directory:
 
 ```env
-VITE_API_BASE_URL=http://localhost:8000
+VITE_API_URL=http://localhost:8000/api/v1
 VITE_WS_URL=ws://localhost:8000
-VITE_DEFAULT_LOCALE=en
 ```
 
 ---

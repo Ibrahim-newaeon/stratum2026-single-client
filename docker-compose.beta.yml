@@ -123,7 +123,8 @@ services:
       dockerfile: Dockerfile
       target: production
       args:
-        - VITE_API_BASE_URL=${VITE_API_BASE_URL:-https://beta.stratum-ai.com}
+        # The code reads VITE_API_URL (must include /api/v1) — not VITE_API_BASE_URL.
+        - VITE_API_URL=${VITE_API_URL:-https://beta.stratum-ai.com/api/v1}
     container_name: stratum_frontend
     restart: always
     networks:

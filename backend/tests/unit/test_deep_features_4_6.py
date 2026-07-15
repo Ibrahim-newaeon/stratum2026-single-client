@@ -805,13 +805,18 @@ class TestAuthRegister:
 
         Registration requires an email/WhatsApp OTP verification token;
         an unrecognized token is rejected with 400."""
+        from app.core.config import settings
+
         fake_redis = AsyncMock()
         fake_redis.get = AsyncMock(return_value=None)  # token not found
         fake_redis.delete = AsyncMock()
         fake_redis.close = AsyncMock()
-        with patch(
-            "app.api.v1.endpoints.auth.get_redis_client",
-            new=AsyncMock(return_value=fake_redis),
+        with (
+            patch.object(settings, "enable_public_signup", True),
+            patch(
+                "app.api.v1.endpoints.auth.get_redis_client",
+                new=AsyncMock(return_value=fake_redis),
+            ),
         ):
             r = await api_client.post(
                 f"{AUTH_PREFIX}/register",

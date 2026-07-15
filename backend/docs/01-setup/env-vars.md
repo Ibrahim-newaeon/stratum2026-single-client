@@ -364,16 +364,14 @@ Frontend uses `VITE_` prefix for environment variables.
 
 | Variable | Type | Default | Description |
 |----------|------|---------|-------------|
-| `VITE_API_BASE_URL` | string | http://localhost:8000 | Backend API URL |
+| `VITE_API_URL` | string | http://localhost:8000/api/v1 | Backend API URL (includes /api/v1) |
 | `VITE_WS_URL` | string | ws://localhost:8000 | WebSocket URL |
-| `VITE_DEFAULT_LOCALE` | string | "en" | Default language |
 | `VITE_SENTRY_DSN` | string | - | Frontend Sentry DSN |
 
 ### Example (.env in frontend/)
 ```env
-VITE_API_BASE_URL=http://localhost:8000
+VITE_API_URL=http://localhost:8000/api/v1
 VITE_WS_URL=ws://localhost:8000
-VITE_DEFAULT_LOCALE=en
 VITE_SENTRY_DSN=https://key@sentry.io/frontend-project
 ```
 

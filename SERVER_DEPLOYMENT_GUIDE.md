@@ -125,11 +125,11 @@ CELERY_RESULT_BACKEND=redis://redis:6379/2
 ```env
 # Development
 CORS_ORIGINS=http://localhost:3000,http://localhost:5173
-VITE_API_BASE_URL=http://localhost:8000
+VITE_API_URL=http://localhost:8000/api/v1
 
 # Production
 CORS_ORIGINS=https://yourdomain.com
-VITE_API_BASE_URL=https://yourdomain.com
+VITE_API_URL=https://yourdomain.com/api/v1
 ```
 
 ### Step 6: Configure ad platforms (optional for dev)

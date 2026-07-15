@@ -211,27 +211,25 @@ async def start_platform_connection(
     oauth_configs = {
         AdPlatform.META: {
             "base_url": "https://www.facebook.com/v25.0/dialog/oauth",
-            "client_id_env": "META_APP_ID",
+            "client_id": settings.meta_app_id,
             "scope": "ads_management,ads_read,business_management,pages_read_engagement",
         },
         AdPlatform.GOOGLE: {
             "base_url": "https://accounts.google.com/o/oauth2/v2/auth",
-            "client_id_env": "GOOGLE_ADS_CLIENT_ID",
+            "client_id": settings.google_ads_client_id,
             "scope": "https://www.googleapis.com/auth/adwords",
         },
         AdPlatform.TIKTOK: {
             "base_url": "https://ads.tiktok.com/marketing_api/auth",
-            "client_id_env": "TIKTOK_APP_ID",
+            "client_id": settings.tiktok_app_id,
             "scope": "advertiser.read,advertiser.write,campaign.read,campaign.write,report.read",
         },
         AdPlatform.SNAPCHAT: {
             "base_url": "https://accounts.snapchat.com/accounts/oauth2/auth",
-            "client_id_env": "SNAPCHAT_APP_ID",
+            "client_id": settings.snapchat_client_id,
             "scope": "snapchat-marketing-api",
         },
     }
-
-    import os
 
     config = oauth_configs.get(platform)
     if not config:
@@ -239,7 +237,7 @@ async def start_platform_connection(
             status_code=400, detail=f"Unsupported platform: {platform.value}"
         )
 
-    client_id = os.environ.get(config["client_id_env"], "")
+    client_id = config["client_id"] or ""
     if not client_id:
         raise HTTPException(
             status_code=400,

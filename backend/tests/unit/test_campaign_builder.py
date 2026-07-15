@@ -37,6 +37,7 @@ from app.api.v1.endpoints.campaign_builder import (
     ConnectorStatusResponse,
     PublishLogResponse,
 )
+from app.core.config import settings
 
 # ---------------------------------------------------------------------------
 # Model / enum imports
@@ -487,7 +488,7 @@ class TestStartPlatformConnection:
         db = _make_db()
         request = _make_request()
 
-        with patch.dict("os.environ", {"META_APP_ID": "test_app_id_123"}):
+        with patch.object(settings, "meta_app_id", "test_app_id_123"):
             resp = await start_platform_connection(request, AdPlatform.META, db)
 
         assert resp.success is True
@@ -502,7 +503,7 @@ class TestStartPlatformConnection:
         db = _make_db()
         request = _make_request()
 
-        with patch.dict("os.environ", {"GOOGLE_ADS_CLIENT_ID": "google_client_123"}):
+        with patch.object(settings, "google_ads_client_id", "google_client_123"):
             resp = await start_platform_connection(request, AdPlatform.GOOGLE, db)
 
         assert resp.success is True
@@ -515,7 +516,7 @@ class TestStartPlatformConnection:
         db = _make_db()
         request = _make_request()
 
-        with patch.dict("os.environ", {"TIKTOK_APP_ID": "tiktok_app_123"}):
+        with patch.object(settings, "tiktok_app_id", "tiktok_app_123"):
             resp = await start_platform_connection(request, AdPlatform.TIKTOK, db)
 
         assert resp.success is True
@@ -528,7 +529,7 @@ class TestStartPlatformConnection:
         db = _make_db()
         request = _make_request()
 
-        with patch.dict("os.environ", {"SNAPCHAT_APP_ID": "snap_app_123"}):
+        with patch.object(settings, "snapchat_client_id", "snap_app_123"):
             resp = await start_platform_connection(request, AdPlatform.SNAPCHAT, db)
 
         assert resp.success is True
@@ -543,7 +544,7 @@ class TestStartPlatformConnection:
         db = _make_db()
         request = _make_request()
 
-        with patch.dict("os.environ", {}, clear=True):
+        with patch.object(settings, "meta_app_id", None):
             with pytest.raises(HTTPException) as exc_info:
                 await start_platform_connection(request, AdPlatform.META, db)
             assert exc_info.value.status_code == 400
@@ -556,7 +557,7 @@ class TestStartPlatformConnection:
         db = _make_db()
         request = _make_request()
 
-        with patch.dict("os.environ", {"META_APP_ID": "test_app"}):
+        with patch.object(settings, "meta_app_id", "test_app"):
             resp = await start_platform_connection(request, AdPlatform.META, db)
 
         assert "state" in resp.data

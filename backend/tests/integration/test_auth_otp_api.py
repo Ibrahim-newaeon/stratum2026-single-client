@@ -26,6 +26,15 @@ _VERIFY_EMAIL = "/api/v1/auth/email/verify-otp"
 _REGISTER = "/api/v1/auth/register"
 
 
+@pytest.fixture(autouse=True)
+def _public_signup_enabled(monkeypatch):
+    """The verify-then-register round trips exercise open registration;
+    the flag defaults to False (invite-only) so enable it for this module."""
+    from app.core.config import settings
+
+    monkeypatch.setattr(settings, "enable_public_signup", True)
+
+
 def _unique_phone() -> str:
     """E.164 phone unique per test (Redis is shared across runs)."""
     return "+1555" + str(uuid.uuid4().int)[:7]

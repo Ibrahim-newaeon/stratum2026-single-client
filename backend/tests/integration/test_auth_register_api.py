@@ -19,6 +19,15 @@ pytestmark = [pytest.mark.integration, pytest.mark.asyncio]
 _URL = "/api/v1/auth/register"
 
 
+@pytest.fixture(autouse=True)
+def _public_signup_enabled(monkeypatch):
+    """These tests exercise the open-registration path; the flag defaults
+    to False (invite-only) so enable it explicitly for this module."""
+    from app.core.config import settings
+
+    monkeypatch.setattr(settings, "enable_public_signup", True)
+
+
 @pytest_asyncio.fixture
 async def verification_token():
     """Seed a one-time signup-verification token in Redis (consumed by register)."""

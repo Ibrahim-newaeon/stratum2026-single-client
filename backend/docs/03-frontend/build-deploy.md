@@ -26,9 +26,8 @@ The dev server runs at `http://localhost:5173` with:
 Create `.env` file:
 
 ```env
-VITE_API_BASE_URL=http://localhost:8000
+VITE_API_URL=http://localhost:8000/api/v1
 VITE_WS_URL=ws://localhost:8000
-VITE_DEFAULT_LOCALE=en
 VITE_SENTRY_DSN=
 ```
 
@@ -189,14 +188,14 @@ server {
 ### Development
 
 ```env
-VITE_API_BASE_URL=http://localhost:8000
+VITE_API_URL=http://localhost:8000/api/v1
 VITE_WS_URL=ws://localhost:8000
 ```
 
 ### Staging
 
 ```env
-VITE_API_BASE_URL=https://api.staging.stratum.ai
+VITE_API_URL=https://api.staging.stratum.ai/api/v1
 VITE_WS_URL=wss://api.staging.stratum.ai
 VITE_SENTRY_DSN=https://xxx@sentry.io/staging
 ```
@@ -204,7 +203,7 @@ VITE_SENTRY_DSN=https://xxx@sentry.io/staging
 ### Production
 
 ```env
-VITE_API_BASE_URL=https://api.stratum.ai
+VITE_API_URL=https://api.stratum.ai/api/v1
 VITE_WS_URL=wss://api.stratum.ai
 VITE_SENTRY_DSN=https://xxx@sentry.io/production
 ```
@@ -317,7 +316,7 @@ jobs:
         working-directory: frontend
         run: npm run build
         env:
-          VITE_API_BASE_URL: ${{ secrets.VITE_API_BASE_URL }}
+          VITE_API_URL: ${{ secrets.VITE_API_URL }}
           VITE_SENTRY_DSN: ${{ secrets.VITE_SENTRY_DSN }}
 
       - name: Deploy to S3

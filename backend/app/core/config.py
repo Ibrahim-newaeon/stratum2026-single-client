@@ -219,14 +219,13 @@ class Settings(BaseSettings):
     pii_encryption_key: str = Field(
         default_factory=lambda: _DEV_PII_KEY, description="AES encryption key for PII"
     )
-    # Preserves the historical (pre-conversion) behavior of an open
-    # POST /auth/register by default. Single-client production deployments
-    # should set this to false and provision teammates via the owner-only
-    # POST /users/invite flow instead.
+    # Invite-only by default: single-client deployments provision teammates
+    # via the owner-only POST /users/invite flow. Set ENABLE_PUBLIC_SIGNUP=true
+    # only for environments that intentionally allow open self-registration.
     enable_public_signup: bool = Field(
-        default=True,
+        default=False,
         description="Allow unauthenticated self-registration via POST /auth/register. "
-        "Set false in production to require owner-issued invites instead.",
+        "Defaults off (invite-only); set true to open self-registration.",
     )
 
     # -------------------------------------------------------------------------

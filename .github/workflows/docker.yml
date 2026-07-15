@@ -113,7 +113,7 @@ jobs:
           cache-to: type=gha,mode=max
           platforms: linux/amd64
           build-args: |
-            VITE_API_BASE_URL=https://api.stratum.ai
+            VITE_API_URL=https://api.stratum.ai/api/v1
 
   # ===========================================================================
   # Docker Compose Integration Test

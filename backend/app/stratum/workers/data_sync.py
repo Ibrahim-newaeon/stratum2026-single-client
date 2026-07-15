@@ -382,14 +382,14 @@ async def update_metrics_all() -> dict[str, Any]:
     try:
         from sqlalchemy import select
 
-        from app.db.session import sync_session_factory
-        from app.models.campaign_builder import PlatformConnection
+        from app.db.session import SyncSessionLocal
+        from app.models.campaign_builder import ConnectionStatus, PlatformConnection
 
-        with sync_session_factory() as db:
+        with SyncSessionLocal() as db:
             connections = (
                 db.execute(
                     select(PlatformConnection).where(
-                        PlatformConnection.is_connected == True
+                        PlatformConnection.status == ConnectionStatus.CONNECTED
                     )
                 )
                 .scalars()
@@ -571,28 +571,25 @@ async def calculate_all_signal_health() -> dict[str, Any]:
     try:
         from sqlalchemy import select
 
-        from app.analytics.logic.signal_health import calculate_signal_health
         from app.db.session import async_session_factory
-        from app.models.campaign_builder import PlatformConnection
+        from app.models.campaign_builder import ConnectionStatus, PlatformConnection
 
         async with async_session_factory() as db:
             conn_result = await db.execute(
                 select(PlatformConnection).where(
-                    PlatformConnection.is_connected == True
+                    PlatformConnection.status == ConnectionStatus.CONNECTED
                 )
             )
             connections = conn_result.scalars().all()
 
             for conn in connections:
                 results["accounts_processed"] += 1
-                is_healthy = getattr(conn, "is_healthy", True)
-
-                if is_healthy:
-                    results["healthy"] += 1
-                elif getattr(conn, "last_error", None):
-                    results["critical"] += 1
-                else:
+                # The model has no per-connection health score — a CONNECTED
+                # row with a recorded error is degraded, otherwise healthy.
+                if conn.last_error:
                     results["degraded"] += 1
+                else:
+                    results["healthy"] += 1
 
             # Trigger alerts for critical accounts
             if results["critical"] > 0:

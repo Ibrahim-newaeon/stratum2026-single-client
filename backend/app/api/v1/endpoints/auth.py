@@ -794,10 +794,9 @@ async def register(
 
     Requires a verification_token from email or WhatsApp OTP verification.
 
-    Gated by ``ENABLE_PUBLIC_SIGNUP`` (default on, preserving historical
-    behavior). Single-client production deployments should set this to
-    false and add teammates via the owner-only ``POST /users/invite``
-    flow instead.
+    Gated by ``ENABLE_PUBLIC_SIGNUP`` (default off — invite-only).
+    Teammates are normally added via the owner-only ``POST /users/invite``
+    flow; set ``ENABLE_PUBLIC_SIGNUP=true`` to open self-registration.
     """
     from app.base_models import UserRole
     from app.core.security import encrypt_pii
