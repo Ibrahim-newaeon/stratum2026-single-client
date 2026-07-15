@@ -148,7 +148,9 @@ async def writeback_hubspot_attribution(
             return results
 
         except Exception as e:
-            logger.error(f"HubSpot writeback failed for connection {connection_id}: {e}")
+            logger.error(
+                f"HubSpot writeback failed for connection {connection_id}: {e}"
+            )
             raise self.retry(exc=e, countdown=60 * 5)
 
 
@@ -229,9 +231,7 @@ async def writeback_zoho_attribution(
         modified_since = None
         if not full_sync:
             result = await db.execute(
-                select(CRMConnection).where(
-                    CRMConnection.provider == CRMProvider.ZOHO
-                )
+                select(CRMConnection).where(CRMConnection.provider == CRMProvider.ZOHO)
             )
             connection = result.scalar_one_or_none()
             if connection and connection.last_sync_at:

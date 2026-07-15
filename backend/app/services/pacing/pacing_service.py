@@ -77,9 +77,7 @@ class PacingService:
             as_of_date = date.today()
 
         # Load target
-        result = await self.db.execute(
-            select(Target).where(Target.id == target_id)
-        )
+        result = await self.db.execute(select(Target).where(Target.id == target_id))
         target = result.scalar_one_or_none()
 
         if not target:
@@ -655,9 +653,7 @@ class TargetService:
 
     async def get_target(self, target_id: UUID) -> Optional[Target]:
         """Get a target by ID."""
-        result = await self.db.execute(
-            select(Target).where(Target.id == target_id)
-        )
+        result = await self.db.execute(select(Target).where(Target.id == target_id))
         return result.scalar_one_or_none()
 
     async def list_targets(

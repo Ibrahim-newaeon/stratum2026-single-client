@@ -111,9 +111,7 @@ class NewsletterTemplate(Base):
     # Relationships
     campaigns = relationship("NewsletterCampaign", back_populates="template")
 
-    __table_args__ = (
-        Index("ix_nl_template_category", "category"),
-    )
+    __table_args__ = (Index("ix_nl_template_category", "category"),)
 
 
 class NewsletterCampaign(Base):

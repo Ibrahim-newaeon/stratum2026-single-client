@@ -463,9 +463,7 @@ class TestDashboardSettings:
         empty_result = make_scalars_result([])
         mock_db.execute = AsyncMock(return_value=empty_result)
 
-        resp = await api_client.get(
-            "/api/v1/dashboard/overview", headers=admin_headers
-        )
+        resp = await api_client.get("/api/v1/dashboard/overview", headers=admin_headers)
         assert resp.status_code == 200
         body = resp.json()
         assert body["success"] is True
@@ -483,9 +481,7 @@ class TestDashboardSettings:
         """GET /dashboard/settings returns org settings."""
         mock_db.get = AsyncMock(return_value=self._mock_org())
 
-        resp = await api_client.get(
-            "/api/v1/dashboard/settings", headers=admin_headers
-        )
+        resp = await api_client.get("/api/v1/dashboard/settings", headers=admin_headers)
         assert resp.status_code == 200
         body = resp.json()
         assert body["success"] is True

@@ -231,9 +231,7 @@ async def list_webhooks(
     List all webhooks.
     """
     result = await db.execute(
-        select(Webhook)
-        .order_by(Webhook.created_at.desc())
-        .limit(1000)
+        select(Webhook).order_by(Webhook.created_at.desc()).limit(1000)
     )
     webhooks = result.scalars().all()
 
@@ -269,9 +267,7 @@ async def get_webhook(
     """
     Get a specific webhook.
     """
-    result = await db.execute(
-        select(Webhook).where(Webhook.id == webhook_id)
-    )
+    result = await db.execute(select(Webhook).where(Webhook.id == webhook_id))
     webhook = result.scalar_one_or_none()
 
     if not webhook:
@@ -367,9 +363,7 @@ async def update_webhook(
     """
     Update a webhook.
     """
-    result = await db.execute(
-        select(Webhook).where(Webhook.id == webhook_id)
-    )
+    result = await db.execute(select(Webhook).where(Webhook.id == webhook_id))
     webhook = result.scalar_one_or_none()
 
     if not webhook:
@@ -424,9 +418,7 @@ async def delete_webhook(
     """
     Delete a webhook.
     """
-    result = await db.execute(
-        select(Webhook).where(Webhook.id == webhook_id)
-    )
+    result = await db.execute(select(Webhook).where(Webhook.id == webhook_id))
     webhook = result.scalar_one_or_none()
 
     if not webhook:
@@ -450,9 +442,7 @@ async def test_webhook(
     """
     Send a test event to a webhook endpoint.
     """
-    result = await db.execute(
-        select(Webhook).where(Webhook.id == webhook_id)
-    )
+    result = await db.execute(select(Webhook).where(Webhook.id == webhook_id))
     webhook = result.scalar_one_or_none()
 
     if not webhook:
@@ -542,9 +532,7 @@ async def get_webhook_deliveries(
     Get delivery history for a webhook.
     """
     # Verify webhook exists
-    result = await db.execute(
-        select(Webhook).where(Webhook.id == webhook_id)
-    )
+    result = await db.execute(select(Webhook).where(Webhook.id == webhook_id))
     if not result.scalar_one_or_none():
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,

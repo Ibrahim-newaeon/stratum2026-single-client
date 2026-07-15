@@ -73,9 +73,7 @@ class PushSubscription(Base):
         nullable=False,
     )
 
-    __table_args__ = (
-        Index("ix_push_subscription_active", "is_active"),
-    )
+    __table_args__ = (Index("ix_push_subscription_active", "is_active"),)
 
 
 class PushNotificationLog(Base):

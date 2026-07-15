@@ -203,9 +203,7 @@ class TestActionValidation:
         await db_session.flush()
 
         # Check autopilot state - should be restricted
-        response = await authenticated_client.get(
-            "/api/v1/emq/autopilot-state"
-        )
+        response = await authenticated_client.get("/api/v1/emq/autopilot-state")
 
         if response.status_code == 200:
             data = response.json()
@@ -266,9 +264,7 @@ class TestActionSummary:
         test_action: dict,
     ):
         """Test retrieval of actions summary."""
-        response = await authenticated_client.get(
-            "/api/v1/autopilot/actions/summary"
-        )
+        response = await authenticated_client.get("/api/v1/autopilot/actions/summary")
 
         if response.status_code == 200:
             data = response.json()

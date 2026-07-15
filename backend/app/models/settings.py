@@ -348,4 +348,3 @@ class SlackIntegration(Base, TimestampMixin):
         DateTime(timezone=True), nullable=True
     )
     last_test_success: Mapped[Optional[bool]] = mapped_column(Boolean, nullable=True)
-

@@ -101,7 +101,8 @@ class AuditLogSearchRequest(BaseModel):
         description="Filter by actions: campaign_create, campaign_update, login, etc.",
     )
     resource_types: Optional[list[str]] = Field(
-        None, description="Filter by resource type: campaign, user, organization, setting"
+        None,
+        description="Filter by resource type: campaign, user, organization, setting",
     )
     severity: Optional[list[str]] = Field(
         None, description="Filter by severity: info, warning, critical"

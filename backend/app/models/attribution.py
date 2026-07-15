@@ -102,9 +102,7 @@ class DailyAttributedRevenue(Base):
 
     __table_args__ = (
         Index("ix_daily_attributed_rev_date", "date"),
-        Index(
-            "ix_daily_attributed_rev_model", "attribution_model", "date"
-        ),
+        Index("ix_daily_attributed_rev_model", "attribution_model", "date"),
         Index(
             "ix_daily_attributed_rev_dimension",
             "dimension_type",

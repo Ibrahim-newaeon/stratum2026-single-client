@@ -437,7 +437,9 @@ class KnowledgeGraphService:
 
         return [self._parse_agtype(row[0]) for row in result]
 
-    async def get_channel_transition_matrix(self, days: int = 30) -> list[dict[str, Any]]:
+    async def get_channel_transition_matrix(
+        self, days: int = 30
+    ) -> list[dict[str, Any]]:
         """
         Get channel-to-channel transition probabilities for Markov attribution.
 

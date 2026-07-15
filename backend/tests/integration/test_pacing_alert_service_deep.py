@@ -531,9 +531,7 @@ class TestCheckPacingCliff:
         assert await svc.check_pacing_cliff(target.id, AS_OF) is None
 
     async def test_scoped_to_platform_and_campaign(self, svc, db_session):
-        target = await _make_target(
-            db_session, platform="meta", campaign_id="cmp-1"
-        )
+        target = await _make_target(db_session, platform="meta", campaign_id="cmp-1")
         # Matching scope: cliff series
         for offset, cents in ((3, 200_00), (2, 200_00), (1, 200_00), (0, 20_00)):
             await _make_kpi(

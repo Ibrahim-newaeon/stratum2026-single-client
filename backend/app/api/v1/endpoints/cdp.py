@@ -654,14 +654,10 @@ async def ingest_events(
                         continue
 
                 # Find or create profile
-                profile, _is_new = await find_or_create_profile(
-                    db, event.identifiers
-                )
+                profile, _is_new = await find_or_create_profile(db, event.identifiers)
 
                 # Link identifiers to profile
-                await link_identifiers_to_profile(
-                    db, profile, event.identifiers
-                )
+                await link_identifiers_to_profile(db, profile, event.identifiers)
 
                 # Calculate EMQ score
                 received_at = datetime.now(UTC)
@@ -900,9 +896,7 @@ async def list_sources(
     """List all data sources for the organization."""
 
     result = await db.execute(
-        select(CDPSource)
-        .order_by(CDPSource.created_at.desc())
-        .limit(1000)
+        select(CDPSource).order_by(CDPSource.created_at.desc()).limit(1000)
     )
     sources = result.scalars().all()
 
@@ -1021,7 +1015,6 @@ async def export_profiles(
 
     from fastapi.responses import StreamingResponse
 
-
     # Fetch profiles
     result = await db.execute(
         select(CDPProfile)
@@ -1082,9 +1075,7 @@ async def export_profiles(
         return StreamingResponse(
             iter([output.getvalue()]),
             media_type="text/csv",
-            headers={
-                "Content-Disposition": f"attachment; filename=cdp_profiles.csv"
-            },
+            headers={"Content-Disposition": f"attachment; filename=cdp_profiles.csv"},
         )
 
     else:
@@ -1158,7 +1149,6 @@ async def export_events(
 
     from fastapi.responses import StreamingResponse
 
-
     # Build query with filters
     query = select(CDPEvent)
 
@@ -1210,9 +1200,7 @@ async def export_events(
         return StreamingResponse(
             iter([output.getvalue()]),
             media_type="text/csv",
-            headers={
-                "Content-Disposition": f"attachment; filename=cdp_events.csv"
-            },
+            headers={"Content-Disposition": f"attachment; filename=cdp_events.csv"},
         )
 
     else:
@@ -1528,9 +1516,7 @@ async def get_profile_statistics(
     now = datetime.now(UTC)
 
     # Total profiles
-    total_result = await db.execute(
-        select(func.count(CDPProfile.id))
-    )
+    total_result = await db.execute(select(func.count(CDPProfile.id)))
     total_profiles = total_result.scalar() or 0
 
     # Profiles by lifecycle stage
@@ -1538,8 +1524,7 @@ async def get_profile_statistics(
         select(
             CDPProfile.lifecycle_stage,
             func.count(CDPProfile.id).label("count"),
-        )
-        .group_by(CDPProfile.lifecycle_stage)
+        ).group_by(CDPProfile.lifecycle_stage)
     )
     lifecycle_distribution = {
         row.lifecycle_stage: row.count for row in lifecycle_result.all()
@@ -1973,7 +1958,6 @@ async def export_audience(
 
     from fastapi.responses import StreamingResponse
 
-
     # Build base query
     query = select(CDPProfile)
 
@@ -2111,9 +2095,7 @@ async def export_audience(
             writer.writerow(row)
 
         output.seek(0)
-        filename = (
-            f"audience_export_{export_time.strftime('%Y%m%d_%H%M%S')}.csv"
-        )
+        filename = f"audience_export_{export_time.strftime('%Y%m%d_%H%M%S')}.csv"
         return StreamingResponse(
             iter([output.getvalue()]),
             media_type="text/csv",
@@ -2238,9 +2220,7 @@ async def list_webhooks(
     """List all webhooks for the organization."""
 
     result = await db.execute(
-        select(CDPWebhook)
-        .order_by(CDPWebhook.created_at.desc())
-        .limit(1000)
+        select(CDPWebhook).order_by(CDPWebhook.created_at.desc()).limit(1000)
     )
     webhooks = result.scalars().all()
 
@@ -2420,7 +2400,6 @@ async def test_webhook(
     import json
 
     import httpx
-
 
     result = await db.execute(
         select(CDPWebhook).where(
@@ -2628,7 +2607,6 @@ async def detect_event_anomalies(
 
     from sqlalchemy import Date, cast
 
-
     # Get daily event counts per source for the last N+1 days
     cutoff = datetime.now(UTC) - timedelta(days=window_days + 1)
 
@@ -2663,9 +2641,7 @@ async def detect_event_anomalies(
     total_daily = total_result.all()
 
     # Get source names for display
-    sources_result = await db.execute(
-        select(CDPSource.id, CDPSource.name)
-    )
+    sources_result = await db.execute(select(CDPSource.id, CDPSource.name))
     source_names = {row.id: row.name for row in sources_result.all()}
 
     # Group by source and analyze
@@ -3192,9 +3168,7 @@ async def list_merge_history(
     """
 
     # Get total count
-    count_result = await db.execute(
-        select(func.count(CDPProfileMerge.id))
-    )
+    count_result = await db.execute(select(func.count(CDPProfileMerge.id)))
     total = count_result.scalar() or 0
 
     # Get merges

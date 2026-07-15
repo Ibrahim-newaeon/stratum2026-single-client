@@ -32,9 +32,7 @@ class TestEmqScoreEndpoint:
         test_signal_health: dict,
     ):
         """Test successful EMQ score retrieval."""
-        response = await authenticated_client.get(
-            f"/api/v1/emq/score"
-        )
+        response = await authenticated_client.get(f"/api/v1/emq/score")
 
         assert response.status_code == 200
         data = response.json()
@@ -57,9 +55,7 @@ class TestEmqScoreEndpoint:
         assert len(data["data"]["drivers"]) == 5
 
     @pytest.mark.asyncio
-    async def test_get_emq_score_with_date(
-        self, authenticated_client: AsyncClient
-    ):
+    async def test_get_emq_score_with_date(self, authenticated_client: AsyncClient):
         """Test EMQ score retrieval with specific date."""
         target_date = (date.today() - timedelta(days=1)).isoformat()
 
@@ -73,9 +69,7 @@ class TestEmqScoreEndpoint:
         assert data["success"] is True
 
     @pytest.mark.asyncio
-    async def test_get_emq_score_invalid_date(
-        self, authenticated_client: AsyncClient
-    ):
+    async def test_get_emq_score_invalid_date(self, authenticated_client: AsyncClient):
         """Test EMQ score with invalid date format."""
         response = await authenticated_client.get(
             f"/api/v1/emq/score",
@@ -85,9 +79,7 @@ class TestEmqScoreEndpoint:
         assert response.status_code == 400
 
     @pytest.mark.asyncio
-    async def test_get_emq_score_unauthorized(
-        self, client: AsyncClient
-    ):
+    async def test_get_emq_score_unauthorized(self, client: AsyncClient):
         """Test EMQ score without authentication."""
         response = await client.get(f"/api/v1/emq/score")
 
@@ -99,13 +91,9 @@ class TestConfidenceEndpoint:
     """Tests for GET /api/v1/emq/confidence"""
 
     @pytest.mark.asyncio
-    async def test_get_confidence_success(
-        self, authenticated_client: AsyncClient
-    ):
+    async def test_get_confidence_success(self, authenticated_client: AsyncClient):
         """Test successful confidence band retrieval."""
-        response = await authenticated_client.get(
-            f"/api/v1/emq/confidence"
-        )
+        response = await authenticated_client.get(f"/api/v1/emq/confidence")
 
         assert response.status_code == 200
         data = response.json()
@@ -125,13 +113,9 @@ class TestPlaybookEndpoint:
     """Tests for playbook management endpoints."""
 
     @pytest.mark.asyncio
-    async def test_get_playbook_success(
-        self, authenticated_client: AsyncClient
-    ):
+    async def test_get_playbook_success(self, authenticated_client: AsyncClient):
         """Test successful playbook retrieval."""
-        response = await authenticated_client.get(
-            f"/api/v1/emq/playbook"
-        )
+        response = await authenticated_client.get(f"/api/v1/emq/playbook")
 
         assert response.status_code == 200
         data = response.json()
@@ -147,9 +131,7 @@ class TestPlaybookEndpoint:
             assert item["priority"] in ["critical", "high", "medium", "low"]
 
     @pytest.mark.asyncio
-    async def test_update_playbook_item(
-        self, authenticated_client: AsyncClient
-    ):
+    async def test_update_playbook_item(self, authenticated_client: AsyncClient):
         """Updating a playbook item persists its status/owner across requests."""
         base = f"/api/v1/emq/playbook"
 
@@ -195,9 +177,7 @@ class TestIncidentsEndpoint:
     """Tests for GET /api/v1/emq/incidents"""
 
     @pytest.mark.asyncio
-    async def test_get_incidents_success(
-        self, authenticated_client: AsyncClient
-    ):
+    async def test_get_incidents_success(self, authenticated_client: AsyncClient):
         """Test successful incidents retrieval."""
         start_date = (date.today() - timedelta(days=7)).isoformat()
         end_date = date.today().isoformat()
@@ -214,13 +194,9 @@ class TestIncidentsEndpoint:
         assert isinstance(data["data"], list)
 
     @pytest.mark.asyncio
-    async def test_get_incidents_missing_dates(
-        self, authenticated_client: AsyncClient
-    ):
+    async def test_get_incidents_missing_dates(self, authenticated_client: AsyncClient):
         """Test incidents without required date parameters."""
-        response = await authenticated_client.get(
-            f"/api/v1/emq/incidents"
-        )
+        response = await authenticated_client.get(f"/api/v1/emq/incidents")
 
         assert response.status_code == 422  # Validation error
 
@@ -229,9 +205,7 @@ class TestImpactEndpoint:
     """Tests for GET /api/v1/emq/impact"""
 
     @pytest.mark.asyncio
-    async def test_get_impact_success(
-        self, authenticated_client: AsyncClient
-    ):
+    async def test_get_impact_success(self, authenticated_client: AsyncClient):
         """Test successful ROAS impact retrieval."""
         start_date = (date.today() - timedelta(days=30)).isoformat()
         end_date = date.today().isoformat()
@@ -254,13 +228,9 @@ class TestVolatilityEndpoint:
     """Tests for GET /api/v1/emq/volatility"""
 
     @pytest.mark.asyncio
-    async def test_get_volatility_success(
-        self, authenticated_client: AsyncClient
-    ):
+    async def test_get_volatility_success(self, authenticated_client: AsyncClient):
         """Test successful volatility retrieval."""
-        response = await authenticated_client.get(
-            f"/api/v1/emq/volatility"
-        )
+        response = await authenticated_client.get(f"/api/v1/emq/volatility")
 
         assert response.status_code == 200
         data = response.json()
@@ -277,13 +247,9 @@ class TestAutopilotStateEndpoint:
     """Tests for autopilot state endpoints."""
 
     @pytest.mark.asyncio
-    async def test_get_autopilot_state_success(
-        self, authenticated_client: AsyncClient
-    ):
+    async def test_get_autopilot_state_success(self, authenticated_client: AsyncClient):
         """Test successful autopilot state retrieval."""
-        response = await authenticated_client.get(
-            f"/api/v1/emq/autopilot-state"
-        )
+        response = await authenticated_client.get(f"/api/v1/emq/autopilot-state")
 
         assert response.status_code == 200
         data = response.json()
@@ -296,9 +262,7 @@ class TestAutopilotStateEndpoint:
         assert data["data"]["mode"] in ["normal", "limited", "cuts_only", "frozen"]
 
     @pytest.mark.asyncio
-    async def test_update_autopilot_mode(
-        self, authenticated_client: AsyncClient
-    ):
+    async def test_update_autopilot_mode(self, authenticated_client: AsyncClient):
         """Test autopilot mode update."""
         response = await authenticated_client.put(
             f"/api/v1/emq/autopilot-mode",

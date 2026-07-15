@@ -13,6 +13,7 @@ from sqlalchemy import select, text
 
 from app.core.config import settings
 from app.db.session import SyncSessionLocal
+
 # NOTE(STRAT-SC-001/C3): dead `Tenant` import removed so `app.main` can
 # import (endpoints import worker task functions at module load). The DB
 # health check below now counts ``Campaign`` rows (it counted ``Tenant``

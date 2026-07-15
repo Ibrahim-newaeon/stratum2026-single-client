@@ -19,8 +19,8 @@ from pydantic import BaseModel, Field
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from app.core.config import settings
 from app.auth.deps import get_current_user
+from app.core.config import settings
 from app.core.logging import get_logger
 from app.db.session import get_async_session
 from app.models.drip import DripExecutionRecord, DripSequence
@@ -217,9 +217,7 @@ def _serialize_log(log: DripExecutionRecord) -> DripExecutionLog:
     )
 
 
-async def _get_sequence(
-    db: AsyncSession, sequence_id: str
-) -> Optional[DripSequence]:
+async def _get_sequence(db: AsyncSession, sequence_id: str) -> Optional[DripSequence]:
     """Fetch a sequence by id (None if not found)."""
     result = await db.execute(
         select(DripSequence).where(

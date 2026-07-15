@@ -156,9 +156,7 @@ class KnowledgeGraphService:
     def __init__(self, db: AsyncSession) -> None:
         self.db = db
 
-    async def get_revenue_by_channel(
-        self, *, days: int = 30
-    ) -> list[dict[str, Any]]:
+    async def get_revenue_by_channel(self, *, days: int = 30) -> list[dict[str, Any]]:
         """Get revenue breakdown by acquisition channel.
 
         Queries CDP events with purchase/revenue data and groups them by
@@ -325,9 +323,7 @@ class KnowledgeGraphService:
             )
             return []
 
-    async def get_customer_journey(
-        self, profile_id: str
-    ) -> Optional[dict[str, Any]]:
+    async def get_customer_journey(self, profile_id: str) -> Optional[dict[str, Any]]:
         """Get complete customer journey for a profile.
 
         Queries the CDP profile and all associated events ordered by
@@ -448,9 +444,7 @@ class KnowledgeGraphService:
             )
             return None
 
-    async def get_blocked_automations(
-        self, *, days: int = 7
-    ) -> list[dict[str, Any]]:
+    async def get_blocked_automations(self, *, days: int = 7) -> list[dict[str, Any]]:
         """Get automations blocked by the Trust Gate.
 
         Queries the FactActionsQueue for actions with status 'dismissed'
@@ -673,9 +667,7 @@ class KnowledgeGraphService:
 
         try:
             # Count profiles
-            profiles_result = await self.db.execute(
-                select(func.count(CDPProfile.id))
-            )
+            profiles_result = await self.db.execute(select(func.count(CDPProfile.id)))
             profiles_count = profiles_result.scalar() or 0
 
             # Count events
@@ -683,22 +675,16 @@ class KnowledgeGraphService:
             events_count = events_result.scalar() or 0
 
             # Count segments
-            segments_result = await self.db.execute(
-                select(func.count(CDPSegment.id))
-            )
+            segments_result = await self.db.execute(select(func.count(CDPSegment.id)))
             segments_count = segments_result.scalar() or 0
 
             # Count campaigns
-            campaigns_result = await self.db.execute(
-                select(func.count(Campaign.id))
-            )
+            campaigns_result = await self.db.execute(select(func.count(Campaign.id)))
             campaigns_count = campaigns_result.scalar() or 0
 
             # Count profile->event edges (events linked to profiles)
             profile_event_edges_result = await self.db.execute(
-                select(func.count(CDPEvent.id)).where(
-                    CDPEvent.profile_id.isnot(None)
-                )
+                select(func.count(CDPEvent.id)).where(CDPEvent.profile_id.isnot(None))
             )
             profile_event_edges = profile_event_edges_result.scalar() or 0
 

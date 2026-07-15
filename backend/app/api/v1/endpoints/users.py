@@ -201,10 +201,7 @@ async def list_users(
         )
 
     result = await db.execute(
-        select(User)
-        .where(User.is_deleted == False)
-        .offset(skip)
-        .limit(limit)
+        select(User).where(User.is_deleted == False).offset(skip).limit(limit)
     )
     users = result.scalars().all()
 

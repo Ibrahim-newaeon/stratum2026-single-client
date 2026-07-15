@@ -291,7 +291,6 @@ async def create_audit_log(
         logger.warning("create_audit_log_failed", error=str(e))
 
 
-
 # =============================================================================
 # Dashboard Summary
 # =============================================================================
@@ -353,9 +352,7 @@ async def _get_system_health(db: AsyncSession) -> dict:
         from app.models.campaign_builder import PlatformConnection
 
         result = await db.execute(
-            select(PlatformConnection).where(
-                PlatformConnection.is_connected == True
-            )
+            select(PlatformConnection).where(PlatformConnection.is_connected == True)
         )
         connections = result.scalars().all()
 
@@ -441,8 +438,8 @@ async def seed_platforms(
     from app.core.config import settings
     from app.core.security import encrypt_pii
     from app.models.campaign_builder import (
-        ConnectionStatus,
         AdAccount,
+        ConnectionStatus,
         PlatformConnection,
     )
 

@@ -204,9 +204,7 @@ def sync_all_campaigns():
         if settings.use_mock_ad_data:
             # Mock mode: sync individual campaigns with generated data
             campaign_ids = (
-                db.execute(
-                    select(Campaign.id).where(Campaign.is_deleted == False)
-                )
+                db.execute(select(Campaign.id).where(Campaign.is_deleted == False))
                 .scalars()
                 .all()
             )

@@ -456,9 +456,7 @@ class ProfitROASReport(Base):
     generated_by = relationship("User", foreign_keys=[generated_by_user_id])
 
     __table_args__ = (
-        Index(
-            "ix_profit_reports_period", "period_start", "period_end"
-        ),
+        Index("ix_profit_reports_period", "period_start", "period_end"),
         Index("ix_profit_reports_type", "report_type"),
     )
 

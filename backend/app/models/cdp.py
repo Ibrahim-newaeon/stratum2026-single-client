@@ -184,9 +184,7 @@ class CDPProfile(Base, TimestampMixin):
         lazy="selectin",
     )
 
-    __table_args__ = (
-        Index("ix_cdp_profiles_lifecycle", "lifecycle_stage"),
-    )
+    __table_args__ = (Index("ix_cdp_profiles_lifecycle", "lifecycle_stage"),)
 
     def __repr__(self) -> str:
         return f"<CDPProfile {self.id} ({self.lifecycle_stage})>"
@@ -479,9 +477,7 @@ class CDPWebhook(Base, TimestampMixin):
     max_retries = Column(Integer, nullable=False, default=3)
     timeout_seconds = Column(Integer, nullable=False, default=30)
 
-    __table_args__ = (
-        Index("ix_cdp_webhooks_active", "is_active"),
-    )
+    __table_args__ = (Index("ix_cdp_webhooks_active", "is_active"),)
 
     def __repr__(self) -> str:
         status = "active" if self.is_active else "inactive"

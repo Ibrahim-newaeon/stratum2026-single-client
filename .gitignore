@@ -45,7 +45,7 @@ htmlcov/
 .cache/
 
 # ML models and training data (generated)
-backend/models/
+/backend/models/
 backend/ml_service/
 *.pkl
 sample_training_data.csv

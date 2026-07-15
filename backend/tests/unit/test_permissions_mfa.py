@@ -53,9 +53,9 @@ from app.auth.permissions import (
     has_any_permission,
     has_permission,
     is_owner_role,
+    require_owner,
     require_permissions,
     require_resource_level,
-    require_owner,
     require_role,
 )
 from app.base_models import UserRole
@@ -448,9 +448,7 @@ class TestRBACMatrix:
         )
 
     def test_unknown_resource_returns_none(self) -> None:
-        assert (
-            get_permission_level(UserRole.OWNER, "nonexistent") == PermLevel.NONE
-        )
+        assert get_permission_level(UserRole.OWNER, "nonexistent") == PermLevel.NONE
 
     def test_unknown_role_returns_none(self) -> None:
         # Build a mock UserRole-like value that isn't in the matrix

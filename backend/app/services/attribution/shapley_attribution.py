@@ -459,9 +459,7 @@ class ShapleyAttributionService:
     ) -> List[UUID]:
         """Get contacts with touchpoints but no won deals."""
         won_contacts = (
-            select(CRMDeal.contact_id)
-            .where(CRMDeal.is_won == True)
-            .distinct()
+            select(CRMDeal.contact_id).where(CRMDeal.is_won == True).distinct()
         )
 
         result = await self.db.execute(

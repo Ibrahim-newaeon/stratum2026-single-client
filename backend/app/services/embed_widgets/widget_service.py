@@ -127,9 +127,7 @@ class EmbedWidgetService:
 
         return widget
 
-    async def get_widget(
-        self, widget_id: UUID
-    ) -> Optional[EmbedWidget]:
+    async def get_widget(self, widget_id: UUID) -> Optional[EmbedWidget]:
         """Get a widget by ID."""
         result = await self.db.execute(
             select(EmbedWidget).where(

@@ -251,7 +251,8 @@ class TestGetTargetPacing:
         # projection with fixed +-20% bounds.
         for i in range(3):
             db_session.add(
-                _kpi(AS_OF - timedelta(days=i),
+                _kpi(
+                    AS_OF - timedelta(days=i),
                     spend=50.0,
                     campaign_id="camp-low",
                 )

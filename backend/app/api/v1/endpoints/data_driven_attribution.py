@@ -504,9 +504,7 @@ def _serialize_model(m: TrainedAttributionModel, *, full: bool = False) -> dict:
     return data
 
 
-async def _get_owned_model(
-    db: AsyncSession, model_id: UUID
-) -> TrainedAttributionModel:
+async def _get_owned_model(db: AsyncSession, model_id: UUID) -> TrainedAttributionModel:
     result = await db.execute(
         select(TrainedAttributionModel).where(
             TrainedAttributionModel.id == model_id,

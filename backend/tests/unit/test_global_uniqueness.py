@@ -62,10 +62,9 @@ def _fresh_schema(sync_engine):
     """
     from sqlalchemy import text
 
-    from app.db.base import Base, StrEnumType
-
     import app.base_models  # noqa: F401 - register base models with Base.metadata
     import app.models  # noqa: F401 - register all model modules
+    from app.db.base import Base, StrEnumType
 
     # StrEnumType (app.db.base) always binds with create_type=False — it
     # assumes the native PG enum type already exists (normally created by an
@@ -103,7 +102,11 @@ async def async_engine():
     from app.core.config import settings
 
     engine = create_async_engine(
-        settings.database_url, echo=False, pool_pre_ping=True, pool_size=5, max_overflow=0
+        settings.database_url,
+        echo=False,
+        pool_pre_ping=True,
+        pool_size=5,
+        max_overflow=0,
     )
     yield engine
     await engine.dispose()

@@ -21,9 +21,7 @@ _BASE = "/api/v1/emq/playbook"
 
 class TestAuth:
     async def test_patch_requires_auth(self, client):
-        resp = await client.patch(
-            f"{_BASE}/{_ITEM}", json={"status": "in_progress"}
-        )
+        resp = await client.patch(f"{_BASE}/{_ITEM}", json={"status": "in_progress"})
         assert resp.status_code == 401
 
 

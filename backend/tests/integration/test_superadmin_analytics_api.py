@@ -39,9 +39,7 @@ class TestOwnerGate:
 
 class TestOwnerAnalytics:
     @pytest.mark.parametrize("path", _ENDPOINTS)
-    async def test_owner_can_read(
-        self, client: AsyncClient, owner_headers, path
-    ):
+    async def test_owner_can_read(self, client: AsyncClient, owner_headers, path):
         resp = await client.get(f"{_BASE}{path}", headers=owner_headers)
         assert resp.status_code == 200, f"{path}: {resp.text}"
         assert resp.json()["success"] is True

@@ -557,9 +557,7 @@ class TestCmsUserManagement:
         assert resp.status_code == 403
 
     @pytest.mark.asyncio
-    async def test_my_permissions_invalid_role(
-        self, client: AsyncClient, test_user
-    ):
+    async def test_my_permissions_invalid_role(self, client: AsyncClient, test_user):
         from app.core.security import create_access_token
 
         token = create_access_token(
@@ -688,9 +686,7 @@ class TestCmsUserManagement:
         assert data["id"] in ids
 
     @pytest.mark.asyncio
-    async def test_invite_duplicate_email(
-        self, cms_client: AsyncClient
-    ):
+    async def test_invite_duplicate_email(self, cms_client: AsyncClient):
         body = {
             "email": "twice@example.com",
             "full_name": "Twice Invited",

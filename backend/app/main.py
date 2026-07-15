@@ -39,8 +39,8 @@ from app.core.logging import get_logger, setup_logging
 from app.core.websocket import ws_manager
 from app.db.session import async_engine, check_database_health
 from app.middleware.audit import AuditMiddleware
-from app.middleware.csrf import CSRFMiddleware
 from app.middleware.auth_context import AuthContextMiddleware
+from app.middleware.csrf import CSRFMiddleware
 from app.middleware.rate_limit import RateLimitMiddleware
 from app.middleware.security import SecurityHeadersMiddleware
 

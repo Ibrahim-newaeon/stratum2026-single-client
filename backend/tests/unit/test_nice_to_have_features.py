@@ -301,8 +301,7 @@ class TestBudgetReallocation:
             max_change_percent=50,
         )
 
-        plan = service.create_plan( campaigns=campaigns, config=config
-        )
+        plan = service.create_plan(campaigns=campaigns, config=config)
 
         assert plan is not None
         assert len(plan.changes) > 0

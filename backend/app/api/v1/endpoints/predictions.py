@@ -329,7 +329,7 @@ async def get_prediction_alerts(
         # Generate alerts on-demand
         campaigns_result = await db.execute(
             select(Campaign).where(
-                    Campaign.is_deleted == False,
+                Campaign.is_deleted == False,
             )
         )
         campaigns = campaigns_result.scalars().all()

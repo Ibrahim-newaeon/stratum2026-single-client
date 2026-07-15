@@ -604,9 +604,7 @@ class TestDeliverReport:
     # scoping at all).
 
     async def test_incomplete_execution_raises(self, db_session):
-        execution = await _seed_execution(
-            db_session, status=ExecutionStatus.RUNNING
-        )
+        execution = await _seed_execution(db_session, status=ExecutionStatus.RUNNING)
         service = DeliveryService(db_session)
         with pytest.raises(ValueError, match="Cannot deliver report"):
             await service.deliver_report(execution.id, ["email"], {})
@@ -680,9 +678,7 @@ class TestDeliverReport:
         assert results["total_recipients"] == 0
         assert results["channels"] == {}
 
-    async def test_whatsapp_channel_delivers_to_phone_numbers(
-        self, db_session
-    ):
+    async def test_whatsapp_channel_delivers_to_phone_numbers(self, db_session):
         # Regression for the fixed bug: _get_recipients now has a WHATSAPP
         # branch that reads phone numbers from ``phone_numbers``, so a
         # whatsapp-channel schedule resolves recipients and delivers.
@@ -800,9 +796,7 @@ class TestRetryDelivery:
         db_session.add(schedule)
         await db_session.flush()
 
-        execution = await _seed_execution(
-            db_session, schedule_id=schedule.id
-        )
+        execution = await _seed_execution(db_session, schedule_id=schedule.id)
         delivery = await _seed_failed_delivery(db_session, execution)
 
         service = DeliveryService(db_session)

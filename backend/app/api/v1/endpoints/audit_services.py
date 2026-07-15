@@ -41,7 +41,10 @@ from fastapi import (
 from pydantic import BaseModel, Field
 from sqlalchemy.ext.asyncio import AsyncSession
 
+# Import services
+from app.auth.deps import get_current_user
 from app.core.logging import get_logger
+from app.db.session import get_db
 from app.ml.ab_testing import ModelABTestingService
 from app.ml.explainability import ModelExplainer
 from app.ml.ltv_predictor import CustomerBehavior, LTVPredictor
@@ -61,10 +64,6 @@ from app.services.competitor_benchmarking_service import (
 )
 from app.services.conversion_latency_service import ConversionLatencyTracker
 from app.services.creative_performance_service import CreativePerformanceService
-
-# Import services
-from app.auth.deps import get_current_user
-from app.db.session import get_db
 from app.services.emq_measurement_service import RealEMQService as EMQMeasurementService
 from app.services.offline_conversion_service import OfflineConversionService
 

@@ -551,9 +551,7 @@ class DailyPipelineMetrics(Base):
 
     __table_args__ = (
         Index("ix_daily_pipeline_metrics_date", "date"),
-        Index(
-            "ix_daily_pipeline_metrics_platform", "platform", "date"
-        ),
+        Index("ix_daily_pipeline_metrics_platform", "platform", "date"),
         Index(
             "ix_daily_pipeline_metrics_campaign",
             "campaign_id",

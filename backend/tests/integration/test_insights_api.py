@@ -54,9 +54,7 @@ class TestAuth:
 
 class TestInsightReads:
     @pytest.mark.asyncio
-    async def test_insights(
-        self, authenticated_client: AsyncClient, insights_enabled
-    ):
+    async def test_insights(self, authenticated_client: AsyncClient, insights_enabled):
         resp = await authenticated_client.get(_url("insights"))
         assert resp.status_code == 200
         assert resp.json()["success"] is True
@@ -70,9 +68,7 @@ class TestInsightReads:
         assert resp.json()["success"] is True
 
     @pytest.mark.asyncio
-    async def test_anomalies(
-        self, authenticated_client: AsyncClient, insights_enabled
-    ):
+    async def test_anomalies(self, authenticated_client: AsyncClient, insights_enabled):
         resp = await authenticated_client.get(_url("anomalies"))
         assert resp.status_code == 200
         assert resp.json()["success"] is True

@@ -84,12 +84,8 @@ class TestAuditLogSearch:
     ):
         from app.base_models import AuditAction
 
-        await _seed_audit(
-            db_session, action=AuditAction.DELETE, resource_id="d1"
-        )
-        await _seed_audit(
-            db_session, action=AuditAction.LOGIN, resource_id="l1"
-        )
+        await _seed_audit(db_session, action=AuditAction.DELETE, resource_id="d1")
+        await _seed_audit(db_session, action=AuditAction.LOGIN, resource_id="l1")
 
         crit = await authenticated_client.post(
             f"{_BASE}/audit-log/search", json={"severity": ["critical"]}
@@ -118,12 +114,8 @@ class TestAuditLogSummary:
     ):
         from app.base_models import AuditAction
 
-        await _seed_audit(
-            db_session, action=AuditAction.DELETE, resource_id="s1"
-        )
-        await _seed_audit(
-            db_session, action=AuditAction.CREATE, resource_id="s2"
-        )
+        await _seed_audit(db_session, action=AuditAction.DELETE, resource_id="s1")
+        await _seed_audit(db_session, action=AuditAction.CREATE, resource_id="s2")
         resp = await authenticated_client.get(f"{_BASE}/audit-log/summary")
         assert resp.status_code == 200, resp.text
         data = resp.json()["data"]

@@ -18,7 +18,6 @@ Owner (console) routes:
 from typing import Any, Dict
 
 from fastapi import APIRouter, Depends, HTTPException, Request
-
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.auth.deps import CurrentUserDep, require_owner

@@ -28,8 +28,8 @@ from app.core.config import settings
 from app.core.security import encrypt_pii, get_password_hash, hash_pii_for_lookup
 from app.models import AdPlatform, User, UserRole
 from app.models.campaign_builder import (
-    ConnectionStatus,
     AdAccount,
+    ConnectionStatus,
     PlatformConnection,
 )
 from app.models.onboarding import (

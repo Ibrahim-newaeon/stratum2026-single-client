@@ -26,14 +26,14 @@ from app.core.config import settings
 from app.core.logging import get_logger
 from app.db.session import get_async_session
 from app.models.campaign_builder import (
+    AdAccount,
     AdPlatform,
     CampaignDraft,
     CampaignPublishLog,
     ConnectionStatus,
     DraftStatus,
-    PublishResult,
-    AdAccount,
     PlatformConnection,
+    PublishResult,
 )
 from app.schemas.response import APIResponse, PaginatedResponse
 
@@ -164,9 +164,7 @@ async def get_connector_status(
 ):
     """Get connection status for a platform."""
     result = await db.execute(
-        select(PlatformConnection).where(
-            PlatformConnection.platform == platform
-        )
+        select(PlatformConnection).where(PlatformConnection.platform == platform)
     )
     connection = result.scalar_one_or_none()
 
@@ -206,7 +204,9 @@ async def start_platform_connection(
     import secrets
 
     state_token = secrets.token_urlsafe(32)
-    redirect_uri = f"{request.base_url}api/v1/campaign-builder/connect/{platform.value}/callback"
+    redirect_uri = (
+        f"{request.base_url}api/v1/campaign-builder/connect/{platform.value}/callback"
+    )
 
     oauth_configs = {
         AdPlatform.META: {
@@ -276,9 +276,7 @@ async def refresh_platform_token(
 ):
     """Refresh OAuth token for a platform."""
     result = await db.execute(
-        select(PlatformConnection).where(
-            PlatformConnection.platform == platform
-        )
+        select(PlatformConnection).where(PlatformConnection.platform == platform)
     )
     connection = result.scalar_one_or_none()
 
@@ -341,9 +339,7 @@ async def disconnect_platform(
 ):
     """Disconnect a platform (revoke OAuth)."""
     result = await db.execute(
-        select(PlatformConnection).where(
-            PlatformConnection.platform == platform
-        )
+        select(PlatformConnection).where(PlatformConnection.platform == platform)
     )
     connection = result.scalar_one_or_none()
 
@@ -436,9 +432,7 @@ async def update_ad_account(
     db: AsyncSession = Depends(get_async_session),
 ):
     """Update ad account settings (enable/disable, budget cap)."""
-    result = await db.execute(
-        select(AdAccount).where(AdAccount.id == ad_account_id)
-    )
+    result = await db.execute(select(AdAccount).where(AdAccount.id == ad_account_id))
     account = result.scalar_one_or_none()
 
     if not account:

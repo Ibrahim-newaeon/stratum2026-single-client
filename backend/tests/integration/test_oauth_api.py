@@ -40,9 +40,9 @@ from httpx import AsyncClient
 
 import app.api.v1.endpoints.oauth as oauth_ep
 from app.models.campaign_builder import (
+    AdAccount,
     AdPlatform,
     ConnectionStatus,
-    AdAccount,
     PlatformConnection,
 )
 from app.services.oauth import get_oauth_service

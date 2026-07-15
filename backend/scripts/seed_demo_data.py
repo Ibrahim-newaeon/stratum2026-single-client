@@ -37,8 +37,8 @@ from app.models import (
     UserRole,
 )
 from app.models.campaign_builder import (
-    ConnectionStatus,
     AdAccount,
+    ConnectionStatus,
     PlatformConnection,
 )
 from app.models.onboarding import (

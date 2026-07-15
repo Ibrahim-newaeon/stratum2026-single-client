@@ -457,9 +457,7 @@ async def get_dashboard_overview(
     """
     # Get date range — wrapped to handle database errors gracefully
     try:
-        return await _build_dashboard_overview(
-            period, custom_start, custom_end, db
-        )
+        return await _build_dashboard_overview(period, custom_start, custom_end, db)
     except (
         SQLAlchemyError,
         ValueError,
@@ -4006,9 +4004,7 @@ async def get_dashboard_alerts(
     """
     # In production, query fact_alerts table
     # For now, derive alerts from campaign performance thresholds
-    result = await db.execute(
-        select(Campaign).where(Campaign.is_deleted == False)
-    )
+    result = await db.execute(select(Campaign).where(Campaign.is_deleted == False))
     campaigns = result.scalars().all()
 
     alerts = []

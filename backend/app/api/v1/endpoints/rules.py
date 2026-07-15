@@ -13,8 +13,8 @@ from fastapi import APIRouter, Depends, HTTPException, Query, Request, status
 from sqlalchemy import func, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from app.core.config import settings
 from app.auth.deps import get_current_user
+from app.core.config import settings
 from app.core.logging import get_logger
 from app.db.session import get_async_session
 from app.models import Rule, RuleExecution, RuleStatus
@@ -425,9 +425,7 @@ async def get_rule_executions(
 ):
     """Get execution history for a rule."""
     # Verify rule exists
-    rule_result = await db.execute(
-        select(Rule).where(Rule.id == rule_id)
-    )
+    rule_result = await db.execute(select(Rule).where(Rule.id == rule_id))
     if not rule_result.scalar_one_or_none():
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,

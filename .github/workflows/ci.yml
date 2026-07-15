@@ -349,6 +349,10 @@ jobs:
         id: pipaudit
         continue-on-error: true
         run: |
+          # Upgrade packaging toolchain first — the setup-python bundled
+          # setuptools carries known advisories (e.g. PYSEC-2026-3447), same
+          # rationale as the backend Dockerfile's pip/setuptools/wheel upgrade.
+          pip install --upgrade pip setuptools wheel
           pip install pip-audit
           pip-audit --strict --desc on
 

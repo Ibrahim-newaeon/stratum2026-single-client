@@ -242,6 +242,7 @@ class TestAnalyticsAIScalingScore:
         )
         assert resp.status_code == 422
 
+
 class TestAnalyticsAIFatigueScore:
     """POST /api/v1/analytics/ai/scoring/fatigue"""
 
@@ -493,9 +494,7 @@ class TestIntegrationsHubSpotStatus:
         resp = await api_client.get("/api/v1/integrations/hubspot/status")
         assert resp.status_code in (401, 403)
 
-    async def test_non_owner_returns_403(
-        self, api_client: AsyncClient, admin_headers
-    ):
+    async def test_non_owner_returns_403(self, api_client: AsyncClient, admin_headers):
         """require_owner dependency should block regular admins."""
         resp = await api_client.get(
             "/api/v1/integrations/hubspot/status", headers=admin_headers
@@ -513,9 +512,7 @@ class TestIntegrationsHubSpotConnect:
         )
         assert resp.status_code in (401, 403)
 
-    async def test_non_owner_returns_403(
-        self, api_client: AsyncClient, admin_headers
-    ):
+    async def test_non_owner_returns_403(self, api_client: AsyncClient, admin_headers):
         resp = await api_client.post(
             "/api/v1/integrations/hubspot/connect",
             json={"redirect_uri": "http://localhost/callback"},
@@ -541,9 +538,7 @@ class TestIntegrationsPipelineSummary:
         resp = await api_client.get("/api/v1/integrations/pipeline/summary")
         assert resp.status_code in (401, 403)
 
-    async def test_non_owner_returns_403(
-        self, api_client: AsyncClient, admin_headers
-    ):
+    async def test_non_owner_returns_403(self, api_client: AsyncClient, admin_headers):
         resp = await api_client.get(
             "/api/v1/integrations/pipeline/summary",
             headers=admin_headers,
@@ -766,9 +761,7 @@ class TestCMSAdminListPosts:
         self, api_client: AsyncClient, mock_db
     ):
         """A viewer with cms_role=viewer should have view_all_posts=True."""
-        headers = make_auth_headers(
-            subject=5, role="viewer", cms_role="viewer"
-        )
+        headers = make_auth_headers(subject=5, role="viewer", cms_role="viewer")
         # check_cms_permission checks "view_all_posts" - viewer has this = True
         # But we need to mock DB for the actual query
         count_result = MagicMock()
@@ -790,9 +783,7 @@ class TestCMSAdminListPosts:
 
     async def test_owner_has_access(self, api_client: AsyncClient, mock_db):
         """Owner should pass check_cms_permission."""
-        headers = make_auth_headers(
-            subject=99, role="owner", cms_role=""
-        )
+        headers = make_auth_headers(subject=99, role="owner", cms_role="")
         count_result = MagicMock()
         count_result.scalar.return_value = 0
         posts_result = MagicMock()
@@ -820,9 +811,7 @@ class TestCMSAdminCreatePost:
 
     async def test_viewer_cannot_create(self, api_client: AsyncClient, mock_db):
         """Viewers have create_post=False so POST admin/posts should be 403."""
-        headers = make_auth_headers(
-            subject=5, role="admin", cms_role="viewer"
-        )
+        headers = make_auth_headers(subject=5, role="admin", cms_role="viewer")
         payload = {"title": "Test Post", "content": "Content"}
         resp = await api_client.post(
             "/api/v1/cms/admin/posts", json=payload, headers=headers
@@ -840,9 +829,7 @@ class TestCMSAdminDeletePost:
 
     async def test_viewer_cannot_delete(self, api_client: AsyncClient, mock_db):
         """Viewer does not have delete_any_post permission."""
-        headers = make_auth_headers(
-            subject=5, role="admin", cms_role="viewer"
-        )
+        headers = make_auth_headers(subject=5, role="admin", cms_role="viewer")
         fake_id = str(uuid4())
         resp = await api_client.delete(
             f"/api/v1/cms/admin/posts/{fake_id}", headers=headers
@@ -851,9 +838,7 @@ class TestCMSAdminDeletePost:
 
     async def test_admin_delete_not_found(self, api_client: AsyncClient, mock_db):
         """Admin can delete but post doesn't exist."""
-        headers = make_auth_headers(
-            subject=5, role="admin", cms_role="admin"
-        )
+        headers = make_auth_headers(subject=5, role="admin", cms_role="admin")
         result = MagicMock()
         result.scalar_one_or_none.return_value = None
         mock_db.execute = AsyncMock(return_value=result)
@@ -876,8 +861,6 @@ class TestCMSAdminCategories:
         self, api_client: AsyncClient, mock_db
     ):
         """Viewer does not have manage_categories permission."""
-        headers = make_auth_headers(
-            subject=5, role="admin", cms_role="viewer"
-        )
+        headers = make_auth_headers(subject=5, role="admin", cms_role="viewer")
         resp = await api_client.get("/api/v1/cms/admin/categories", headers=headers)
         assert resp.status_code == 403

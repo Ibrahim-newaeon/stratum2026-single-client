@@ -85,9 +85,7 @@ class TestGenerateCampaigns:
     def test_linkedin_supported(self, network):
         # Regression: LINKEDIN was added to AdPlatform but not to the mock
         # templates/params maps -> KeyError on default generate_campaigns()
-        campaigns = network.generate_campaigns(
-            count=5, platforms=[AdPlatform.LINKEDIN]
-        )
+        campaigns = network.generate_campaigns(count=5, platforms=[AdPlatform.LINKEDIN])
         assert all(c.platform == AdPlatform.LINKEDIN for c in campaigns)
         assert all(c.metrics["impressions"] > 0 for c in campaigns)
 
@@ -120,9 +118,7 @@ class TestMetrics:
             )
 
     def test_google_never_has_video(self, network):
-        campaigns = network.generate_campaigns(
-            count=20, platforms=[AdPlatform.GOOGLE]
-        )
+        campaigns = network.generate_campaigns(count=20, platforms=[AdPlatform.GOOGLE])
         assert all(c.metrics["video_views"] is None for c in campaigns)
 
     def test_video_completions_bounded_by_views(self, network):

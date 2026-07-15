@@ -197,9 +197,7 @@ class AdAccount(Base):
 
     __table_args__ = (
         # was tenant-scoped; now global
-        UniqueConstraint(
-            "platform", "platform_account_id", name="uq_ad_account"
-        ),
+        UniqueConstraint("platform", "platform_account_id", name="uq_ad_account"),
         Index("ix_ad_account_enabled", "is_enabled"),
     )
 

@@ -106,9 +106,7 @@ class WhatsAppService:
         return False
 
     @staticmethod
-    async def opt_out_contact(
-        db: AsyncSession, contact_id: int
-    ) -> bool:
+    async def opt_out_contact(db: AsyncSession, contact_id: int) -> bool:
         """Opt-out a contact from WhatsApp messages."""
         contact = await WhatsAppService.get_contact_by_id(db, contact_id)
         if contact:
@@ -336,9 +334,7 @@ class WhatsAppService:
         return result.scalars().all()
 
     @staticmethod
-    async def close_conversation(
-        db: AsyncSession, conversation_id: int
-    ) -> bool:
+    async def close_conversation(db: AsyncSession, conversation_id: int) -> bool:
         """Close an active conversation."""
         result = await db.execute(
             select(WhatsAppConversation).where(

@@ -89,9 +89,7 @@ class TestOwnerFeatures:
         assert resp.status_code == 403
 
     @pytest.mark.asyncio
-    async def test_owner_get_features(
-        self, client: AsyncClient, owner_headers: dict
-    ):
+    async def test_owner_get_features(self, client: AsyncClient, owner_headers: dict):
         resp = await client.get(
             "/api/v1/console/features",
             headers=owner_headers,
@@ -113,9 +111,7 @@ class TestOwnerFeatures:
         assert resp.json()["data"]["features"]["signal_health"] is True
 
     @pytest.mark.asyncio
-    async def test_owner_reset_features(
-        self, client: AsyncClient, owner_headers: dict
-    ):
+    async def test_owner_reset_features(self, client: AsyncClient, owner_headers: dict):
         resp = await client.post(
             "/api/v1/console/features/reset",
             headers=owner_headers,

@@ -105,8 +105,6 @@ def _variance(
     )
 
 
-
-
 @pytest_asyncio.fixture
 async def emq_service(db_session) -> EmqService:
     return EmqService(db_session)
@@ -160,9 +158,7 @@ class TestGetEmqScoreFromRecords:
         assert weights["Event Match Rate"] == 0.30
         assert sum(weights.values()) == pytest.approx(1.0)
 
-    async def test_downward_trend_and_directional_band(
-        self, emq_service, db_session
-    ):
+    async def test_downward_trend_and_directional_band(self, emq_service, db_session):
         db_session.add_all(
             [
                 _shd(TARGET, platform="meta", emq=70.0),
@@ -182,7 +178,8 @@ class TestGetEmqScoreFromRecords:
         self, emq_service, db_session
     ):
         db_session.add(
-            _shd(TARGET,
+            _shd(
+                TARGET,
                 platform="meta",
                 emq=50.0,
                 status=SignalHealthStatus.DEGRADED,
@@ -213,9 +210,7 @@ class TestGetEmqScoreFromRecords:
         # flat: 83 is within +/-2 of the synthetic 81 previous
         assert {d["trend"] for d in data["drivers"]} == {"flat"}
 
-    async def test_null_scores_are_skipped_in_average(
-        self, emq_service, db_session
-    ):
+    async def test_null_scores_are_skipped_in_average(self, emq_service, db_session):
         db_session.add_all(
             [
                 _shd(TARGET, platform="meta", emq=None),
@@ -240,9 +235,7 @@ class TestGetEmqScoreFromRecords:
         assert data["previousScore"] == 73.0
         assert data["confidenceBand"] == "directional"
 
-    async def test_last_updated_is_valid_iso8601_utc(
-        self, emq_service, db_session
-    ):
+    async def test_last_updated_is_valid_iso8601_utc(self, emq_service, db_session):
         """Timestamp is valid ISO-8601: tz-aware isoformat with the +00:00
         offset rendered as a ``Z`` suffix, never the invalid ``+00:00Z``."""
         db_session.add(_shd(TARGET, platform="meta", emq=88.0))
@@ -262,9 +255,7 @@ class TestGetEmqScoreFromRecords:
 
 
 class TestGetEmqScoreFromVariance:
-    async def test_variance_fallback_reliable_band(
-        self, emq_service, db_session
-    ):
+    async def test_variance_fallback_reliable_band(self, emq_service, db_session):
         """5% variance -> accuracy 90 -> estimated EMQ 99 -> reliable."""
         db_session.add(_variance(TARGET, delta_pct=5.0))
         await db_session.flush()
@@ -277,9 +268,7 @@ class TestGetEmqScoreFromVariance:
         assert len(data["drivers"]) == 5
         assert data["lastUpdated"].endswith("Z")
 
-    async def test_variance_fallback_directional_band(
-        self, emq_service, db_session
-    ):
+    async def test_variance_fallback_directional_band(self, emq_service, db_session):
         """20% variance -> accuracy 60 -> estimated 66 -> directional."""
         db_session.add(_variance(TARGET, delta_pct=20.0))
         await db_session.flush()
@@ -317,9 +306,7 @@ class TestGetEmqScoreFromVariance:
 
         assert data["score"] == 66.0
 
-    async def test_no_data_at_all_returns_default(
-        self, emq_service, db_session
-    ):
+    async def test_no_data_at_all_returns_default(self, emq_service, db_session):
         data = await emq_service.get_emq_score(TARGET)
 
         assert data["score"] == 75.0
@@ -343,9 +330,7 @@ class TestGetEmqScoreFromVariance:
 
 
 class TestGetConfidenceData:
-    async def test_factors_positive_for_high_score(
-        self, emq_service, db_session
-    ):
+    async def test_factors_positive_for_high_score(self, emq_service, db_session):
         db_session.add(_shd(TARGET, platform="meta", emq=90.0))
         await db_session.flush()
 
@@ -365,9 +350,7 @@ class TestGetConfidenceData:
             100.0 * 0.10, abs=0.1
         )
 
-    async def test_factors_negative_for_low_score(
-        self, emq_service, db_session
-    ):
+    async def test_factors_negative_for_low_score(self, emq_service, db_session):
         db_session.add(_shd(TARGET, platform="meta", emq=60.0))
         await db_session.flush()
 
@@ -387,23 +370,24 @@ class TestGetConfidenceData:
 
 
 class TestGetIncidents:
-    async def test_status_type_severity_matrix(
-        self, emq_service, db_session
-    ):
+    async def test_status_type_severity_matrix(self, emq_service, db_session):
         db_session.add_all(
             [
-                _shd(TARGET,
+                _shd(
+                    TARGET,
                     platform="meta",
                     emq=65.0,
                     status=SignalHealthStatus.CRITICAL,
                     issues=["Pixel dropped", "detail A", "detail B"],
                 ),
-                _shd(TARGET - timedelta(days=1),
+                _shd(
+                    TARGET - timedelta(days=1),
                     platform="google",
                     emq=None,
                     status=SignalHealthStatus.DEGRADED,
                 ),
-                _shd(TARGET - timedelta(days=2),
+                _shd(
+                    TARGET - timedelta(days=2),
                     platform="tiktok",
                     emq=72.0,
                     status=SignalHealthStatus.RISK,
@@ -415,9 +399,7 @@ class TestGetIncidents:
         )
         await db_session.flush()
 
-        incidents = await emq_service.get_incidents(
-            TARGET - timedelta(days=7), TARGET
-        )
+        incidents = await emq_service.get_incidents(TARGET - timedelta(days=7), TARGET)
 
         assert len(incidents) == 3
         # Ordered by date desc: critical (TARGET) first, risk (TARGET-2) last.
@@ -443,13 +425,12 @@ class TestGetIncidents:
         assert risk["title"] == "Latency spike"
         assert risk["description"] is None  # single issue -> no description
 
-    async def test_zero_emq_score_gives_full_impact(
-        self, emq_service, db_session
-    ):
+    async def test_zero_emq_score_gives_full_impact(self, emq_service, db_session):
         """An emq_score of exactly 0.0 is a real (worst) score, not missing:
         impact is 0 - 80 = -80, not the -10 null fallback."""
         db_session.add(
-            _shd(TARGET,
+            _shd(
+                TARGET,
                 platform="meta",
                 emq=0.0,
                 status=SignalHealthStatus.CRITICAL,
@@ -457,17 +438,15 @@ class TestGetIncidents:
         )
         await db_session.flush()
 
-        incidents = await emq_service.get_incidents(
-            TARGET, TARGET)
+        incidents = await emq_service.get_incidents(TARGET, TARGET)
 
         assert len(incidents) == 1
         assert incidents[0]["emqImpact"] == -80.0
 
-    async def test_out_of_range_dates_excluded(
-        self, emq_service, db_session
-    ):
+    async def test_out_of_range_dates_excluded(self, emq_service, db_session):
         db_session.add(
-            _shd(TARGET - timedelta(days=30),
+            _shd(
+                TARGET - timedelta(days=30),
                 platform="meta",
                 emq=50.0,
                 status=SignalHealthStatus.CRITICAL,
@@ -475,9 +454,7 @@ class TestGetIncidents:
         )
         await db_session.flush()
 
-        incidents = await emq_service.get_incidents(
-            TARGET - timedelta(days=7), TARGET
-        )
+        incidents = await emq_service.get_incidents(TARGET - timedelta(days=7), TARGET)
 
         assert incidents == []
 
@@ -534,9 +511,7 @@ class TestGetVolatility:
         assert data["trend"] == "stable"
         assert all(p["value"] == pytest.approx(7.1) for p in data["weeklyData"])
 
-    async def test_single_row_weeks_have_null_stddev(
-        self, emq_service, db_session
-    ):
+    async def test_single_row_weeks_have_null_stddev(self, emq_service, db_session):
         """One record per week -> stddev NULL -> SVI falls back to 10.0."""
         today = date.today()
         _seed_week(db_session, today - timedelta(days=7), [75.0])
@@ -549,9 +524,7 @@ class TestGetVolatility:
         assert [p["value"] for p in data["weeklyData"]] == [0.0, 0.0]
         assert data["trend"] == "stable"
 
-    async def test_single_week_yields_stable_trend(
-        self, emq_service, db_session
-    ):
+    async def test_single_week_yields_stable_trend(self, emq_service, db_session):
         _seed_week(db_session, date.today(), [60.0, 90.0])
         await db_session.flush()
 
@@ -573,9 +546,7 @@ class TestGetVolatility:
 
         assert len(data["weeklyData"]) == 2
 
-    async def test_no_data_returns_synthetic_default(
-        self, emq_service, db_session
-    ):
+    async def test_no_data_returns_synthetic_default(self, emq_service, db_session):
         data = await emq_service.get_volatility(weeks=6)
 
         assert data["svi"] == 15.3
@@ -603,9 +574,7 @@ class TestGetAutopilotState:
         assert "increase_budget" in data["allowedActions"]
         assert data["budgetAtRisk"] == 0.0
 
-    async def test_no_data_freezes_autopilot_fail_closed(
-        self, emq_service, db_session
-    ):
+    async def test_no_data_freezes_autopilot_fail_closed(self, emq_service, db_session):
         """No data -> fail closed -> frozen mode.
 
         The no-data EMQ response carries a display-only placeholder score, but
@@ -666,14 +635,13 @@ class TestGetAutopilotState:
 
 
 class TestGetImpact:
-    async def test_per_platform_roas_impact_math(
-        self, emq_service, db_session
-    ):
+    async def test_per_platform_roas_impact_math(self, emq_service, db_session):
         db_session.add_all(
             [
                 # meta split across two rows to prove aggregation:
                 # totals platform 3000 / ga4 1000 -> ROAS 3.0, est 3.45
-                _variance(TARGET,
+                _variance(
+                    TARGET,
                     platform="meta",
                     platform_revenue=1500.0,
                     ga4_revenue=500.0,
@@ -681,7 +649,8 @@ class TestGetImpact:
                     ga4_conversions=12,
                     confidence=0.8,
                 ),
-                _variance(TARGET - timedelta(days=1),
+                _variance(
+                    TARGET - timedelta(days=1),
                     platform="meta",
                     platform_revenue=1500.0,
                     ga4_revenue=500.0,
@@ -690,7 +659,8 @@ class TestGetImpact:
                     confidence=0.9,
                 ),
                 # tiktok has zero GA4 revenue -> excluded from breakdown
-                _variance(TARGET,
+                _variance(
+                    TARGET,
                     platform="tiktok",
                     platform_revenue=800.0,
                     ga4_revenue=0.0,
@@ -713,18 +683,18 @@ class TestGetImpact:
         assert meta["revenueImpact"] == pytest.approx(45.0)
         assert data["totalImpact"] == pytest.approx(45.0)
 
-    async def test_multiple_platforms_sum_total_impact(
-        self, emq_service, db_session
-    ):
+    async def test_multiple_platforms_sum_total_impact(self, emq_service, db_session):
         db_session.add_all(
             [
-                _variance(TARGET,
+                _variance(
+                    TARGET,
                     platform="meta",
                     platform_revenue=3000.0,
                     ga4_revenue=1000.0,
                     confidence=0.8,
                 ),
-                _variance(TARGET,
+                _variance(
+                    TARGET,
                     platform="google",
                     platform_revenue=4000.0,
                     ga4_revenue=2000.0,
@@ -742,9 +712,7 @@ class TestGetImpact:
         # meta 45.0 + google (2.3-2.0)*2000*0.1 = 60.0 -> 105.0
         assert data["totalImpact"] == pytest.approx(105.0)
 
-    async def test_no_records_returns_default_impact(
-        self, emq_service, db_session
-    ):
+    async def test_no_records_returns_default_impact(self, emq_service, db_session):
         data = await emq_service.get_impact(TARGET, TARGET)
 
         assert data["totalImpact"] == 24350.00

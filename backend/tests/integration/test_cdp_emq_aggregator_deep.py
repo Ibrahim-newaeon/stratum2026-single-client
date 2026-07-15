@@ -101,9 +101,7 @@ async def aggregator(db_session) -> CDPEMQAggregator:
 
 
 class TestGetAggregateEmq:
-    async def test_empty_org_returns_default_with_warning(
-        self, aggregator
-    ):
+    async def test_empty_org_returns_default_with_warning(self, aggregator):
         data = await aggregator.get_aggregate_emq()
 
         assert data["aggregate_score"] == 75.0
@@ -119,9 +117,7 @@ class TestGetAggregateEmq:
         ]
         assert "calculated_at" in data
 
-    async def test_healthy_events_produce_no_issues(
-        self, aggregator, db_session
-    ):
+    async def test_healthy_events_produce_no_issues(self, aggregator, db_session):
         db_session.add_all(
             [
                 _event(emq=88.0),
@@ -178,14 +174,10 @@ class TestGetAggregateEmq:
         assert data["recent_event_count"] == 0
         assert data["issues"] == ["No CDP events in last 24 hours - data may be stale"]
 
-    async def test_lookback_window_excludes_older_events(
-        self, aggregator, db_session
-    ):
+    async def test_lookback_window_excludes_older_events(self, aggregator, db_session):
         db_session.add_all(
             [
-                _event(
-                    emq=40.0, received_at=datetime.now(UTC) - timedelta(days=10)
-                ),
+                _event(emq=40.0, received_at=datetime.now(UTC) - timedelta(days=10)),
                 _event(emq=90.0),
             ]
         )
@@ -237,9 +229,7 @@ class TestGetAggregateEmq:
 
 
 class TestGetEmqTrend:
-    async def test_daily_grouping_and_ordering(
-        self, aggregator, db_session
-    ):
+    async def test_daily_grouping_and_ordering(self, aggregator, db_session):
         now = datetime.now(UTC)
         db_session.add_all(
             [
@@ -277,9 +267,7 @@ class TestGetEmqTrend:
 
 
 class TestProfileQualityBreakdown:
-    async def test_stage_distribution_and_resolution_rate(
-        self, aggregator, db_session
-    ):
+    async def test_stage_distribution_and_resolution_rate(self, aggregator, db_session):
         db_session.add_all(
             [
                 _profile(stage="anonymous", total_events=2),

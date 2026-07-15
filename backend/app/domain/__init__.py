@@ -6,13 +6,13 @@
 # Do NOT define models here to avoid duplicate table registration.
 
 from app.models.campaign_builder import (
+    AdAccount,
     CampaignDraft,
     CampaignPublishLog,
     ConnectionStatus,
     DraftStatus,
-    PublishResult,
-    AdAccount,
     PlatformConnection,
+    PublishResult,
 )
 from app.models.trust_layer import (
     AttributionVarianceStatus,

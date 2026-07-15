@@ -952,9 +952,7 @@ class AudienceOverlapRecord(Base):
     audience_1 = relationship("AudienceRecord", foreign_keys=[audience_id_1])
     audience_2 = relationship("AudienceRecord", foreign_keys=[audience_id_2])
 
-    __table_args__ = (
-        Index("ix_overlap_audiences", "audience_id_1", "audience_id_2"),
-    )
+    __table_args__ = (Index("ix_overlap_audiences", "audience_id_1", "audience_id_2"),)
 
 
 # =============================================================================

@@ -316,9 +316,7 @@ class TestListFilters:
         assigned = await _create_client_api(authenticated_client, "mine", "Mine Co")
         await _create_client_api(authenticated_client, "theirs", "Theirs Co")
 
-        manager = await _make_user(
-            db_session, UserRole.MANAGER, "manager@example.com"
-        )
+        manager = await _make_user(db_session, UserRole.MANAGER, "manager@example.com")
         await _make_assignment(db_session, manager.id, assigned["id"])
 
         resp = await authenticated_client.get(
@@ -336,9 +334,7 @@ class TestListFilters:
         from app.base_models import UserRole
 
         await _create_client_api(authenticated_client, "unseen", "Unseen Co")
-        manager = await _make_user(
-            db_session, UserRole.MANAGER, "lonely@example.com"
-        )
+        manager = await _make_user(db_session, UserRole.MANAGER, "lonely@example.com")
 
         resp = await authenticated_client.get(
             "/api/v1/clients",
@@ -491,9 +487,7 @@ class TestDeleteClient:
         from app.base_models import UserRole
 
         created = await _create_client_api(authenticated_client, "keep", "Keep Co")
-        manager = await _make_user(
-            db_session, UserRole.MANAGER, "delmgr@example.com"
-        )
+        manager = await _make_user(db_session, UserRole.MANAGER, "delmgr@example.com")
         await _make_assignment(db_session, manager.id, created["id"])
 
         resp = await authenticated_client.delete(
@@ -583,9 +577,7 @@ class TestClientSummary:
         from app.base_models import UserRole
 
         created = await _create_client_api(authenticated_client, "sec", "Secret Co")
-        analyst = await _make_user(
-            db_session, UserRole.ANALYST, "analyst@example.com"
-        )
+        analyst = await _make_user(db_session, UserRole.ANALYST, "analyst@example.com")
         resp = await authenticated_client.get(
             f"/api/v1/clients/{created['id']}/summary",
             headers=_headers_for(analyst, "analyst@example.com"),
@@ -622,9 +614,7 @@ class TestAssignments:
         from app.base_models import UserRole
 
         created = await _create_client_api(authenticated_client, "team", "Team Co")
-        manager = await _make_user(
-            db_session, UserRole.MANAGER, "assignee@example.com"
-        )
+        manager = await _make_user(db_session, UserRole.MANAGER, "assignee@example.com")
 
         resp = await authenticated_client.post(
             f"/api/v1/clients/{created['id']}/assignments",
@@ -655,9 +645,7 @@ class TestAssignments:
     ):
         from app.base_models import UserRole
 
-        manager = await _make_user(
-            db_session, UserRole.MANAGER, "orphan@example.com"
-        )
+        manager = await _make_user(db_session, UserRole.MANAGER, "orphan@example.com")
         resp = await authenticated_client.post(
             "/api/v1/clients/999999/assignments", json={"user_id": manager.id}
         )
@@ -691,9 +679,7 @@ class TestAssignments:
         from app.base_models import UserRole
 
         created = await _create_client_api(authenticated_client, "dupa", "Dup Assign")
-        analyst = await _make_user(
-            db_session, UserRole.ANALYST, "twice@example.com"
-        )
+        analyst = await _make_user(db_session, UserRole.ANALYST, "twice@example.com")
         first = await authenticated_client.post(
             f"/api/v1/clients/{created['id']}/assignments",
             json={"user_id": analyst.id},
@@ -712,9 +698,7 @@ class TestAssignments:
         from app.base_models import UserRole
 
         created = await _create_client_api(authenticated_client, "unassign", "Unassign")
-        manager = await _make_user(
-            db_session, UserRole.MANAGER, "leaver@example.com"
-        )
+        manager = await _make_user(db_session, UserRole.MANAGER, "leaver@example.com")
         await _make_assignment(db_session, manager.id, created["id"])
 
         resp = await authenticated_client.delete(
@@ -802,9 +786,7 @@ class TestPortalInvite:
         from app.base_models import UserRole
 
         created = await _create_client_api(authenticated_client, "guard", "Guard Co")
-        analyst = await _make_user(
-            db_session, UserRole.ANALYST, "noinvite@example.com"
-        )
+        analyst = await _make_user(db_session, UserRole.ANALYST, "noinvite@example.com")
         resp = await authenticated_client.post(
             f"/api/v1/clients/{created['id']}/invite-portal",
             json={
@@ -1027,9 +1009,7 @@ class TestClientRequestWorkflow:
         created = await _create_client_api(authenticated_client, "noacc", "NoAcc Co")
         await _make_request_row(db_session, created["id"], test_user["id"])
         # Analyst with no ClientAssignment and no user.client_id -> no access.
-        analyst = await _make_user(
-            db_session, UserRole.ANALYST, "outsider@example.com"
-        )
+        analyst = await _make_user(db_session, UserRole.ANALYST, "outsider@example.com")
 
         resp = await authenticated_client.get(
             f"/api/v1/clients/{created['id']}/requests",

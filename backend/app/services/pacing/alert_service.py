@@ -242,9 +242,7 @@ class PacingAlertService:
             as_of_date = date.today()
 
         # Get target
-        result = await self.db.execute(
-            select(Target).where(Target.id == target_id)
-        )
+        result = await self.db.execute(select(Target).where(Target.id == target_id))
         target = result.scalar_one_or_none()
 
         if not target:

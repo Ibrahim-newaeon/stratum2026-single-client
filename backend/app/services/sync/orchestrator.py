@@ -30,8 +30,8 @@ from app.base_models import AdPlatform, Campaign, CampaignMetric, CampaignStatus
 from app.core.config import settings
 from app.core.logging import get_logger
 from app.models.campaign_builder import (
-    ConnectionStatus,
     AdAccount,
+    ConnectionStatus,
     PlatformConnection,
 )
 from app.services.oauth import get_oauth_service

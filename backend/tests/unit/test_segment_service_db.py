@@ -606,9 +606,7 @@ class TestMembership:
         existing = SimpleNamespace(
             is_active=True, removed_at=None, added_by_user_id=None
         )
-        service = SegmentService(
-            db=_make_db([_scalar(seg), _scalar(existing)])
-        )
+        service = SegmentService(db=_make_db([_scalar(seg), _scalar(existing)]))
         assert await service.add_profile_to_segment(seg.id, uuid4()) is True
         assert seg.profile_count == 5
 
@@ -619,9 +617,7 @@ class TestMembership:
             removed_at=datetime(2026, 1, 1, tzinfo=UTC),
             added_by_user_id=None,
         )
-        service = SegmentService(
-            db=_make_db([_scalar(seg), _scalar(existing)])
-        )
+        service = SegmentService(db=_make_db([_scalar(seg), _scalar(existing)]))
 
         assert (
             await service.add_profile_to_segment(seg.id, uuid4(), added_by_user_id=9)
@@ -651,9 +647,7 @@ class TestMembership:
     async def test_remove_profile_success(self) -> None:
         seg = _segment(profile_count=1)
         membership = SimpleNamespace(is_active=True, removed_at=None)
-        service = SegmentService(
-            db=_make_db([_scalar(seg), _scalar(membership)])
-        )
+        service = SegmentService(db=_make_db([_scalar(seg), _scalar(membership)]))
 
         before = datetime.now(UTC)
         assert await service.remove_profile_from_segment(seg.id, uuid4()) is True
@@ -664,17 +658,13 @@ class TestMembership:
     async def test_remove_profile_count_never_negative(self) -> None:
         seg = _segment(profile_count=0)
         membership = SimpleNamespace(is_active=True, removed_at=None)
-        service = SegmentService(
-            db=_make_db([_scalar(seg), _scalar(membership)])
-        )
+        service = SegmentService(db=_make_db([_scalar(seg), _scalar(membership)]))
         assert await service.remove_profile_from_segment(seg.id, uuid4()) is True
         assert seg.profile_count == 0
 
     async def test_remove_profile_no_membership(self) -> None:
         seg = _segment()
-        service = SegmentService(
-            db=_make_db([_scalar(seg), _scalar(None)])
-        )
+        service = SegmentService(db=_make_db([_scalar(seg), _scalar(None)]))
         assert await service.remove_profile_from_segment(seg.id, uuid4()) is False
 
     async def test_remove_profile_segment_missing(self) -> None:

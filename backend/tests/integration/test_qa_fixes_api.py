@@ -33,9 +33,7 @@ class TestIssues:
     # test_cross_tenant_forbidden removed (routes no longer take a
     # path-organization segment to mismatch against).
 
-    async def test_no_connections_empty_issues(
-        self, authenticated_client: AsyncClient
-    ):
+    async def test_no_connections_empty_issues(self, authenticated_client: AsyncClient):
         resp = await authenticated_client.get(f"{_BASE}/issues")
         assert resp.status_code == 200, resp.text
         data = resp.json()["data"]

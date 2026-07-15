@@ -30,9 +30,9 @@ from app.core.config import settings
 from app.core.logging import get_logger
 from app.db.session import get_async_session
 from app.models.campaign_builder import (
+    AdAccount,
     AdPlatform,
     ConnectionStatus,
-    AdAccount,
     PlatformConnection,
 )
 from app.schemas import APIResponse
@@ -935,9 +935,7 @@ async def disconnect_platform(
             # Continue with local disconnect anyway
 
     # Disable all ad accounts
-    await db.execute(
-        select(AdAccount).where(AdAccount.connection_id == connection.id)
-    )
+    await db.execute(select(AdAccount).where(AdAccount.connection_id == connection.id))
     # Update all related ad accounts
     accounts_result = await db.execute(
         select(AdAccount).where(AdAccount.connection_id == connection.id)

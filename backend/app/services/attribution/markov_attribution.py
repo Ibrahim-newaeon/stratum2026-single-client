@@ -447,9 +447,7 @@ class MarkovAttributionService:
 
         # Subquery for contacts with won deals
         won_contacts = (
-            select(CRMDeal.contact_id)
-            .where(CRMDeal.is_won == True)
-            .distinct()
+            select(CRMDeal.contact_id).where(CRMDeal.is_won == True).distinct()
         )
 
         # Get contacts with touchpoints but not in won_contacts

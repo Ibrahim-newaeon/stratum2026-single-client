@@ -72,9 +72,7 @@ async def forecasting(db_session) -> ForecastingService:
 async def constant_meta_history(db_session) -> None:
     """56 days of constant meta spend (100/day) ending at AS_OF."""
     start = AS_OF - timedelta(days=55)
-    db_session.add_all(
-        _kpi(start + timedelta(days=i)) for i in range(56)
-    )
+    db_session.add_all(_kpi(start + timedelta(days=i)) for i in range(56))
     await db_session.flush()
 
 
@@ -141,9 +139,7 @@ class TestForecastMetric:
         # 15 days to EOM > 5-day horizon.
         assert result["eom_projection"] is None
 
-    async def test_dow_seasonality_and_ci_widening(
-        self, db_session, forecasting
-    ):
+    async def test_dow_seasonality_and_ci_widening(self, db_session, forecasting):
         # Weekdays 100, weekends 40: DoW factors split around 1.0 and the
         # residual std becomes non-zero so CIs widen with the horizon.
         start = AS_OF - timedelta(days=41)
@@ -170,7 +166,8 @@ class TestForecastMetric:
     async def test_campaign_scope(self, db_session, forecasting):
         for i in range(10):
             db_session.add(
-                _kpi(AS_OF - timedelta(days=i),
+                _kpi(
+                    AS_OF - timedelta(days=i),
                     spend=20.0,
                     campaign_id="camp-fc",
                 )
@@ -206,9 +203,7 @@ class TestForecastMetric:
 
 
 class TestForecastEom:
-    async def test_current_month_with_history(
-        self, db_session, forecasting
-    ):
+    async def test_current_month_with_history(self, db_session, forecasting):
         # 45 days of org-level (platform=None) revenue through today.
         today = date.today()
         for i in range(45):
@@ -247,7 +242,8 @@ class TestForecastEom:
         for i in range(3):
             d = today - timedelta(days=i)
             db_session.add(
-                _kpi(d,
+                _kpi(
+                    d,
                     spend=50.0,
                     platform=None,
                     campaign_id="sparse-eom",
@@ -293,9 +289,7 @@ class TestForecastEom:
         assert result["projected_eom"] == 0.0
         assert result["daily_needed"] == 0
 
-    async def test_past_month_caps_actuals_window_at_eom(
-        self, db_session, forecasting
-    ):
+    async def test_past_month_caps_actuals_window_at_eom(self, db_session, forecasting):
         # forecast_eom must cap the actuals window at min(today, eom): for a
         # fully elapsed past month, spend logged *after* that month ends must
         # not leak into mtd_actual, and days_elapsed must not exceed the
@@ -309,14 +303,16 @@ class TestForecastEom:
         in_month_day = month_start + timedelta(days=10)
         after_month_day = eom + timedelta(days=5)
         db_session.add(
-            _kpi(in_month_day,
+            _kpi(
+                in_month_day,
                 spend=50.0,
                 platform=None,
                 campaign_id="past-eom-cap",
             )
         )
         db_session.add(
-            _kpi(after_month_day,
+            _kpi(
+                after_month_day,
                 spend=999.0,
                 platform=None,
                 campaign_id="past-eom-cap",
@@ -436,9 +432,7 @@ class TestHelperEdgeCases:
             (TargetMetric.CPL, 1.25),
         ],
     )
-    async def test_get_metric_value_branches(
-        self, forecasting, metric, expected
-    ):
+    async def test_get_metric_value_branches(self, forecasting, metric, expected):
         record = DailyKPI(
             date=AS_OF,
             spend_cents=12345,
@@ -477,8 +471,7 @@ class TestSaveForecast:
         rows = (
             (
                 await db_session.execute(
-                    select(Forecast)
-                    .order_by(Forecast.forecast_for_date)
+                    select(Forecast).order_by(Forecast.forecast_for_date)
                 )
             )
             .scalars()
@@ -498,18 +491,8 @@ class TestSaveForecast:
         assert first.model_type == "ewma_dow"
         assert first.model_params["type"] == "ewma_dow"
 
-    async def test_empty_result_saves_nothing(
-        self, db_session, forecasting
-    ):
+    async def test_empty_result_saves_nothing(self, db_session, forecasting):
         await forecasting.save_forecast({}, TargetMetric.SPEND)
 
-        count = (
-            (
-                await db_session.execute(
-                    select(Forecast)
-                )
-            )
-            .scalars()
-            .all()
-        )
+        count = (await db_session.execute(select(Forecast))).scalars().all()
         assert count == []

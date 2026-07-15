@@ -151,7 +151,6 @@ def _mock_user(*, user_id=1, role_value="admin"):
 class TestCampaignBuilderConnectors:
     """Tests for campaign builder connector (OAuth) endpoints."""
 
-
     # ---- Happy path: status (no connection) ----
 
     @pytest.mark.asyncio

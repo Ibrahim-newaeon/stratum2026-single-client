@@ -268,9 +268,7 @@ class TestCompareCreatives:
 # =============================================================================
 class TestAggregations:
     def _two_creatives(self, svc):
-        svc.record_metrics(
-            "hi", "meta", "camp1", _metrics(revenue=1000.0)
-        )  # roas 10
+        svc.record_metrics("hi", "meta", "camp1", _metrics(revenue=1000.0))  # roas 10
         svc.record_metrics(
             "lo",
             "google",

@@ -307,7 +307,9 @@ class TestGetDueSchedules:
 
 
 class TestExecuteSchedule:
-    async def test_success_updates_bookkeeping_and_delivers(self, db_session, scheduler):
+    async def test_success_updates_bookkeeping_and_delivers(
+        self, db_session, scheduler
+    ):
         template = await _seed_template(db_session, "Exec Tmpl")
         schedule = await _seed_schedule(
             db_session,
@@ -464,9 +466,7 @@ class TestProcessDueSchedules:
         assert results["failed"] == 0
         scheduler.execute_schedule.assert_awaited_once()
 
-    async def test_failure_accounting_with_logger_patched(
-        self, db_session, scheduler
-    ):
+    async def test_failure_accounting_with_logger_patched(self, db_session, scheduler):
         # Patch the module logger so the failure-branch accounting lines are
         # exercised in isolation from real logging (see the logger-enabled
         # regression test below for the previously-crashing path).
@@ -571,9 +571,7 @@ class TestScheduleManagement:
     # test_create_schedule_foreign_tenant_template_raises removed (no more
     # Tenant model / tenant-scoped template lookup to violate).
 
-    async def test_update_non_timing_field_keeps_next_run(
-        self, db_session, scheduler
-    ):
+    async def test_update_non_timing_field_keeps_next_run(self, db_session, scheduler):
         template = await _seed_template(db_session, "Upd Tmpl")
         schedule = await _seed_schedule(db_session, template)
         original_next_run = schedule.next_run_at
@@ -646,18 +644,11 @@ class TestQueryMethods:
 
         assert await scheduler.get_schedule(uuid.uuid4()) is None
 
-    async def test_list_schedules_filters_and_total(
-        self, db_session, scheduler
-    ):
+    async def test_list_schedules_filters_and_total(self, db_session, scheduler):
         template_a = await _seed_template(db_session, "List Tmpl A")
         template_b = await _seed_template(db_session, "List Tmpl B")
-        active = await _seed_schedule(
-            db_session,
-            template_a)
-        inactive = await _seed_schedule(
-            db_session,
-            template_b, is_active=False
-        )
+        active = await _seed_schedule(db_session, template_a)
+        inactive = await _seed_schedule(db_session, template_b, is_active=False)
 
         all_schedules, total = await scheduler.list_schedules()
         assert total == 2
@@ -677,9 +668,7 @@ class TestQueryMethods:
         assert total_paged == 2
         assert len(paged) == 1
 
-    async def test_get_execution_history_ordered_desc(
-        self, db_session, scheduler
-    ):
+    async def test_get_execution_history_ordered_desc(self, db_session, scheduler):
         template = await _seed_template(db_session, "Hist Tmpl")
         schedule = await _seed_schedule(db_session, template)
 

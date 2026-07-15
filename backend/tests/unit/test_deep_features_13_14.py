@@ -793,6 +793,7 @@ class TestReportingExecutions:
         )
         assert r.status_code == 404
 
+
 class TestReportingReportTypes:
     """The /report-types info endpoint."""
 
@@ -969,4 +970,3 @@ class TestOwnerConsoleAnalyticsActionsAnalytics:
         assert r.status_code == 200
         data = r.json()["data"]
         assert data["total_actions"] == 0
-

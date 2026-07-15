@@ -167,20 +167,14 @@ def svc(db_session) -> AudienceSyncService:
 
 
 class TestCreatePlatformAudience:
-    async def test_full_create_flow_persists_audience_and_job(
-        self, db_session, svc
-    ):
+    async def test_full_create_flow_persists_audience_and_job(self, db_session, svc):
         segment = await _seed_segment(db_session)
         await _seed_credential(db_session)
 
         # 3 syncable profiles + 1 unmapped identifier type + 1 inactive member
-        await _seed_profile(
-            db_session, segment, [("email", "user1@example.com")]
-        )
+        await _seed_profile(db_session, segment, [("email", "user1@example.com")])
         await _seed_profile(db_session, segment, [("phone", "+15551230001")])
-        await _seed_profile(
-            db_session, segment, [("device_id", "gaid-abc-123")]
-        )
+        await _seed_profile(db_session, segment, [("device_id", "gaid-abc-123")])
         await _seed_profile(db_session, segment, [("address", "1 Main St")])
         await _seed_profile(
             db_session,
@@ -374,7 +368,9 @@ class TestSyncPlatformAudience:
         await _seed_credential(db_session)
         audience = await _seed_audience(db_session, segment)
         for i in range(4):
-            await _seed_profile(db_session, segment, [("email", f"part{i}@example.com")])
+            await _seed_profile(
+                db_session, segment, [("email", f"part{i}@example.com")]
+            )
 
         with respx.mock:
             respx.post(f"{GRAPH}/aud_ext_1/users").mock(
@@ -396,14 +392,10 @@ class TestSyncPlatformAudience:
         assert job.error_message == "rate limited"
         assert audience.last_sync_status == SyncStatus.PARTIAL.value
 
-    async def test_update_without_platform_id_commits_failed_job(
-        self, db_session, svc
-    ):
+    async def test_update_without_platform_id_commits_failed_job(self, db_session, svc):
         segment = await _seed_segment(db_session)
         await _seed_credential(db_session)
-        audience = await _seed_audience(
-            db_session, segment, platform_audience_id=None
-        )
+        audience = await _seed_audience(db_session, segment, platform_audience_id=None)
 
         with pytest.raises(ValueError, match="No platform audience ID"):
             await svc.sync_platform_audience(audience.id)
@@ -497,9 +489,7 @@ class TestSyncPlatformAudience:
     ):
         segment = await _seed_segment(db_session)
         await _seed_credential(db_session)
-        audience = await _seed_audience(
-            db_session, segment, platform_audience_id=None
-        )
+        audience = await _seed_audience(db_session, segment, platform_audience_id=None)
 
         with pytest.raises(ValueError, match="No platform audience ID"):
             await svc.sync_platform_audience(audience.id, operation=operation)
@@ -615,9 +605,7 @@ class TestDeletePlatformAudience:
     ):
         segment = await _seed_segment(db_session)
         await _seed_credential(db_session)
-        audience = await _seed_audience(
-            db_session, segment, platform_audience_id=None
-        )
+        audience = await _seed_audience(db_session, segment, platform_audience_id=None)
 
         with respx.mock:
             assert await svc.delete_platform_audience(audience.id) is True
@@ -745,7 +733,9 @@ class TestHelpers:
         profiles = []
         for i in range(5):
             profiles.append(
-                await _seed_profile(db_session, segment, [("email", f"b{i}@example.com")])
+                await _seed_profile(
+                    db_session, segment, [("email", f"b{i}@example.com")]
+                )
             )
         # Inactive membership excluded
         await _seed_profile(

@@ -692,8 +692,7 @@ class TestCreativePerformanceTracking:
                 date=date,
             )
 
-        fatigued = service.get_fatigued_creatives( min_fatigue_level=FatigueLevel.LOW
-        )
+        fatigued = service.get_fatigued_creatives(min_fatigue_level=FatigueLevel.LOW)
 
         # Should have at least our fatigued creative
         assert len(fatigued) >= 0  # May be 0 if fatigue threshold not met

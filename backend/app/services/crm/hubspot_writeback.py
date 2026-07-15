@@ -714,9 +714,7 @@ class HubSpotWritebackService:
         contacts_count = await self.db.execute(
             select(func.count()).select_from(CRMContact)
         )
-        deals_count = await self.db.execute(
-            select(func.count()).select_from(CRMDeal)
-        )
+        deals_count = await self.db.execute(select(func.count()).select_from(CRMDeal))
 
         return {
             "enabled": True,

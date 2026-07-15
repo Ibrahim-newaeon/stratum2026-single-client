@@ -499,9 +499,7 @@ class COGSIngestionService:
     ) -> List[COGSUpload]:
         """Get COGS upload history."""
         result = await self.db.execute(
-            select(COGSUpload)
-            .order_by(COGSUpload.uploaded_at.desc())
-            .limit(limit)
+            select(COGSUpload).order_by(COGSUpload.uploaded_at.desc()).limit(limit)
         )
         return list(result.scalars().all())
 

@@ -98,9 +98,7 @@ def refresh_all_competitors():
     with SyncSessionLocal() as db:
         competitors = (
             db.execute(
-                select(CompetitorBenchmark).where(
-                    CompetitorBenchmark.is_active == True
-                )
+                select(CompetitorBenchmark).where(CompetitorBenchmark.is_active == True)
             )
             .scalars()
             .all()

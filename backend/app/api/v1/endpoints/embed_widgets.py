@@ -20,6 +20,7 @@ from fastapi import APIRouter, Depends, HTTPException, Query, Request, status
 from sqlalchemy import func, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from app.auth.deps import get_current_user
 from app.core.config import settings
 from app.db.session import get_db
 from app.models import Campaign
@@ -44,7 +45,6 @@ from app.schemas.embed_widgets import WidgetType as WidgetTypeEnum
 from app.schemas.embed_widgets import (
     WidgetUpdate,
 )
-from app.auth.deps import get_current_user
 from app.services.embed_widgets import (
     EmbedSecurityService,
     EmbedTokenService,

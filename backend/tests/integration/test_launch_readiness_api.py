@@ -60,17 +60,13 @@ class TestLaunchReadinessAuth:
         assert response.status_code in (401, 403)
 
     @pytest.mark.asyncio
-    async def test_non_owner_cannot_access(
-        self, authenticated_client: AsyncClient
-    ):
+    async def test_non_owner_cannot_access(self, authenticated_client: AsyncClient):
         # authenticated_client uses the test_user fixture (role=admin)
         response = await authenticated_client.get(BASE)
         assert response.status_code == 403
 
     @pytest.mark.asyncio
-    async def test_owner_can_access(
-        self, client: AsyncClient, owner_headers: dict
-    ):
+    async def test_owner_can_access(self, client: AsyncClient, owner_headers: dict):
         response = await client.get(BASE, headers=owner_headers)
         assert response.status_code == 200
 
@@ -260,9 +256,7 @@ class TestReopen:
 # =============================================================================
 class TestAuditTrail:
     @pytest.mark.asyncio
-    async def test_check_appends_event(
-        self, client: AsyncClient, owner_headers: dict
-    ):
+    async def test_check_appends_event(self, client: AsyncClient, owner_headers: dict):
         key = _phase_items(1)[0]
         await client.patch(
             f"{BASE}/items/{key}",

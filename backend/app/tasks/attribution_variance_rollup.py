@@ -160,9 +160,7 @@ def attribution_variance_rollup(self, target_date: Optional[str] = None):
 
                 for platform in PLATFORMS:
                     # Fetch GA4 and platform metrics
-                    metrics = await fetch_attribution_metrics(
-                        db, platform, rollup_date
-                    )
+                    metrics = await fetch_attribution_metrics(db, platform, rollup_date)
 
                     if not metrics:
                         continue

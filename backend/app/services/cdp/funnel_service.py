@@ -329,9 +329,7 @@ class FunnelService:
         offset = 0
         while True:
             result = await self.db.execute(
-                select(CDPProfile)
-                .limit(batch_size)
-                .offset(offset)
+                select(CDPProfile).limit(batch_size).offset(offset)
             )
             profiles = list(
                 result.scalars().all()

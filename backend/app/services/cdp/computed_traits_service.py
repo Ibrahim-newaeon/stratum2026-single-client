@@ -293,9 +293,7 @@ class ComputedTraitsService:
 
         while True:
             result = await self.db.execute(
-                select(CDPProfile)
-                .offset(offset)
-                .limit(batch_size)
+                select(CDPProfile).offset(offset).limit(batch_size)
             )
             profiles = result.scalars().all()
 
@@ -533,9 +531,7 @@ class RFMAnalysisService:
 
         while True:
             result = await self.db.execute(
-                select(CDPProfile)
-                .offset(offset)
-                .limit(batch_size)
+                select(CDPProfile).offset(offset).limit(batch_size)
             )
             profiles = list(result.scalars().all())
 

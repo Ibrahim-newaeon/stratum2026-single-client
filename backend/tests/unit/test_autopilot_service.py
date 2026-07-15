@@ -332,7 +332,8 @@ class TestApprovalWorkflow:
         db = _make_db([MagicMock(rowcount=2)])
         service = AutopilotService(db=db)
 
-        count = await service.approve_all_queued( user_id=5, action_ids=[uuid4(), uuid4()]
+        count = await service.approve_all_queued(
+            user_id=5, action_ids=[uuid4(), uuid4()]
         )
 
         assert count == 2
