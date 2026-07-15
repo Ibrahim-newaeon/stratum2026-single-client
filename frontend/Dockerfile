@@ -7,8 +7,8 @@ FROM node:26-alpine AS development
 
 WORKDIR /app
 
-# Copy package files
-COPY package*.json ./
+# Copy package files (.npmrc carries legacy-peer-deps for @tremor/react vs react 19)
+COPY package*.json .npmrc ./
 
 # Install dependencies
 RUN npm install
