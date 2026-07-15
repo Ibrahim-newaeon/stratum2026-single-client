@@ -28,7 +28,7 @@ jobs:
         uses: actions/checkout@v7
 
       - name: Setup Pages
-        uses: actions/configure-pages@v5
+        uses: actions/configure-pages@v6
 
       # If your docs are already static files (HTML/CSS/JS) inside /backend/docs
       - name: Upload artifact
