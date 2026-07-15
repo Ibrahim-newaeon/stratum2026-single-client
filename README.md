@@ -40,7 +40,7 @@ behind a **Trust Gate** that continuously scores the reliability of the
 underlying data and refuses to act when that signal is degraded.
 
 The platform is large and substantially built: **68 API endpoint modules**,
-**~167 frontend views**, **20 SQLAlchemy model modules**, and **~1,900 test
+**~167 frontend views**, **23 SQLAlchemy model modules**, and **~1,900 test
 functions** across 51 test files. Migrations run on a fresh, single-client
 Alembic chain (1 revision) since the STRAT-SC-001 conversion — see
 [`docs/single-client-conversion.md`](docs/single-client-conversion.md).

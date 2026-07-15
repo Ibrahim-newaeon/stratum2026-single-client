@@ -128,14 +128,16 @@ number of sidebar groups. `dashboardNavGroups` (in `nav/dashboardNav.ts`)
 reconciles by splitting the routes into 3 collapsible groups:
 
 ```
-Operate       Overview · Campaigns · Autopilot · Audiences ·
-              Trust Engine · Pacing · Rules · AB Testing · Profit & ROAS
+Operate       Overview · Custom Dashboard · Campaigns · Autopilot ·
+              Audiences · Trust Engine · Pacing · Rules · AB Testing ·
+              Profit & ROAS
 Intelligence  CDP · Attribution · Reporting · Knowledge Graph ·
-              AI Insights · Cohort/Funnel Analysis · Predictions ·
-              Benchmarks · Anomalies · Model Explainability · SQL Editor
+              AI Insights · AI Recommendations · Cohort/Funnel Analysis ·
+              Predictions · Benchmarks · Anomalies · Model Explainability ·
+              SQL Editor
 Workspace     Integrations · WhatsApp · Newsletter · Drip Campaigns ·
-              Push Notifications · Embed Widgets · Audit Log ·
-              Settings · Team · Billing
+              Push Notifications · Embed Widgets · Audit Log · Compliance ·
+              Data & Privacy · API Keys · Settings · Team · Billing
 ```
 
 Platform-owner tooling (feature flags, control tower, credentials,

@@ -53,7 +53,7 @@ Signal Health Check → Trust Gate → Automation Decision
 │   │   └── styles/             # Tailwind CSS + custom styles
 │   ├── package.json
 │   └── vite.config.ts
-├── docker-compose.yml          # 8 services (db, redis, api, worker, scheduler, frontend, flower)
+├── docker-compose.yml          # 7 services (db, redis, api, worker, scheduler, frontend, flower)
 ├── backend/docs/               # 60+ documentation files (curated subset is shipped in the backend image for the Copilot RAG indexer)
 └── CLAUDE.md
 ```
@@ -90,7 +90,7 @@ make migration msg="description"  # Create new migration
 make check            # Lint + type check + test
 
 # Docker
-docker compose up -d              # Full stack (8 services)
+docker compose up -d              # Full stack (7 services)
 docker compose --profile monitoring up -d  # Include Flower
 
 # Frontend

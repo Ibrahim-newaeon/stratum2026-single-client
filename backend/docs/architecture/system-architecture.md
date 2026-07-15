@@ -251,7 +251,7 @@ Client Request
 
 ```
 ┌─────────────────┐     ┌─────────────────┐     ┌─────────────────┐
-│  organizations  │────→│     users       │────→│   user_roles    │
+│  organization   │────→│     users       │────→│   user_roles    │
 │  (single row)   │     │  (auth+profile) │     │  (permissions)  │
 └─────────────────┘     └─────────────────┘     └─────────────────┘
          │
@@ -281,7 +281,7 @@ Client Request
                          └─────────────────┘
 ```
 
-> `organizations` is a single-row table (STRAT-SC-001) — it replaces the
+> `organization` is a single-row table (STRAT-SC-001) — it replaces the
 > former `tenants` table. No other table carries a `tenant_id` column.
 
 ### Key Design Decisions

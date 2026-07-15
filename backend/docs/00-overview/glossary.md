@@ -155,13 +155,15 @@ user in the deployment belongs to the same organization.
 Two independent layers control functionality (see
 `docs/single-client-conversion.md` for the full architecture):
 - **Env-var kill-switches** — process-wide toggles in `core/config.py`
-  (e.g. `feature_knowledge_graph`, `ENABLE_PUBLIC_SIGNUP`).
+  (e.g. `feature_knowledge_graph`, `ENABLE_PUBLIC_SIGNUP`,
+  `feature_competitor_intel`, `feature_what_if_simulator`,
+  `feature_automation_rules`, `feature_gdpr_compliance`).
 - **`Organization.feature_flags`** — org-configurable overrides layered
   on top of `DEFAULT_ORG_FEATURES` (`app/features/flags.py`):
-  - `feature_competitor_intel`
-  - `feature_what_if_simulator`
-  - `feature_automation_rules`
-  - `feature_gdpr_compliance`
+  `signal_health`, `attribution_variance`, `ai_recommendations`,
+  `anomaly_alerts`, `creative_fatigue`, `campaign_builder`,
+  `autopilot_level`, `owner_profitability`, plus `max_campaigns` /
+  `max_users` / `data_retention_days` caps.
 
 ---
 
