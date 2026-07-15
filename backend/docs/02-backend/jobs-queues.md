@@ -117,23 +117,32 @@ task_routes = {
 
 ## Scheduled Tasks (Beat Schedule)
 
+Static schedule (`app/workers/celery_app.py`):
+
 | Task | Schedule | Queue | Description |
 |------|----------|-------|-------------|
-| `evaluate_all_rules` | Every 15 min | rules | Evaluate automation rules |
 | `sync_all_campaigns` | Hourly (0 min) | sync | Sync campaign data from platforms |
-| `refresh_all_competitors` | Every 6 hours | intel | Refresh competitor data |
 | `generate_daily_forecasts` | 6:00 AM UTC | ml | Generate ML forecasts |
-| `calculate_fatigue_scores` | 3:00 AM UTC | default | Calculate creative fatigue |
-| `process_audit_logs` | Every minute | default | Process audit log queue |
-| `calculate_cost_allocation` | 2:00 AM UTC | default | Calculate cost allocation |
-| `calculate_usage_rollup` | 1:00 AM UTC | default | Calculate usage metrics |
+| `calculate_all_fatigue_scores` | 3:00 AM UTC | default | Calculate creative fatigue |
+| `process_audit_log_queue` | Every minute | default | Process audit log queue |
 | `check_pipeline_health` | Every hour (30 min) | default | Check data pipeline health |
+| `worker_heartbeat` | Every minute | default | Redis liveness heartbeat (INF-003) |
 | `calculate_daily_scores` | 4:00 AM UTC | default | Calculate daily scores |
 | `run_all_predictions` | Every 30 min | ml | Run ML predictions |
-| `process_scheduled_whatsapp` | Every minute | default | Process WhatsApp queue |
-| `compute_all_cdp_segments` | Hourly (0 min) | cdp | Compute CDP segments |
-| `compute_all_cdp_funnels` | Every 2 hours | cdp | Compute CDP funnels |
-| `publish_scheduled_cms_posts` | Every minute | default | Publish scheduled CMS posts |
+| `process_scheduled_whatsapp_messages` | Every minute | default | Process WhatsApp queue |
+| `schedule_apply_actions_queue` | Every 5 min | default | Backstop sweep for approved autopilot actions |
+| `schedule_signal_health_rollup` | 2:00 AM UTC | default | Daily signal-health rollup (FactSignalHealthDaily) |
+| `schedule_attribution_variance_rollup` | 2:15 AM UTC | default | Daily attribution-variance rollup |
+| `schedule_audience_auto_sync` | Every 15 min | sync | Execute due PlatformAudience sync schedules |
+
+Feature-gated schedule entries (added only when their flag is on):
+
+| Task | Schedule | Gate |
+|------|----------|------|
+| `sync_all_ad_accounts` / `refresh_expiring_tokens` / `connector_health_check` | 2:00 AM / every 6 h / every 30 min | `ENABLE_CAMPAIGN_BUILDER_BEAT` |
+| `process_scheduled_campaigns` (newsletter) | Every minute | `ENABLE_NEWSLETTER_BEAT` |
+| `evaluate_all_rules` | Every 15 min | `FEATURE_AUTOMATION_RULES` |
+| `refresh_all_competitors` | Every 6 hours | `FEATURE_COMPETITOR_INTEL` |
 
 ---
 

@@ -134,9 +134,12 @@ HEALTHY_THRESHOLD = 70      # Green - autopilot enabled
 DEGRADED_THRESHOLD = 40     # Yellow - alert + hold
 # Never auto-execute when signal_health < 70
 
-# Signal Health Components (weighted):
-# EMQ: 35%, API Health: 25%, Event Loss: 20%,
-# Platform Stability: 10%, Data Quality: 10%
+# Signal Health Component weights (stratum/core/signal_health.py HealthConfig):
+# EMQ: 40%, Freshness: 25%, Attribution Variance: 20%, Anomaly: 15%.
+# When CDP data is available the four base weights scale by 0.9 and
+# CDP contributes the remaining 10%.
+# The dashboard overview card uses a separate lightweight heuristic
+# (Freshness 40% / EMQ 35% / Connectivity 25%) in endpoints/dashboard.py.
 ```
 
 ## Do NOT

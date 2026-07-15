@@ -15,7 +15,7 @@ These rules MUST hold. Flag any violation as BLOCKING.
 2. **No hardcoded thresholds**: thresholds must come from `TrustGateConfig` (per-tenant). Inline magic numbers (`if score < 70:`) are a violation unless they reference the config constant.
 3. **Audit logging**: every automation execution path must write an audit log entry. A trust gate decision without a corresponding audit record is a violation.
 4. **Enforcement mode honored**: `Advisory` must never execute, `Soft-Block` must alert, `Hard-Block` must require manual approval. Verify each mode's branch.
-5. **Signal weights sum to 1.0**: EMQ (0.35) + API Health (0.25) + Event Loss (0.20) + Platform Stability (0.10) + Data Quality (0.10) = 1.00. Reject changes that break the sum.
+5. **Signal weights sum to 1.0**: EMQ (0.40) + Freshness (0.25) + Attribution Variance (0.20) + Anomaly (0.15) = 1.00 (`stratum/core/signal_health.py` HealthConfig; with CDP available the base weights scale by 0.9 and CDP takes 0.10). Reject changes that break the sum.
 6. **No bypasses**: any `skip_gate=True`, `force=True`, `override=True` flag must require admin permission AND emit an audit log.
 
 ## Review Checklist

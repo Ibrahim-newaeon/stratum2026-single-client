@@ -91,9 +91,9 @@ celery_app.conf.update(
 # Beat schedule for periodic tasks
 celery_app.conf.beat_schedule = {
     # NOTE: "evaluate-active-rules" and "refresh-competitor-data" are NOT in
-    # this static schedule — they are gated behind feature flags below (the
-    # rules task crashes on a schema mismatch and the competitor task
-    # fabricates benchmarks, so both are shelved off for launch).
+    # this static schedule — they are gated behind their feature flags below
+    # (automation rules is a default-off feature; the competitor task
+    # fabricates benchmarks, so it stays shelved until a real source lands).
     # Sync campaign data every hour
     "sync-all-campaigns": {
         "task": "app.workers.tasks.sync_all_campaigns",
@@ -229,10 +229,11 @@ if settings.enable_newsletter_beat:
         "options": {"queue": "default"},
     }
 
-# The automation-rules evaluator reads ``rule.conditions`` but the model stores
-# flat ``condition_field/operator/value`` columns, so the task raises
-# AttributeError and dies on every 15-minute tick. Gated off until the rules
-# schema is reconciled (Tier 3). Set FEATURE_AUTOMATION_RULES=true to re-enable.
+# The rules evaluator's old schema mismatch (reading ``rule.conditions``
+# instead of the flat condition_field/operator/value columns) is fixed —
+# see workers/tasks/rules.py::_evaluate_condition. The beat entry stays
+# behind the same flag as the automation-rules feature itself, which is
+# default-off. Set FEATURE_AUTOMATION_RULES=true to enable both.
 if settings.feature_automation_rules:
     celery_app.conf.beat_schedule["evaluate-active-rules"] = {
         "task": "app.workers.tasks.evaluate_all_rules",

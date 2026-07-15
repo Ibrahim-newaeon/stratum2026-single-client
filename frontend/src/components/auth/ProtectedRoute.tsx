@@ -2,12 +2,12 @@
  * Protected Route Component
  * Wraps routes that require authentication.
  *
- * Role hierarchy (mirrors backend ROLE_HIERARCHY):
- *   OWNER:      100  — Platform-wide admin, cross-tenant
- *   ADMIN:       80  — Full tenant access, user management
- *   MANAGER:     50  — Assigned-client scope, campaign management
- *   ANALYST:     30  — Assigned-client scope, campaign execution
- *   VIEWER:      10  — Single-client portal scope (read-only)
+ * Role hierarchy (mirrors backend ROLE_HIERARCHY in auth/permissions.py):
+ *   OWNER:      100  — Platform owner, console access
+ *   ADMIN:       80  — Full organization access, user management
+ *   MANAGER:     60  — Campaign management
+ *   ANALYST:     40  — Campaign execution, analytics
+ *   VIEWER:      10  — Portal scope (read-only)
  */
 
 import { Navigate, useLocation } from 'react-router-dom';
@@ -21,8 +21,8 @@ export type AppRole = 'owner' | 'admin' | 'manager' | 'analyst' | 'viewer';
 const ROLE_HIERARCHY: Record<AppRole, number> = {
   owner: 100,
   admin: 80,
-  manager: 50,
-  analyst: 30,
+  manager: 60,
+  analyst: 40,
   viewer: 10,
 };
 

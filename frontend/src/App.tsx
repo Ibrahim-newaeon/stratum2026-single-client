@@ -3,6 +3,7 @@ import { ComponentType, lazy } from 'react';
 import { HelmetProvider } from 'react-helmet-async';
 import DashboardLayout from './views/DashboardLayout';
 import LegacyTenantRedirect from './components/routing/LegacyTenantRedirect';
+import LegacySuperadminRedirect from './components/routing/LegacySuperadminRedirect';
 import { Toaster } from './components/ui/toaster';
 import { TooltipProvider } from './components/ui/tooltip';
 import { JoyrideProvider } from './components/guide/JoyrideWrapper';
@@ -1663,6 +1664,14 @@ function App() {
                       <Route
                         path="/dashboard/owner/system"
                         element={<Navigate to="/console/system" replace />}
+                      />
+
+                      {/* Legacy superadmin bookmarks: /dashboard/superadmin/users
+                          -> /console/users (superadmin shell replaced by the
+                          platform console; single-client conversion, spec §5.1) */}
+                      <Route
+                        path="/dashboard/superadmin/*"
+                        element={<LegacySuperadminRedirect />}
                       />
 
                       {/* 403 - Access Denied (ProtectedRoute redirect target;

@@ -22,6 +22,13 @@ updates:
         update-types:
           - "minor"
           - "patch"
+      # Majors land as ONE bundled PR so they get triaged together via the
+      # upgrade-dependency skill instead of 5+ individual major-bump PRs.
+      python-major:
+        patterns:
+          - "*"
+        update-types:
+          - "major"
 
   # NPM dependencies
   - package-ecosystem: "npm"
@@ -42,6 +49,12 @@ updates:
         update-types:
           - "minor"
           - "patch"
+      # Majors land as ONE bundled PR (see python-major note above).
+      npm-major:
+        patterns:
+          - "*"
+        update-types:
+          - "major"
 
   # GitHub Actions
   - package-ecosystem: "github-actions"

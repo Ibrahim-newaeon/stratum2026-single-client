@@ -18,6 +18,6 @@ Debug trust gate failure for: $ARGUMENTS
 ## Output
 
 - Root cause analysis with `file:line` citations
-- Which signal component (EMQ / API Health / Event Loss / Platform Stability / Data Quality) drove the score down
+- Which signal component (EMQ / Freshness / Attribution Variance / Anomaly / CDP) drove the score down
 - Recommended fix (config, code, or data)
 - Prevention measures (test, alert, monitoring)

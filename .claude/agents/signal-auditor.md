@@ -24,7 +24,7 @@ The user will name a signal (e.g., "meta_capi_events", "google_ads_spend"). Trac
 
 ### 3. Health calculation contribution
 - File: `backend/app/analytics/logic/signal_health.py`
-- Identify which of the 5 components this signal feeds (EMQ 35%, API Health 25%, Event Loss 20%, Platform Stability 10%, Data Quality 10%).
+- Identify which component this signal feeds (EMQ 40%, Freshness 25%, Attribution Variance 20%, Anomaly 15%; +CDP 10% when CDP data is available — see stratum/core/signal_health.py HealthConfig).
 - Quote the formula. Confirm weights still sum to 1.0.
 
 ### 4. Freshness and SLA
@@ -52,7 +52,7 @@ The user will name a signal (e.g., "meta_capi_events", "google_ads_spend"). Trac
 - Cadence: <expected interval>
 
 ### Health contribution
-- Component: <EMQ | API Health | Event Loss | Platform Stability | Data Quality>
+- Component: <EMQ | Freshness | Attribution Variance | Anomaly | CDP>
 - Weight: <X%>
 - Formula: <quote>
 

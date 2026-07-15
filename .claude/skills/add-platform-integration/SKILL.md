@@ -46,7 +46,7 @@ In `backend/app/workers/`:
 ### 4. Health calculation
 Edit `backend/app/analytics/logic/signal_health.py`:
 - Add the platform to `PLATFORM_REGISTRY`.
-- Wire it into the existing 5-component score (EMQ / API Health / Event Loss / Platform Stability / Data Quality). Do NOT change the weights.
+- Wire it into the existing composite score (EMQ / Freshness / Attribution Variance / Anomaly, +CDP when available — see stratum/core/signal_health.py HealthConfig). Do NOT change the weights.
 - Add API-health probe: latency, error rate, last successful sync timestamp.
 - Verify `pytest backend/tests/unit/test_signal_health.py` still passes (weights sum to 1.0).
 

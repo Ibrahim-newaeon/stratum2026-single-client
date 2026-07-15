@@ -57,11 +57,7 @@ jobs:
           #   - test.css: a vendored/misplaced WordPress core stylesheet at
           #     repo root; its `.is-style-stripes` table classes false-positive
           #     on the "stripe" substring. Unrelated to payments.
-          #   - backend/alembic: orphaned pre-conversion Alembic chain —
-          #     alembic.ini's script_location is "migrations", not "alembic",
-          #     confirmed unreferenced at runtime. Flagged for deletion in a
-          #     follow-up task rather than excluded permanently.
-          EXCL=':!*.md :!*.html :!*.txt :!*.xlsx :!*.zip :!*.csv :!datasets :!audit :!superads-dashboard :!docs :!backend/docs :!chat.md :!frontend/src/api/client.test.ts :!frontend/src/components/routing/LegacyTenantRedirect.tsx :!frontend/src/components/routing/LegacyTenantRedirect.test.tsx :!.github/workflows/ci.yml :!.claude/hooks/rule-check.sh :!.secrets.baseline :!.scratch :!test.css :!backend/alembic'
+          EXCL=':!*.md :!*.html :!*.txt :!*.xlsx :!*.zip :!*.csv :!datasets :!audit :!superads-dashboard :!docs :!backend/docs :!chat.md :!frontend/src/api/client.test.ts :!frontend/src/components/routing/LegacyTenantRedirect.tsx :!frontend/src/components/routing/LegacyTenantRedirect.test.tsx :!.github/workflows/ci.yml :!.claude/hooks/rule-check.sh :!.secrets.baseline :!.scratch :!test.css'
           if git grep -I -iE 'tenant_id|X-Tenant-ID|stripe' -- . $EXCL; then
             echo '::error::removed-scope residue found'; exit 1; fi
           if git grep -I -nE '\{tenant' -- . $EXCL; then

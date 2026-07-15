@@ -274,12 +274,6 @@ class DataIntegrityError(StratumError):
     detail = "Data integrity violation"
 
 
-class TenantIsolationError(StratumError):
-    error_code = "TENANT_ISOLATION"
-    status_code = 403
-    detail = "Cross-tenant data access denied"
-
-
 # === Error Code Registry ===
 
 ERROR_CODES: dict[str, dict[str, Any]] = {
@@ -308,6 +302,5 @@ ERROR_CODES: dict[str, dict[str, Any]] = {
         PlatformRateLimitError,
         PlatformTimeoutError,
         DataIntegrityError,
-        TenantIsolationError,
     ]
 }

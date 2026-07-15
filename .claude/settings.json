@@ -23,15 +23,19 @@
       "Bash(git fetch:*)",
       "Bash(git add:*)",
       "Bash(git commit:*)",
-      "Bash(git push:*)",
+      "Bash(git push origin main)",
       "Bash(git checkout:*)"
     ],
     "deny": [
-      "Bash(git push --force origin main:*)",
-      "Bash(git push --force origin master:*)",
-      "Bash(git push -f origin main:*)",
+      "Read(**/.env)",
+      "Read(**/.env.*)",
+      "Bash(git push --force:*)",
+      "Bash(git push -f:*)",
+      "Bash(git push --force*)",
+      "Bash(git push -f*)",
       "Bash(rm -rf /:*)",
-      "Bash(rm -rf ~:*)"
+      "Bash(rm -rf ~:*)",
+      "Bash(rm -rf /*)"
     ]
   },
   "hooks": {
