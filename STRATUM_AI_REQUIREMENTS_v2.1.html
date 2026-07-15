@@ -1,0 +1,894 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="dark">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Stratum AI — Requirements v2.1 (Single-Client Edition)</title>
+<style>
+  :root[data-theme="dark"]{
+    --bg:#0B0B0B; --card:#141414; --card2:#1A1A1A; --muted:#262626;
+    --line:#1F1F1F; --fg:#FFFFFF; --mut:#9A9A9A; --ember:#FF5A1F;
+    --ember2:#FF8A4A; --info:#06B6D4; --ok:#10B981; --warn:#F59E0B; --bad:#EF4444;
+    --code-bg:#101010;
+  }
+  :root[data-theme="light"]{
+    --bg:#FAFAF7; --card:#FFFFFF; --card2:#F0EFE8; --muted:#F0EFE8;
+    --line:#E8E8E0; --fg:#1A1A1A; --mut:#5A5A55; --ember:#E84F1F;
+    --ember2:#FF8A4A; --info:#0891B2; --ok:#059669; --warn:#D97706; --bad:#DC2626;
+    --code-bg:#F4F3EC;
+  }
+  *{box-sizing:border-box;margin:0;padding:0}
+  html{scroll-behavior:smooth}
+  body{
+    background:var(--bg); color:var(--fg);
+    font:14px/1.65 -apple-system,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;
+    display:flex; min-height:100vh;
+  }
+  code,pre,.mono{font-family:ui-monospace,"Cascadia Code",Consolas,Menlo,monospace}
+  code{background:var(--code-bg);border:1px solid var(--line);border-radius:6px;padding:1px 6px;font-size:12.5px}
+  pre{background:var(--code-bg);border:1px solid var(--line);border-radius:12px;padding:14px 16px;overflow-x:auto;font-size:12.5px;line-height:1.5}
+  a{color:var(--info);text-decoration:none} a:hover{text-decoration:underline}
+
+  /* ---------- sidebar ---------- */
+  nav{
+    width:270px; min-width:270px; height:100vh; position:sticky; top:0;
+    border-right:1px solid var(--line); padding:20px 14px; overflow-y:auto;
+    background:var(--bg);
+  }
+  .brand{display:flex;align-items:center;gap:10px;padding:4px 8px 14px}
+  .brand .dot{width:12px;height:12px;border-radius:50%;background:radial-gradient(circle at 35% 35%,var(--ember2),var(--ember));box-shadow:0 0 14px color-mix(in srgb,var(--ember) 55%,transparent)}
+  .brand b{font-size:15px;letter-spacing:.02em}
+  .brand small{display:block;color:var(--mut);font-size:11px;font-weight:400}
+  #filter{
+    width:100%;margin:2px 0 14px;padding:8px 12px;border-radius:999px;
+    border:1px solid var(--line);background:var(--card);color:var(--fg);font-size:13px;outline:none;
+  }
+  #filter:focus{border-color:var(--ember)}
+  nav h5{font-size:10.5px;letter-spacing:.14em;text-transform:uppercase;color:var(--mut);padding:14px 8px 5px;font-family:ui-monospace,Consolas,monospace}
+  nav a.item{display:block;padding:5px 10px;border-radius:8px;color:var(--fg);font-size:13px;opacity:.82}
+  nav a.item:hover{background:var(--muted);text-decoration:none;opacity:1}
+  nav a.item.active{background:color-mix(in srgb,var(--ember) 14%,transparent);color:var(--ember);opacity:1}
+
+  /* ---------- main ---------- */
+  main{flex:1;max-width:980px;padding:34px 44px 120px}
+  header.top{display:flex;justify-content:space-between;align-items:flex-start;gap:16px;margin-bottom:26px}
+  header.top h1{font-size:27px;letter-spacing:-.01em;line-height:1.25}
+  header.top .sub{color:var(--mut);margin-top:6px;font-size:13.5px;max-width:640px}
+  .toolbar{display:flex;gap:8px;flex-shrink:0}
+  .btn{
+    border:1px solid var(--line);background:var(--card);color:var(--fg);
+    border-radius:999px;padding:7px 15px;font-size:12.5px;cursor:pointer;
+  }
+  .btn:hover{border-color:var(--ember);color:var(--ember)}
+  .stamp{
+    display:inline-flex;align-items:center;gap:7px;margin-top:12px;
+    border:1px solid var(--line);border-radius:999px;padding:4px 12px;
+    font-size:11.5px;color:var(--mut);font-family:ui-monospace,Consolas,monospace;
+  }
+  .stamp i{width:7px;height:7px;border-radius:50%;background:var(--ok);display:inline-block}
+
+  section{margin:0 0 18px;scroll-margin-top:20px}
+  section.hidden{display:none}
+  .card{background:var(--card);border:1px solid var(--line);border-radius:16px;padding:22px 24px;margin-bottom:12px}
+  section h2{font-size:19px;margin-bottom:2px;letter-spacing:-.01em}
+  section h2 .num{color:var(--ember);font-family:ui-monospace,Consolas,monospace;font-size:13px;margin-right:8px}
+  .crumb{color:var(--mut);font-size:11px;text-transform:uppercase;letter-spacing:.12em;font-family:ui-monospace,Consolas,monospace;margin-bottom:14px}
+  .summary p{margin:8px 0;font-size:14px}
+  .summary .lead{font-size:14.5px}
+  .kv{display:grid;grid-template-columns:190px 1fr;gap:6px 18px;margin:10px 0 2px;font-size:13.5px}
+  .kv dt{color:var(--mut)}
+  .kv dd{margin:0}
+  ul.reqs{margin:8px 0 2px 18px}
+  ul.reqs li{margin:5px 0}
+  details.tech{border:1px solid var(--line);border-radius:14px;background:var(--card2);margin-top:14px;overflow:hidden}
+  details.tech>summary{
+    cursor:pointer;list-style:none;padding:12px 18px;font-size:12px;letter-spacing:.1em;
+    text-transform:uppercase;color:var(--mut);font-family:ui-monospace,Consolas,monospace;
+    display:flex;align-items:center;gap:10px;user-select:none;
+  }
+  details.tech>summary::before{content:"▸";color:var(--ember);transition:transform .15s}
+  details.tech[open]>summary::before{transform:rotate(90deg)}
+  details.tech>summary:hover{color:var(--fg)}
+  details.tech .body{padding:4px 20px 18px;border-top:1px solid var(--line)}
+  details.tech h4{font-size:12px;letter-spacing:.1em;text-transform:uppercase;color:var(--mut);margin:16px 0 7px;font-family:ui-monospace,Consolas,monospace}
+
+  table{border-collapse:collapse;width:100%;margin:8px 0;font-size:13px}
+  th,td{border:1px solid var(--line);padding:7px 12px;text-align:left;vertical-align:top}
+  th{background:var(--muted);font-size:11.5px;letter-spacing:.08em;text-transform:uppercase;color:var(--mut);font-family:ui-monospace,Consolas,monospace}
+  .tablewrap{overflow-x:auto}
+
+  .pill{
+    display:inline-block;border-radius:999px;padding:2px 11px;font-size:11px;
+    font-family:ui-monospace,Consolas,monospace;letter-spacing:.03em;white-space:nowrap;
+    border:1px solid transparent;
+  }
+  .pill.on{color:var(--ok);background:color-mix(in srgb,var(--ok) 12%,transparent);border-color:color-mix(in srgb,var(--ok) 35%,transparent)}
+  .pill.off{color:var(--warn);background:color-mix(in srgb,var(--warn) 12%,transparent);border-color:color-mix(in srgb,var(--warn) 35%,transparent)}
+  .pill.req{color:var(--bad);background:color-mix(in srgb,var(--bad) 10%,transparent);border-color:color-mix(in srgb,var(--bad) 32%,transparent)}
+  .pill.info{color:var(--info);background:color-mix(in srgb,var(--info) 12%,transparent);border-color:color-mix(in srgb,var(--info) 35%,transparent)}
+  .pill.neutral{color:var(--mut);background:var(--muted);border-color:var(--line)}
+
+  .callout{border-left:3px solid var(--ember);background:color-mix(in srgb,var(--ember) 6%,transparent);border-radius:0 12px 12px 0;padding:12px 16px;margin:12px 0;font-size:13.5px}
+  .grid2{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+  @media(max-width:1100px){.grid2{grid-template-columns:1fr}}
+  @media(max-width:840px){nav{display:none}main{padding:24px 20px 80px}}
+  footer{color:var(--mut);font-size:12px;border-top:1px solid var(--line);padding-top:18px;margin-top:44px}
+</style>
+</head>
+<body>
+
+<nav id="nav">
+  <div class="brand">
+    <span class="dot"></span>
+    <div><b>Stratum AI</b><small>Requirements v2.1</small></div>
+  </div>
+  <input id="filter" type="search" placeholder="Filter sections…" aria-label="Filter sections">
+  <h5>Overview</h5>
+  <a class="item" href="#overview">Product &amp; Trust Gate</a>
+  <h5>Features</h5>
+  <a class="item" href="#trust-engine">1 · Trust Engine</a>
+  <a class="item" href="#cdp">2 · CDP</a>
+  <a class="item" href="#autopilot">3 · Autopilot Enforcement</a>
+  <a class="item" href="#campaign-builder">4 · Campaign Builder</a>
+  <a class="item" href="#audience-sync">5 · Audience Sync</a>
+  <a class="item" href="#auth">6 · Authentication</a>
+  <a class="item" href="#analytics">7 · Analytics</a>
+  <a class="item" href="#integrations-hub">8 · Integrations Hub</a>
+  <a class="item" href="#cms">9 · CMS</a>
+  <a class="item" href="#whatsapp-feature">10 · WhatsApp</a>
+  <a class="item" href="#reporting">11 · Reporting</a>
+  <a class="item" href="#console">12 · Console / Owner</a>
+  <h5>Platform integrations</h5>
+  <a class="item" href="#meta">Meta (Facebook/Instagram)</a>
+  <a class="item" href="#google-ads">Google Ads</a>
+  <a class="item" href="#tiktok">TikTok Ads</a>
+  <a class="item" href="#snapchat">Snapchat Ads</a>
+  <a class="item" href="#whatsapp-business">WhatsApp Business</a>
+  <a class="item" href="#crm">CRM — HubSpot / Pipedrive</a>
+  <a class="item" href="#comms">Comms — Slack / Email</a>
+  <h5>Delivery</h5>
+  <a class="item" href="#frontend">Frontend</a>
+  <a class="item" href="#infra">Infrastructure &amp; Ops</a>
+  <a class="item" href="#acceptance">Acceptance criteria</a>
+</nav>
+
+<main>
+<header class="top">
+  <div>
+    <h1>Stratum AI — Requirements <span style="color:var(--ember)">v2.1</span></h1>
+    <div class="sub">Single-Client Edition. Per-feature and per-platform requirements with plain-language
+    summaries for stakeholders and expandable technical blocks for engineering.</div>
+    <span class="stamp"><i></i>matches spec v2.1 as revised 2026-07-15 · repo commit f443d393</span>
+  </div>
+  <div class="toolbar">
+    <button class="btn" id="expandAll">Expand all</button>
+    <button class="btn" id="themeToggle">☀ Light</button>
+  </div>
+</header>
+
+<!-- ======================= OVERVIEW ======================= -->
+<section id="overview">
+  <div class="card">
+    <div class="crumb">Overview</div>
+    <h2>Product &amp; the Trust Gate</h2>
+    <div class="summary">
+      <p class="lead"><b>Stratum AI is a Revenue Operating System with a Trust-Gated Autopilot.</b>
+      It ingests advertising and customer signals across Meta, Google, TikTok and Snapchat, scores how
+      trustworthy those signals are, and only allows automation (budget shifts, pausing, scaling) to
+      execute when signal health passes safety thresholds. This build is a <b>single-client deployment</b>:
+      one organization, no multi-tenant partitioning, no billing tiers.</p>
+      <pre>Signal Health Check   →   Trust Gate   →   Automation Decision
+  [HEALTHY  ≥70]           [PASS]            [EXECUTE]
+  [DEGRADED 40–69]         [HOLD]            [ALERT ONLY]
+  [UNHEALTHY &lt;40]          [BLOCK]           [MANUAL REQUIRED]</pre>
+      <p><b>Signal Health</b> is a composite 0–100 score (<code>stratum/core/signal_health.py · HealthConfig</code>):</p>
+      <div class="tablewrap"><table>
+        <tr><th>Component</th><th>Weight</th></tr>
+        <tr><td>EMQ (Event Match Quality)</td><td>40%</td></tr>
+        <tr><td>Freshness</td><td>25%</td></tr>
+        <tr><td>Attribution Variance</td><td>20%</td></tr>
+        <tr><td>Anomaly</td><td>15%</td></tr>
+      </table></div>
+      <p>When CDP data is available the four base weights scale by 0.9 and a <b>CDP component contributes 10%</b>.
+      The dashboard overview card uses a separate lightweight heuristic (Freshness 40 / EMQ 35 / Connectivity 25)
+      — the two must not be conflated.</p>
+      <div class="callout">Thresholds are org-configurable (<code>TrustGateConfig</code>: pass 70 · hold 40 ·
+      high-risk 80 · conservative 60). Hard rule: <b>never auto-execute when signal_health &lt; 70</b>.</div>
+    </div>
+    <details class="tech"><summary>Technical requirements</summary><div class="body">
+      <h4>Role hierarchy (backend = frontend, exact mirror)</h4>
+      <div class="tablewrap"><table>
+        <tr><th>Role</th><th>Level</th><th>Scope</th></tr>
+        <tr><td>owner</td><td>100</td><td>Platform owner; exclusive /console access, scoping bypass, debug/raw-SQL endpoints</td></tr>
+        <tr><td>admin</td><td>80</td><td>Full organization access, user management</td></tr>
+        <tr><td>manager</td><td>60</td><td>Campaign management</td></tr>
+        <tr><td>analyst</td><td>40</td><td>Campaign execution, analytics</td></tr>
+        <tr><td>viewer</td><td>10</td><td>Portal scope, read-only (Brand-scoped)</td></tr>
+      </table></div>
+      <h4>Off-flag status-code convention</h4>
+      <p>Feature-flagged routes return <span class="pill req">404</span> when the flag is off (the route
+      "doesn't exist" for this deployment). Environment-gated capabilities (missing infra/credentials,
+      e.g. knowledge graph without Apache AGE) return <span class="pill warn off">503</span> — the feature
+      exists but its backing service is unavailable.</p>
+      <h4>Env-var kill-switches (defaults)</h4>
+      <div class="tablewrap"><table>
+        <tr><th>Flag</th><th>Default</th></tr>
+        <tr><td><code>ENABLE_PUBLIC_SIGNUP</code></td><td><span class="pill off">off — invite-only</span></td></tr>
+        <tr><td><code>FEATURE_WHAT_IF_SIMULATOR</code></td><td><span class="pill on">on</span></td></tr>
+        <tr><td><code>FEATURE_GDPR_COMPLIANCE</code></td><td><span class="pill on">on</span></td></tr>
+        <tr><td><code>FEATURE_COMPETITOR_INTEL</code></td><td><span class="pill off">off</span></td></tr>
+        <tr><td><code>FEATURE_AUTOMATION_RULES</code></td><td><span class="pill off">off</span></td></tr>
+        <tr><td><code>FEATURE_KNOWLEDGE_GRAPH</code></td><td><span class="pill off">off</span></td></tr>
+        <tr><td><code>FEATURE_DRIP_CAMPAIGNS</code></td><td><span class="pill off">off</span></td></tr>
+        <tr><td><code>ENABLE_CAMPAIGN_PUBLISH</code></td><td><span class="pill off">off</span></td></tr>
+        <tr><td><code>ENABLE_CAMPAIGN_BUILDER_BEAT</code></td><td><span class="pill off">off</span></td></tr>
+        <tr><td><code>ENABLE_NEWSLETTER_BEAT</code></td><td><span class="pill off">off</span></td></tr>
+      </table></div>
+      <p>Org-level overrides live in <code>Organization.feature_flags</code> (jsonb) layered on
+      <code>DEFAULT_ORG_FEATURES</code> (<code>app/features/flags.py</code>).</p>
+    </div></details>
+  </div>
+</section>
+
+<!-- ======================= FEATURES ======================= -->
+<section id="trust-engine">
+  <div class="card">
+    <div class="crumb">Feature 1</div>
+    <h2><span class="num">01</span>Trust Engine</h2>
+    <div class="summary">
+      <p class="lead">The decision core. Continuously scores signal reliability per platform and converts the
+      score into a gate decision: <b>PASS</b> (automation may run), <b>HOLD</b> (alert only), <b>BLOCK</b>
+      (manual approval required). Protects ad spend from acting on broken or stale data.</p>
+      <p><b>Client provides:</b> nothing beyond connected platforms; thresholds are tunable in Organization settings.</p>
+    </div>
+    <details class="tech"><summary>Technical requirements</summary><div class="body">
+      <h4>Key files</h4>
+      <p><code>analytics/logic/signal_health.py</code> · <code>stratum/core/signal_health.py</code> ·
+      <code>stratum/core/trust_gate.py</code> · fact tables in <code>models/trust_layer.py</code></p>
+      <h4>Requirements</h4>
+      <ul class="reqs">
+        <li>Composite weights exactly as the Overview table; weights must always sum to 1.0.</li>
+        <li>No hardcoded thresholds — read from <code>TrustGateConfig.from_org_settings</code>.</li>
+        <li>Daily signal-health rollup (beat 02:00 UTC) populates <code>FactSignalHealthDaily</code>; the gate,
+        dashboard trust layer, and autopilot health check all read this table — without the rollup they see
+        permanent <code>no_data</code>.</li>
+        <li>Attribution-variance rollup at 02:15 UTC populates <code>FactAttributionVarianceDaily</code>.</li>
+        <li>Every gate decision is audit-logged.</li>
+      </ul>
+    </div></details>
+  </div>
+</section>
+
+<section id="cdp">
+  <div class="card">
+    <div class="crumb">Feature 2</div>
+    <h2><span class="num">02</span>Customer Data Platform (CDP)</h2>
+    <div class="summary">
+      <p class="lead">Unified customer profiles built from events and identities: identity resolution,
+      behavioral/predictive segments, computed traits, RFM analysis, funnels and consent management.
+      Segments feed <a href="#audience-sync">Audience Sync</a> and the EMQ signal that drives trust.</p>
+      <p><b>Client provides:</b> event streams (web/pixel/webhook/CSV) and consent policy decisions.</p>
+    </div>
+    <details class="tech"><summary>Technical requirements</summary><div class="body">
+      <h4>Key files</h4>
+      <p><code>models/cdp.py</code> · <code>analytics/logic/emq_calculation.py</code> ·
+      <code>services/cdp/audience_sync/</code></p>
+      <h4>Requirements</h4>
+      <ul class="reqs">
+        <li>Profiles, identity graph (anonymous→known→customer), segments, computed traits, RFM, lifecycle stages, funnels.</li>
+        <li>EMQ (0–100) measures event-match fidelity per platform and contributes 40% of signal health.</li>
+        <li>PII is Fernet-encrypted at rest; hashed (SHA-256) for platform audience matching.</li>
+        <li>GDPR/CCPA surface: export, erasure, consent — gated by <code>FEATURE_GDPR_COMPLIANCE</code> <span class="pill on">on</span>.</li>
+      </ul>
+    </div></details>
+  </div>
+</section>
+
+<section id="autopilot">
+  <div class="card">
+    <div class="crumb">Feature 3</div>
+    <h2><span class="num">03</span>Autopilot Enforcement</h2>
+    <div class="summary">
+      <p class="lead">Executes approved optimization actions (budget, bidding, pause/enable, scaling) —
+      but only through the Trust Gate. Three enforcement modes: <b>Advisory</b> (never executes),
+      <b>Soft-Block</b> (alerts), <b>Hard-Block</b> (manual approval required).</p>
+      <p><b>Client provides:</b> chosen enforcement mode + autopilot level (0–2) in settings.</p>
+    </div>
+    <details class="tech"><summary>Technical requirements</summary><div class="body">
+      <h4>Key files &amp; tables</h4>
+      <p><code>autopilot/enforcer.py</code> · <code>autopilot/service.py</code> ·
+      tables <code>enforcement_settings</code>, <code>enforcement_rules</code>
+      (renamed from tenant_* in migration <code>b7e3f4a9c2d1</code>)</p>
+      <h4>Requirements</h4>
+      <ul class="reqs">
+        <li>Approved actions applied via a 5-minute backstop sweep (<code>schedule_apply_actions_queue</code>)
+        in addition to direct dispatch at approval time.</li>
+        <li>Any bypass flag (<code>skip_gate/force/override</code>) requires admin permission AND emits an audit log.</li>
+        <li>Emergency stop surface in the frontend (<code>components/autopilot/EmergencyStop</code>).</li>
+      </ul>
+    </div></details>
+  </div>
+</section>
+
+<section id="campaign-builder">
+  <div class="card">
+    <div class="crumb">Feature 4</div>
+    <h2><span class="num">04</span>Campaign Builder</h2>
+    <div class="summary">
+      <p class="lead">Draft, validate and (behind a flag) publish campaigns to the connected ad platforms.
+      Owns the platform OAuth connection lifecycle: start, refresh, health.</p>
+      <p><b>Client provides:</b> platform app credentials (see each platform section) and ad-account IDs.</p>
+    </div>
+    <details class="tech"><summary>Technical requirements</summary><div class="body">
+      <h4>Key files</h4>
+      <p><code>models/campaign_builder.py</code> · <code>api/v1/endpoints/campaign_builder.py</code></p>
+      <h4>Requirements</h4>
+      <ul class="reqs">
+        <li>OAuth start: <code>POST /api/v1/campaign-builder/connect/{platform}/start</code> — client IDs are read
+        from <code>settings</code> (config.py), never raw <code>os.environ</code>; unconfigured platform → 400 with
+        "not configured".</li>
+        <li>Connection state machine: <code>PlatformConnection.status ∈ {connected, expired, error, …}</code>.
+        <b>The source of truth is <code>status == ConnectionStatus.CONNECTED</code></b> — there is no
+        <code>is_connected</code> column (regression-tested).</li>
+        <li>Publishing gated by <code>ENABLE_CAMPAIGN_PUBLISH</code> <span class="pill off">off</span>;
+        connector beat tasks (account sync / token refresh / health) gated by
+        <code>ENABLE_CAMPAIGN_BUILDER_BEAT</code> <span class="pill off">off</span>.</li>
+      </ul>
+    </div></details>
+  </div>
+</section>
+
+<section id="audience-sync">
+  <div class="card">
+    <div class="crumb">Feature 5</div>
+    <h2><span class="num">05</span>Audience Sync</h2>
+    <div class="summary">
+      <p class="lead">Pushes CDP segments to the ad platforms as targeting audiences: Meta Custom Audiences,
+      Google Customer Match, TikTok Custom Audiences, Snapchat Audience Match. PII goes out hashed only.</p>
+      <p><b>Client provides:</b> platform connections with audience-write capability (covered by the scopes in each platform section).</p>
+    </div>
+    <details class="tech"><summary>Technical requirements</summary><div class="body">
+      <h4>Key files</h4><p><code>services/cdp/audience_sync/</code></p>
+      <ul class="reqs">
+        <li>Auto-sync sweep every 15 min executes due <code>PlatformAudience</code> schedules
+        (<code>auto_sync + next_sync_at &lt;= now</code>, <code>triggered_by="schedule"</code>).</li>
+        <li>Emails/phones hashed SHA-256 before leaving the system; raw PII never sent.</li>
+      </ul>
+    </div></details>
+  </div>
+</section>
+
+<section id="auth">
+  <div class="card">
+    <div class="crumb">Feature 6</div>
+    <h2><span class="num">06</span>Authentication &amp; Access</h2>
+    <div class="summary">
+      <p class="lead">JWT-based auth with refresh rotation, TOTP MFA, API keys and full audit trail.
+      <b>Invite-only by default</b>: teammates are added by the owner via invite; open self-registration
+      requires explicitly setting a flag.</p>
+      <p><b>Client provides:</b> the initial owner account (seeded superadmin) and team email addresses to invite.</p>
+    </div>
+    <details class="tech"><summary>Technical requirements</summary><div class="body">
+      <h4>Key files</h4><p><code>auth/</code> · <code>core/security.py</code> · <code>services/mfa_service.py</code></p>
+      <ul class="reqs">
+        <li>JWT HS256; access token 30 min, refresh 7 days; Redis blacklist on logout.
+        Token middleware <b>fails open if Redis is down</b> but still rejects non-access token types.</li>
+        <li><code>POST /auth/register</code> gated by <code>ENABLE_PUBLIC_SIGNUP</code>
+        <span class="pill off">default off — invite-only</span>; registration requires a one-time email/WhatsApp
+        OTP verification token (Redis-stored, single use).</li>
+        <li>No PII and no tenant claim in JWTs; bcrypt password hashing; <code>secrets</code> module for tokens;
+        <code>hmac.compare_digest</code> for comparisons.</li>
+        <li>Role-based idle timeout 15–60 min with warning; tokens in sessionStorage (never localStorage).</li>
+      </ul>
+    </div></details>
+  </div>
+</section>
+
+<section id="analytics">
+  <div class="card">
+    <div class="crumb">Feature 7</div>
+    <h2><span class="num">07</span>Analytics &amp; ML</h2>
+    <div class="summary">
+      <p class="lead">Eight analytics modules (signal health, EMQ, attribution, anomalies, pacing, cohorts,
+      funnels, benchmarks) plus ML predictors: forecasting, budget optimization, churn/LTV, segmentation and
+      model explainability. Attribution supports MTA, Markov and Shapley models.</p>
+    </div>
+    <details class="tech"><summary>Technical requirements</summary><div class="body">
+      <h4>Key files</h4><p><code>analytics/logic/</code> (8 modules) · <code>app/ml/</code></p>
+      <ul class="reqs">
+        <li>ML models are <b>pre-trained at Docker build time</b> (multi-GB runtime training is forbidden);
+        <code>ML_AUTO_TRAIN</code> self-heals a fresh deploy but must be off in CI/health-probe environments.</li>
+        <li>Provider switch <code>ML_PROVIDER=local|vertex</code> (Vertex needs
+        <code>GOOGLE_CLOUD_PROJECT</code>/<code>VERTEX_AI_ENDPOINT</code>/<code>GOOGLE_APPLICATION_CREDENTIALS</code>).</li>
+        <li>Daily forecasts 06:00 UTC · fatigue scores 03:00 · daily scores 04:00 · live predictions every 30 min.</li>
+        <li>Copilot default is a deterministic keyword classifier; Anthropic generation
+        (<code>COPILOT_LLM_ENABLED</code> + <code>ANTHROPIC_API_KEY</code>) and pgvector RAG
+        (<code>COPILOT_RAG_ENABLED</code> + <code>OPENAI_API_KEY</code>) are opt-in.</li>
+      </ul>
+    </div></details>
+  </div>
+</section>
+
+<section id="integrations-hub">
+  <div class="card">
+    <div class="crumb">Feature 8</div>
+    <h2><span class="num">08</span>Integrations Hub</h2>
+    <div class="summary">
+      <p class="lead">Central OAuth + adapter layer for the four ad platforms, with a sync orchestrator that
+      pulls campaigns and metrics on schedule. Adapter registry pattern makes adding a platform a 5-step recipe.</p>
+    </div>
+    <details class="tech"><summary>Technical requirements</summary><div class="body">
+      <h4>Key files</h4>
+      <p><code>services/oauth/</code> (factory + per-platform) · <code>app/stratum/adapters/</code> + registry ·
+      <code>services/sync/orchestrator.py</code></p>
+      <ul class="reqs">
+        <li>Hourly <code>sync_all_campaigns</code>; metrics update dispatch counts only
+        <code>status == CONNECTED</code> connections.</li>
+        <li><code>USE_MOCK_AD_DATA=true</code> serves deterministic mock data for development;
+        production runs with it <b>false</b>.</li>
+        <li>New integrations follow <code>.claude/skills/add-platform-integration</code> (OAuth → collector →
+        health wiring → registry → docs).</li>
+      </ul>
+    </div></details>
+  </div>
+</section>
+
+<section id="cms">
+  <div class="card">
+    <div class="crumb">Feature 9</div>
+    <h2><span class="num">09</span>CMS</h2>
+    <div class="summary">
+      <p class="lead">Built-in content management for the public marketing site: pages, blog posts, authors,
+      categories, rich-text editing (TipTap), with a separate CMS login and layout shell.</p>
+    </div>
+    <details class="tech"><summary>Technical requirements</summary><div class="body">
+      <h4>Key files</h4><p><code>models/cms.py</code> · frontend <code>/cms/*</code> shell (13 views) · <code>CMSProtectedRoute</code></p>
+      <ul class="reqs"><li>Scheduled publishing task exists; asset uploads go to <code>ASSET_UPLOAD_DIR</code>
+      or S3-compatible storage (<code>ASSET_STORAGE_BACKEND</code>).</li></ul>
+    </div></details>
+  </div>
+</section>
+
+<section id="whatsapp-feature">
+  <div class="card">
+    <div class="crumb">Feature 10</div>
+    <h2><span class="num">10</span>WhatsApp (product feature)</h2>
+    <div class="summary">
+      <p class="lead">Customer messaging over WhatsApp Business: contacts, templates, broadcasts, scheduled
+      messages, plus WhatsApp OTP as a signup verification channel. Activates when credentials are configured —
+      there is deliberately <b>no ENABLE_WHATSAPP kill-switch</b>.</p>
+      <p><b>Client provides:</b> a verified WhatsApp Business account (see <a href="#whatsapp-business">platform section</a>).</p>
+    </div>
+    <details class="tech"><summary>Technical requirements</summary><div class="body">
+      <h4>Key files</h4><p><code>services/whatsapp_service.py</code> · <code>workers/tasks/whatsapp.py</code> · frontend <code>/dashboard/whatsapp/*</code> (5 views)</p>
+      <ul class="reqs">
+        <li>Scheduled-message sweep every minute (<code>process_scheduled_whatsapp_messages</code>).</li>
+        <li>OTP endpoints return <span class="pill off">503</span> when WhatsApp is not configured (env-gated convention).</li>
+      </ul>
+    </div></details>
+  </div>
+</section>
+
+<section id="reporting">
+  <div class="card">
+    <div class="crumb">Feature 11</div>
+    <h2><span class="num">11</span>Reporting</h2>
+    <div class="summary">
+      <p class="lead">Generated and scheduled reports delivered as PDF, Slack messages, or email —
+      covering performance, pacing, profit/ROAS and attribution.</p>
+    </div>
+    <details class="tech"><summary>Technical requirements</summary><div class="body">
+      <h4>Key files</h4><p><code>services/reporting/</code></p>
+      <ul class="reqs"><li>Report scheduling via Celery; email via SendGrid/SMTP; Slack webhook integration
+      (see <a href="#comms">Comms</a>).</li></ul>
+    </div></details>
+  </div>
+</section>
+
+<section id="console">
+  <div class="card">
+    <div class="crumb">Feature 12</div>
+    <h2><span class="num">12</span>Console / Owner Ops</h2>
+    <div class="summary">
+      <p class="lead">A separate owner-only shell at <code>/console/*</code> for platform operations: feature
+      flags, users, control tower, credentials, dead-letter queue, EMQ measurement, experiments, budget
+      reallocation, LTV batch predictions, launch readiness and system health. Non-owner roles never see it.</p>
+    </div>
+    <details class="tech"><summary>Technical requirements</summary><div class="body">
+      <h4>Key files</h4><p><code>endpoints/console.py</code> · frontend <code>ConsoleLayout</code> + <code>consoleNav.ts</code> (Platform / Operations / Health groups)</p>
+      <ul class="reqs">
+        <li><code>ProtectedRoute requiredRole="owner"</code>; legacy <code>/dashboard/superadmin/*</code>
+        bookmarks redirect into <code>/console/*</code>.</li>
+        <li>System-health card derives pipeline success from the share of configured
+        <code>PlatformConnection</code> rows currently CONNECTED; <code>api_uptime</code> stays null rather than
+        fabricating a number.</li>
+      </ul>
+    </div></details>
+  </div>
+</section>
+
+<!-- ======================= PLATFORMS ======================= -->
+<section id="meta">
+  <div class="card">
+    <div class="crumb">Platform integration</div>
+    <h2>Meta — Facebook &amp; Instagram Ads</h2>
+    <div class="summary">
+      <p class="lead">Campaign sync, metrics, audience sync (Custom Audiences), CAPI server-side events and
+      OAuth-connected ad accounts.</p>
+      <p><b>Client must provide / complete:</b></p>
+      <ul class="reqs">
+        <li>A Meta developer app linked to the client's Business Manager.</li>
+        <li><b>Meta Business verification</b> and <b>App Review (Advanced Access)</b> for the ads permissions below — without approval the scopes only work for app-role users.</li>
+        <li>System-user access token for server-side (CAPI) events + Pixel ID.</li>
+      </ul>
+    </div>
+    <details class="tech"><summary>Technical requirements — permissions &amp; config</summary><div class="body">
+      <h4>Required app permissions (OAuth scopes) — <code>services/oauth/meta.py</code></h4>
+      <p><span class="pill info">ads_management</span> <span class="pill info">ads_read</span>
+      <span class="pill info">business_management</span> <span class="pill info">pages_read_engagement</span></p>
+      <h4>Credential env vars (names config.py reads)</h4>
+      <div class="tablewrap"><table>
+        <tr><th>Variable</th><th>Purpose</th></tr>
+        <tr><td><code>META_APP_ID</code></td><td>App ID — OAuth client id</td></tr>
+        <tr><td><code>META_APP_SECRET</code></td><td>App secret — token exchange + webhook signature verification</td></tr>
+        <tr><td><code>META_ACCESS_TOKEN</code></td><td>System-user token for server-side API + CAPI</td></tr>
+        <tr><td><code>META_API_VERSION</code></td><td>Graph API version (default <code>v25.0</code>)</td></tr>
+        <tr><td><code>META_AD_ACCOUNT_IDS</code></td><td>Comma-separated ad account ids to sync</td></tr>
+        <tr><td><code>META_PIXEL_ID</code></td><td>CAPI events pixel (webhook server config)</td></tr>
+      </table></div>
+      <h4>Surfaces</h4>
+      <p>OAuth: <code>facebook.com/v25.0/dialog/oauth</code> via
+      <code>/campaign-builder/connect/meta/start</code> · CAPI sender in <code>stratum/events</code> ·
+      webhook receiver verifies <code>META_VERIFY_TOKEN</code>/<code>META_APP_SECRET</code> signatures.</p>
+    </div></details>
+  </div>
+</section>
+
+<section id="google-ads">
+  <div class="card">
+    <div class="crumb">Platform integration</div>
+    <h2>Google Ads</h2>
+    <div class="summary">
+      <p class="lead">Campaign/metrics sync, Customer Match audience upload, OAuth-connected customer accounts.</p>
+      <p><b>Client must provide / complete:</b></p>
+      <ul class="reqs">
+        <li>Google Cloud project with an OAuth consent screen (verified for external use).</li>
+        <li><b>Google Ads Developer Token</b> — starts at test-account access; Basic/Standard access requires
+        Google's API access review.</li>
+        <li>Customer ID (and MCC ID if managed through a manager account).</li>
+      </ul>
+    </div>
+    <details class="tech"><summary>Technical requirements — permissions &amp; config</summary><div class="body">
+      <h4>Required OAuth scope — <code>services/oauth/google.py</code></h4>
+      <p><span class="pill info">https://www.googleapis.com/auth/adwords</span>
+      (offline access — refresh token — is requested via <code>access_type=offline</code> +
+      <code>include_granted_scopes</code>)</p>
+      <h4>Credential env vars</h4>
+      <div class="tablewrap"><table>
+        <tr><th>Variable</th><th>Purpose</th></tr>
+        <tr><td><code>GOOGLE_ADS_DEVELOPER_TOKEN</code></td><td>API developer token (requires Google review for production)</td></tr>
+        <tr><td><code>GOOGLE_ADS_CLIENT_ID</code></td><td>OAuth client id</td></tr>
+        <tr><td><code>GOOGLE_ADS_CLIENT_SECRET</code></td><td>OAuth client secret</td></tr>
+        <tr><td><code>GOOGLE_ADS_REFRESH_TOKEN</code></td><td>Long-lived refresh token for server-side sync</td></tr>
+        <tr><td><code>GOOGLE_ADS_CUSTOMER_ID</code></td><td>Target Google Ads customer account</td></tr>
+      </table></div>
+      <h4>Surfaces</h4>
+      <p>OAuth: <code>accounts.google.com/o/oauth2/v2/auth</code> via
+      <code>/campaign-builder/connect/google/start</code> · sync orchestrator pulls campaigns + stats hourly.</p>
+    </div></details>
+  </div>
+</section>
+
+<section id="tiktok">
+  <div class="card">
+    <div class="crumb">Platform integration</div>
+    <h2>TikTok Ads</h2>
+    <div class="summary">
+      <p class="lead">Campaign/metrics sync, Custom Audience sync and OAuth-connected advertiser accounts via
+      the TikTok Marketing API.</p>
+      <p><b>Client must provide / complete:</b></p>
+      <ul class="reqs">
+        <li>A TikTok for Business developer app — <b>Marketing API app approval</b> is required before
+        production traffic.</li>
+        <li>Advertiser ID(s) authorized to the app.</li>
+      </ul>
+    </div>
+    <details class="tech"><summary>Technical requirements — permissions &amp; config</summary><div class="body">
+      <h4>Required app permissions (OAuth scopes) — <code>services/oauth/tiktok.py</code></h4>
+      <p><span class="pill info">advertiser.read</span> <span class="pill info">advertiser.write</span>
+      <span class="pill info">campaign.read</span> <span class="pill info">campaign.write</span>
+      <span class="pill info">report.read</span></p>
+      <h4>Credential env vars</h4>
+      <div class="tablewrap"><table>
+        <tr><th>Variable</th><th>Purpose</th></tr>
+        <tr><td><code>TIKTOK_APP_ID</code></td><td>App id — OAuth client id</td></tr>
+        <tr><td><code>TIKTOK_SECRET</code></td><td>App secret (note: exactly this name — not TIKTOK_APP_SECRET)</td></tr>
+        <tr><td><code>TIKTOK_ACCESS_TOKEN</code></td><td>Long-lived access token for server-side sync</td></tr>
+        <tr><td><code>TIKTOK_ADVERTISER_ID</code></td><td>Target advertiser account</td></tr>
+      </table></div>
+      <div class="callout">The former <code>TIKTOK_PIXEL_ID</code> / <code>TIKTOK_CAPI_TOKEN</code> /
+      <code>TIKTOK_AD_ACCOUNT_ID</code> vars are <b>not read by this codebase</b> — do not set them
+      (removed from compose/spec 2026-07-15).</div>
+      <h4>Surfaces</h4>
+      <p>OAuth: <code>ads.tiktok.com/marketing_api/auth</code> via
+      <code>/campaign-builder/connect/tiktok/start</code> · events sender constructed in code
+      (<code>stratum/events</code>), not from env.</p>
+    </div></details>
+  </div>
+</section>
+
+<section id="snapchat">
+  <div class="card">
+    <div class="crumb">Platform integration</div>
+    <h2>Snapchat Ads</h2>
+    <div class="summary">
+      <p class="lead">Campaign/metrics sync via the Snapchat Marketing API, Audience Match sync, and
+      OAuth-connected ad accounts.</p>
+      <p><b>Client must provide / complete:</b></p>
+      <ul class="reqs">
+        <li>A Snap Business account with a <b>Snapchat Marketing API app — Snap approval required</b>
+        (tracked as launch-readiness item <code>snapchat_app_approved</code>).</li>
+        <li>Ad account ID and a refresh-capable access token.</li>
+      </ul>
+    </div>
+    <details class="tech"><summary>Technical requirements — permissions &amp; config</summary><div class="body">
+      <h4>Required app permission (OAuth scope) — <code>services/oauth/snapchat.py</code></h4>
+      <p><span class="pill info">snapchat-marketing-api</span></p>
+      <h4>Credential env vars</h4>
+      <div class="tablewrap"><table>
+        <tr><th>Variable</th><th>Purpose</th></tr>
+        <tr><td><code>SNAPCHAT_CLIENT_ID</code></td><td>OAuth client id</td></tr>
+        <tr><td><code>SNAPCHAT_CLIENT_SECRET</code></td><td>OAuth client secret</td></tr>
+        <tr><td><code>SNAPCHAT_ACCESS_TOKEN</code></td><td>Access token for server-side sync (orchestrator)</td></tr>
+        <tr><td><code>SNAPCHAT_AD_ACCOUNT_ID</code></td><td>Target ad account</td></tr>
+      </table></div>
+      <div class="callout">Historic names <code>SNAPCHAT_APP_ID</code> / <code>SNAPCHAT_SECRET</code> /
+      <code>SNAPCHAT_CAPI_TOKEN</code> / <code>SNAPCHAT_PIXEL_ID</code> are <b>not read by this codebase</b>.
+      When copying from an old credentials file: APP_ID → CLIENT_ID, SECRET → CLIENT_SECRET
+      (fixed 2026-07-15 — the old compose names silently never reached the app).</div>
+      <h4>Surfaces</h4>
+      <p>OAuth: <code>accounts.snapchat.com/accounts/oauth2/auth</code> via
+      <code>/campaign-builder/connect/snapchat/start</code> · sync via
+      <code>services/sync/snapchat_sync.py</code> (adsapi.snapchat.com/v1).</p>
+    </div></details>
+  </div>
+</section>
+
+<section id="whatsapp-business">
+  <div class="card">
+    <div class="crumb">Platform integration</div>
+    <h2>WhatsApp Business (Meta Cloud API)</h2>
+    <div class="summary">
+      <p class="lead">Powers the WhatsApp product feature and signup OTP. Uses Meta's Cloud API with a
+      system-user token — no per-user OAuth scopes.</p>
+      <p><b>Client must provide / complete:</b></p>
+      <ul class="reqs">
+        <li>Meta Business verification; a registered WhatsApp Business phone number with an
+        <b>approved display name</b>.</li>
+        <li>Message template approval for any business-initiated (broadcast/notification) messages.</li>
+        <li>Webhook endpoint configured in the Meta app with the verify token below.</li>
+      </ul>
+    </div>
+    <details class="tech"><summary>Technical requirements — permissions &amp; config</summary><div class="body">
+      <h4>Access model</h4>
+      <p>System-user access token with <span class="pill info">whatsapp_business_messaging</span>
+      <span class="pill info">whatsapp_business_management</span> granted to the app (token-level permissions,
+      configured in Meta Business settings — not an end-user OAuth flow).</p>
+      <h4>Credential env vars</h4>
+      <div class="tablewrap"><table>
+        <tr><th>Variable</th><th>Purpose</th></tr>
+        <tr><td><code>WHATSAPP_PHONE_NUMBER_ID</code></td><td>Sender phone number id</td></tr>
+        <tr><td><code>WHATSAPP_ACCESS_TOKEN</code></td><td>Cloud API token</td></tr>
+        <tr><td><code>WHATSAPP_BUSINESS_ACCOUNT_ID</code></td><td>WABA id</td></tr>
+        <tr><td><code>WHATSAPP_VERIFY_TOKEN</code></td><td>Webhook verification handshake <span class="pill req">required</span></td></tr>
+        <tr><td><code>WHATSAPP_APP_SECRET</code></td><td>Webhook payload signature verification</td></tr>
+        <tr><td><code>WHATSAPP_API_VERSION</code></td><td>Graph API version (default v18.0; compose passes v24.0)</td></tr>
+      </table></div>
+      <div class="callout">There is deliberately <b>no ENABLE_WHATSAPP flag</b> — WhatsApp features activate
+      when credentials are present; OTP endpoints return 503 until then.</div>
+    </div></details>
+  </div>
+</section>
+
+<section id="crm">
+  <div class="card">
+    <div class="crumb">Platform integration</div>
+    <h2>CRM — HubSpot &amp; Pipedrive</h2>
+    <div class="summary">
+      <p class="lead">Syncs contacts/companies into the CDP for identity resolution and revenue attribution.</p>
+      <p><b>Client must provide:</b> a HubSpot OAuth app (or legacy API key) and/or Pipedrive OAuth app credentials.</p>
+    </div>
+    <details class="tech"><summary>Technical requirements — config</summary><div class="body">
+      <h4>Credential env vars</h4>
+      <div class="tablewrap"><table>
+        <tr><th>Variable</th><th>Purpose</th></tr>
+        <tr><td><code>HUBSPOT_CLIENT_ID</code> / <code>HUBSPOT_CLIENT_SECRET</code></td><td>HubSpot OAuth app</td></tr>
+        <tr><td><code>HUBSPOT_API_KEY</code></td><td>Legacy key (prefer OAuth)</td></tr>
+        <tr><td><code>PIPEDRIVE_CLIENT_ID</code> / <code>PIPEDRIVE_CLIENT_SECRET</code></td><td>Pipedrive OAuth app</td></tr>
+      </table></div>
+      <p>Key files: <code>services/crm/</code>. HubSpot app scopes are configured on the HubSpot app itself
+      (contacts/companies read) when the client creates it.</p>
+    </div></details>
+  </div>
+</section>
+
+<section id="comms">
+  <div class="card">
+    <div class="crumb">Platform integration</div>
+    <h2>Comms — Slack &amp; Email (SendGrid/SMTP)</h2>
+    <div class="summary">
+      <p class="lead">Delivery channels for alerts, reports, invites, verification emails and newsletters.</p>
+      <p><b>Client must provide:</b> a Slack incoming-webhook (per workspace) and a SendGrid API key or SMTP account
+      with a verified sender domain (SPF/DKIM).</p>
+    </div>
+    <details class="tech"><summary>Technical requirements — config</summary><div class="body">
+      <h4>Credential env vars</h4>
+      <div class="tablewrap"><table>
+        <tr><th>Variable</th><th>Purpose</th></tr>
+        <tr><td><code>SENDGRID_API_KEY</code> / <code>SENDGRID_WEBHOOK_TOKEN</code></td><td>Transactional email + event webhook</td></tr>
+        <tr><td><code>SMTP_HOST/PORT/USER/PASSWORD/TLS/SSL</code></td><td>SMTP fallback</td></tr>
+        <tr><td><code>EMAIL_FROM_NAME</code> / <code>EMAIL_FROM_ADDRESS</code></td><td>Sender identity</td></tr>
+        <tr><td><code>ALERT_WEBHOOK_URL</code></td><td>Slack/ops alert webhook</td></tr>
+      </table></div>
+      <p>Newsletter scheduled sends stay behind <code>ENABLE_NEWSLETTER_BEAT</code>
+      <span class="pill off">off</span> (manual send endpoint always works).</p>
+    </div></details>
+  </div>
+</section>
+
+<!-- ======================= DELIVERY ======================= -->
+<section id="frontend">
+  <div class="card">
+    <div class="crumb">Delivery</div>
+    <h2>Frontend</h2>
+    <div class="summary">
+      <p class="lead">React 18 + Vite + TypeScript. Four shells: Dashboard (~60 routes), owner Console, CMS and
+      client Portal, plus the public marketing site (English + Arabic RTL). Design system: "Bloomberg density ·
+      Apple restraint · ember warmth" — dual dark/light themes, semantic tokens, primitive component library.</p>
+    </div>
+    <details class="tech"><summary>Technical requirements</summary><div class="body">
+      <ul class="reqs">
+        <li>Semantic Tailwind tokens only (<code>bg-card</code>, <code>text-foreground</code>,
+        <code>text-muted-foreground</code>, <code>border-border</code>) — no raw <code>text-gray-*</code>
+        (swept 2026-07-15; one intentional brand-gradient exception).</li>
+        <li>Fonts: Geist + Geist Mono in the app shell; Cairo is loaded by the static Arabic landing asset only.</li>
+        <li>Env: <code>VITE_API_URL</code> (includes <code>/api/v1</code> — the only API-URL name the code reads),
+        <code>VITE_WS_URL</code> (includes <code>/ws</code>), <code>VITE_SENTRY_DSN</code>,
+        <code>VITE_SENTRY_DEBUG</code>, <code>VITE_ENABLE_DEMO_MODE</code>. Vite bakes these at build time.</li>
+        <li>Auth session restored from <code>localStorage['stratum_auth']</code>; access token in
+        sessionStorage with in-memory cache + 401 refresh mutex.</li>
+        <li>Legacy redirects: <code>/overview</code>→<code>/dashboard/overview</code>,
+        <code>/dashboard/superadmin/*</code>→<code>/console/*</code>,
+        <code>/app/:tenantId/*</code>→<code>/dashboard/*</code>,
+        <code>am/tenant/:id</code>→<code>am/account/:id</code>.</li>
+        <li>Tests: vitest (jsdom, ratcheted coverage) + Playwright across 5 projects
+        (Chromium/Firefox/WebKit/Mobile Chrome/Mobile Safari) — specs: auth, dashboard, emq, logout, mobile,
+        onboarding, settings, signup-otp, whatsapp, console.</li>
+      </ul>
+    </div></details>
+  </div>
+</section>
+
+<section id="infra">
+  <div class="card">
+    <div class="crumb">Delivery</div>
+    <h2>Infrastructure &amp; Ops</h2>
+    <div class="summary">
+      <p class="lead">Docker Compose for local (7 services), Railway for production (Postgres, Redis, api,
+      worker, beat, frontend; push-to-main auto-deploys). CI enforces quality gates, tests, security scans and
+      a removed-scope residue gate.</p>
+    </div>
+    <details class="tech"><summary>Technical requirements</summary><div class="body">
+      <h4>CI gates (ci.yml)</h4>
+      <ul class="reqs">
+        <li>backend-quality (Ruff/Black/isort/mypy, aggregated so no gate masks another) · backend-tests
+        (unit+integration on pgvector+redis) · backend-security (Bandit, pip-audit) · frontend (audit, lint,
+        tsc, vitest, build) · e2e (Playwright/chromium on PRs) · Trivy · gitleaks · release gate · k6 smoke.</li>
+        <li><b>Coverage ratchet:</b> <code>.coveragerc fail_under</code> applies to the COMBINED
+        unit+integration run and may only ever be raised (74.0 at v2.1 revision); 90% on core/autopilot/analytics
+        is the long-term target, not a merge gate.</li>
+        <li><b>Residue gate:</b> <code>git grep -iE 'tenant_id|X-Tenant-ID|stripe'</code> over source must
+        return empty (documented narrow exclusions only).</li>
+      </ul>
+      <h4>Beat schedule (static)</h4>
+      <div class="tablewrap"><table>
+        <tr><th>Task</th><th>Schedule</th></tr>
+        <tr><td>sync_all_campaigns</td><td>hourly :00</td></tr>
+        <tr><td>generate_daily_forecasts</td><td>06:00 UTC</td></tr>
+        <tr><td>calculate_all_fatigue_scores</td><td>03:00 UTC</td></tr>
+        <tr><td>process_audit_log_queue · worker_heartbeat · process_scheduled_whatsapp_messages</td><td>every minute</td></tr>
+        <tr><td>check_pipeline_health</td><td>hourly :30</td></tr>
+        <tr><td>calculate_daily_scores</td><td>04:00 UTC</td></tr>
+        <tr><td>run_all_predictions</td><td>every 30 min</td></tr>
+        <tr><td>schedule_apply_actions_queue</td><td>every 5 min</td></tr>
+        <tr><td>signal-health rollup / attribution-variance rollup</td><td>02:00 / 02:15 UTC</td></tr>
+        <tr><td>schedule_audience_auto_sync</td><td>every 15 min</td></tr>
+      </table></div>
+      <p>Feature-gated beats: campaign-builder trio (<code>ENABLE_CAMPAIGN_BUILDER_BEAT</code>), newsletter
+      sweep (<code>ENABLE_NEWSLETTER_BEAT</code>), rules evaluation (<code>FEATURE_AUTOMATION_RULES</code>),
+      competitor refresh (<code>FEATURE_COMPETITOR_INTEL</code>).</p>
+      <h4>Health &amp; observability</h4>
+      <p><code>/health</code>, <code>/health/ready</code> (503 until DB+Redis up), <code>/health/live</code>,
+      bearer-gated <code>/metrics</code>, Sentry (backend + frontend), structlog JSON. Railway probes the API;
+      worker liveness is reported via the Redis heartbeat.</p>
+    </div></details>
+  </div>
+</section>
+
+<section id="acceptance">
+  <div class="card">
+    <div class="crumb">Delivery</div>
+    <h2>Acceptance criteria</h2>
+    <div class="summary"><p class="lead">The release gate: all of the following hold before shipping.</p></div>
+    <details class="tech" open><summary>Checklist (spec §10)</summary><div class="body">
+      <ul class="reqs">
+        <li>Trust Gate: no automation executes below signal-health 70; enforcement modes honored; every
+        decision audit-logged.</li>
+        <li>API contract: OpenAPI docs gated by <code>DOCS_API_KEY</code> in prod; every mutating endpoint has
+        auth + schema + audit + rate limit; flagged-off routers return 404/403 per flag semantics; knowledge
+        graph returns 503 (not crash) without Apache AGE.</li>
+        <li>Coverage: combined unit+integration meets the <code>.coveragerc</code> ratchet (only ever raised;
+        74.0 at revision time); core/autopilot/analytics trend toward 90%.</li>
+        <li>CI: all jobs green including residue gate, security scans and the vacuous-pass floor guard.</li>
+        <li>Ops: Prometheus scrapes bearer-gated /metrics; Sentry receives errors; images build; Railway
+        probes pass.</li>
+        <li>Security: invite-only signup default; PII Fernet-encrypted; no PII in JWTs; webhook signatures
+        verified; secrets never committed.</li>
+      </ul>
+    </div></details>
+  </div>
+</section>
+
+<footer>
+  Stratum AI · Requirements v2.1 (Single-Client Edition) · generated 2026-07-15 from
+  <span class="mono">STRATUM_AI_SINGLE_CLIENT_REBUILD_PROMPT_v2.1_FINAL.md</span> @ f443d393 ·
+  scopes verified against <span class="mono">app/services/oauth/*.py</span> and
+  <span class="mono">app/core/config.py</span>
+</footer>
+</main>
+
+<script>
+(function(){
+  var root=document.documentElement;
+  var btn=document.getElementById('themeToggle');
+  function setTheme(t){root.setAttribute('data-theme',t);
+    btn.textContent=t==='dark'?'☀ Light':'☾ Dark';
+    try{localStorage.setItem('stratum-req-theme',t)}catch(e){}}
+  var saved=null; try{saved=localStorage.getItem('stratum-req-theme')}catch(e){}
+  setTheme(saved||'dark');
+  btn.addEventListener('click',function(){setTheme(root.getAttribute('data-theme')==='dark'?'light':'dark')});
+
+  var expandBtn=document.getElementById('expandAll'),expanded=false;
+  expandBtn.addEventListener('click',function(){
+    expanded=!expanded;
+    document.querySelectorAll('details.tech').forEach(function(d){d.open=expanded});
+    expandBtn.textContent=expanded?'Collapse all':'Expand all';
+  });
+
+  var sections=Array.prototype.slice.call(document.querySelectorAll('main section'));
+  var links=Array.prototype.slice.call(document.querySelectorAll('nav a.item'));
+
+  document.getElementById('filter').addEventListener('input',function(){
+    var q=this.value.trim().toLowerCase();
+    sections.forEach(function(s){
+      var hit=!q||s.textContent.toLowerCase().indexOf(q)!==-1;
+      s.classList.toggle('hidden',!hit);
+    });
+    links.forEach(function(a){
+      var sec=document.querySelector(a.getAttribute('href'));
+      a.style.display=(sec&&sec.classList.contains('hidden'))?'none':'block';
+    });
+  });
+
+  var obs=new IntersectionObserver(function(entries){
+    entries.forEach(function(e){
+      if(e.isIntersecting){
+        links.forEach(function(a){a.classList.toggle('active',a.getAttribute('href')==='#'+e.target.id)});
+      }
+    });
+  },{rootMargin:'-10% 0px -80% 0px'});
+  sections.forEach(function(s){obs.observe(s)});
+})();
+</script>
+</body>
+</html>
