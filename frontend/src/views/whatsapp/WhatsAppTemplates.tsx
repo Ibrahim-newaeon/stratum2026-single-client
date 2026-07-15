@@ -106,7 +106,7 @@ export default function WhatsAppTemplates() {
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
         <div>
           <h2 className="text-xl font-semibold">Message Templates</h2>
-          <p className="text-gray-400 text-sm">
+          <p className="text-muted-foreground text-sm">
             {templates.filter((t) => t.status === 'approved').length} approved •{' '}
             {templates.filter((t) => t.status === 'pending').length} pending approval
           </p>
@@ -123,7 +123,7 @@ export default function WhatsAppTemplates() {
       {/* Filters */}
       <div className="flex flex-wrap gap-4">
         <div className="flex gap-2">
-          <span className="text-sm text-gray-400 self-center">Category:</span>
+          <span className="text-sm text-muted-foreground self-center">Category:</span>
           {['all', 'MARKETING', 'UTILITY', 'AUTHENTICATION'].map((cat) => (
             <button
               key={cat}
@@ -132,7 +132,7 @@ export default function WhatsAppTemplates() {
                 'px-3 py-1.5 rounded-lg text-sm transition-colors',
                 categoryFilter === cat
                   ? 'bg-success text-foreground'
-                  : 'bg-muted/50 text-gray-400 hover:text-foreground'
+                  : 'bg-muted/50 text-muted-foreground hover:text-foreground'
               )}
             >
               {cat === 'all' ? 'All' : categoryConfig[cat as keyof typeof categoryConfig]?.label}
@@ -140,7 +140,7 @@ export default function WhatsAppTemplates() {
           ))}
         </div>
         <div className="flex gap-2">
-          <span className="text-sm text-gray-400 self-center">Status:</span>
+          <span className="text-sm text-muted-foreground self-center">Status:</span>
           {['all', 'approved', 'pending', 'rejected'].map((status) => (
             <button
               key={status}
@@ -149,7 +149,7 @@ export default function WhatsAppTemplates() {
                 'px-3 py-1.5 rounded-lg text-sm transition-colors',
                 statusFilter === status
                   ? 'bg-success text-foreground'
-                  : 'bg-muted/50 text-gray-400 hover:text-foreground'
+                  : 'bg-muted/50 text-muted-foreground hover:text-foreground'
               )}
             >
               {status === 'all' ? 'All' : statusConfig[status as keyof typeof statusConfig]?.label}
@@ -195,7 +195,7 @@ export default function WhatsAppTemplates() {
                     </span>
                   </div>
                 </div>
-                <span className="text-xs text-gray-500">{template.language.toUpperCase()}</span>
+                <span className="text-xs text-muted-foreground">{template.language.toUpperCase()}</span>
               </div>
 
               {/* Preview */}
@@ -204,15 +204,15 @@ export default function WhatsAppTemplates() {
                   <div className="font-bold text-foreground mb-1">{template.header_content}</div>
                 )}
                 {template.header_type === 'IMAGE' && (
-                  <div className="flex items-center gap-2 text-gray-300 mb-2">
+                  <div className="flex items-center gap-2 text-foreground mb-2">
                     <PhotoIcon className="w-4 h-4" /> Image Header
                   </div>
                 )}
-                <div className="text-gray-100 whitespace-pre-wrap">
+                <div className="text-foreground whitespace-pre-wrap">
                   {template.body_text.replace(/\{\{(\d+)\}\}/g, (_, n) => `[Variable ${n}]`)}
                 </div>
                 {template.footer_text && (
-                  <div className="text-gray-400 text-xs mt-2">{template.footer_text}</div>
+                  <div className="text-muted-foreground text-xs mt-2">{template.footer_text}</div>
                 )}
                 {template.buttons.length > 0 && (
                   <div className="flex gap-2 mt-3 pt-2 border-t border-foreground/10">
@@ -227,10 +227,10 @@ export default function WhatsAppTemplates() {
 
               {/* Stats */}
               <div className="flex items-center justify-between text-sm mb-4">
-                <span className="text-gray-400">
+                <span className="text-muted-foreground">
                   Used {template.usage_count.toLocaleString()} times
                 </span>
-                <span className="text-gray-500">
+                <span className="text-muted-foreground">
                   {new Date(template.created_at).toLocaleDateString()}
                 </span>
               </div>
@@ -250,10 +250,10 @@ export default function WhatsAppTemplates() {
                     Use
                   </button>
                 )}
-                <button className="p-2 text-gray-400 hover:bg-foreground/5 rounded-lg transition-colors" aria-label="Edit template">
+                <button className="p-2 text-muted-foreground hover:bg-foreground/5 rounded-lg transition-colors" aria-label="Edit template">
                   <PencilIcon className="w-4 h-4" />
                 </button>
-                <button className="p-2 text-gray-400 hover:bg-red-500/10 hover:text-red-400 rounded-lg transition-colors" aria-label="Delete template">
+                <button className="p-2 text-muted-foreground hover:bg-red-500/10 hover:text-red-400 rounded-lg transition-colors" aria-label="Delete template">
                   <TrashIcon className="w-4 h-4" />
                 </button>
               </div>
@@ -385,7 +385,7 @@ function CreateTemplateModal({
           {/* Basic Info */}
           <div className="grid grid-cols-2 gap-4">
             <div>
-              <label className="block text-sm font-medium text-gray-400 mb-2">Template Name</label>
+              <label className="block text-sm font-medium text-muted-foreground mb-2">Template Name</label>
               <input
                 type="text"
                 required
@@ -400,10 +400,10 @@ function CreateTemplateModal({
                 }
                 className="w-full px-4 py-3 bg-background border border-foreground/10 rounded-xl focus:border-success/50 focus:outline-none"
               />
-              <span className="text-xs text-gray-500">Lowercase, underscores only</span>
+              <span className="text-xs text-muted-foreground">Lowercase, underscores only</span>
             </div>
             <div>
-              <label className="block text-sm font-medium text-gray-400 mb-2">Category</label>
+              <label className="block text-sm font-medium text-muted-foreground mb-2">Category</label>
               <select
                 required
                 value={formData.category}
@@ -420,7 +420,7 @@ function CreateTemplateModal({
           </div>
 
           <div>
-            <label className="block text-sm font-medium text-gray-400 mb-2">Language</label>
+            <label className="block text-sm font-medium text-muted-foreground mb-2">Language</label>
             <select
               value={formData.language}
               onChange={(e) => setFormData({ ...formData, language: e.target.value })}
@@ -436,7 +436,7 @@ function CreateTemplateModal({
 
           {/* Header */}
           <div>
-            <label className="block text-sm font-medium text-gray-400 mb-2">
+            <label className="block text-sm font-medium text-muted-foreground mb-2">
               Header (Optional)
             </label>
             <div className="flex gap-2 mb-2">
@@ -457,7 +457,7 @@ function CreateTemplateModal({
                     'flex items-center gap-1.5 px-3 py-2 rounded-lg text-sm transition-colors',
                     formData.header_type === opt.value
                       ? 'bg-success text-foreground'
-                      : 'bg-card text-gray-400 hover:text-foreground'
+                      : 'bg-card text-muted-foreground hover:text-foreground'
                   )}
                 >
                   <opt.icon className="w-4 h-4" />
@@ -488,7 +488,7 @@ function CreateTemplateModal({
 
           {/* Body */}
           <div>
-            <label className="block text-sm font-medium text-gray-400 mb-2">Body Text</label>
+            <label className="block text-sm font-medium text-muted-foreground mb-2">Body Text</label>
             <textarea
               required
               rows={4}
@@ -498,14 +498,14 @@ function CreateTemplateModal({
               onChange={(e) => setFormData({ ...formData, body_text: e.target.value })}
               className="w-full px-4 py-3 bg-background border border-foreground/10 rounded-xl focus:border-success/50 focus:outline-none resize-none"
             />
-            <span className="text-xs text-gray-500">
+            <span className="text-xs text-muted-foreground">
               Use {'{{1}}'}, {'{{2}}'} for variables. {formData.body_text.length}/1024
             </span>
           </div>
 
           {/* Footer */}
           <div>
-            <label className="block text-sm font-medium text-gray-400 mb-2">
+            <label className="block text-sm font-medium text-muted-foreground mb-2">
               Footer (Optional)
             </label>
             <input
@@ -520,7 +520,7 @@ function CreateTemplateModal({
 
           {/* Buttons */}
           <div>
-            <label className="block text-sm font-medium text-gray-400 mb-2">
+            <label className="block text-sm font-medium text-muted-foreground mb-2">
               Buttons (Optional, max 3)
             </label>
             <div className="space-y-2 mb-2">
@@ -552,7 +552,7 @@ function CreateTemplateModal({
                       className="flex-1 px-3 py-2 bg-background border border-foreground/10 rounded-lg text-sm"
                     />
                   )}
-                  <span className="text-xs text-gray-500 w-16">{btn.type}</span>
+                  <span className="text-xs text-muted-foreground w-16">{btn.type}</span>
                   <button
                     type="button"
                     onClick={() => removeButton(i)}
@@ -661,16 +661,16 @@ function TemplatePreviewModal({ template, onClose }: { template: Template; onClo
             )}
             {template.header_type === 'IMAGE' && (
               <div className="bg-success/10 rounded-lg h-32 flex items-center justify-center mb-2">
-                <PhotoIcon className="w-8 h-8 text-gray-400" />
+                <PhotoIcon className="w-8 h-8 text-muted-foreground" />
               </div>
             )}
             <div className="text-foreground text-sm whitespace-pre-wrap">
               {getPreviewText(template.body_text)}
             </div>
             {template.footer_text && (
-              <div className="text-gray-400 text-xs mt-2">{template.footer_text}</div>
+              <div className="text-muted-foreground text-xs mt-2">{template.footer_text}</div>
             )}
-            <div className="text-right text-xs text-gray-400 mt-1">
+            <div className="text-right text-xs text-muted-foreground mt-1">
               {new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
             </div>
           </div>
@@ -687,10 +687,10 @@ function TemplatePreviewModal({ template, onClose }: { template: Template; onClo
 
         {/* Sample Values Editor */}
         <div className="space-y-3">
-          <h4 className="font-medium text-sm text-gray-400">Sample Variable Values</h4>
+          <h4 className="font-medium text-sm text-muted-foreground">Sample Variable Values</h4>
           {[1, 2, 3].map((num) => (
             <div key={num} className="flex items-center gap-3">
-              <span className="text-sm text-gray-500 w-16">{`{{${num}}}`}</span>
+              <span className="text-sm text-muted-foreground w-16">{`{{${num}}}`}</span>
               <input
                 type="text"
                 value={sampleValues[num - 1] || ''}

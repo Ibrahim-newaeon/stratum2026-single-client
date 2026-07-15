@@ -117,7 +117,7 @@ export default function WhatsAppBroadcast() {
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
         <div>
           <h2 className="text-xl font-semibold">Broadcast Campaigns</h2>
-          <p className="text-gray-400 text-sm">Send approved templates to multiple contacts</p>
+          <p className="text-muted-foreground text-sm">Send approved templates to multiple contacts</p>
         </div>
         <button
           onClick={() => setShowCreateModal(true)}
@@ -165,17 +165,17 @@ export default function WhatsAppBroadcast() {
           <table className="w-full">
             <thead>
               <tr className="border-b border-foreground/5">
-                <th className="p-4 text-left text-sm font-medium text-gray-400">Template</th>
-                <th className="p-4 text-left text-sm font-medium text-gray-400">Recipients</th>
-                <th className="p-4 text-left text-sm font-medium text-gray-400">Delivery</th>
-                <th className="p-4 text-left text-sm font-medium text-gray-400">Status</th>
-                <th className="p-4 text-left text-sm font-medium text-gray-400">Sent At</th>
+                <th className="p-4 text-left text-sm font-medium text-muted-foreground">Template</th>
+                <th className="p-4 text-left text-sm font-medium text-muted-foreground">Recipients</th>
+                <th className="p-4 text-left text-sm font-medium text-muted-foreground">Delivery</th>
+                <th className="p-4 text-left text-sm font-medium text-muted-foreground">Status</th>
+                <th className="p-4 text-left text-sm font-medium text-muted-foreground">Sent At</th>
               </tr>
             </thead>
             <tbody>
               {history.length === 0 && (
                 <tr>
-                  <td colSpan={5} className="p-8 text-center text-gray-400">
+                  <td colSpan={5} className="p-8 text-center text-muted-foreground">
                     <MegaphoneIcon className="w-10 h-10 mx-auto mb-3 opacity-50" />
                     <p className="font-medium">No broadcasts yet</p>
                     <p className="text-sm mt-1">Create your first broadcast campaign to get started</p>
@@ -207,21 +207,21 @@ export default function WhatsAppBroadcast() {
                     </td>
                     <td className="p-4">
                       <div className="flex items-center gap-2">
-                        <UserGroupIcon className="w-4 h-4 text-gray-400" />
+                        <UserGroupIcon className="w-4 h-4 text-muted-foreground" />
                         <span>{broadcast.recipients.toLocaleString()}</span>
                       </div>
                     </td>
                     <td className="p-4">
                       <div className="space-y-1">
                         <div className="flex items-center gap-4 text-sm">
-                          <span className="text-gray-400">
+                          <span className="text-muted-foreground">
                             Sent:{' '}
                             <span className="text-foreground">{broadcast.sent.toLocaleString()}</span>
                           </span>
-                          <span className="text-gray-400">
+                          <span className="text-muted-foreground">
                             Delivered: <span className="text-green-400">{deliveryRate}%</span>
                           </span>
-                          <span className="text-gray-400">
+                          <span className="text-muted-foreground">
                             Read: <span className="text-cyan-400">{readRate}%</span>
                           </span>
                         </div>
@@ -242,7 +242,7 @@ export default function WhatsAppBroadcast() {
                     <td className="p-4">
                       <StatusBadge status={broadcast.status} />
                     </td>
-                    <td className="p-4 text-gray-400 text-sm">
+                    <td className="p-4 text-muted-foreground text-sm">
                       {new Date(broadcast.sent_at).toLocaleString()}
                     </td>
                   </tr>
@@ -301,10 +301,10 @@ function StatCard({
         <div className="p-2 bg-success/10 rounded-lg">
           <Icon className="w-5 h-5 text-success" />
         </div>
-        <span className="text-sm text-gray-400">{title}</span>
+        <span className="text-sm text-muted-foreground">{title}</span>
       </div>
       <div className="text-2xl font-bold mb-1">{value}</div>
-      <div className="text-xs text-gray-500">{subtitle}</div>
+      <div className="text-xs text-muted-foreground">{subtitle}</div>
     </div>
   );
 }
@@ -419,7 +419,7 @@ function CreateBroadcastModal({
         <div className="flex items-center justify-between mb-6">
           <div>
             <h3 className="text-xl font-semibold">Create Broadcast</h3>
-            <p className="text-sm text-gray-400">Step {step} of 3</p>
+            <p className="text-sm text-muted-foreground">Step {step} of 3</p>
           </div>
           <button onClick={onClose} aria-label="Close" className="p-2 hover:bg-foreground/5 rounded-lg">
             <XMarkIcon className="w-5 h-5" />
@@ -444,7 +444,7 @@ function CreateBroadcastModal({
           <div className="space-y-4">
             <h4 className="font-medium">Select Template</h4>
             <div className="relative mb-4">
-              <MagnifyingGlassIcon className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
+              <MagnifyingGlassIcon className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-muted-foreground" />
               <input
                 type="text"
                 placeholder="Search templates..."
@@ -465,12 +465,12 @@ function CreateBroadcastModal({
                 >
                   <div className="flex items-center justify-between mb-2">
                     <span className="font-medium">{template.name}</span>
-                    <span className="text-xs text-gray-500 px-2 py-0.5 bg-foreground/5 rounded">
+                    <span className="text-xs text-muted-foreground px-2 py-0.5 bg-foreground/5 rounded">
                       {template.category}
                     </span>
                   </div>
-                  <p className="text-sm text-gray-400 line-clamp-2">{template.body_text}</p>
-                  <p className="text-xs text-gray-500 mt-2">Used {template.usage_count} times</p>
+                  <p className="text-sm text-muted-foreground line-clamp-2">{template.body_text}</p>
+                  <p className="text-xs text-muted-foreground mt-2">Used {template.usage_count} times</p>
                 </button>
               ))}
             </div>
@@ -482,7 +482,7 @@ function CreateBroadcastModal({
           <div className="space-y-4">
             <div className="flex items-center justify-between">
               <h4 className="font-medium">Select Audience</h4>
-              <span className="text-sm text-gray-400">
+              <span className="text-sm text-muted-foreground">
                 {totalRecipients.toLocaleString()} recipients selected
               </span>
             </div>
@@ -503,7 +503,7 @@ function CreateBroadcastModal({
                       'w-5 h-5 rounded border-2 flex items-center justify-center transition-colors',
                       selectedSegments.includes(segment.id)
                         ? 'border-success bg-success'
-                        : 'border-gray-500'
+                        : 'border-border'
                     )}
                   >
                     {selectedSegments.includes(segment.id) && (
@@ -512,14 +512,14 @@ function CreateBroadcastModal({
                   </div>
                   <div className="flex-1">
                     <div className="flex items-center gap-2">
-                      <TagIcon className="w-4 h-4 text-gray-400" />
+                      <TagIcon className="w-4 h-4 text-muted-foreground" />
                       <span className="font-medium">{segment.name}</span>
                     </div>
-                    <p className="text-sm text-gray-400">{segment.description}</p>
+                    <p className="text-sm text-muted-foreground">{segment.description}</p>
                   </div>
                   <div className="text-right">
                     <div className="font-medium">{segment.count.toLocaleString()}</div>
-                    <div className="text-xs text-gray-500">contacts</div>
+                    <div className="text-xs text-muted-foreground">contacts</div>
                   </div>
                 </button>
               ))}
@@ -533,7 +533,7 @@ function CreateBroadcastModal({
             <div>
               <h4 className="font-medium mb-4">Template Variables</h4>
               <div className="bg-background rounded-xl p-4 mb-4">
-                <p className="text-sm text-gray-400 mb-3">Preview:</p>
+                <p className="text-sm text-muted-foreground mb-3">Preview:</p>
                 <p className="text-sm">
                   {selectedTemplate?.body_text.replace(/\{\{(\d+)\}\}/g, (_, n) => {
                     return variables[n] || `[Variable ${n}]`;
@@ -543,7 +543,7 @@ function CreateBroadcastModal({
               <div className="grid grid-cols-3 gap-3">
                 {[1, 2, 3].map((num) => (
                   <div key={num}>
-                    <label className="block text-sm text-gray-400 mb-1">{`{{${num}}}`}</label>
+                    <label className="block text-sm text-muted-foreground mb-1">{`{{${num}}}`}</label>
                     <input
                       type="text"
                       placeholder={`Variable ${num}`}
@@ -570,7 +570,7 @@ function CreateBroadcastModal({
                 >
                   <PaperAirplaneIcon className="w-6 h-6 mb-2 text-success" />
                   <div className="font-medium">Send Now</div>
-                  <div className="text-sm text-gray-400">Start immediately</div>
+                  <div className="text-sm text-muted-foreground">Start immediately</div>
                 </button>
                 <button
                   onClick={() => setScheduleType('scheduled')}
@@ -583,7 +583,7 @@ function CreateBroadcastModal({
                 >
                   <CalendarIcon className="w-6 h-6 mb-2 text-success" />
                   <div className="font-medium">Schedule</div>
-                  <div className="text-sm text-gray-400">Pick date & time</div>
+                  <div className="text-sm text-muted-foreground">Pick date & time</div>
                 </button>
               </div>
               {scheduleType === 'scheduled' && (
@@ -609,15 +609,15 @@ function CreateBroadcastModal({
               <h4 className="font-medium mb-3">Summary</h4>
               <div className="space-y-2 text-sm">
                 <div className="flex justify-between">
-                  <span className="text-gray-400">Template</span>
+                  <span className="text-muted-foreground">Template</span>
                   <span>{selectedTemplate?.name}</span>
                 </div>
                 <div className="flex justify-between">
-                  <span className="text-gray-400">Recipients</span>
+                  <span className="text-muted-foreground">Recipients</span>
                   <span>{totalRecipients.toLocaleString()}</span>
                 </div>
                 <div className="flex justify-between">
-                  <span className="text-gray-400">Schedule</span>
+                  <span className="text-muted-foreground">Schedule</span>
                   <span>
                     {scheduleType === 'now'
                       ? 'Send immediately'

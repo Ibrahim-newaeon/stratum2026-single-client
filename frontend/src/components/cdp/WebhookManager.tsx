@@ -327,7 +327,7 @@ function WebhookDetail({ webhook, onBack, onRefresh }: WebhookDetailProps) {
               'px-3 py-1.5 rounded-lg text-sm font-medium transition-colors',
               webhook.is_active
                 ? 'bg-green-500/10 text-green-500 hover:bg-green-500/20'
-                : 'bg-gray-500/10 text-gray-500 hover:bg-gray-500/20'
+                : 'bg-muted-foreground/10 text-muted-foreground hover:bg-muted-foreground/20'
             )}
           >
             {webhook.is_active ? 'Active' : 'Inactive'}
@@ -543,7 +543,7 @@ export function WebhookManager() {
 
   const getStatusIndicator = (webhook: CDPWebhook) => {
     if (!webhook.is_active) {
-      return <span className="w-2 h-2 rounded-full bg-gray-400" />;
+      return <span className="w-2 h-2 rounded-full bg-muted-foreground" />;
     }
     if (webhook.failure_count > 5) {
       return <span className="w-2 h-2 rounded-full bg-red-500" />;
@@ -690,7 +690,7 @@ export function WebhookManager() {
                       <span
                         className={cn(
                           'text-xs font-medium',
-                          webhook.is_active ? 'text-green-500' : 'text-gray-500'
+                          webhook.is_active ? 'text-green-500' : 'text-muted-foreground'
                         )}
                       >
                         {webhook.is_active ? 'Active' : 'Inactive'}

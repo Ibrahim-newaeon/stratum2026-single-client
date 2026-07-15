@@ -148,7 +148,7 @@ function HealthScoreRing({ score, status }: { score: number; status: string }) {
       </svg>
       <div className="absolute inset-0 flex flex-col items-center justify-center">
         <span className="text-3xl font-bold text-white">{Math.round(score)}</span>
-        <span className="text-xs text-gray-400 uppercase tracking-wider">{status}</span>
+        <span className="text-xs text-muted-foreground uppercase tracking-wider">{status}</span>
       </div>
     </div>
   );
@@ -180,23 +180,23 @@ function ProblemCard({ problem, isExpanded, onToggle }: {
             <span className={`px-2 py-0.5 rounded text-xs font-medium ${config.badge}`}>
               {problem.severity.toUpperCase()}
             </span>
-            <span className="text-xs text-gray-500 flex items-center gap-1">
+            <span className="text-xs text-muted-foreground flex items-center gap-1">
               <CategoryIcon className="w-3 h-3" />
               {problem.category.replace(/_/g, ' ')}
             </span>
           </div>
           <h3 className="text-white font-semibold truncate">{problem.title}</h3>
-          <p className="text-sm text-gray-400 mt-1 line-clamp-2">{problem.description}</p>
+          <p className="text-sm text-muted-foreground mt-1 line-clamp-2">{problem.description}</p>
         </div>
 
         <div className="flex items-center gap-2">
-          <span className="text-xs text-gray-500">
+          <span className="text-xs text-muted-foreground">
             {problem.solutions.length} solution{problem.solutions.length !== 1 ? 's' : ''}
           </span>
           {isExpanded ? (
-            <ChevronDown className="w-5 h-5 text-gray-400" />
+            <ChevronDown className="w-5 h-5 text-muted-foreground" />
           ) : (
-            <ChevronRight className="w-5 h-5 text-gray-400" />
+            <ChevronRight className="w-5 h-5 text-muted-foreground" />
           )}
         </div>
       </button>
@@ -207,22 +207,22 @@ function ProblemCard({ problem, isExpanded, onToggle }: {
           {/* Root Cause Path */}
           {problem.root_cause_path.length > 0 && (
             <div>
-              <h4 className="text-sm font-medium text-gray-300 mb-2 flex items-center gap-2">
+              <h4 className="text-sm font-medium text-foreground mb-2 flex items-center gap-2">
                 <GitBranch className="w-4 h-4" />
                 Root Cause Analysis
               </h4>
               <div className="space-y-2">
                 {problem.root_cause_path.map((cause, idx) => (
                   <div key={idx} className="flex items-start gap-2 text-sm">
-                    <div className="w-6 h-6 rounded-full bg-foreground/10 flex items-center justify-center text-xs text-gray-400">
+                    <div className="w-6 h-6 rounded-full bg-foreground/10 flex items-center justify-center text-xs text-muted-foreground">
                       {idx + 1}
                     </div>
                     <div>
                       <span className="text-cyan-400 font-medium">{String(cause.node)}</span>
-                      <span className="text-gray-400 mx-2">→</span>
+                      <span className="text-muted-foreground mx-2">→</span>
                       <span className="text-white">{String(cause.finding)}</span>
                       {!!cause.detail && (
-                        <p className="text-gray-500 text-xs mt-0.5">{String(cause.detail)}</p>
+                        <p className="text-muted-foreground text-xs mt-0.5">{String(cause.detail)}</p>
                       )}
                     </div>
                   </div>
@@ -234,14 +234,14 @@ function ProblemCard({ problem, isExpanded, onToggle }: {
           {/* Metrics */}
           {Object.keys(problem.metrics).length > 0 && (
             <div>
-              <h4 className="text-sm font-medium text-gray-300 mb-2 flex items-center gap-2">
+              <h4 className="text-sm font-medium text-foreground mb-2 flex items-center gap-2">
                 <BarChart3 className="w-4 h-4" />
                 Key Metrics
               </h4>
               <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
                 {Object.entries(problem.metrics).slice(0, 6).map(([key, value]) => (
                   <div key={key} className="bg-foreground/5 rounded-lg p-2">
-                    <div className="text-xs text-gray-500 truncate">
+                    <div className="text-xs text-muted-foreground truncate">
                       {key.replace(/_/g, ' ')}
                     </div>
                     <div className="text-sm font-medium text-white truncate">
@@ -257,7 +257,7 @@ function ProblemCard({ problem, isExpanded, onToggle }: {
 
           {/* Solutions */}
           <div>
-            <h4 className="text-sm font-medium text-gray-300 mb-3 flex items-center gap-2">
+            <h4 className="text-sm font-medium text-foreground mb-3 flex items-center gap-2">
               <Sparkles className="w-4 h-4 text-amber-400" />
               Suggested Solutions
             </h4>
@@ -293,7 +293,7 @@ function SolutionCard({ solution, priority }: { solution: Solution; priority: nu
         <div className="flex-1">
           <div className="flex items-center gap-2 mb-1">
             <h5 className="text-white font-medium">{solution.title}</h5>
-            <span className={`px-2 py-0.5 rounded text-xs ${actionTypeColors[solution.action_type] || 'bg-gray-500/20 text-gray-400'}`}>
+            <span className={`px-2 py-0.5 rounded text-xs ${actionTypeColors[solution.action_type] || 'bg-muted-foreground/20 text-muted-foreground'}`}>
               {solution.action_type}
             </span>
             {solution.auto_fixable && (
@@ -303,7 +303,7 @@ function SolutionCard({ solution, priority }: { solution: Solution; priority: nu
               </span>
             )}
           </div>
-          <p className="text-sm text-gray-400">{solution.description}</p>
+          <p className="text-sm text-muted-foreground">{solution.description}</p>
 
           {solution.estimated_impact && (
             <p className="text-xs text-cyan-400 mt-2 flex items-center gap-1">
@@ -316,14 +316,14 @@ function SolutionCard({ solution, priority }: { solution: Solution; priority: nu
             <div className="mt-3">
               <button
                 onClick={() => setShowSteps(!showSteps)}
-                className="text-xs text-gray-400 hover:text-white flex items-center gap-1 transition-colors"
+                className="text-xs text-muted-foreground hover:text-white flex items-center gap-1 transition-colors"
               >
                 {showSteps ? <ChevronDown className="w-3 h-3" /> : <ChevronRight className="w-3 h-3" />}
                 {showSteps ? 'Hide' : 'Show'} {solution.steps.length} steps
               </button>
 
               {showSteps && (
-                <ol className="mt-2 space-y-1 text-sm text-gray-400 list-decimal list-inside">
+                <ol className="mt-2 space-y-1 text-sm text-muted-foreground list-decimal list-inside">
                   {solution.steps.map((step, idx) => (
                     <li key={idx} className="pl-2">{step}</li>
                   ))}
@@ -380,14 +380,14 @@ export function KGInsights() {
             <Sparkles className="w-5 h-5 text-amber-400" />
             Knowledge Graph Insights
           </h2>
-          <p className="text-sm text-gray-400 mt-1">
+          <p className="text-sm text-muted-foreground mt-1">
             AI-powered problem detection with suggested solutions
           </p>
         </div>
         <button
           onClick={handleRefresh}
           aria-label="Refresh insights"
-          className="p-2 rounded-lg bg-foreground/5 hover:bg-foreground/10 text-gray-400 hover:text-white transition-colors"
+          className="p-2 rounded-lg bg-foreground/5 hover:bg-foreground/10 text-muted-foreground hover:text-white transition-colors"
         >
           <RefreshCw className="w-5 h-5" />
         </button>
@@ -420,7 +420,7 @@ export function KGInsights() {
                     <div className={`text-2xl font-bold ${config?.color || 'text-white'}`}>
                       {String(count)}
                     </div>
-                    <div className="text-xs text-gray-400 capitalize">{severity}</div>
+                    <div className="text-xs text-muted-foreground capitalize">{severity}</div>
                   </button>
                 );
               })}
@@ -430,14 +430,14 @@ export function KGInsights() {
           {/* Top Problem Preview */}
           {health?.top_problem && (
             <div className="w-80 bg-foreground/5 rounded-lg p-4 border border-foreground/10">
-              <div className="text-xs text-gray-500 mb-2">Top Priority</div>
+              <div className="text-xs text-muted-foreground mb-2">Top Priority</div>
               <div className="flex items-start gap-2">
                 <AlertTriangle className="w-4 h-4 text-red-500 mt-0.5" />
                 <div>
                   <div className="text-sm font-medium text-white line-clamp-1">
                     {health.top_problem.title}
                   </div>
-                  <div className="text-xs text-gray-400 mt-1 line-clamp-2">
+                  <div className="text-xs text-muted-foreground mt-1 line-clamp-2">
                     {health.top_problem.solutions[0]?.title || 'View solutions'}
                   </div>
                 </div>
@@ -450,11 +450,11 @@ export function KGInsights() {
       {/* Severity Filter Pills */}
       {severityFilter && (
         <div className="flex items-center gap-2">
-          <span className="text-sm text-gray-400">Filtering by:</span>
+          <span className="text-sm text-muted-foreground">Filtering by:</span>
           <button
             onClick={() => setSeverityFilter(null)}
             className={`px-3 py-1 rounded-full text-sm flex items-center gap-1 ${
-              severityConfig[severityFilter as keyof typeof severityConfig]?.badge || 'bg-gray-500 text-white'
+              severityConfig[severityFilter as keyof typeof severityConfig]?.badge || 'bg-muted text-foreground'
             }`}
           >
             {severityFilter}
@@ -475,7 +475,7 @@ export function KGInsights() {
           <div className="text-center py-12 bg-[rgba(255,_255,_255,_0.05)] rounded-xl border border-foreground/10">
             <CheckCircle2 className="w-12 h-12 text-green-500 mx-auto mb-4" />
             <h3 className="text-lg font-medium text-white mb-2">All Systems Healthy</h3>
-            <p className="text-gray-400">No problems detected in the last 7 days.</p>
+            <p className="text-muted-foreground">No problems detected in the last 7 days.</p>
           </div>
         ) : (
           problems.map((problem: Problem) => (

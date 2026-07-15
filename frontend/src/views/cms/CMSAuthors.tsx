@@ -199,7 +199,7 @@ export default function CMSAuthors() {
               <div className="flex items-center justify-between mt-4 pt-4 border-t border-foreground/5 text-xs text-foreground/40">
                 <span>{author.email || 'No email'}</span>
                 <span
-                  className={`px-2 py-0.5 rounded-full ${author.is_active ? 'bg-green-500/20 text-green-400' : 'bg-gray-500/20 text-gray-400'}`}
+                  className={`px-2 py-0.5 rounded-full ${author.is_active ? 'bg-green-500/20 text-green-400' : 'bg-muted-foreground/20 text-muted-foreground'}`}
                 >
                   {author.is_active ? 'Active' : 'Inactive'}
                 </span>

@@ -64,7 +64,7 @@ const StatusBadge = memo(function StatusBadge({ status }: { status: Campaign['st
     active: 'bg-green-500/10 text-green-500',
     paused: 'bg-amber-500/10 text-amber-500',
     completed: 'bg-blue-500/10 text-blue-500',
-    draft: 'bg-gray-500/10 text-gray-500',
+    draft: 'bg-muted-foreground/10 text-muted-foreground',
   }
   return (
     <span className={cn('px-2 py-1 rounded-full text-xs font-medium', styles[status])}>

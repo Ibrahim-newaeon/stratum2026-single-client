@@ -112,7 +112,7 @@ export default function DeveloperPortal() {
             <CodeBracketIcon className="w-8 h-8 text-primary" />
             Developer Portal
           </h1>
-          <p className="text-gray-400 mt-2">API keys, usage analytics, webhook management, and SDK quickstart</p>
+          <p className="text-muted-foreground mt-2">API keys, usage analytics, webhook management, and SDK quickstart</p>
         </header>
 
         <div className="flex gap-2 mb-6">
@@ -127,7 +127,7 @@ export default function DeveloperPortal() {
               onClick={() => setActiveTab(tab.id)}
               className={cn(
                 'flex items-center gap-2 px-4 py-2 rounded-lg font-medium transition-all',
-                activeTab === tab.id ? 'bg-primary text-white' : 'bg-foreground/[0.03] text-gray-400 hover:bg-foreground/[0.06]'
+                activeTab === tab.id ? 'bg-primary text-white' : 'bg-foreground/[0.03] text-muted-foreground hover:bg-foreground/[0.06]'
               )}
             >
               <tab.icon className="w-5 h-5" />
@@ -167,8 +167,8 @@ function KeysPanel() {
             <div key={k.id} className="flex items-center justify-between bg-foreground/[0.03] border border-foreground/5 rounded-lg p-4">
               <div>
                 <div className="font-medium">{k.name}</div>
-                <div className="text-xs text-gray-500">{k.prefix}</div>
-                <div className="text-xs text-gray-600 mt-1">Created {k.created_at} · Last used {k.last_used}</div>
+                <div className="text-xs text-muted-foreground">{k.prefix}</div>
+                <div className="text-xs text-muted-foreground mt-1">Created {k.created_at} · Last used {k.last_used}</div>
               </div>
               <button className="text-red-400 hover:text-red-300 p-2">
                 <TrashIcon className="w-4 h-4" />
@@ -219,7 +219,7 @@ function UsagePanel() {
         ].map((m) => (
           <div key={m.label} className="bg-foreground/[0.02] border border-foreground/10 rounded-xl p-4 text-center">
             <div className={`text-2xl font-bold ${m.color}`}>{m.value}</div>
-            <div className="text-xs text-gray-500 mt-1">{m.label}</div>
+            <div className="text-xs text-muted-foreground mt-1">{m.label}</div>
           </div>
         ))}
       </div>
@@ -235,11 +235,11 @@ function UsagePanel() {
                   <div className="absolute bottom-0 left-0 right-0 bg-red-500/60 rounded-t" style={{ height: `${(d.errors / d.requests) * 100}%` }} />
                 )}
               </div>
-              <span className="text-xs text-gray-500">{d.date.slice(5)}</span>
+              <span className="text-xs text-muted-foreground">{d.date.slice(5)}</span>
             </div>
           ))}
         </div>
-        <div className="flex items-center gap-4 mt-3 text-xs text-gray-500">
+        <div className="flex items-center gap-4 mt-3 text-xs text-muted-foreground">
           <div className="flex items-center gap-1"><span className="w-3 h-3 bg-primary/40 rounded" /> Requests</div>
           <div className="flex items-center gap-1"><span className="w-3 h-3 bg-red-500/60 rounded" /> Errors</div>
         </div>
@@ -250,12 +250,12 @@ function UsagePanel() {
         <div className="space-y-3">
           {usage.endpoint_breakdown.map((ep, i) => (
             <div key={i} className="flex items-center gap-4">
-              <div className="w-48 text-sm text-gray-300 truncate">{ep.endpoint}</div>
+              <div className="w-48 text-sm text-foreground truncate">{ep.endpoint}</div>
               <div className="flex-1 bg-foreground/10 rounded-full h-2 overflow-hidden">
                 <div className="h-full bg-primary/50 rounded-full" style={{ width: `${(ep.requests / usage.endpoint_breakdown[0].requests) * 100}%` }} />
               </div>
-              <div className="w-20 text-right text-sm text-gray-400">{ep.requests.toLocaleString()}</div>
-              <div className="w-20 text-right text-xs text-gray-500">{ep.avg_latency_ms}ms</div>
+              <div className="w-20 text-right text-sm text-muted-foreground">{ep.requests.toLocaleString()}</div>
+              <div className="w-20 text-right text-xs text-muted-foreground">{ep.avg_latency_ms}ms</div>
             </div>
           ))}
         </div>
@@ -311,7 +311,7 @@ function WebhooksPanel() {
               }}
               className={cn(
                 'text-xs px-3 py-1.5 rounded-full border transition-colors',
-                newWebhook.events.includes(e) ? 'bg-primary/20 border-primary text-primary' : 'bg-foreground/[0.03] border-foreground/10 text-gray-400'
+                newWebhook.events.includes(e) ? 'bg-primary/20 border-primary text-primary' : 'bg-foreground/[0.03] border-foreground/10 text-muted-foreground'
               )}
             >
               {e}
@@ -336,25 +336,25 @@ function WebhooksPanel() {
           <div className="flex items-center justify-between mb-3">
             <div>
               <h4 className="font-medium">{wh.name}</h4>
-              <p className="text-xs text-gray-500">{wh.url}</p>
+              <p className="text-xs text-muted-foreground">{wh.url}</p>
             </div>
             <div className="flex items-center gap-2">
-              <span className={cn('text-xs px-2 py-0.5 rounded-full', wh.is_active ? 'bg-green-500/20 text-green-400' : 'bg-gray-500/20 text-gray-400')}>{wh.is_active ? 'Active' : 'Inactive'}</span>
+              <span className={cn('text-xs px-2 py-0.5 rounded-full', wh.is_active ? 'bg-green-500/20 text-green-400' : 'bg-muted-foreground/20 text-muted-foreground')}>{wh.is_active ? 'Active' : 'Inactive'}</span>
               <span className={cn('text-xs px-2 py-0.5 rounded-full', healthColor(wh.health_status))}>{wh.health_status}</span>
             </div>
           </div>
           <div className="grid grid-cols-3 gap-4 mb-3">
             <div className="bg-foreground/[0.03] rounded-lg p-3 text-center">
               <div className="text-lg font-bold">{wh.delivery_count.toLocaleString()}</div>
-              <div className="text-xs text-gray-500">Deliveries</div>
+              <div className="text-xs text-muted-foreground">Deliveries</div>
             </div>
             <div className="bg-foreground/[0.03] rounded-lg p-3 text-center">
               <div className="text-lg font-bold text-red-400">{wh.failure_count}</div>
-              <div className="text-xs text-gray-500">Failures</div>
+              <div className="text-xs text-muted-foreground">Failures</div>
             </div>
             <div className="bg-foreground/[0.03] rounded-lg p-3 text-center">
               <div className="text-lg font-bold">{wh.failure_count > 0 ? ((wh.failure_count / wh.delivery_count) * 100).toFixed(2) : '0.00'}%</div>
-              <div className="text-xs text-gray-500">Error Rate</div>
+              <div className="text-xs text-muted-foreground">Error Rate</div>
             </div>
           </div>
           <div className="flex gap-2">
@@ -391,7 +391,7 @@ function SDKPanel() {
               onClick={() => setActiveLang(i)}
               className={cn(
                 'px-4 py-2 rounded-lg text-sm font-medium transition-all',
-                activeLang === i ? 'bg-primary text-white' : 'bg-foreground/[0.03] text-gray-400 hover:bg-foreground/[0.06]'
+                activeLang === i ? 'bg-primary text-white' : 'bg-foreground/[0.03] text-muted-foreground hover:bg-foreground/[0.06]'
               )}
             >
               {ex.language}
@@ -402,25 +402,25 @@ function SDKPanel() {
         <div className="bg-black/40 border border-foreground/10 rounded-lg p-4 relative">
           <button
             onClick={() => copy(example.code)}
-            className="absolute top-3 right-3 text-xs bg-foreground/[0.05] hover:bg-foreground/[0.1] text-gray-400 px-3 py-1.5 rounded-lg transition-colors flex items-center gap-1"
+            className="absolute top-3 right-3 text-xs bg-foreground/[0.05] hover:bg-foreground/[0.1] text-muted-foreground px-3 py-1.5 rounded-lg transition-colors flex items-center gap-1"
           >
             {copied ? <CheckCircleIcon className="w-3 h-3 text-green-400" /> : <DocumentDuplicateIcon className="w-3 h-3" />}
             {copied ? 'Copied' : 'Copy'}
           </button>
-          <div className="text-xs text-gray-500 mb-2">{example.install}</div>
-          <pre className="text-sm font-mono text-gray-300 overflow-x-auto">{example.code}</pre>
+          <div className="text-xs text-muted-foreground mb-2">{example.install}</div>
+          <pre className="text-sm font-mono text-foreground overflow-x-auto">{example.code}</pre>
         </div>
       </div>
 
       <div className="bg-foreground/[0.02] border border-foreground/10 rounded-xl p-6">
         <h3 className="text-lg font-semibold mb-4">API Reference</h3>
-        <p className="text-sm text-gray-400 mb-4">Interactive documentation is available at:</p>
+        <p className="text-sm text-muted-foreground mb-4">Interactive documentation is available at:</p>
         <a href="https://api.stratumai.app/docs" target="_blank" rel="noopener noreferrer" className="text-primary hover:underline text-sm">
           https://api.stratumai.app/docs
         </a>
         <div className="mt-4 grid grid-cols-2 md:grid-cols-4 gap-3">
           {['Campaigns', 'Analytics', 'CDP', 'Autopilot', 'Trust Engine', 'Reporting', 'Integrations', 'Compliance'].map((ep) => (
-            <div key={ep} className="bg-foreground/[0.03] border border-foreground/5 rounded-lg p-3 text-center text-sm text-gray-300">{ep}</div>
+            <div key={ep} className="bg-foreground/[0.03] border border-foreground/5 rounded-lg p-3 text-center text-sm text-foreground">{ep}</div>
           ))}
         </div>
       </div>

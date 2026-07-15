@@ -167,7 +167,7 @@ export const AccountBreakdown: React.FC<AccountBreakdownProps> = ({
             All
           </button>
           {platforms.map((p) => {
-            const config = PLATFORM_CONFIG[p] || { color: 'text-gray-400', label: p };
+            const config = PLATFORM_CONFIG[p] || { color: 'text-muted-foreground', label: p };
             return (
               <button
                 key={p}
@@ -263,7 +263,7 @@ export const AccountBreakdown: React.FC<AccountBreakdownProps> = ({
             <tbody>
               {sortedAccounts.map((account) => {
                 const platformCfg = PLATFORM_CONFIG[account.platform] || {
-                  color: 'text-gray-400',
+                  color: 'text-muted-foreground',
                   label: account.platform,
                 };
                 const health = healthLookup[account.account_id];

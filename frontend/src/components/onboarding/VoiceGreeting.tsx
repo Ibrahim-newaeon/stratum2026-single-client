@@ -187,7 +187,7 @@ export default function VoiceGreeting({
             <button
               onClick={handleDismiss}
               aria-label="Dismiss"
-              className="absolute top-3 right-3 p-1.5 rounded-full bg-foreground/5 hover:bg-foreground/10 text-gray-400 hover:text-white transition-colors z-10"
+              className="absolute top-3 right-3 p-1.5 rounded-full bg-foreground/5 hover:bg-foreground/10 text-muted-foreground hover:text-white transition-colors z-10"
             >
               <XMarkIcon className="w-4 h-4" />
             </button>
@@ -218,7 +218,7 @@ export default function VoiceGreeting({
                 </div>
               </div>
 
-              <p className="text-gray-400 text-sm mb-5 leading-relaxed">
+              <p className="text-muted-foreground text-sm mb-5 leading-relaxed">
                 {displaySubMessage}
               </p>
 
@@ -226,7 +226,7 @@ export default function VoiceGreeting({
               {audioSrc && (
                 <button
                   onClick={toggleAudio}
-                  className="flex items-center gap-2 text-xs text-gray-500 hover:text-gray-300 transition-colors mb-4"
+                  className="flex items-center gap-2 text-xs text-muted-foreground hover:text-foreground transition-colors mb-4"
                 >
                   {isPlaying ? (
                     <>
@@ -263,7 +263,7 @@ export default function VoiceGreeting({
                 </button>
                 <button
                   onClick={handleDismiss}
-                  className="py-3 px-4 bg-foreground/5 text-gray-400 font-medium rounded-xl hover:bg-foreground/10 hover:text-white transition-colors"
+                  className="py-3 px-4 bg-foreground/5 text-muted-foreground font-medium rounded-xl hover:bg-foreground/10 hover:text-white transition-colors"
                 >
                   {texts.dismissText}
                 </button>

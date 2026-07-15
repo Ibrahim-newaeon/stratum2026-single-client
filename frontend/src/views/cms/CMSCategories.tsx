@@ -180,7 +180,7 @@ export default function CMSCategories() {
               <div className="flex items-center justify-between text-xs text-foreground/40">
                 <span>/{cat.slug}</span>
                 <span
-                  className={`px-2 py-0.5 rounded-full ${cat.is_active ? 'bg-green-500/20 text-green-400' : 'bg-gray-500/20 text-gray-400'}`}
+                  className={`px-2 py-0.5 rounded-full ${cat.is_active ? 'bg-green-500/20 text-green-400' : 'bg-muted-foreground/20 text-muted-foreground'}`}
                 >
                   {cat.is_active ? 'Active' : 'Inactive'}
                 </span>

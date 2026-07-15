@@ -391,12 +391,12 @@ export default function BattleCard() {
         >
           {/* Table Header */}
           <div className="grid grid-cols-6 gap-4 p-6 border-b border-foreground/[0.05] bg-foreground/[0.02]">
-            <div className="text-sm font-medium text-gray-400">Feature</div>
+            <div className="text-sm font-medium text-muted-foreground">Feature</div>
             {competitors.map((comp) => (
               <div
                 key={comp.id}
                 className={`text-sm font-medium text-center ${
-                  comp.highlight ? 'text-purple-400' : 'text-gray-400'
+                  comp.highlight ? 'text-purple-400' : 'text-muted-foreground'
                 }`}
               >
                 {comp.name}
@@ -418,7 +418,7 @@ export default function BattleCard() {
                 <div className="col-span-6 flex items-center gap-2">
                   <motion.div
                     animate={{ rotate: expandedCategory === category.name ? 90 : 0 }}
-                    className="text-gray-400"
+                    className="text-muted-foreground"
                   >
                     <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                       <path
@@ -430,7 +430,7 @@ export default function BattleCard() {
                     </svg>
                   </motion.div>
                   <span className="text-sm font-semibold text-foreground">{category.name}</span>
-                  <span className="text-xs text-gray-500">
+                  <span className="text-xs text-muted-foreground">
                     ({category.features.length} features)
                   </span>
                 </div>
@@ -454,9 +454,9 @@ export default function BattleCard() {
                     } hover:bg-foreground/[0.02] transition-colors`}
                   >
                     <div className="group relative">
-                      <span className="text-sm text-gray-300">{row.feature}</span>
+                      <span className="text-sm text-foreground">{row.feature}</span>
                       {row.tooltip && (
-                        <div className="absolute left-0 bottom-full mb-2 px-3 py-2 bg-gray-900 border border-foreground/10 rounded-lg text-xs text-gray-400 opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none whitespace-nowrap z-10">
+                        <div className="absolute left-0 bottom-full mb-2 px-3 py-2 bg-card border border-foreground/10 rounded-lg text-xs text-muted-foreground opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none whitespace-nowrap z-10">
                           {row.tooltip}
                         </div>
                       )}
@@ -523,7 +523,7 @@ export default function BattleCard() {
                   {item.title}
                 </span>
               </div>
-              <p className="text-sm text-gray-400">{item.description}</p>
+              <p className="text-sm text-muted-foreground">{item.description}</p>
             </div>
           ))}
         </motion.div>

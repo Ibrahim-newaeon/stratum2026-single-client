@@ -138,7 +138,7 @@ export default function WhatsAppContacts() {
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
         <div>
           <h2 className="text-xl font-semibold">Contact Management</h2>
-          <p className="text-gray-400 text-sm">
+          <p className="text-muted-foreground text-sm">
             {filteredContacts.length} contacts •{' '}
             {contacts.filter((c) => c.opt_in_status === 'opted_in').length} opted in
           </p>
@@ -164,7 +164,7 @@ export default function WhatsAppContacts() {
       {/* Filters */}
       <div className="flex flex-col md:flex-row gap-4">
         <div className="relative flex-1">
-          <MagnifyingGlassIcon className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
+          <MagnifyingGlassIcon className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-muted-foreground" />
           <input
             type="text"
             placeholder="Search by phone or name..."
@@ -182,7 +182,7 @@ export default function WhatsAppContacts() {
                 'px-4 py-2 rounded-xl transition-colors text-sm font-medium',
                 statusFilter === status
                   ? 'bg-success text-foreground'
-                  : 'bg-muted/50 text-gray-400 hover:text-foreground border border-foreground/10'
+                  : 'bg-muted/50 text-muted-foreground hover:text-foreground border border-foreground/10'
               )}
             >
               {status === 'all' ? 'All' : statusConfig[status as keyof typeof statusConfig]?.label}
@@ -230,12 +230,12 @@ export default function WhatsAppContacts() {
                     className="rounded border-foreground/20 bg-transparent"
                   />
                 </th>
-                <th className="p-4 text-left text-sm font-medium text-gray-400">Contact</th>
-                <th className="p-4 text-left text-sm font-medium text-gray-400">Phone</th>
-                <th className="p-4 text-left text-sm font-medium text-gray-400">Status</th>
-                <th className="p-4 text-left text-sm font-medium text-gray-400">Messages</th>
-                <th className="p-4 text-left text-sm font-medium text-gray-400">Last Contact</th>
-                <th className="p-4 text-right text-sm font-medium text-gray-400">Actions</th>
+                <th className="p-4 text-left text-sm font-medium text-muted-foreground">Contact</th>
+                <th className="p-4 text-left text-sm font-medium text-muted-foreground">Phone</th>
+                <th className="p-4 text-left text-sm font-medium text-muted-foreground">Status</th>
+                <th className="p-4 text-left text-sm font-medium text-muted-foreground">Messages</th>
+                <th className="p-4 text-left text-sm font-medium text-muted-foreground">Last Contact</th>
+                <th className="p-4 text-right text-sm font-medium text-muted-foreground">Actions</th>
               </tr>
             </thead>
             <tbody>
@@ -262,12 +262,12 @@ export default function WhatsAppContacts() {
                         </div>
                         <div>
                           <div className="font-medium">{contact.display_name || 'Unknown'}</div>
-                          <div className="text-xs text-gray-500">{contact.country_code}</div>
+                          <div className="text-xs text-muted-foreground">{contact.country_code}</div>
                         </div>
                       </div>
                     </td>
                     <td className="p-4">
-                      <div className="flex items-center gap-2 text-gray-300">
+                      <div className="flex items-center gap-2 text-foreground">
                         <PhoneIcon className="w-4 h-4" />
                         {contact.phone_number}
                       </div>
@@ -284,8 +284,8 @@ export default function WhatsAppContacts() {
                         {status.label}
                       </span>
                     </td>
-                    <td className="p-4 text-gray-300">{contact.message_count}</td>
-                    <td className="p-4 text-gray-400 text-sm">
+                    <td className="p-4 text-foreground">{contact.message_count}</td>
+                    <td className="p-4 text-muted-foreground text-sm">
                       {contact.last_message_at
                         ? new Date(contact.last_message_at).toLocaleDateString()
                         : 'Never'}
@@ -312,10 +312,10 @@ export default function WhatsAppContacts() {
                             <XCircleIcon className="w-4 h-4" />
                           </button>
                         )}
-                        <button aria-label="Edit contact" className="p-2 text-gray-400 hover:bg-foreground/5 rounded-lg transition-colors">
+                        <button aria-label="Edit contact" className="p-2 text-muted-foreground hover:bg-foreground/5 rounded-lg transition-colors">
                           <PencilIcon className="w-4 h-4" />
                         </button>
-                        <button aria-label="Delete contact" className="p-2 text-gray-400 hover:bg-red-500/10 hover:text-red-400 rounded-lg transition-colors">
+                        <button aria-label="Delete contact" className="p-2 text-muted-foreground hover:bg-red-500/10 hover:text-red-400 rounded-lg transition-colors">
                           <TrashIcon className="w-4 h-4" />
                         </button>
                       </div>
@@ -329,7 +329,7 @@ export default function WhatsAppContacts() {
 
         {/* Pagination */}
         <div className="flex items-center justify-between p-4 border-t border-foreground/5">
-          <span className="text-sm text-gray-400">
+          <span className="text-sm text-muted-foreground">
             Showing {(currentPage - 1) * pageSize + 1}-
             {Math.min(currentPage * pageSize, filteredContacts.length)} of {filteredContacts.length}
           </span>
@@ -443,7 +443,7 @@ function AddContactModal({
 
         <form onSubmit={handleSubmit} className="space-y-4">
           <div>
-            <label className="block text-sm font-medium text-gray-400 mb-2">Phone Number</label>
+            <label className="block text-sm font-medium text-muted-foreground mb-2">Phone Number</label>
             <input
               type="tel"
               required
@@ -454,7 +454,7 @@ function AddContactModal({
             />
           </div>
           <div>
-            <label className="block text-sm font-medium text-gray-400 mb-2">Country Code</label>
+            <label className="block text-sm font-medium text-muted-foreground mb-2">Country Code</label>
             <select
               value={formData.country_code}
               onChange={(e) => setFormData({ ...formData, country_code: e.target.value })}
@@ -469,7 +469,7 @@ function AddContactModal({
             </select>
           </div>
           <div>
-            <label className="block text-sm font-medium text-gray-400 mb-2">Display Name</label>
+            <label className="block text-sm font-medium text-muted-foreground mb-2">Display Name</label>
             <input
               type="text"
               placeholder="John Doe"
@@ -560,14 +560,14 @@ function ImportContactsModal({
               <DocumentArrowDownIcon className="w-8 h-8 text-green-400" />
               <div>
                 <div className="font-medium">{file.name}</div>
-                <div className="text-sm text-gray-400">{(file.size / 1024).toFixed(1)} KB</div>
+                <div className="text-sm text-muted-foreground">{(file.size / 1024).toFixed(1)} KB</div>
               </div>
             </div>
           ) : (
             <>
-              <ArrowUpTrayIcon className="w-12 h-12 mx-auto mb-4 text-gray-500" />
-              <p className="text-gray-400 mb-2">Drag and drop your CSV file here</p>
-              <p className="text-sm text-gray-500">or</p>
+              <ArrowUpTrayIcon className="w-12 h-12 mx-auto mb-4 text-muted-foreground" />
+              <p className="text-muted-foreground mb-2">Drag and drop your CSV file here</p>
+              <p className="text-sm text-muted-foreground">or</p>
               <label className="inline-block mt-3 px-4 py-2 bg-success rounded-lg cursor-pointer hover:opacity-90">
                 Browse Files
                 <input
@@ -583,7 +583,7 @@ function ImportContactsModal({
 
         <div className="mt-4 p-4 bg-background rounded-xl">
           <h4 className="font-medium mb-2">CSV Format Required:</h4>
-          <code className="text-sm text-gray-400">
+          <code className="text-sm text-muted-foreground">
             phone_number,country_code,display_name
             <br />
             +1234567890,US,John Doe

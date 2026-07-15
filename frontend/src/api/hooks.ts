@@ -284,26 +284,26 @@ export {
   useVerifyDeliveryChannel,
 } from './reporting'
 
-// Tenant Dashboard hooks
+// Account Dashboard hooks
 export {
-  useUpdateTenantSettings,
-} from './hooks/useTenantDashboard'
+  useUpdateAccountSettings,
+} from './hooks/useAccountDashboard'
 
 // =============================================================================
-// Tenant Overview Hooks (for tenant dashboard)
+// Account Overview Hooks (for account dashboard)
 // =============================================================================
 
 /**
- * Get tenant overview KPIs for the dashboard.
+ * Get account overview KPIs for the dashboard.
  *
- * Adapts the flat `/tenant/{id}/dashboard/overview` payload into the
- * `{ kpis }` shape this hook's consumers expect. (The previous
- * `/analytics/tenant-overview` endpoint returns a LIST of tenants, which
- * crashed every consumer that read `data.kpis` off it.)
+ * Adapts the flat `/dashboard/overview` payload into the `{ kpis }`
+ * shape this hook's consumers expect. (The previous
+ * `/analytics/tenant-overview` endpoint returned a LIST of accounts,
+ * which crashed every consumer that read `data.kpis` off it.)
  */
-export function useTenantOverview(tenantId: number) {
+export function useAccountOverview(accountId: number) {
   return useQuery({
-    queryKey: ['tenant', 'overview', tenantId],
+    queryKey: ['account', 'overview', accountId],
     queryFn: async () => {
       const response = await apiClient.get<ApiResponse<{
         total_spend: number
@@ -321,18 +321,18 @@ export function useTenantOverview(tenantId: number) {
         },
       }
     },
-    enabled: !!tenantId,
+    enabled: !!accountId,
     staleTime: 60 * 1000,
     refetchInterval: 5 * 60 * 1000,
   })
 }
 
 /**
- * Get tenant recommendations
+ * Get account recommendations
  */
-export function useTenantRecommendations(tenantId: number, options?: { limit?: number }) {
+export function useAccountRecommendations(accountId: number, options?: { limit?: number }) {
   return useQuery({
-    queryKey: ['tenant', 'recommendations', tenantId, options],
+    queryKey: ['account', 'recommendations', accountId, options],
     queryFn: async () => {
       const params = options?.limit ? `?limit=${options.limit}` : ''
       const response = await apiClient.get<ApiResponse<{

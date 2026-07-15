@@ -67,7 +67,7 @@ interface RecoveryMetric {
 const COST_KPI_IDS = ['spend', 'revenue', 'roas', 'cpa']
 
 export default function AccountNarrative() {
-  const { tenantId: accountId } = useParams<{ tenantId: string }>()
+  const { accountId } = useParams<{ accountId: string }>()
   const { showPriceMetrics } = usePriceMetrics()
   const tid = parseInt(accountId || '', 10)
 
@@ -272,7 +272,7 @@ export default function AccountNarrative() {
 
   const handleExportPDF = () => {
     // Generate a printable PDF view of the narrative
-    const printContent = document.querySelector('[data-tour="tenant-narrative"]')
+    const printContent = document.querySelector('[data-tour="account-narrative"]')
     if (printContent) {
       const printWindow = window.open('', '_blank')
       if (printWindow) {
@@ -309,7 +309,7 @@ export default function AccountNarrative() {
   }
 
   return (
-    <div data-tour="tenant-narrative" className="space-y-6">
+    <div data-tour="account-narrative" className="space-y-6">
       {/* Header */}
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-4">

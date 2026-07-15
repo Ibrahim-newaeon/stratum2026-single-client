@@ -172,7 +172,7 @@ export default function WhatsAppManager() {
           </div>
           <h1 className="text-2xl font-bold">WhatsApp Business Manager</h1>
         </div>
-        <p className="text-gray-400">Manage contacts, templates, and broadcast campaigns</p>
+        <p className="text-muted-foreground">Manage contacts, templates, and broadcast campaigns</p>
       </div>
 
       {/* Tab Navigation */}
@@ -188,7 +188,7 @@ export default function WhatsAppManager() {
                 'flex items-center gap-2 px-4 py-3 rounded-xl transition-colors whitespace-nowrap',
                 isActive
                   ? 'bg-gradient-to-r from-[#25D366] to-[#128C7E] text-foreground shadow-lg shadow-[#25D366]/20'
-                  : 'bg-muted/50 text-gray-400 hover:text-foreground hover:bg-card border border-foreground/5'
+                  : 'bg-muted/50 text-muted-foreground hover:text-foreground hover:bg-card border border-foreground/5'
               )}
             >
               <Icon className="w-5 h-5" />
@@ -292,7 +292,7 @@ function OverviewDashboard({
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
           <div className="space-y-2">
             <div className="flex justify-between text-sm">
-              <span className="text-gray-400">Delivery Rate</span>
+              <span className="text-muted-foreground">Delivery Rate</span>
               <span className="text-success font-medium">{deliveryRate}%</span>
             </div>
             <div className="h-2 bg-card rounded-full overflow-hidden">
@@ -304,7 +304,7 @@ function OverviewDashboard({
           </div>
           <div className="space-y-2">
             <div className="flex justify-between text-sm">
-              <span className="text-gray-400">Read Rate</span>
+              <span className="text-muted-foreground">Read Rate</span>
               <span className="text-cyan-400 font-medium">{readRate}%</span>
             </div>
             <div className="h-2 bg-card rounded-full overflow-hidden">
@@ -316,7 +316,7 @@ function OverviewDashboard({
           </div>
           <div className="space-y-2">
             <div className="flex justify-between text-sm">
-              <span className="text-gray-400">Opt-in Rate</span>
+              <span className="text-muted-foreground">Opt-in Rate</span>
               <span className="text-purple-400 font-medium">{optInRate}%</span>
             </div>
             <div className="h-2 bg-card rounded-full overflow-hidden">
@@ -399,8 +399,8 @@ function StatCard({
         <Icon className={cn('w-6 h-6', iconColors[color])} />
       </div>
       <div className="text-3xl font-bold mb-1">{value}</div>
-      <div className="text-sm text-gray-400">{title}</div>
-      <div className="text-xs text-gray-500 mt-1">{subtitle}</div>
+      <div className="text-sm text-muted-foreground">{title}</div>
+      <div className="text-xs text-muted-foreground mt-1">{subtitle}</div>
     </button>
   );
 }
@@ -433,9 +433,9 @@ function QuickActionCard({
         colorClasses[color]
       )}
     >
-      <Icon className="w-8 h-8 text-gray-400 group-hover:text-current transition-colors mb-4" />
+      <Icon className="w-8 h-8 text-muted-foreground group-hover:text-current transition-colors mb-4" />
       <h4 className="font-semibold mb-1">{title}</h4>
-      <p className="text-sm text-gray-500">{description}</p>
+      <p className="text-sm text-muted-foreground">{description}</p>
     </button>
   );
 }
@@ -462,7 +462,7 @@ function StatusRow({
     <div className="flex items-center justify-between py-2 border-b border-foreground/5 last:border-0">
       <div className="flex items-center gap-3">
         <Icon className={cn('w-5 h-5', colorClasses[color])} />
-        <span className="text-gray-300">{label}</span>
+        <span className="text-foreground">{label}</span>
       </div>
       <span className="font-medium">{value}</span>
     </div>

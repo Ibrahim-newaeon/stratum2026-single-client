@@ -93,7 +93,7 @@ export const accountManagerTour: TourConfig = {
       placement: 'bottom',
     },
     {
-      target: '[data-tour="tenant-narrative"]',
+      target: '[data-tour="account-narrative"]',
       content: 'Click any tenant to see their narrative - a client-friendly summary of what changed, what\'s at risk, and what you\'re doing about it.',
       placement: 'right',
     },

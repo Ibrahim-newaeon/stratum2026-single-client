@@ -535,7 +535,7 @@ export function Benchmarks() {
               <span className="text-sm text-muted-foreground">Your Performance</span>
             </div>
             <div className="flex items-center gap-2">
-              <div className="w-3 h-3 rounded-full bg-gray-400" />
+              <div className="w-3 h-3 rounded-full bg-muted-foreground" />
               <span className="text-sm text-muted-foreground">Industry Average</span>
             </div>
           </div>

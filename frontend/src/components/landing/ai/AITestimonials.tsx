@@ -151,7 +151,7 @@ export default function AITestimonials() {
                 </div>
 
                 {/* Quote */}
-                <blockquote className="text-gray-300 text-lg leading-relaxed mb-6">
+                <blockquote className="text-foreground text-lg leading-relaxed mb-6">
                   "{testimonial.quote}"
                 </blockquote>
 
@@ -165,7 +165,7 @@ export default function AITestimonials() {
                     </div>
                     <div>
                       <div className="font-medium text-white">{testimonial.author}</div>
-                      <div className="text-sm text-gray-500">
+                      <div className="text-sm text-muted-foreground">
                         {testimonial.role}, {testimonial.company}
                       </div>
                     </div>
@@ -194,7 +194,7 @@ export default function AITestimonials() {
           transition={{ delay: 0.4, duration: 0.6 }}
           className="text-center"
         >
-          <p className="text-sm text-gray-500 mb-8">
+          <p className="text-sm text-muted-foreground mb-8">
             Integrates with the platforms you already use
           </p>
 
@@ -204,11 +204,11 @@ export default function AITestimonials() {
                 key={platform.name}
                 className="flex flex-col items-center justify-center p-6 rounded-2xl bg-foreground/[0.02] border border-foreground/[0.05] hover:border-foreground/10 transition-colors"
               >
-                <div className="w-12 h-12 rounded-xl flex items-center justify-center mb-3 text-gray-400">
+                <div className="w-12 h-12 rounded-xl flex items-center justify-center mb-3 text-muted-foreground">
                   {platform.icon}
                 </div>
                 <span className="text-sm font-medium text-white mb-1">{platform.name}</span>
-                <span className="text-xs text-gray-500 text-center">{platform.api}</span>
+                <span className="text-xs text-muted-foreground text-center">{platform.api}</span>
               </div>
             ))}
           </div>
@@ -228,10 +228,10 @@ export default function AITestimonials() {
             { value: '4.9/5', label: 'Customer Rating' },
           ].map((stat) => (
             <div key={stat.label} className="text-center">
-              <div className="text-3xl font-bold bg-gradient-to-r from-white to-gray-400 text-foreground mb-1">
+              <div className="text-3xl font-bold bg-gradient-to-r from-foreground to-muted-foreground bg-clip-text text-transparent mb-1">
                 {stat.value}
               </div>
-              <div className="text-sm text-gray-500">{stat.label}</div>
+              <div className="text-sm text-muted-foreground">{stat.label}</div>
             </div>
           ))}
         </motion.div>

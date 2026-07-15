@@ -192,7 +192,7 @@ const getChangeIcon = (type: ChangeType) => {
     case 'breaking':
       return { icon: Wrench, color: 'text-orange-500', bg: 'bg-orange-500/10' };
     default:
-      return { icon: Star, color: 'text-gray-500', bg: 'bg-gray-500/10' };
+      return { icon: Star, color: 'text-muted-foreground', bg: 'bg-muted-foreground/10' };
   }
 };
 

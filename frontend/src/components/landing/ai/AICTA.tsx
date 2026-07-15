@@ -148,7 +148,7 @@ export default function AICTA() {
           transition={{ delay: 0.6, duration: 0.6 }}
           className="mt-16 pt-8 border-t border-foreground/[0.05]"
         >
-          <p className="text-sm text-gray-500">
+          <p className="text-sm text-muted-foreground">
             No credit card required. SOC 2 Type II compliant. Your data never trains our models.
           </p>
         </motion.div>

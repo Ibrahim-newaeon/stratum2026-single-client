@@ -54,7 +54,7 @@ const IDENTIFIER_COLORS: Record<IdentifierType, string> = {
   email: 'bg-blue-500',
   phone: 'bg-green-500',
   device_id: 'bg-purple-500',
-  anonymous_id: 'bg-gray-500',
+  anonymous_id: 'bg-muted-foreground',
   external_id: 'bg-amber-500',
 };
 

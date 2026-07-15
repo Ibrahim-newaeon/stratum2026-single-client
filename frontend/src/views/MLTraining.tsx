@@ -276,7 +276,7 @@ export default function MLTraining() {
                 "flex items-center gap-2 px-4 py-3 border-b-2 font-medium transition-colors",
                 activeTab === tab.id
                   ? "border-blue-500 text-blue-600 dark:text-blue-400"
-                  : "border-transparent text-gray-500 hover:text-gray-700 dark:text-gray-400"
+                  : "border-transparent text-muted-foreground hover:text-foreground"
               )}
             >
               <tab.icon className="w-5 h-5" />
@@ -290,12 +290,12 @@ export default function MLTraining() {
       {activeTab === 'upload' && (
         <div className="space-y-6">
           {/* Upload Area */}
-          <div className="bg-white dark:bg-gray-800 rounded-xl border border-border p-6">
+          <div className="bg-card rounded-xl border border-border p-6">
             <h2 className="text-lg font-semibold text-foreground mb-4">
               Upload Training Data
             </h2>
 
-            <div className="border-2 border-dashed border-gray-300 dark:border-gray-600 rounded-lg p-8 text-center">
+            <div className="border-2 border-dashed border-border rounded-lg p-8 text-center">
               <input
                 type="file"
                 ref={fileInputRef}
@@ -303,7 +303,7 @@ export default function MLTraining() {
                 accept=".csv"
                 className="hidden"
               />
-              <FileSpreadsheet className="w-12 h-12 mx-auto text-gray-400 mb-4" />
+              <FileSpreadsheet className="w-12 h-12 mx-auto text-muted-foreground mb-4" />
               <p className="text-muted-foreground mb-2">
                 Drag and drop your CSV file here, or
               </p>
@@ -314,7 +314,7 @@ export default function MLTraining() {
               >
                 {isLoading ? 'Uploading...' : 'Browse Files'}
               </button>
-              <p className="text-sm text-gray-500 dark:text-gray-500 mt-4">
+              <p className="text-sm text-muted-foreground mt-4">
                 Supported: CSV files from Kaggle (Facebook Ads, Google Ads) or generic format
               </p>
             </div>
@@ -338,7 +338,7 @@ export default function MLTraining() {
           </div>
 
           {/* Generate Sample Data */}
-          <div className="bg-white dark:bg-gray-800 rounded-xl border border-border p-6">
+          <div className="bg-card rounded-xl border border-border p-6">
             <h2 className="text-lg font-semibold text-foreground mb-4">
               Or Generate Sample Data
             </h2>
@@ -356,7 +356,7 @@ export default function MLTraining() {
           </div>
 
           {/* Training Files List */}
-          <div className="bg-white dark:bg-gray-800 rounded-xl border border-border p-6">
+          <div className="bg-card rounded-xl border border-border p-6">
             <div className="flex items-center justify-between mb-4">
               <h2 className="text-lg font-semibold text-foreground">
                 Training Data Files
@@ -365,7 +365,7 @@ export default function MLTraining() {
                 onClick={fetchTrainingData}
                 className="p-2 hover:bg-muted rounded-lg"
               >
-                <RefreshCw className="w-5 h-5 text-gray-500" />
+                <RefreshCw className="w-5 h-5 text-muted-foreground" />
               </button>
             </div>
 
@@ -378,7 +378,7 @@ export default function MLTraining() {
                 {trainingFiles.map((file) => (
                   <div
                     key={file.path}
-                    className="flex items-center justify-between p-3 bg-gray-50 dark:bg-gray-700/50 rounded-lg"
+                    className="flex items-center justify-between p-3 bg-muted/50 rounded-lg"
                   >
                     <div className="flex items-center gap-3">
                       <Database className="w-5 h-5 text-blue-500" />
@@ -404,8 +404,8 @@ export default function MLTraining() {
       {activeTab === 'models' && (
         <div className="space-y-6">
           {models.length === 0 ? (
-            <div className="bg-white dark:bg-gray-800 rounded-xl border border-border p-12 text-center">
-              <Brain className="w-16 h-16 mx-auto text-gray-300 dark:text-gray-600 mb-4" />
+            <div className="bg-card rounded-xl border border-border p-12 text-center">
+              <Brain className="w-16 h-16 mx-auto text-muted-foreground mb-4" />
               <h3 className="text-lg font-semibold text-foreground mb-2">
                 No Models Trained
               </h3>
@@ -424,7 +424,7 @@ export default function MLTraining() {
               {models.map((model) => (
                 <div
                   key={model.name}
-                  className="bg-white dark:bg-gray-800 rounded-xl border border-border p-6"
+                  className="bg-card rounded-xl border border-border p-6"
                 >
                   <div className="flex items-start justify-between mb-4">
                     <div className="flex items-center gap-3">
@@ -442,7 +442,7 @@ export default function MLTraining() {
                     </div>
                     <button
                       onClick={() => handleDeleteModel(model.name)}
-                      className="p-1.5 hover:bg-red-100 dark:hover:bg-red-900/30 rounded text-gray-400 hover:text-red-500"
+                      className="p-1.5 hover:bg-red-100 dark:hover:bg-red-900/30 rounded text-muted-foreground hover:text-red-500"
                     >
                       <Trash2 className="w-4 h-4" />
                     </button>
@@ -485,14 +485,14 @@ export default function MLTraining() {
                         </span>
                       ))}
                       {model.features.length > 4 && (
-                        <span className="px-1.5 py-0.5 text-xs text-gray-500">
+                        <span className="px-1.5 py-0.5 text-xs text-muted-foreground">
                           +{model.features.length - 4} more
                         </span>
                       )}
                     </div>
                   </div>
 
-                  <p className="text-xs text-gray-400 dark:text-gray-500 mt-4">
+                  <p className="text-xs text-muted-foreground mt-4">
                     Created: {formatDate(model.created_at)}
                   </p>
                 </div>
@@ -506,14 +506,14 @@ export default function MLTraining() {
       {activeTab === 'training' && (
         <div className="space-y-6">
           {/* Training Options */}
-          <div className="bg-white dark:bg-gray-800 rounded-xl border border-border p-6">
+          <div className="bg-card rounded-xl border border-border p-6">
             <h2 className="text-lg font-semibold text-foreground mb-4">
               Train Models
             </h2>
 
             <div className="grid gap-4 md:grid-cols-2">
               {/* Train from Uploaded Data */}
-              <div className="p-4 border border-gray-200 dark:border-gray-600 rounded-lg">
+              <div className="p-4 border border-border rounded-lg">
                 <div className="flex items-center gap-3 mb-3">
                   <Database className="w-6 h-6 text-blue-500" />
                   <h3 className="font-medium text-foreground">
@@ -548,7 +548,7 @@ export default function MLTraining() {
               </div>
 
               {/* Train from Sample Data */}
-              <div className="p-4 border border-gray-200 dark:border-gray-600 rounded-lg">
+              <div className="p-4 border border-border rounded-lg">
                 <div className="flex items-center gap-3 mb-3">
                   <Sparkles className="w-6 h-6 text-purple-500" />
                   <h3 className="font-medium text-foreground">
@@ -613,7 +613,7 @@ export default function MLTraining() {
                       return (
                         <div
                           key={modelName}
-                          className="flex items-center justify-between p-3 bg-white dark:bg-gray-800 rounded-lg"
+                          className="flex items-center justify-between p-3 bg-card rounded-lg"
                         >
                           <div className="flex items-center gap-3">
                             {getModelIcon(modelName)}

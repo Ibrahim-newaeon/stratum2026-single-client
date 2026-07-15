@@ -494,7 +494,7 @@ function SegmentForm({ segment, onSave, onCancel }: SegmentFormProps) {
               id="autoRefresh"
               checked={autoRefresh}
               onChange={(e) => setAutoRefresh(e.target.checked)}
-              className="w-4 h-4 rounded border-gray-300"
+              className="w-4 h-4 rounded border-border"
             />
             <label htmlFor="autoRefresh" className="text-sm font-medium">
               Auto-refresh segment
@@ -584,7 +584,7 @@ export function SegmentBuilder() {
       active: 'bg-green-500/10 text-green-500',
       computing: 'bg-blue-500/10 text-blue-500',
       stale: 'bg-amber-500/10 text-amber-500',
-      draft: 'bg-gray-500/10 text-gray-500',
+      draft: 'bg-muted-foreground/10 text-muted-foreground',
     };
     return (
       <span

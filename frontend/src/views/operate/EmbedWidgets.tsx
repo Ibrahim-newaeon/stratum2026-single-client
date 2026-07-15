@@ -185,7 +185,7 @@ export default function EmbedWidgets() {
       <div className="flex items-center justify-between">
         <div>
           <h1 className="text-2xl font-bold text-white">Embed Widgets</h1>
-          <p className="text-gray-400 mt-1">
+          <p className="text-muted-foreground mt-1">
             Create embeddable widgets for external dashboards and reports
           </p>
         </div>
@@ -206,26 +206,26 @@ export default function EmbedWidgets() {
 
       {/* Tier Info Card */}
       {tierInfo && (
-        <Card className="bg-gradient-to-r from-gray-900/50 to-gray-800/50 border-foreground/10">
+        <Card className="bg-gradient-to-r from-muted/50 to-muted/30 border-foreground/10">
           <CardContent className="p-4">
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-6">
                 <div>
-                  <div className="text-sm text-gray-500">Widgets Used</div>
+                  <div className="text-sm text-muted-foreground">Widgets Used</div>
                   <div className="text-2xl font-bold text-white">
                     {widgets.length} / {tierInfo.limits.max_widgets}
                   </div>
                 </div>
                 <Separator orientation="vertical" className="h-12 bg-foreground/10" />
                 <div>
-                  <div className="text-sm text-gray-500">Domains Whitelisted</div>
+                  <div className="text-sm text-muted-foreground">Domains Whitelisted</div>
                   <div className="text-2xl font-bold text-white">
                     {domains.length} / {tierInfo.limits.max_domains}
                   </div>
                 </div>
                 <Separator orientation="vertical" className="h-12 bg-foreground/10" />
                 <div>
-                  <div className="text-sm text-gray-500">Branding Level</div>
+                  <div className="text-sm text-muted-foreground">Branding Level</div>
                   <div className="text-lg font-semibold text-white capitalize">
                     {tierInfo.branding_level === 'none' ? 'White Label' : tierInfo.branding_level}
                   </div>
@@ -246,7 +246,7 @@ export default function EmbedWidgets() {
 
       {/* Main Content Tabs */}
       <Tabs defaultValue="widgets" className="space-y-6">
-        <TabsList className="bg-gray-900/50">
+        <TabsList className="bg-muted/50">
           <TabsTrigger value="widgets">Widgets</TabsTrigger>
           <TabsTrigger value="domains">Domain Whitelist</TabsTrigger>
         </TabsList>
@@ -254,11 +254,11 @@ export default function EmbedWidgets() {
         {/* Widgets Tab */}
         <TabsContent value="widgets" className="space-y-4">
           {widgets.length === 0 ? (
-            <Card className="bg-gray-900/30 border-foreground/5">
+            <Card className="bg-muted/30 border-foreground/5">
               <CardContent className="p-12 text-center">
-                <CodeBracketIcon className="w-12 h-12 text-gray-600 mx-auto mb-4" />
+                <CodeBracketIcon className="w-12 h-12 text-muted-foreground mx-auto mb-4" />
                 <h3 className="text-lg font-medium text-white mb-2">No widgets yet</h3>
-                <p className="text-gray-500 mb-4">Create your first embeddable widget</p>
+                <p className="text-muted-foreground mb-4">Create your first embeddable widget</p>
                 <Button onClick={() => setShowCreateDialog(true)}>
                   <PlusIcon className="w-4 h-4 mr-2" />
                   Create Widget
@@ -270,7 +270,7 @@ export default function EmbedWidgets() {
               {widgets.map((widget) => (
                 <Card
                   key={widget.id}
-                  className="bg-gray-900/30 border-foreground/5 hover:border-foreground/10 transition-colors"
+                  className="bg-muted/30 border-foreground/5 hover:border-foreground/10 transition-colors"
                 >
                   <CardHeader className="pb-3">
                     <div className="flex items-start justify-between">
@@ -290,7 +290,7 @@ export default function EmbedWidgets() {
                         className={
                           widget.is_active
                             ? 'text-green-400 border-green-500/30'
-                            : 'text-gray-500 border-gray-600'
+                            : 'text-muted-foreground border-border'
                         }
                       >
                         {widget.is_active ? 'Active' : 'Inactive'}
@@ -299,11 +299,11 @@ export default function EmbedWidgets() {
                   </CardHeader>
                   <CardContent className="space-y-4">
                     <div className="flex items-center justify-between text-sm">
-                      <span className="text-gray-500">Size</span>
-                      <span className="text-gray-300 capitalize">{widget.widget_size}</span>
+                      <span className="text-muted-foreground">Size</span>
+                      <span className="text-foreground capitalize">{widget.widget_size}</span>
                     </div>
                     <div className="flex items-center justify-between text-sm">
-                      <span className="text-gray-500">Branding</span>
+                      <span className="text-muted-foreground">Branding</span>
                       <Badge
                         variant="outline"
                         className={brandingBadgeColors[widget.branding_level]}
@@ -312,8 +312,8 @@ export default function EmbedWidgets() {
                       </Badge>
                     </div>
                     <div className="flex items-center justify-between text-sm">
-                      <span className="text-gray-500">Total Views</span>
-                      <span className="text-gray-300">{widget.total_views.toLocaleString()}</span>
+                      <span className="text-muted-foreground">Total Views</span>
+                      <span className="text-foreground">{widget.total_views.toLocaleString()}</span>
                     </div>
                     <Separator className="bg-foreground/5" />
                     <div className="flex items-center gap-2">
@@ -350,7 +350,7 @@ export default function EmbedWidgets() {
         {/* Domains Tab */}
         <TabsContent value="domains" className="space-y-4">
           <div className="flex items-center justify-between">
-            <p className="text-sm text-gray-400">
+            <p className="text-sm text-muted-foreground">
               Domains must be whitelisted before they can be used with embed tokens.
             </p>
             <Button variant="outline" onClick={() => setShowDomainDialog(true)}>
@@ -360,11 +360,11 @@ export default function EmbedWidgets() {
           </div>
 
           {domains.length === 0 ? (
-            <Card className="bg-gray-900/30 border-foreground/5">
+            <Card className="bg-muted/30 border-foreground/5">
               <CardContent className="p-12 text-center">
-                <GlobeAltIcon className="w-12 h-12 text-gray-600 mx-auto mb-4" />
+                <GlobeAltIcon className="w-12 h-12 text-muted-foreground mx-auto mb-4" />
                 <h3 className="text-lg font-medium text-white mb-2">No domains whitelisted</h3>
-                <p className="text-gray-500 mb-4">
+                <p className="text-muted-foreground mb-4">
                   Add domains where your widgets will be embedded
                 </p>
                 <Button onClick={() => setShowDomainDialog(true)}>
@@ -376,15 +376,15 @@ export default function EmbedWidgets() {
           ) : (
             <div className="space-y-2">
               {domains.map((domain) => (
-                <Card key={domain.id} className="bg-gray-900/30 border-foreground/5">
+                <Card key={domain.id} className="bg-muted/30 border-foreground/5">
                   <CardContent className="p-4">
                     <div className="flex items-center justify-between">
                       <div className="flex items-center gap-4">
-                        <GlobeAltIcon className="w-5 h-5 text-gray-500" />
+                        <GlobeAltIcon className="w-5 h-5 text-muted-foreground" />
                         <div>
                           <div className="font-mono text-white">{domain.domain_pattern}</div>
                           {domain.description && (
-                            <div className="text-sm text-gray-500">{domain.description}</div>
+                            <div className="text-sm text-muted-foreground">{domain.description}</div>
                           )}
                         </div>
                       </div>
@@ -418,7 +418,7 @@ export default function EmbedWidgets() {
 
       {/* Create Widget Dialog */}
       <Dialog open={showCreateDialog} onOpenChange={setShowCreateDialog}>
-        <DialogContent className="bg-gray-900 border-foreground/10">
+        <DialogContent className="bg-card border-foreground/10">
           <DialogHeader>
             <DialogTitle className="text-white">Create Embed Widget</DialogTitle>
             <DialogDescription>
@@ -429,37 +429,37 @@ export default function EmbedWidgets() {
 
           <div className="space-y-4 py-4">
             <div className="space-y-2">
-              <label className="text-sm text-gray-400">Widget Name</label>
+              <label className="text-sm text-muted-foreground">Widget Name</label>
               <Input
                 placeholder="e.g., Client Dashboard Signal Health"
                 value={newWidget.name}
                 onChange={(e) => setNewWidget({ ...newWidget, name: e.target.value })}
-                className="bg-gray-800 border-foreground/10"
+                className="bg-muted border-foreground/10"
               />
             </div>
 
             <div className="space-y-2">
-              <label className="text-sm text-gray-400">Description (optional)</label>
+              <label className="text-sm text-muted-foreground">Description (optional)</label>
               <Input
                 placeholder="Brief description of where this widget will be used"
                 value={newWidget.description}
                 onChange={(e) => setNewWidget({ ...newWidget, description: e.target.value })}
-                className="bg-gray-800 border-foreground/10"
+                className="bg-muted border-foreground/10"
               />
             </div>
 
             <div className="space-y-2">
-              <label className="text-sm text-gray-400">Widget Type</label>
+              <label className="text-sm text-muted-foreground">Widget Type</label>
               <Select
                 value={newWidget.widget_type}
                 onValueChange={(value: WidgetType) =>
                   setNewWidget({ ...newWidget, widget_type: value })
                 }
               >
-                <SelectTrigger className="bg-gray-800 border-foreground/10">
+                <SelectTrigger className="bg-muted border-foreground/10">
                   <SelectValue />
                 </SelectTrigger>
-                <SelectContent className="bg-gray-800 border-foreground/10">
+                <SelectContent className="bg-muted border-foreground/10">
                   {Object.entries(WIDGET_TYPE_INFO).map(([type, info]) => (
                     <SelectItem key={type} value={type}>
                       <div className="flex items-center gap-2">
@@ -470,23 +470,23 @@ export default function EmbedWidgets() {
                   ))}
                 </SelectContent>
               </Select>
-              <p className="text-xs text-gray-500">
+              <p className="text-xs text-muted-foreground">
                 {WIDGET_TYPE_INFO[newWidget.widget_type].description}
               </p>
             </div>
 
             <div className="space-y-2">
-              <label className="text-sm text-gray-400">Widget Size</label>
+              <label className="text-sm text-muted-foreground">Widget Size</label>
               <Select
                 value={newWidget.widget_size}
                 onValueChange={(value: WidgetSize) =>
                   setNewWidget({ ...newWidget, widget_size: value })
                 }
               >
-                <SelectTrigger className="bg-gray-800 border-foreground/10">
+                <SelectTrigger className="bg-muted border-foreground/10">
                   <SelectValue />
                 </SelectTrigger>
-                <SelectContent className="bg-gray-800 border-foreground/10">
+                <SelectContent className="bg-muted border-foreground/10">
                   <SelectItem value="badge">Badge (120x40)</SelectItem>
                   <SelectItem value="compact">Compact (200x100)</SelectItem>
                   <SelectItem value="standard">Standard (300x200)</SelectItem>
@@ -509,7 +509,7 @@ export default function EmbedWidgets() {
 
       {/* Add Domain Dialog */}
       <Dialog open={showDomainDialog} onOpenChange={setShowDomainDialog}>
-        <DialogContent className="bg-gray-900 border-foreground/10">
+        <DialogContent className="bg-card border-foreground/10">
           <DialogHeader>
             <DialogTitle className="text-white">Add Domain to Whitelist</DialogTitle>
             <DialogDescription>
@@ -520,23 +520,23 @@ export default function EmbedWidgets() {
 
           <div className="space-y-4 py-4">
             <div className="space-y-2">
-              <label className="text-sm text-gray-400">Domain Pattern</label>
+              <label className="text-sm text-muted-foreground">Domain Pattern</label>
               <Input
                 placeholder="e.g., dashboard.example.com or *.example.com"
                 value={newDomain.domain_pattern}
                 onChange={(e) => setNewDomain({ ...newDomain, domain_pattern: e.target.value })}
-                className="bg-gray-800 border-foreground/10 font-mono"
+                className="bg-muted border-foreground/10 font-mono"
               />
-              <p className="text-xs text-gray-500">Use *.domain.com to allow all subdomains</p>
+              <p className="text-xs text-muted-foreground">Use *.domain.com to allow all subdomains</p>
             </div>
 
             <div className="space-y-2">
-              <label className="text-sm text-gray-400">Description (optional)</label>
+              <label className="text-sm text-muted-foreground">Description (optional)</label>
               <Input
                 placeholder="e.g., Client reporting portal"
                 value={newDomain.description}
                 onChange={(e) => setNewDomain({ ...newDomain, description: e.target.value })}
-                className="bg-gray-800 border-foreground/10"
+                className="bg-muted border-foreground/10"
               />
             </div>
           </div>
@@ -554,7 +554,7 @@ export default function EmbedWidgets() {
 
       {/* Embed Code Dialog */}
       <Dialog open={showEmbedCodeDialog} onOpenChange={setShowEmbedCodeDialog}>
-        <DialogContent className="bg-gray-900 border-foreground/10 max-w-2xl">
+        <DialogContent className="bg-card border-foreground/10 max-w-2xl">
           <DialogHeader>
             <DialogTitle className="text-white">Embed Code</DialogTitle>
             <DialogDescription>
@@ -565,14 +565,14 @@ export default function EmbedWidgets() {
 
           {selectedWidget && (
             <Tabs defaultValue="iframe" className="mt-4">
-              <TabsList className="bg-gray-800">
+              <TabsList className="bg-muted">
                 <TabsTrigger value="iframe">Iframe</TabsTrigger>
                 <TabsTrigger value="script">Script</TabsTrigger>
               </TabsList>
 
               <TabsContent value="iframe" className="space-y-3">
                 <div className="relative">
-                  <pre className="p-4 bg-gray-800 rounded-lg text-sm text-gray-300 overflow-x-auto">
+                  <pre className="p-4 bg-muted rounded-lg text-sm text-foreground overflow-x-auto">
                     {generateIframeCode(selectedWidget)}
                   </pre>
                   <Button
@@ -588,14 +588,14 @@ export default function EmbedWidgets() {
                     )}
                   </Button>
                 </div>
-                <p className="text-xs text-gray-500">
+                <p className="text-xs text-muted-foreground">
                   Simple iframe embed. Best for basic integration.
                 </p>
               </TabsContent>
 
               <TabsContent value="script" className="space-y-3">
                 <div className="relative">
-                  <pre className="p-4 bg-gray-800 rounded-lg text-sm text-gray-300 overflow-x-auto">
+                  <pre className="p-4 bg-muted rounded-lg text-sm text-foreground overflow-x-auto">
                     {generateScriptCode(selectedWidget)}
                   </pre>
                   <Button
@@ -611,7 +611,7 @@ export default function EmbedWidgets() {
                     )}
                   </Button>
                 </div>
-                <p className="text-xs text-gray-500">
+                <p className="text-xs text-muted-foreground">
                   Script embed with automatic loading. More flexible for styling.
                 </p>
               </TabsContent>

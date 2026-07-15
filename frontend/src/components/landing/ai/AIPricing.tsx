@@ -210,13 +210,13 @@ const FeatureValue = ({ value }: { value: boolean | string }) => {
   if (value === false) {
     return (
       <div className="flex items-center justify-center">
-        <div className="w-5 h-5 rounded-full bg-gray-500/20 flex items-center justify-center">
-          <XMarkIcon className="w-3 h-3 text-gray-500" />
+        <div className="w-5 h-5 rounded-full bg-muted-foreground/20 flex items-center justify-center">
+          <XMarkIcon className="w-3 h-3 text-muted-foreground" />
         </div>
       </div>
     );
   }
-  return <span className="text-xs text-gray-300 text-center">{value}</span>;
+  return <span className="text-xs text-foreground text-center">{value}</span>;
 };
 
 export default function AIPricing() {
@@ -271,7 +271,7 @@ export default function AIPricing() {
               className={`px-6 py-2 rounded-full text-sm font-medium transition-colors ${
                 billingCycle === 'monthly'
                   ? 'bg-foreground/10 text-white'
-                  : 'text-gray-400 hover:text-white'
+                  : 'text-muted-foreground hover:text-white'
               }`}
             >
               Monthly
@@ -281,7 +281,7 @@ export default function AIPricing() {
               className={`px-6 py-2 rounded-full text-sm font-medium transition-colors ${
                 billingCycle === 'annual'
                   ? 'bg-gradient-to-r from-green-500 to-emerald-500 text-white'
-                  : 'text-gray-400 hover:text-white'
+                  : 'text-muted-foreground hover:text-white'
               }`}
             >
               Annual
@@ -332,20 +332,20 @@ export default function AIPricing() {
                     </div>
                   </div>
 
-                  <p className="text-sm text-gray-400 mb-6">{tier.description}</p>
+                  <p className="text-sm text-muted-foreground mb-6">{tier.description}</p>
 
                   {/* Price */}
                   <div className="mb-6">
                     {price ? (
                       <div className="flex items-baseline gap-2">
                         <span className="text-4xl font-bold text-white">${price}</span>
-                        <span className="text-gray-500">/month</span>
+                        <span className="text-muted-foreground">/month</span>
                       </div>
                     ) : (
                       <div className="text-2xl font-bold text-white">Custom Pricing</div>
                     )}
                     {billingCycle === 'annual' && price && (
-                      <div className="text-xs text-gray-500 mt-1">
+                      <div className="text-xs text-muted-foreground mt-1">
                         Billed annually (${price * 12}/year)
                       </div>
                     )}
@@ -370,21 +370,21 @@ export default function AIPricing() {
                   <div className="mt-6 pt-6 border-t border-foreground/[0.05] grid grid-cols-2 gap-4">
                     <div>
                       <div className="text-lg font-semibold text-white">{tier.limits.profiles}</div>
-                      <div className="text-xs text-gray-500">Profiles</div>
+                      <div className="text-xs text-muted-foreground">Profiles</div>
                     </div>
                     <div>
                       <div className="text-lg font-semibold text-white">{tier.limits.events}</div>
-                      <div className="text-xs text-gray-500">Events</div>
+                      <div className="text-xs text-muted-foreground">Events</div>
                     </div>
                     <div>
                       <div className="text-lg font-semibold text-white">
                         {tier.limits.platforms}
                       </div>
-                      <div className="text-xs text-gray-500">Platforms</div>
+                      <div className="text-xs text-muted-foreground">Platforms</div>
                     </div>
                     <div>
                       <div className="text-lg font-semibold text-white">{tier.limits.users}</div>
-                      <div className="text-xs text-gray-500">Users</div>
+                      <div className="text-xs text-muted-foreground">Users</div>
                     </div>
                   </div>
                 </div>
@@ -430,7 +430,7 @@ export default function AIPricing() {
           <div className="rounded-3xl border border-border bg-card overflow-hidden">
             {/* Header */}
             <div className="grid grid-cols-4 gap-4 p-6 border-b border-foreground/[0.05] bg-foreground/[0.02]">
-              <div className="text-sm font-medium text-gray-400">Feature</div>
+              <div className="text-sm font-medium text-muted-foreground">Feature</div>
               <div className="text-sm font-medium text-center text-blue-400">Starter</div>
               <div className="text-sm font-medium text-center text-purple-400">Professional</div>
               <div className="text-sm font-medium text-center text-orange-400">Enterprise</div>
@@ -450,11 +450,11 @@ export default function AIPricing() {
                     }`}
                   >
                     <div className="flex items-center gap-2">
-                      <span className="text-sm text-gray-300">{feature.name}</span>
+                      <span className="text-sm text-foreground">{feature.name}</span>
                       {feature.tooltip && (
                         <div className="group relative">
-                          <InformationCircleIcon className="w-4 h-4 text-gray-500 cursor-help" />
-                          <div className="absolute left-full ml-2 top-1/2 -translate-y-1/2 px-3 py-2 bg-gray-900 border border-foreground/10 rounded-lg text-xs text-gray-400 opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none whitespace-nowrap z-10">
+                          <InformationCircleIcon className="w-4 h-4 text-muted-foreground cursor-help" />
+                          <div className="absolute left-full ml-2 top-1/2 -translate-y-1/2 px-3 py-2 bg-card border border-foreground/10 rounded-lg text-xs text-muted-foreground opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none whitespace-nowrap z-10">
                             {feature.tooltip}
                           </div>
                         </div>
@@ -477,7 +477,7 @@ export default function AIPricing() {
           transition={{ delay: 0.4, duration: 0.6 }}
           className="mt-16 text-left"
         >
-          <p className="text-gray-400 mb-4">
+          <p className="text-muted-foreground mb-4">
             Need custom integrations, dedicated support, or volume pricing?
           </p>
           <a

@@ -25,7 +25,9 @@ test.describe('Console (owner ops shell)', () => {
       await expect(page.getByRole('link', { name: /^Feature Flags$/i }).first()).toBeVisible()
     })
 
-    test('should navigate between console pages', async ({ page }) => {
+    test('should navigate between console pages', async ({ page, isMobile }) => {
+      // Desktop sidebar navigation; collapsed behind a menu on mobile.
+      test.skip(isMobile, 'desktop sidebar nav; mobile covered by mobile.spec.ts')
       await page.getByRole('link', { name: /^Feature Flags$/i }).first().click()
       await expect(page).toHaveURL(/\/console\/feature-flags/)
 

@@ -337,7 +337,7 @@ export default function Portfolio() {
                     </span>
                   </div>
                   <Link
-                    to={`/dashboard/am/tenant/${a.id}`}
+                    to={`/dashboard/am/account/${a.id}`}
                     className="px-3 py-1 rounded-lg bg-danger/20 text-danger hover:bg-danger/30 text-sm transition-colors"
                   >
                     View Now
@@ -517,7 +517,7 @@ export default function Portfolio() {
 
               {/* Action */}
               <Link
-                to={`/dashboard/am/tenant/${account.id}`}
+                to={`/dashboard/am/account/${account.id}`}
                 className="flex items-center gap-1 px-4 py-2 rounded-lg bg-surface-tertiary text-muted-foreground hover:text-white transition-colors"
               >
                 View

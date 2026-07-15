@@ -3,6 +3,7 @@ import { ComponentType, lazy } from 'react';
 import { HelmetProvider } from 'react-helmet-async';
 import DashboardLayout from './views/DashboardLayout';
 import LegacyTenantRedirect from './components/routing/LegacyTenantRedirect';
+import LegacyAmTenantRedirect from './components/routing/LegacyAmTenantRedirect';
 import LegacySuperadminRedirect from './components/routing/LegacySuperadminRedirect';
 import { Toaster } from './components/ui/toaster';
 import { TooltipProvider } from './components/ui/tooltip';
@@ -1446,12 +1447,17 @@ function App() {
                           }
                         />
                         <Route
-                          path="am/tenant/:tenantId"
+                          path="am/account/:accountId"
                           element={
                             <LazyRoute>
                               <AMAccountNarrative />
                             </LazyRoute>
                           }
+                        />
+                        {/* Legacy bookmark: am/tenant/:tenantId -> am/account/:accountId */}
+                        <Route
+                          path="am/tenant/:tenantId"
+                          element={<LegacyAmTenantRedirect />}
                         />
                       </Route>
 

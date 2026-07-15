@@ -213,14 +213,14 @@ export default function AIFeatures() {
                 </p>
 
                 {/* Description */}
-                <p className="text-gray-400 text-sm leading-relaxed mb-6">{model.description}</p>
+                <p className="text-muted-foreground text-sm leading-relaxed mb-6">{model.description}</p>
 
                 {/* Stats */}
                 <div className="flex items-center gap-4">
                   {Object.entries(model.stats).map(([key, value]) => (
                     <div key={key} className="flex items-center gap-2">
                       <div className="text-lg font-bold text-white">{value}</div>
-                      <div className="text-xs text-gray-500 uppercase">{key}</div>
+                      <div className="text-xs text-muted-foreground uppercase">{key}</div>
                     </div>
                   ))}
                 </div>
@@ -252,7 +252,7 @@ export default function AIFeatures() {
             >
               <feature.icon className="w-5 h-5 mb-3 transition-colors text-foreground/50" />
               <h4 className="text-sm font-medium text-white mb-1">{feature.title}</h4>
-              <p className="text-xs text-gray-500">{feature.description}</p>
+              <p className="text-xs text-muted-foreground">{feature.description}</p>
             </div>
           ))}
         </motion.div>
@@ -262,7 +262,7 @@ export default function AIFeatures() {
           initial={{ opacity: 0, y: 20 }}
           animate={isInView ? { opacity: 1, y: 0 } : {}}
           transition={{ delay: 0.6, duration: 0.6 }}
-          className="mt-16 flex flex-wrap items-center justify-center gap-6 text-sm text-gray-500"
+          className="mt-16 flex flex-wrap items-center justify-center gap-6 text-sm text-muted-foreground"
         >
           <div className="flex items-center gap-2">
             <div className="w-2 h-2 rounded-full bg-green-500" />
@@ -274,7 +274,7 @@ export default function AIFeatures() {
           </div>
           <div className="flex items-center gap-2">
             <span>Powered by</span>
-            <span className="font-medium text-gray-400">scikit-learn + Vertex AI</span>
+            <span className="font-medium text-muted-foreground">scikit-learn + Vertex AI</span>
           </div>
         </motion.div>
       </div>

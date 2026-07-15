@@ -35,7 +35,7 @@ const nodeConfig: Record<
   email: { icon: EnvelopeIcon, color: 'bg-blue-500', label: 'Email' },
   phone: { icon: PhoneIcon, color: 'bg-green-500', label: 'Phone' },
   device_id: { icon: DevicePhoneMobileIcon, color: 'bg-purple-500', label: 'Device' },
-  anonymous_id: { icon: UserCircleIcon, color: 'bg-gray-500', label: 'Anonymous' },
+  anonymous_id: { icon: UserCircleIcon, color: 'bg-muted-foreground', label: 'Anonymous' },
   external_id: { icon: LinkIcon, color: 'bg-orange-500', label: 'External' },
 };
 

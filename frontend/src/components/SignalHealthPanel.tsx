@@ -33,24 +33,24 @@ const MetricCardComponent: React.FC<{ card: MetricCard }> = ({ card }) => {
     ok: 'border-green-200 bg-green-50',
     risk: 'border-yellow-200 bg-yellow-50',
     degraded: 'border-orange-200 bg-orange-50',
-    neutral: 'border-gray-200 bg-gray-50',
+    neutral: 'border-border bg-muted',
   }
 
   const valueColors: Record<string, string> = {
     ok: 'text-green-700',
     risk: 'text-yellow-700',
     degraded: 'text-orange-700',
-    neutral: 'text-gray-700',
+    neutral: 'text-muted-foreground',
   }
 
   return (
     <div className={`rounded-lg border p-4 ${statusColors[card.status]}`}>
-      <div className="text-sm font-medium text-gray-600">{card.title}</div>
+      <div className="text-sm font-medium text-muted-foreground">{card.title}</div>
       <div className={`text-2xl font-bold mt-1 ${valueColors[card.status]}`}>
         {card.value}
       </div>
       {card.description && (
-        <div className="text-xs text-gray-500 mt-1">{card.description}</div>
+        <div className="text-xs text-muted-foreground mt-1">{card.description}</div>
       )}
     </div>
   )
@@ -62,7 +62,7 @@ const PlatformRow: React.FC<{ row: PlatformHealthRow }> = ({ row }) => {
     risk: 'bg-yellow-100 text-yellow-800',
     degraded: 'bg-orange-100 text-orange-800',
     critical: 'bg-red-100 text-red-800',
-    no_data: 'bg-gray-100 text-gray-800',
+    no_data: 'bg-muted text-muted-foreground',
   }
 
   const platformIcons: Record<string, string> = {
@@ -85,14 +85,14 @@ const PlatformRow: React.FC<{ row: PlatformHealthRow }> = ({ row }) => {
   }
 
   return (
-    <tr className="border-b border-gray-100 hover:bg-gray-50">
+    <tr className="border-b border-border hover:bg-muted">
       <td className="py-3 px-4">
         <div className="flex items-center space-x-2">
           <span className="text-lg">{platformIcons[row.platform] || '📊'}</span>
           <div>
-            <div className="font-medium text-gray-900 capitalize">{row.platform}</div>
+            <div className="font-medium text-foreground capitalize">{row.platform}</div>
             {row.account_id && (
-              <div className="text-xs text-gray-500">{row.account_id}</div>
+              <div className="text-xs text-muted-foreground">{row.account_id}</div>
             )}
           </div>
         </div>
@@ -109,7 +109,7 @@ const PlatformRow: React.FC<{ row: PlatformHealthRow }> = ({ row }) => {
             {row.emq_score.toFixed(0)}%
           </span>
         ) : (
-          <span className="text-gray-400">-</span>
+          <span className="text-muted-foreground">-</span>
         )}
       </td>
       <td className="py-3 px-4 text-center">
@@ -124,7 +124,7 @@ const PlatformRow: React.FC<{ row: PlatformHealthRow }> = ({ row }) => {
             {row.event_loss_pct.toFixed(1)}%
           </span>
         ) : (
-          <span className="text-gray-400">-</span>
+          <span className="text-muted-foreground">-</span>
         )}
       </td>
       <td className="py-3 px-4 text-center">
@@ -139,7 +139,7 @@ const PlatformRow: React.FC<{ row: PlatformHealthRow }> = ({ row }) => {
             {row.freshness_minutes} min
           </span>
         ) : (
-          <span className="text-gray-400">-</span>
+          <span className="text-muted-foreground">-</span>
         )}
       </td>
       <td className="py-3 px-4 text-center">
@@ -154,7 +154,7 @@ const PlatformRow: React.FC<{ row: PlatformHealthRow }> = ({ row }) => {
             {(100 - row.api_error_rate).toFixed(1)}%
           </span>
         ) : (
-          <span className="text-gray-400">-</span>
+          <span className="text-muted-foreground">-</span>
         )}
       </td>
       <td className="py-3 px-4 text-center">
@@ -182,8 +182,8 @@ export const SignalHealthPanel: React.FC<SignalHealthPanelProps> = ({
 
   if (!canSignalHealth) {
     return (
-      <div className="bg-gray-50 rounded-lg border border-gray-200 p-6 text-center">
-        <div className="text-gray-500">
+      <div className="bg-muted rounded-lg border border-border p-6 text-center">
+        <div className="text-muted-foreground">
           Signal Health feature is not enabled for your plan.
         </div>
       </div>
@@ -194,10 +194,10 @@ export const SignalHealthPanel: React.FC<SignalHealthPanelProps> = ({
     return (
       <div className="bg-card rounded-lg border border-border p-6">
         <div className="animate-pulse space-y-4">
-          <div className="h-6 bg-gray-200 rounded w-1/4" />
+          <div className="h-6 bg-muted rounded w-1/4" />
           <div className="grid grid-cols-4 gap-4">
             {[1, 2, 3, 4].map((i) => (
-              <div key={i} className="h-24 bg-gray-200 rounded" />
+              <div key={i} className="h-24 bg-muted rounded" />
             ))}
           </div>
         </div>
@@ -227,17 +227,17 @@ export const SignalHealthPanel: React.FC<SignalHealthPanelProps> = ({
     <div className="bg-card rounded-lg border border-border overflow-hidden">
       {/* Header */}
       <div
-        className="px-6 py-4 border-b border-gray-200 flex items-center justify-between cursor-pointer hover:bg-gray-50"
+        className="px-6 py-4 border-b border-border flex items-center justify-between cursor-pointer hover:bg-muted"
         onClick={() => setExpanded(!expanded)}
       >
         <div className="flex items-center space-x-3">
-          <h3 className="text-lg font-semibold text-gray-900">Signal Health</h3>
+          <h3 className="text-lg font-semibold text-foreground">Signal Health</h3>
           <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${
             data.status === 'ok' ? 'bg-green-100 text-green-800' :
             data.status === 'risk' ? 'bg-yellow-100 text-yellow-800' :
             data.status === 'degraded' ? 'bg-orange-100 text-orange-800' :
             data.status === 'critical' ? 'bg-red-100 text-red-800' :
-            'bg-gray-100 text-gray-800'
+            'bg-muted text-muted-foreground'
           }`}>
             {getStatusLabel(data.status)}
           </span>
@@ -248,9 +248,9 @@ export const SignalHealthPanel: React.FC<SignalHealthPanelProps> = ({
           )}
         </div>
         <div className="flex items-center space-x-2">
-          <span className="text-sm text-gray-500">{data.date}</span>
+          <span className="text-sm text-muted-foreground">{data.date}</span>
           <svg
-            className={`w-5 h-5 text-gray-400 transition-transform ${expanded ? 'rotate-180' : ''}`}
+            className={`w-5 h-5 text-muted-foreground transition-transform ${expanded ? 'rotate-180' : ''}`}
             fill="currentColor"
             viewBox="0 0 20 20"
           >
@@ -276,23 +276,23 @@ export const SignalHealthPanel: React.FC<SignalHealthPanelProps> = ({
             <div className="overflow-x-auto">
               <table className="w-full">
                 <thead>
-                  <tr className="bg-gray-50 border-b border-gray-200">
-                    <th scope="col" className="py-3 px-4 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  <tr className="bg-muted border-b border-border">
+                    <th scope="col" className="py-3 px-4 text-left text-xs font-medium text-muted-foreground uppercase tracking-wider">
                       Platform
                     </th>
-                    <th scope="col" className="py-3 px-4 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    <th scope="col" className="py-3 px-4 text-center text-xs font-medium text-muted-foreground uppercase tracking-wider">
                       EMQ Score
                     </th>
-                    <th scope="col" className="py-3 px-4 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    <th scope="col" className="py-3 px-4 text-center text-xs font-medium text-muted-foreground uppercase tracking-wider">
                       Event Loss
                     </th>
-                    <th scope="col" className="py-3 px-4 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    <th scope="col" className="py-3 px-4 text-center text-xs font-medium text-muted-foreground uppercase tracking-wider">
                       Freshness
                     </th>
-                    <th scope="col" className="py-3 px-4 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    <th scope="col" className="py-3 px-4 text-center text-xs font-medium text-muted-foreground uppercase tracking-wider">
                       API Health
                     </th>
-                    <th scope="col" className="py-3 px-4 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    <th scope="col" className="py-3 px-4 text-center text-xs font-medium text-muted-foreground uppercase tracking-wider">
                       Status
                     </th>
                   </tr>
@@ -341,9 +341,9 @@ export const SignalHealthPanel: React.FC<SignalHealthPanelProps> = ({
           {/* Empty State */}
           {data.platform_rows.length === 0 && data.cards.length === 0 && (
             <div className="text-center py-8">
-              <div className="text-gray-400 text-4xl mb-3">📊</div>
-              <div className="text-gray-600">No signal health data available for this date.</div>
-              <div className="text-sm text-gray-500 mt-1">
+              <div className="text-muted-foreground text-4xl mb-3">📊</div>
+              <div className="text-muted-foreground">No signal health data available for this date.</div>
+              <div className="text-sm text-muted-foreground mt-1">
                 Data will appear after the daily sync runs.
               </div>
             </div>

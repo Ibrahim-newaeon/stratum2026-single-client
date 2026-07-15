@@ -18,10 +18,10 @@ import {
   ArrowDownRight,
   Minus,
 } from 'lucide-react'
-import { useCommandCenter, type CommandCenterItem } from '@/api/hooks/useTenantDashboard'
+import { useCommandCenter, type CommandCenterItem } from '@/api/hooks/useAccountDashboard'
 
 interface CommandCenterProps {
-  tenantId: number
+  accountId: number
   className?: string
   onApply?: (item: CommandCenterItem) => void
   onDismiss?: (item: CommandCenterItem) => void
@@ -65,7 +65,7 @@ const ScoreBar: React.FC<{ score: number }> = ({ score }) => {
 
   return (
     <div className="flex items-center gap-2">
-      <div className="w-20 h-2 bg-gray-200 dark:bg-gray-700 rounded-full overflow-hidden">
+      <div className="w-20 h-2 bg-muted rounded-full overflow-hidden">
         <div
           className={`h-full rounded-full transition-[width] ${
             isPositive ? 'bg-emerald-500' : 'bg-red-500'
@@ -92,7 +92,7 @@ const SignalIndicator: React.FC<{ value: number; label: string }> = ({ value, la
       ? 'text-emerald-500'
       : value < 0
       ? 'text-red-500'
-      : 'text-gray-400'
+      : 'text-muted-foreground'
 
   return (
     <div className="flex items-center gap-1 text-xs">
@@ -102,14 +102,14 @@ const SignalIndicator: React.FC<{ value: number; label: string }> = ({ value, la
   )
 }
 
-export const CommandCenter: React.FC<CommandCenterProps> = ({ tenantId, className = '', onApply, onDismiss }) => {
+export const CommandCenter: React.FC<CommandCenterProps> = ({ accountId, className = '', onApply, onDismiss }) => {
   const [actionFilter, setActionFilter] = useState<ActionFilter>('all')
   const [sortField, setSortField] = useState<SortField>('scaling_score')
   const [sortDirection, setSortDirection] = useState<SortDirection>('desc')
   const [expandedRow, setExpandedRow] = useState<number | null>(null)
 
   const { data, isLoading, error } = useCommandCenter(
-    tenantId,
+    accountId,
     actionFilter !== 'all' ? { action: actionFilter } : undefined
   )
 
@@ -135,7 +135,7 @@ export const CommandCenter: React.FC<CommandCenterProps> = ({ tenantId, classNam
 
   const SortHeader: React.FC<{ field: SortField; label: string }> = ({ field, label }) => (
     <th scope="col"
-      className="px-4 py-3 text-left text-xs font-medium text-muted-foreground uppercase tracking-wider cursor-pointer hover:bg-gray-50 dark:hover:bg-gray-700/50"
+      className="px-4 py-3 text-left text-xs font-medium text-muted-foreground uppercase tracking-wider cursor-pointer hover:bg-muted/50"
       onClick={() => handleSort(field)}
     >
       <div className="flex items-center gap-1">
@@ -155,10 +155,10 @@ export const CommandCenter: React.FC<CommandCenterProps> = ({ tenantId, classNam
     return (
       <div className={`rounded-xl border bg-card shadow-card p-6 ${className}`}>
         <div className="animate-pulse space-y-4">
-          <div className="h-8 bg-gray-200 dark:bg-gray-700 rounded w-1/3" />
+          <div className="h-8 bg-muted rounded w-1/3" />
           <div className="space-y-3">
             {[1, 2, 3, 4, 5].map((i) => (
-              <div key={i} className="h-12 bg-gray-200 dark:bg-gray-700 rounded" />
+              <div key={i} className="h-12 bg-muted rounded" />
             ))}
           </div>
         </div>
@@ -213,7 +213,7 @@ export const CommandCenter: React.FC<CommandCenterProps> = ({ tenantId, classNam
 
         {/* Filters */}
         <div className="mt-4 flex items-center gap-2">
-          <Filter className="h-4 w-4 text-gray-400" />
+          <Filter className="h-4 w-4 text-muted-foreground" />
           <div className="flex gap-1">
             {(['all', 'scale', 'watch', 'fix'] as ActionFilter[]).map((filter) => (
               <button
@@ -252,11 +252,11 @@ export const CommandCenter: React.FC<CommandCenterProps> = ({ tenantId, classNam
               </th>
             </tr>
           </thead>
-          <tbody className="divide-y divide-gray-200 dark:divide-gray-700">
+          <tbody className="divide-y divide-border">
             {sortedItems.map((item) => (
               <React.Fragment key={item.campaign_id}>
                 <tr
-                  className="hover:bg-gray-50 dark:hover:bg-gray-800/50 cursor-pointer transition-colors"
+                  className="hover:bg-muted/50 cursor-pointer transition-colors"
                   onClick={() =>
                     setExpandedRow(expandedRow === item.campaign_id ? null : item.campaign_id)
                   }
@@ -335,7 +335,7 @@ export const CommandCenter: React.FC<CommandCenterProps> = ({ tenantId, classNam
                             Apply Action
                           </button>
                           <button
-                            className={`px-3 py-1.5 text-sm border border-gray-300 dark:border-gray-600 rounded-lg transition-colors ${
+                            className={`px-3 py-1.5 text-sm border border-border rounded-lg transition-colors ${
                               onDismiss ? 'hover:bg-muted cursor-pointer' : 'opacity-50 cursor-not-allowed'
                             }`}
                             onClick={(e) => {

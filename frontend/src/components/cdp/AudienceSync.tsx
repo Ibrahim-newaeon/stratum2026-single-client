@@ -69,7 +69,7 @@ const PLATFORM_CONFIG: Record<
   tiktok: {
     name: 'TikTok',
     color: 'text-foreground',
-    bgColor: 'bg-gray-900/10 dark:bg-foreground/10',
+    bgColor: 'bg-foreground/10',
     icon: 'T',
   },
   snapchat: {
@@ -117,7 +117,7 @@ function StatusBadge({ status }: { status: SyncStatus | null }) {
   > = {
     pending: {
       icon: <Clock className="w-3 h-3" />,
-      className: 'bg-gray-500/10 text-gray-500',
+      className: 'bg-muted-foreground/10 text-muted-foreground',
       label: 'Pending',
     },
     processing: {
@@ -144,7 +144,7 @@ function StatusBadge({ status }: { status: SyncStatus | null }) {
 
   if (!status) {
     return (
-      <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-medium bg-gray-500/10 text-gray-500">
+      <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-medium bg-muted-foreground/10 text-muted-foreground">
         <Clock className="w-3 h-3" />
         Never synced
       </span>
@@ -339,7 +339,7 @@ function CreateAudienceModal({
                 id="autoSync"
                 checked={autoSync}
                 onChange={(e) => setAutoSync(e.target.checked)}
-                className="w-4 h-4 rounded border-gray-300"
+                className="w-4 h-4 rounded border-border"
               />
               <label htmlFor="autoSync" className="text-sm font-medium">
                 Auto-sync audience
@@ -636,7 +636,7 @@ function ExportAudienceModal({ isOpen, onClose, segments }: ExportAudienceModalP
                   type="checkbox"
                   checked={includeTraits}
                   onChange={(e) => setIncludeTraits(e.target.checked)}
-                  className="w-4 h-4 rounded border-gray-300"
+                  className="w-4 h-4 rounded border-border"
                 />
                 <span className="text-sm">Profile traits & attributes</span>
               </label>
@@ -645,7 +645,7 @@ function ExportAudienceModal({ isOpen, onClose, segments }: ExportAudienceModalP
                   type="checkbox"
                   checked={includeEvents}
                   onChange={(e) => setIncludeEvents(e.target.checked)}
-                  className="w-4 h-4 rounded border-gray-300"
+                  className="w-4 h-4 rounded border-border"
                 />
                 <span className="text-sm">Recent events (last 30 days)</span>
               </label>

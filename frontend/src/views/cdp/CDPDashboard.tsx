@@ -103,7 +103,7 @@ function HealthBadge({ status }: { status: string }) {
       color: 'bg-red-100 text-red-800 dark:bg-red-900/30 dark:text-red-400',
       icon: ExclamationTriangleIcon,
     },
-  }[status] || { color: 'bg-gray-100 text-gray-800', icon: CheckCircleIcon };
+  }[status] || { color: 'bg-muted text-muted-foreground', icon: CheckCircleIcon };
 
   return (
     <span
@@ -121,7 +121,7 @@ function HealthBadge({ status }: { status: string }) {
 // Lifecycle Distribution Chart
 function LifecycleChart({ data }: { data: Record<string, number> }) {
   const stages = [
-    { key: 'anonymous', label: 'Anonymous', color: 'bg-gray-400' },
+    { key: 'anonymous', label: 'Anonymous', color: 'bg-muted-foreground' },
     { key: 'known', label: 'Known', color: 'bg-blue-400' },
     { key: 'customer', label: 'Customer', color: 'bg-green-400' },
     { key: 'churned', label: 'Churned', color: 'bg-red-400' },

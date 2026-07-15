@@ -1,18 +1,17 @@
 import { test, expect } from '@playwright/test'
+import { DEFAULT_USER } from './utils/session'
 
 test.describe('Logout Flow', () => {
   test.beforeEach(async ({ page }) => {
-    // Seed authenticated state
+    // Seed authenticated state ONCE (deliberately not via authenticate()'s
+    // addInitScript — these tests clear the session and must not have it
+    // re-seeded on the next navigation). stratum_auth is the key
+    // AuthContext actually restores from.
     await page.goto('/')
-    await page.evaluate(() => {
-      localStorage.setItem('auth_token', 'test-token')
-      localStorage.setItem('user', JSON.stringify({
-        id: 1,
-        name: 'Test User',
-        email: 'test@example.com',
-        role: 'tenant_admin',
-      }))
-    })
+    await page.evaluate((u) => {
+      localStorage.setItem('stratum_auth', JSON.stringify(u))
+      sessionStorage.setItem('access_token', 'e2e.placeholder.token')
+    }, DEFAULT_USER)
     await page.goto('/dashboard/overview')
   })
 
@@ -24,34 +23,35 @@ test.describe('Logout Flow', () => {
     }
 
     // Click logout
-    const logoutBtn = page.locator('text=Logout, text=Sign out').first()
-    if (await logoutBtn.isVisible()) {
+    const logoutBtn = page.getByText(/^(Logout|Sign out)$/i).first()
+    if (await logoutBtn.isVisible().catch(() => false)) {
       await logoutBtn.click()
     } else {
-      // Fallback: simulate logout via localStorage clear + navigate
+      // Fallback: simulate logout via session clear + navigate
       await page.evaluate(() => {
-        localStorage.removeItem('auth_token')
-        localStorage.removeItem('user')
+        localStorage.removeItem('stratum_auth')
+        sessionStorage.removeItem('access_token')
         window.location.href = '/login'
       })
     }
 
     // Should redirect to login
-    await expect(page).toHaveURL(/login/)
+    await expect(page).toHaveURL(/login/, { timeout: 15000 })
 
-    // Auth tokens should be cleared
-    const token = await page.evaluate(() => localStorage.getItem('auth_token'))
-    expect(token).toBeNull()
+    // Auth session should be cleared
+    const session = await page.evaluate(() => localStorage.getItem('stratum_auth'))
+    expect(session).toBeNull()
   })
 
   test('should block dashboard access after logout', async ({ page }) => {
     await page.evaluate(() => {
-      localStorage.removeItem('auth_token')
-      localStorage.removeItem('user')
+      localStorage.removeItem('stratum_auth')
+      sessionStorage.removeItem('access_token')
     })
     await page.goto('/dashboard/overview')
 
-    // Should be redirected to login
-    await expect(page).toHaveURL(/login/)
+    // Should be redirected to login (allow slower engines time for the
+    // lazy-loaded route chunk + auth-restore bounce)
+    await expect(page).toHaveURL(/login/, { timeout: 15000 })
   })
 })

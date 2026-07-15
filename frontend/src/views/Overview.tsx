@@ -49,7 +49,7 @@ import {
   DashboardFilters,
   KPIMetrics,
 } from '@/types/dashboard'
-import { useCampaigns, useTenantOverview } from '@/api/hooks'
+import { useCampaigns, useAccountOverview } from '@/api/hooks'
 import { useSyncAllCampaigns, useSyncCampaign } from '@/api/campaigns'
 import { usePriceMetrics } from '@/hooks/usePriceMetrics'
 import { exportDashboardPDF } from '@/utils/pdfExport'
@@ -254,7 +254,7 @@ export function Overview() {
   const [syncingCampaignId, setSyncingCampaignId] = useState<string | null>(null)
 
   const { data: campaignsData, isLoading: campaignsLoading, refetch: refetchCampaigns } = useCampaigns()
-  const { data: overviewData } = useTenantOverview(accountId)
+  const { data: overviewData } = useAccountOverview(accountId)
 
   const simulation = useLiveSimulation(10000)
 

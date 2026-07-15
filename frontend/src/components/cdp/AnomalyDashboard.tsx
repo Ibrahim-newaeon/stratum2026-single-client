@@ -90,8 +90,8 @@ const HEALTH_CONFIG = {
   },
   unknown: {
     label: 'Unknown',
-    color: 'text-gray-500',
-    bgColor: 'bg-gray-500/10',
+    color: 'text-muted-foreground',
+    bgColor: 'bg-muted-foreground/10',
     icon: <Info className="w-5 h-5" />,
   },
 };
@@ -104,7 +104,7 @@ function TrendIcon({ trend }: { trend: 'increasing' | 'stable' | 'decreasing' })
     case 'decreasing':
       return <TrendingDown className="w-4 h-4 text-red-500" />;
     default:
-      return <Minus className="w-4 h-4 text-gray-500" />;
+      return <Minus className="w-4 h-4 text-muted-foreground" />;
   }
 }
 

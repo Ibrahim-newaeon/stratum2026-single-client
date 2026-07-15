@@ -32,7 +32,7 @@ import {
 // Lifecycle Stage Badge
 function LifecycleBadge({ stage }: { stage: LifecycleStage }) {
   const config = {
-    anonymous: 'bg-gray-100 text-gray-800 dark:bg-gray-800 dark:text-gray-300',
+    anonymous: 'bg-muted text-muted-foreground',
     known: 'bg-blue-100 text-blue-800 dark:bg-blue-900/30 dark:text-blue-400',
     customer: 'bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-400',
     churned: 'bg-red-100 text-red-800 dark:bg-red-900/30 dark:text-red-400',
@@ -288,7 +288,7 @@ function FilterPanel({
             onChange={(e) =>
               onFilterChange({ ...filters, has_email: e.target.checked || undefined })
             }
-            className="rounded border-gray-300"
+            className="rounded border-border"
           />
           <span className="text-sm">Has Email</span>
         </label>
@@ -299,7 +299,7 @@ function FilterPanel({
             onChange={(e) =>
               onFilterChange({ ...filters, has_phone: e.target.checked || undefined })
             }
-            className="rounded border-gray-300"
+            className="rounded border-border"
           />
           <span className="text-sm">Has Phone</span>
         </label>
@@ -313,7 +313,7 @@ function FilterPanel({
           onChange={(e) =>
             onFilterChange({ ...filters, is_customer: e.target.checked || undefined })
           }
-          className="rounded border-gray-300"
+          className="rounded border-border"
         />
         <span className="text-sm">Customers Only</span>
       </label>

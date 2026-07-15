@@ -27,7 +27,7 @@ export default function ComplianceDashboard() {
             <ShieldCheckIcon className="w-8 h-8 text-primary" />
             Compliance & Governance
           </h1>
-          <p className="text-gray-400 mt-2">Audit logs, role-based access control, and data retention policies</p>
+          <p className="text-muted-foreground mt-2">Audit logs, role-based access control, and data retention policies</p>
         </header>
 
         <div className="flex gap-2 mb-6">
@@ -41,7 +41,7 @@ export default function ComplianceDashboard() {
               onClick={() => setActiveTab(tab.id)}
               className={cn(
                 'flex items-center gap-2 px-4 py-2 rounded-lg font-medium transition-all',
-                activeTab === tab.id ? 'bg-primary text-white' : 'bg-foreground/[0.03] text-gray-400 hover:bg-foreground/[0.06]'
+                activeTab === tab.id ? 'bg-primary text-white' : 'bg-foreground/[0.03] text-muted-foreground hover:bg-foreground/[0.06]'
               )}
             >
               <tab.icon className="w-5 h-5" />
@@ -113,21 +113,21 @@ function AuditLogPanel() {
       <div className="bg-foreground/[0.02] border border-foreground/10 rounded-xl p-4">
         <div className="grid grid-cols-2 md:grid-cols-4 gap-3 mb-3">
           <div>
-            <label className="text-xs text-gray-400">From</label>
+            <label className="text-xs text-muted-foreground">From</label>
             <input type="date" value={filters.dateFrom} onChange={(e) => setFilters({ ...filters, dateFrom: e.target.value })} className="w-full bg-foreground/[0.03] border border-foreground/10 rounded px-2 py-1.5 text-sm text-white" />
           </div>
           <div>
-            <label className="text-xs text-gray-400">To</label>
+            <label className="text-xs text-muted-foreground">To</label>
             <input type="date" value={filters.dateTo} onChange={(e) => setFilters({ ...filters, dateTo: e.target.value })} className="w-full bg-foreground/[0.03] border border-foreground/10 rounded px-2 py-1.5 text-sm text-white" />
           </div>
           <div>
-            <label className="text-xs text-gray-400">Severity</label>
-            <input value={filters.severity} onChange={(e) => setFilters({ ...filters, severity: e.target.value })} placeholder="info,warning,critical" className="w-full bg-foreground/[0.03] border border-foreground/10 rounded px-2 py-1.5 text-sm text-white placeholder-gray-600" />
+            <label className="text-xs text-muted-foreground">Severity</label>
+            <input value={filters.severity} onChange={(e) => setFilters({ ...filters, severity: e.target.value })} placeholder="info,warning,critical" className="w-full bg-foreground/[0.03] border border-foreground/10 rounded px-2 py-1.5 text-sm text-white placeholder:text-muted-foreground" />
           </div>
           <div>
-            <label className="text-xs text-gray-400">Search</label>
+            <label className="text-xs text-muted-foreground">Search</label>
             <div className="flex gap-1">
-              <input value={filters.searchTerm} onChange={(e) => setFilters({ ...filters, searchTerm: e.target.value })} placeholder="keyword..." className="flex-1 bg-foreground/[0.03] border border-foreground/10 rounded px-2 py-1.5 text-sm text-white placeholder-gray-600" />
+              <input value={filters.searchTerm} onChange={(e) => setFilters({ ...filters, searchTerm: e.target.value })} placeholder="keyword..." className="flex-1 bg-foreground/[0.03] border border-foreground/10 rounded px-2 py-1.5 text-sm text-white placeholder:text-muted-foreground" />
             </div>
           </div>
         </div>
@@ -136,7 +136,7 @@ function AuditLogPanel() {
             {loading ? <ArrowPathIcon className="w-4 h-4 animate-spin" /> : <MagnifyingGlassIcon className="w-4 h-4" />}
             Search
           </button>
-          <button onClick={() => { setFilters({ dateFrom: '', dateTo: '', actions: '', resourceTypes: '', severity: '', searchTerm: '' }); setEntries([]); setTotal(0); }} className="bg-foreground/[0.03] hover:bg-foreground/[0.06] text-gray-400 px-4 py-1.5 rounded-lg text-sm transition-colors">
+          <button onClick={() => { setFilters({ dateFrom: '', dateTo: '', actions: '', resourceTypes: '', severity: '', searchTerm: '' }); setEntries([]); setTotal(0); }} className="bg-foreground/[0.03] hover:bg-foreground/[0.06] text-muted-foreground px-4 py-1.5 rounded-lg text-sm transition-colors">
             Reset
           </button>
         </div>
@@ -147,30 +147,30 @@ function AuditLogPanel() {
           <table className="w-full text-sm">
             <thead>
               <tr className="border-b border-foreground/10 bg-foreground/[0.02]">
-                <th className="text-left py-3 px-4 text-gray-400 font-medium">Time</th>
-                <th className="text-left py-3 px-4 text-gray-400 font-medium">User</th>
-                <th className="text-left py-3 px-4 text-gray-400 font-medium">Action</th>
-                <th className="text-left py-3 px-4 text-gray-400 font-medium">Resource</th>
-                <th className="text-left py-3 px-4 text-gray-400 font-medium">Severity</th>
-                <th className="text-left py-3 px-4 text-gray-400 font-medium">Details</th>
+                <th className="text-left py-3 px-4 text-muted-foreground font-medium">Time</th>
+                <th className="text-left py-3 px-4 text-muted-foreground font-medium">User</th>
+                <th className="text-left py-3 px-4 text-muted-foreground font-medium">Action</th>
+                <th className="text-left py-3 px-4 text-muted-foreground font-medium">Resource</th>
+                <th className="text-left py-3 px-4 text-muted-foreground font-medium">Severity</th>
+                <th className="text-left py-3 px-4 text-muted-foreground font-medium">Details</th>
               </tr>
             </thead>
             <tbody>
               {entries.length === 0 && (
                 <tr>
-                  <td colSpan={6} className="py-8 text-center text-gray-500">No entries found. Apply filters and search.</td>
+                  <td colSpan={6} className="py-8 text-center text-muted-foreground">No entries found. Apply filters and search.</td>
                 </tr>
               )}
               {entries.map((entry, i) => (
                 <tr key={i} className="border-b border-foreground/5 hover:bg-foreground/[0.02]">
-                  <td className="py-3 px-4 text-gray-400 whitespace-nowrap">{entry.timestamp?.slice(0, 16).replace('T', ' ')}</td>
-                  <td className="py-3 px-4 text-gray-300">{entry.user_email || `User #${entry.user_id}`}</td>
-                  <td className="py-3 px-4 text-gray-300">{entry.action}</td>
-                  <td className="py-3 px-4 text-gray-300">{entry.resource_type}{entry.resource_id ? ` #${entry.resource_id}` : ''}</td>
+                  <td className="py-3 px-4 text-muted-foreground whitespace-nowrap">{entry.timestamp?.slice(0, 16).replace('T', ' ')}</td>
+                  <td className="py-3 px-4 text-foreground">{entry.user_email || `User #${entry.user_id}`}</td>
+                  <td className="py-3 px-4 text-foreground">{entry.action}</td>
+                  <td className="py-3 px-4 text-foreground">{entry.resource_type}{entry.resource_id ? ` #${entry.resource_id}` : ''}</td>
                   <td className="py-3 px-4">
                     <span className={`text-xs px-2 py-0.5 rounded-full ${severityBadge(entry.severity)}`}>{entry.severity}</span>
                   </td>
-                  <td className="py-3 px-4 text-gray-400 text-xs max-w-xs truncate">{JSON.stringify(entry.details)}</td>
+                  <td className="py-3 px-4 text-muted-foreground text-xs max-w-xs truncate">{JSON.stringify(entry.details)}</td>
                 </tr>
               ))}
             </tbody>
@@ -178,11 +178,11 @@ function AuditLogPanel() {
         </div>
         {total > 50 && (
           <div className="flex items-center justify-between p-4 border-t border-foreground/10">
-            <span className="text-sm text-gray-400">{total} total entries</span>
+            <span className="text-sm text-muted-foreground">{total} total entries</span>
             <div className="flex gap-2">
-              <button onClick={() => { setPage(Math.max(1, page - 1)); search(); }} disabled={page === 1} className="px-3 py-1 bg-foreground/[0.03] rounded text-sm text-gray-400 hover:bg-foreground/[0.06] disabled:opacity-30">Previous</button>
-              <span className="px-3 py-1 text-sm text-gray-400">Page {page}</span>
-              <button onClick={() => { setPage(page + 1); search(); }} disabled={entries.length < 50} className="px-3 py-1 bg-foreground/[0.03] rounded text-sm text-gray-400 hover:bg-foreground/[0.06] disabled:opacity-30">Next</button>
+              <button onClick={() => { setPage(Math.max(1, page - 1)); search(); }} disabled={page === 1} className="px-3 py-1 bg-foreground/[0.03] rounded text-sm text-muted-foreground hover:bg-foreground/[0.06] disabled:opacity-30">Previous</button>
+              <span className="px-3 py-1 text-sm text-muted-foreground">Page {page}</span>
+              <button onClick={() => { setPage(page + 1); search(); }} disabled={entries.length < 50} className="px-3 py-1 bg-foreground/[0.03] rounded text-sm text-muted-foreground hover:bg-foreground/[0.06] disabled:opacity-30">Next</button>
             </div>
           </div>
         )}
@@ -278,13 +278,13 @@ function RBACPanel() {
           <div key={role.id} className="bg-foreground/[0.02] border border-foreground/10 rounded-xl p-5">
             <div className="flex items-center justify-between mb-2">
               <h3 className="font-semibold">{role.name}</h3>
-              {!role.is_custom && <span className="text-xs bg-foreground/[0.05] text-gray-500 px-2 py-0.5 rounded-full">Built-in</span>}
+              {!role.is_custom && <span className="text-xs bg-foreground/[0.05] text-muted-foreground px-2 py-0.5 rounded-full">Built-in</span>}
             </div>
-            <p className="text-sm text-gray-400 mb-3">{role.description}</p>
+            <p className="text-sm text-muted-foreground mb-3">{role.description}</p>
             <div className="space-y-1">
-              <span className="text-xs text-gray-500 font-medium">Permissions:</span>
+              <span className="text-xs text-muted-foreground font-medium">Permissions:</span>
               {role.permissions.map((p: any, i: number) => (
-                <div key={i} className="text-xs text-gray-400 flex items-center gap-1">
+                <div key={i} className="text-xs text-muted-foreground flex items-center gap-1">
                   <span className="w-1 h-1 rounded-full bg-primary" />
                   {p.resource_type} → {p.action}
                 </div>
@@ -296,7 +296,7 @@ function RBACPanel() {
 
       <div className="bg-foreground/[0.02] border border-foreground/10 rounded-xl p-6">
         <h3 className="text-lg font-semibold mb-4">Create Custom Role</h3>
-        <p className="text-sm text-gray-400">Custom roles can be defined with resource-level conditions. Contact support to enable.</p>
+        <p className="text-sm text-muted-foreground">Custom roles can be defined with resource-level conditions. Contact support to enable.</p>
       </div>
     </div>
   );
@@ -355,7 +355,7 @@ function GDPRPanel() {
             { key: 'campaign_metric_retention_days', label: 'Campaign Metric Retention', min: 90, max: 1825 },
           ].map((field) => (
             <div key={field.key}>
-              <label className="block text-sm text-gray-400 mb-1">{field.label} ({field.min}-{field.max} days)</label>
+              <label className="block text-sm text-muted-foreground mb-1">{field.label} ({field.min}-{field.max} days)</label>
               <div className="flex items-center gap-3">
                 <input
                   type="range"
@@ -377,7 +377,7 @@ function GDPRPanel() {
             onChange={(e) => setPolicy({ ...policy, auto_purge_enabled: e.target.checked })}
             className="w-4 h-4 accent-primary"
           />
-          <label className="text-sm text-gray-300">Enable automated purge</label>
+          <label className="text-sm text-foreground">Enable automated purge</label>
         </div>
         <button onClick={savePolicy} className="mt-4 bg-primary hover:bg-primary/90 text-white px-5 py-2 rounded-lg text-sm font-medium transition-colors">
           Save Policy
@@ -390,13 +390,13 @@ function GDPRPanel() {
           <button
             onClick={previewPurge}
             disabled={loading}
-            className="bg-foreground/[0.03] hover:bg-foreground/[0.06] text-gray-300 px-4 py-2 rounded-lg text-sm font-medium flex items-center gap-2 transition-colors"
+            className="bg-foreground/[0.03] hover:bg-foreground/[0.06] text-foreground px-4 py-2 rounded-lg text-sm font-medium flex items-center gap-2 transition-colors"
           >
             {loading ? <ArrowPathIcon className="w-4 h-4 animate-spin" /> : <TrashIcon className="w-4 h-4" />}
             Preview Purge
           </button>
         </div>
-        <p className="text-sm text-gray-400 mb-4">See what data would be deleted under current policy. No data is actually deleted.</p>
+        <p className="text-sm text-muted-foreground mb-4">See what data would be deleted under current policy. No data is actually deleted.</p>
 
         {preview && (
           <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
@@ -408,11 +408,11 @@ function GDPRPanel() {
             ].map((item) => (
               <div key={item.label} className="bg-foreground/[0.03] border border-foreground/5 rounded-lg p-4 text-center">
                 <div className={`text-2xl font-bold ${item.color}`}>{item.count.toLocaleString()}</div>
-                <div className="text-xs text-gray-500 mt-1">{item.label}</div>
+                <div className="text-xs text-muted-foreground mt-1">{item.label}</div>
               </div>
             ))}
             <div className="col-span-2 md:col-span-4 bg-foreground/[0.03] border border-foreground/5 rounded-lg p-4">
-              <div className="text-sm text-gray-400">Estimated space to reclaim: <span className="text-white font-medium">{preview.total_estimated_mb} MB</span></div>
+              <div className="text-sm text-muted-foreground">Estimated space to reclaim: <span className="text-white font-medium">{preview.total_estimated_mb} MB</span></div>
             </div>
           </div>
         )}

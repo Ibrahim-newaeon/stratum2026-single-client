@@ -1535,8 +1535,8 @@ export const WORKFLOW_STATUS_CONFIG: Record<
 > = {
   draft: {
     label: 'Draft',
-    color: 'text-gray-400',
-    bgColor: 'bg-gray-500/20',
+    color: 'text-muted-foreground',
+    bgColor: 'bg-muted-foreground/20',
     description: 'Work in progress, not yet submitted',
     allowedActions: ['submit_for_review', 'schedule', 'publish'],
   },
@@ -1577,15 +1577,15 @@ export const WORKFLOW_STATUS_CONFIG: Record<
   },
   unpublished: {
     label: 'Unpublished',
-    color: 'text-gray-400',
-    bgColor: 'bg-gray-500/20',
+    color: 'text-muted-foreground',
+    bgColor: 'bg-muted-foreground/20',
     description: 'Temporarily taken offline',
     allowedActions: ['publish', 'archive'],
   },
   archived: {
     label: 'Archived',
-    color: 'text-gray-500',
-    bgColor: 'bg-gray-600/20',
+    color: 'text-muted-foreground',
+    bgColor: 'bg-muted-foreground/20',
     description: 'Permanently archived',
     allowedActions: ['restore'],
   },

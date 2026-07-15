@@ -86,7 +86,7 @@ export default function AIFooter() {
             <a href="/" className="flex items-center gap-3 mb-6">
               <img src="/images/stratum-logo.png" alt="Stratum AI" className="h-7" loading="lazy" decoding="async" />
             </a>
-            <p className="text-sm text-gray-500 mb-6">
+            <p className="text-sm text-muted-foreground mb-6">
               AI-Powered Revenue Operating System with Trust-Gated Autopilot.
             </p>
             <div className="flex items-center gap-4">
@@ -96,7 +96,7 @@ export default function AIFooter() {
                   href={social.href}
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="text-gray-500 hover:text-white transition-colors"
+                  className="text-muted-foreground hover:text-white transition-colors"
                   aria-label={social.name}
                 >
                   {social.icon}
@@ -114,7 +114,7 @@ export default function AIFooter() {
                   <li key={link.name}>
                     <a
                       href={link.href}
-                      className="text-sm text-gray-500 hover:text-white transition-colors"
+                      className="text-sm text-muted-foreground hover:text-white transition-colors"
                     >
                       {link.name}
                     </a>
@@ -130,11 +130,11 @@ export default function AIFooter() {
       <div className="border-t border-foreground/[0.05]">
         <div className="max-w-7xl mx-auto px-6 py-6">
           <div className="flex flex-col md:flex-row items-center justify-between gap-4">
-            <p className="text-sm text-gray-500">{currentYear} Stratum AI. All rights reserved.</p>
+            <p className="text-sm text-muted-foreground">{currentYear} Stratum AI. All rights reserved.</p>
 
             <div className="flex items-center gap-6">
               {/* Compliance Badges */}
-              <div className="flex items-center gap-2 text-xs text-gray-500">
+              <div className="flex items-center gap-2 text-xs text-muted-foreground">
                 <div className="px-2 py-1 rounded border border-foreground/10 bg-foreground/[0.02]">
                   SOC 2
                 </div>

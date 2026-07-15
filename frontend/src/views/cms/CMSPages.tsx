@@ -34,11 +34,11 @@ import {
 // =============================================================================
 
 const PAGE_STATUS_STYLES: Record<PageStatus, { label: string; color: string; bg: string }> = {
-  draft: { label: 'Draft', color: 'text-gray-400', bg: 'bg-gray-500/20' },
+  draft: { label: 'Draft', color: 'text-muted-foreground', bg: 'bg-muted-foreground/20' },
   in_review: { label: 'In Review', color: 'text-yellow-400', bg: 'bg-yellow-500/20' },
   approved: { label: 'Approved', color: 'text-green-400', bg: 'bg-green-500/20' },
   published: { label: 'Published', color: 'text-emerald-400', bg: 'bg-emerald-500/20' },
-  archived: { label: 'Archived', color: 'text-gray-500', bg: 'bg-gray-600/20' },
+  archived: { label: 'Archived', color: 'text-muted-foreground', bg: 'bg-muted-foreground/20' },
 };
 
 const TEMPLATES = [

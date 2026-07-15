@@ -834,7 +834,7 @@ export function WhatsApp() {
 
   const getMessageStatusBadge = (status: MessageStatus) => {
     const config = {
-      pending: { icon: Clock, color: 'text-gray-500', bg: 'bg-gray-500/10' },
+      pending: { icon: Clock, color: 'text-muted-foreground', bg: 'bg-muted-foreground/10' },
       sent: { icon: Send, color: 'text-blue-500', bg: 'bg-blue-500/10' },
       delivered: { icon: CheckCircle, color: 'text-green-500', bg: 'bg-green-500/10' },
       read: { icon: Eye, color: 'text-purple-500', bg: 'bg-purple-500/10' },
@@ -854,7 +854,7 @@ export function WhatsApp() {
       approved: 'bg-green-500/10 text-green-500',
       pending: 'bg-amber-500/10 text-amber-500',
       rejected: 'bg-red-500/10 text-red-500',
-      paused: 'bg-gray-500/10 text-gray-500',
+      paused: 'bg-muted-foreground/10 text-muted-foreground',
     }
     return (
       <span className={cn('px-2 py-1 rounded-full text-xs font-medium', styles[status])}>
@@ -870,7 +870,7 @@ export function WhatsApp() {
       AUTHENTICATION: 'bg-amber-500/10 text-amber-500',
     }
     return (
-      <span className={cn('px-2 py-1 rounded-full text-xs font-medium', styles[category] || 'bg-gray-500/10 text-gray-500')}>
+      <span className={cn('px-2 py-1 rounded-full text-xs font-medium', styles[category] || 'bg-muted-foreground/10 text-muted-foreground')}>
         {category}
       </span>
     )
@@ -1447,7 +1447,7 @@ export function WhatsApp() {
                       type="checkbox"
                       checked={allOptedInSelected && optedInFilteredContacts.length > 0}
                       onChange={toggleSelectAll}
-                      className="w-4 h-4 rounded border-gray-300 text-green-600 focus:ring-green-500"
+                      className="w-4 h-4 rounded border-border text-green-600 focus:ring-green-500"
                       title="Select all opted-in contacts"
                     />
                   </th>
@@ -1480,7 +1480,7 @@ export function WhatsApp() {
                           onChange={() => toggleContactSelection(contact.id)}
                           disabled={!canSelect}
                           className={cn(
-                            'w-4 h-4 rounded border-gray-300 text-green-600 focus:ring-green-500',
+                            'w-4 h-4 rounded border-border text-green-600 focus:ring-green-500',
                             !canSelect && 'opacity-30 cursor-not-allowed'
                           )}
                           title={!canSelect ? 'Contact must be opted-in to receive messages' : ''}
@@ -1510,7 +1510,7 @@ export function WhatsApp() {
                         {contact.is_verified ? (
                           <CheckCircle className="w-5 h-5 text-green-500 mx-auto" />
                         ) : (
-                          <XCircle className="w-5 h-5 text-gray-400 mx-auto" />
+                          <XCircle className="w-5 h-5 text-muted-foreground mx-auto" />
                         )}
                       </td>
                       <td className="p-4 text-right font-medium">{contact.message_count}</td>
@@ -2131,7 +2131,7 @@ export function WhatsApp() {
                   </span>
                 ))}
                 {selectedContactIds.length > 5 && (
-                  <span className="px-2 py-1 rounded-full bg-gray-500/10 text-gray-500 text-xs font-medium">
+                  <span className="px-2 py-1 rounded-full bg-muted-foreground/10 text-muted-foreground text-xs font-medium">
                     +{selectedContactIds.length - 5} more
                   </span>
                 )}

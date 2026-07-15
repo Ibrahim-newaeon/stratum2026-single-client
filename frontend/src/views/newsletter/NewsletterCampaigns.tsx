@@ -40,7 +40,7 @@ const STATUS_OPTIONS: { value: CampaignStatus | ''; label: string }[] = [
 ];
 
 const STATUS_BADGE_STYLES: Record<CampaignStatus, string> = {
-  draft: 'bg-gray-500/20 text-gray-400',
+  draft: 'bg-muted-foreground/20 text-muted-foreground',
   scheduled: 'bg-blue-500/20 text-blue-400',
   sending: 'bg-amber-500/20 text-amber-400',
   sent: 'bg-green-500/20 text-green-400',

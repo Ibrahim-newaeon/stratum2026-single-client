@@ -34,7 +34,7 @@ import {
 // Status Badge
 function StatusBadge({ status }: { status: SegmentStatus }) {
   const config = {
-    draft: 'bg-gray-100 text-gray-800 dark:bg-gray-800 dark:text-gray-300',
+    draft: 'bg-muted text-muted-foreground',
     computing: 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900/30 dark:text-yellow-400',
     active: 'bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-400',
     stale: 'bg-orange-100 text-orange-800 dark:bg-orange-900/30 dark:text-orange-400',
@@ -345,7 +345,7 @@ function SegmentBuilderModal({
                 type="checkbox"
                 checked={autoRefresh}
                 onChange={(e) => setAutoRefresh(e.target.checked)}
-                className="rounded border-gray-300"
+                className="rounded border-border"
               />
               <span className="text-sm font-medium">Auto-refresh segment</span>
             </label>

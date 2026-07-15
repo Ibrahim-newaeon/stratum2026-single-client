@@ -175,12 +175,12 @@ export default function TrustEngine() {
                   className={`relative px-6 py-3 rounded-xl font-medium text-sm transition-colors ${
                     isActive
                       ? `${stateColors.bgLight} ${stateColors.border} border-2 ${stateColors.text}`
-                      : 'bg-foreground/[0.02] border border-foreground/[0.05] text-gray-400 hover:bg-foreground/[0.05]'
+                      : 'bg-foreground/[0.02] border border-foreground/[0.05] text-muted-foreground hover:bg-foreground/[0.05]'
                   }`}
                 >
                   <div className="flex items-center gap-2">
                     <div
-                      className={`w-2 h-2 rounded-full ${isActive ? stateColors.bg : 'bg-gray-600'}`}
+                      className={`w-2 h-2 rounded-full ${isActive ? stateColors.bg : 'bg-muted-foreground'}`}
                     />
                     <span className="capitalize">{state}</span>
                     <span className="text-xs opacity-60">({stateData.score})</span>
@@ -205,7 +205,7 @@ export default function TrustEngine() {
                 </div>
                 <span className="text-sm font-medium text-foreground">Signal Sources</span>
               </div>
-              <div className="space-y-2 text-xs text-gray-500">
+              <div className="space-y-2 text-xs text-muted-foreground">
                 <div className="flex items-center gap-2">
                   <div className="w-1.5 h-1.5 rounded-full bg-blue-500" />
                   <span>Meta Ads API</span>
@@ -227,7 +227,7 @@ export default function TrustEngine() {
 
             {/* Arrow */}
             <div className="hidden lg:flex items-center justify-center">
-              <ArrowRightIcon className="w-6 h-6 text-gray-600" />
+              <ArrowRightIcon className="w-6 h-6 text-muted-foreground" />
             </div>
 
             {/* Step 2: Health Calculator */}
@@ -248,7 +248,7 @@ export default function TrustEngine() {
               {/* Score Display */}
               <div className="text-center mb-4">
                 <div className={`text-5xl font-bold ${colors.text}`}>{current.score}</div>
-                <div className="text-xs text-gray-500 uppercase mt-1">{current.status}</div>
+                <div className="text-xs text-muted-foreground uppercase mt-1">{current.status}</div>
               </div>
 
               {/* Health Bar */}
@@ -264,7 +264,7 @@ export default function TrustEngine() {
 
             {/* Arrow */}
             <div className="hidden lg:flex items-center justify-center">
-              <ArrowRightIcon className="w-6 h-6 text-gray-600" />
+              <ArrowRightIcon className="w-6 h-6 text-muted-foreground" />
             </div>
 
             {/* Step 3: Trust Gate Decision */}
@@ -289,7 +289,7 @@ export default function TrustEngine() {
                   <current.icon className={`w-4 h-4 ${colors.text}`} />
                   <span className={`font-bold ${colors.text}`}>{current.decision}</span>
                 </div>
-                <div className="text-sm text-gray-400">{current.action}</div>
+                <div className="text-sm text-muted-foreground">{current.action}</div>
               </div>
             </motion.div>
           </div>
@@ -310,7 +310,7 @@ export default function TrustEngine() {
                   <span className="text-sm font-medium text-foreground">{component.name}</span>
                   <span className="text-xs font-bold text-purple-400">{component.weight}</span>
                 </div>
-                <p className="text-xs text-gray-500">{component.description}</p>
+                <p className="text-xs text-muted-foreground">{component.description}</p>
               </div>
             ))}
           </motion.div>

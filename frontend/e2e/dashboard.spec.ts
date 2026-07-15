@@ -17,7 +17,10 @@ test.describe('Dashboard', () => {
     await expect(page.getByRole('link', { name: /^Settings$/i }).first()).toBeVisible()
   })
 
-  test('should navigate between pages', async ({ page }) => {
+  test('should navigate between pages', async ({ page, isMobile }) => {
+    // Desktop sidebar navigation; the sidebar is collapsed on mobile
+    // viewports — mobile flows are covered in mobile.spec.ts.
+    test.skip(isMobile, 'desktop sidebar nav; mobile covered by mobile.spec.ts')
     await page.getByRole('link', { name: /^Campaigns$/i }).first().click()
     await expect(page).toHaveURL(/campaigns/)
 

@@ -1,7 +1,7 @@
 /**
- * Stratum AI - Tenant Dashboard Hooks
+ * Stratum AI - Account Dashboard Hooks
  *
- * React Query hooks for tenant-scoped dashboard data.
+ * React Query hooks for account-scoped dashboard data.
  */
 
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
@@ -74,7 +74,7 @@ export interface Alert {
   created_at: string
 }
 
-export interface TenantSettings {
+export interface AccountSettings {
   currency: string
   timezone: string
   date_format: string
@@ -126,18 +126,18 @@ export interface CommandCenterResponse {
 // Query Keys
 // =============================================================================
 
-export const tenantQueryKeys = {
-  all: ['tenant'] as const,
-  overview: (tenantId: number, date?: string) =>
-    [...tenantQueryKeys.all, 'overview', tenantId, date] as const,
-  recommendations: (tenantId: number, date?: string) =>
-    [...tenantQueryKeys.all, 'recommendations', tenantId, date] as const,
-  alerts: (tenantId: number, filters?: Record<string, unknown>) =>
-    [...tenantQueryKeys.all, 'alerts', tenantId, filters] as const,
-  settings: (tenantId: number) =>
-    [...tenantQueryKeys.all, 'settings', tenantId] as const,
-  commandCenter: (tenantId: number, filters?: Record<string, unknown>) =>
-    [...tenantQueryKeys.all, 'commandCenter', tenantId, filters] as const,
+export const accountQueryKeys = {
+  all: ['account'] as const,
+  overview: (accountId: number, date?: string) =>
+    [...accountQueryKeys.all, 'overview', accountId, date] as const,
+  recommendations: (accountId: number, date?: string) =>
+    [...accountQueryKeys.all, 'recommendations', accountId, date] as const,
+  alerts: (accountId: number, filters?: Record<string, unknown>) =>
+    [...accountQueryKeys.all, 'alerts', accountId, filters] as const,
+  settings: (accountId: number) =>
+    [...accountQueryKeys.all, 'settings', accountId] as const,
+  commandCenter: (accountId: number, filters?: Record<string, unknown>) =>
+    [...accountQueryKeys.all, 'commandCenter', accountId, filters] as const,
 }
 
 // =============================================================================
@@ -145,7 +145,7 @@ export const tenantQueryKeys = {
 // =============================================================================
 
 const fetchDashboardOverview = async (
-  _tenantId: number,
+  _accountId: number,
   date?: string,
   period?: string
 ): Promise<DashboardOverview> => {
@@ -160,7 +160,7 @@ const fetchDashboardOverview = async (
 }
 
 const fetchRecommendations = async (
-  _tenantId: number,
+  _accountId: number,
   date?: string,
   limit?: number
 ): Promise<Recommendation[]> => {
@@ -175,7 +175,7 @@ const fetchRecommendations = async (
 }
 
 const fetchAlerts = async (
-  _tenantId: number,
+  _accountId: number,
   filters?: {
     severity?: string
     type?: string
@@ -197,18 +197,18 @@ const fetchAlerts = async (
   return response.data.data
 }
 
-const fetchSettings = async (_tenantId: number): Promise<TenantSettings> => {
-  const response = await apiClient.get<ApiResponse<TenantSettings>>(
+const fetchSettings = async (_accountId: number): Promise<AccountSettings> => {
+  const response = await apiClient.get<ApiResponse<AccountSettings>>(
     `/dashboard/settings`
   )
   return response.data.data
 }
 
 const updateSettings = async (
-  _tenantId: number,
-  settings: Partial<TenantSettings>
-): Promise<TenantSettings> => {
-  const response = await apiClient.put<ApiResponse<TenantSettings>>(
+  _accountId: number,
+  settings: Partial<AccountSettings>
+): Promise<AccountSettings> => {
+  const response = await apiClient.put<ApiResponse<AccountSettings>>(
     `/dashboard/settings`,
     settings
   )
@@ -216,7 +216,7 @@ const updateSettings = async (
 }
 
 const acknowledgeAlert = async (
-  _tenantId: number,
+  _accountId: number,
   alertId: number
 ): Promise<{ alert_id: number; acknowledged_by: number; acknowledged_at: string }> => {
   const response = await apiClient.post<ApiResponse<{ alert_id: number; acknowledged_by: number; acknowledged_at: string }>>(
@@ -226,7 +226,7 @@ const acknowledgeAlert = async (
 }
 
 const resolveAlert = async (
-  _tenantId: number,
+  _accountId: number,
   alertId: number,
   notes?: string
 ): Promise<{ alert_id: number; resolved_by: number; resolved_at: string }> => {
@@ -238,7 +238,7 @@ const resolveAlert = async (
 }
 
 const fetchCommandCenter = async (
-  _tenantId: number,
+  _accountId: number,
   filters?: {
     action?: string
     platform?: string
@@ -261,10 +261,10 @@ const fetchCommandCenter = async (
 // =============================================================================
 
 /**
- * Hook to fetch tenant dashboard overview data.
+ * Hook to fetch account dashboard overview data.
  */
-export function useTenantOverview(
-  tenantId: number,
+export function useAccountOverview(
+  accountId: number,
   date?: string,
   options?: {
     period?: string
@@ -273,19 +273,19 @@ export function useTenantOverview(
   }
 ) {
   return useQuery({
-    queryKey: tenantQueryKeys.overview(tenantId, date),
-    queryFn: () => fetchDashboardOverview(tenantId, date, options?.period),
-    enabled: options?.enabled !== false && !!tenantId,
+    queryKey: accountQueryKeys.overview(accountId, date),
+    queryFn: () => fetchDashboardOverview(accountId, date, options?.period),
+    enabled: options?.enabled !== false && !!accountId,
     refetchInterval: options?.refetchInterval,
     staleTime: 1000 * 60 * 2, // 2 minutes
   })
 }
 
 /**
- * Hook to fetch tenant recommendations.
+ * Hook to fetch account recommendations.
  */
-export function useTenantRecommendations(
-  tenantId: number,
+export function useAccountRecommendations(
+  accountId: number,
   date?: string,
   options?: {
     limit?: number
@@ -293,18 +293,18 @@ export function useTenantRecommendations(
   }
 ) {
   return useQuery({
-    queryKey: tenantQueryKeys.recommendations(tenantId, date),
-    queryFn: () => fetchRecommendations(tenantId, date, options?.limit),
-    enabled: options?.enabled !== false && !!tenantId,
+    queryKey: accountQueryKeys.recommendations(accountId, date),
+    queryFn: () => fetchRecommendations(accountId, date, options?.limit),
+    enabled: options?.enabled !== false && !!accountId,
     staleTime: 1000 * 60 * 5, // 5 minutes
   })
 }
 
 /**
- * Hook to fetch tenant alerts.
+ * Hook to fetch account alerts.
  */
-export function useTenantAlerts(
-  tenantId: number,
+export function useAccountAlerts(
+  accountId: number,
   filters?: {
     severity?: string
     type?: string
@@ -318,36 +318,36 @@ export function useTenantAlerts(
   }
 ) {
   return useQuery({
-    queryKey: tenantQueryKeys.alerts(tenantId, filters),
-    queryFn: () => fetchAlerts(tenantId, filters),
-    enabled: options?.enabled !== false && !!tenantId,
+    queryKey: accountQueryKeys.alerts(accountId, filters),
+    queryFn: () => fetchAlerts(accountId, filters),
+    enabled: options?.enabled !== false && !!accountId,
     refetchInterval: options?.refetchInterval,
     staleTime: 1000 * 30, // 30 seconds
   })
 }
 
 /**
- * Hook to fetch tenant settings.
+ * Hook to fetch account settings.
  */
-export function useTenantSettings(tenantId: number, options?: { enabled?: boolean }) {
+export function useAccountSettings(accountId: number, options?: { enabled?: boolean }) {
   return useQuery({
-    queryKey: tenantQueryKeys.settings(tenantId),
-    queryFn: () => fetchSettings(tenantId),
-    enabled: options?.enabled !== false && !!tenantId,
+    queryKey: accountQueryKeys.settings(accountId),
+    queryFn: () => fetchSettings(accountId),
+    enabled: options?.enabled !== false && !!accountId,
     staleTime: 1000 * 60 * 10, // 10 minutes
   })
 }
 
 /**
- * Hook to update tenant settings.
+ * Hook to update account settings.
  */
-export function useUpdateTenantSettings(tenantId: number) {
+export function useUpdateAccountSettings(accountId: number) {
   const queryClient = useQueryClient()
 
   return useMutation({
-    mutationFn: (settings: Partial<TenantSettings>) => updateSettings(tenantId, settings),
+    mutationFn: (settings: Partial<AccountSettings>) => updateSettings(accountId, settings),
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: tenantQueryKeys.settings(tenantId) })
+      queryClient.invalidateQueries({ queryKey: accountQueryKeys.settings(accountId) })
     },
   })
 }
@@ -355,13 +355,13 @@ export function useUpdateTenantSettings(tenantId: number) {
 /**
  * Hook to acknowledge an alert.
  */
-export function useAcknowledgeAlert(tenantId: number) {
+export function useAcknowledgeAlert(accountId: number) {
   const queryClient = useQueryClient()
 
   return useMutation({
-    mutationFn: (alertId: number) => acknowledgeAlert(tenantId, alertId),
+    mutationFn: (alertId: number) => acknowledgeAlert(accountId, alertId),
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: tenantQueryKeys.alerts(tenantId) })
+      queryClient.invalidateQueries({ queryKey: accountQueryKeys.alerts(accountId) })
     },
   })
 }
@@ -369,14 +369,14 @@ export function useAcknowledgeAlert(tenantId: number) {
 /**
  * Hook to resolve an alert.
  */
-export function useResolveAlert(tenantId: number) {
+export function useResolveAlert(accountId: number) {
   const queryClient = useQueryClient()
 
   return useMutation({
     mutationFn: ({ alertId, notes }: { alertId: number; notes?: string }) =>
-      resolveAlert(tenantId, alertId, notes),
+      resolveAlert(accountId, alertId, notes),
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: tenantQueryKeys.alerts(tenantId) })
+      queryClient.invalidateQueries({ queryKey: accountQueryKeys.alerts(accountId) })
     },
   })
 }
@@ -385,7 +385,7 @@ export function useResolveAlert(tenantId: number) {
  * Hook to fetch command center data.
  */
 export function useCommandCenter(
-  tenantId: number,
+  accountId: number,
   filters?: {
     action?: string
     platform?: string
@@ -397,9 +397,9 @@ export function useCommandCenter(
   }
 ) {
   return useQuery({
-    queryKey: tenantQueryKeys.commandCenter(tenantId, filters),
-    queryFn: () => fetchCommandCenter(tenantId, filters),
-    enabled: options?.enabled !== false && !!tenantId,
+    queryKey: accountQueryKeys.commandCenter(accountId, filters),
+    queryFn: () => fetchCommandCenter(accountId, filters),
+    enabled: options?.enabled !== false && !!accountId,
     refetchInterval: options?.refetchInterval,
     staleTime: 1000 * 60, // 1 minute
   })

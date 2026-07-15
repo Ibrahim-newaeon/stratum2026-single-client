@@ -794,7 +794,7 @@ export default function Onboarding() {
                             notificationEmail: e.target.checked,
                           }))
                         }
-                        className="w-4 h-4 rounded border-gray-300 text-primary focus:ring-primary"
+                        className="w-4 h-4 rounded border-border text-primary focus:ring-primary"
                       />
                       <span className="text-sm">Email notifications</span>
                     </label>
@@ -808,7 +808,7 @@ export default function Onboarding() {
                             notificationSlack: e.target.checked,
                           }))
                         }
-                        className="w-4 h-4 rounded border-gray-300 text-primary focus:ring-primary"
+                        className="w-4 h-4 rounded border-border text-primary focus:ring-primary"
                       />
                       <span className="text-sm">Slack notifications</span>
                     </label>
@@ -822,7 +822,7 @@ export default function Onboarding() {
                             notificationWhatsapp: e.target.checked,
                           }))
                         }
-                        className="w-4 h-4 rounded border-gray-300 text-primary focus:ring-primary"
+                        className="w-4 h-4 rounded border-border text-primary focus:ring-primary"
                       />
                       <span className="text-sm">WhatsApp notifications</span>
                     </label>

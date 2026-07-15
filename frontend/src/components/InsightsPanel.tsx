@@ -21,11 +21,11 @@ import {
   CheckCircle2,
   X,
 } from 'lucide-react'
-import { useTenantRecommendations, type Recommendation } from '@/api/hooks/useTenantDashboard'
+import { useAccountRecommendations, type Recommendation } from '@/api/hooks/useAccountDashboard'
 import { useToast } from '@/components/ui/use-toast'
 
 interface InsightsPanelProps {
-  tenantId: number
+  accountId: number
   className?: string
   maxItems?: number
   onApply?: (recommendationId: string, action: string) => void | Promise<void>
@@ -64,9 +64,9 @@ const typeConfig = {
   },
   pause: {
     icon: TrendingDown,
-    color: 'text-gray-500',
+    color: 'text-muted-foreground',
     bgColor: 'bg-muted/20',
-    borderColor: 'border-l-gray-500',
+    borderColor: 'border-l-muted-foreground',
     label: 'Consider Pausing',
   },
   creative_refresh: {
@@ -90,7 +90,7 @@ const priorityLabels = {
   2: { label: 'High', color: 'text-orange-600 bg-orange-100 dark:bg-orange-900/30' },
   3: { label: 'Medium', color: 'text-amber-600 bg-amber-100 dark:bg-amber-900/30' },
   4: { label: 'Low', color: 'text-blue-600 bg-blue-100 dark:bg-blue-900/30' },
-  5: { label: 'Info', color: 'text-gray-600 bg-gray-100 dark:bg-gray-900/30' },
+  5: { label: 'Info', color: 'text-muted-foreground bg-muted' },
 }
 
 const InsightCard: React.FC<{
@@ -269,7 +269,7 @@ const InsightCard: React.FC<{
 }
 
 export const InsightsPanel: React.FC<InsightsPanelProps> = ({
-  tenantId,
+  accountId,
   className = '',
   maxItems = 5,
   onApply,
@@ -280,8 +280,8 @@ export const InsightsPanel: React.FC<InsightsPanelProps> = ({
   const navigate = useNavigate()
   const { toast } = useToast()
 
-  const { data: recommendations, isLoading, error, refetch } = useTenantRecommendations(
-    tenantId,
+  const { data: recommendations, isLoading, error, refetch } = useAccountRecommendations(
+    accountId,
     undefined,
     { limit: maxItems + dismissedIds.size }
   )

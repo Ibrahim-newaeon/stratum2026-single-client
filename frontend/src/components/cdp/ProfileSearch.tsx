@@ -38,7 +38,7 @@ import {
 
 // Lifecycle stages
 const LIFECYCLE_STAGES: { value: LifecycleStage; label: string; color: string }[] = [
-  { value: 'anonymous', label: 'Anonymous', color: 'bg-gray-500' },
+  { value: 'anonymous', label: 'Anonymous', color: 'bg-muted-foreground' },
   { value: 'known', label: 'Known', color: 'bg-blue-500' },
   { value: 'customer', label: 'Customer', color: 'bg-green-500' },
   { value: 'churned', label: 'Churned', color: 'bg-red-500' },
@@ -364,7 +364,7 @@ function ProfileCard({ profile, onView }: ProfileCardProps) {
             </div>
             <div className="flex items-center gap-2">
               <span
-                className={cn('w-2 h-2 rounded-full', lifecycleConfig?.color || 'bg-gray-500')}
+                className={cn('w-2 h-2 rounded-full', lifecycleConfig?.color || 'bg-muted-foreground')}
               />
               <span className="text-xs text-muted-foreground capitalize">
                 {profile.lifecycle_stage}
@@ -727,7 +727,7 @@ export function ProfileSearch() {
                       className={cn(
                         'px-2 py-0.5 rounded-full text-xs font-medium',
                         LIFECYCLE_STAGES.find((s) => s.value === selectedProfile.lifecycle_stage)
-                          ?.color || 'bg-gray-500',
+                          ?.color || 'bg-muted-foreground',
                         'text-white'
                       )}
                     >

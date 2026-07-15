@@ -60,7 +60,7 @@ const StatusBadge = memo(function StatusBadge({ status }: { status: AssetStatus 
     active: { color: 'bg-green-500/10 text-green-500', icon: CheckCircle2, label: 'Active' },
     paused: { color: 'bg-amber-500/10 text-amber-500', icon: Clock, label: 'Paused' },
     fatigued: { color: 'bg-red-500/10 text-red-500', icon: AlertTriangle, label: 'Fatigued' },
-    draft: { color: 'bg-gray-500/10 text-gray-500', icon: FileText, label: 'Draft' },
+    draft: { color: 'bg-muted-foreground/10 text-muted-foreground', icon: FileText, label: 'Draft' },
   }
   const { color, icon: Icon, label } = config[status]
   return (

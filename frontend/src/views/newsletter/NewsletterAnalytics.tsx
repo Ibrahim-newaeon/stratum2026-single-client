@@ -25,7 +25,7 @@ import { useCampaignAnalytics } from '@/api/newsletter';
 const EVENTS_LIMIT = 50;
 
 const EVENT_BADGE_STYLES: Record<string, string> = {
-  sent: 'bg-gray-500/20 text-gray-400',
+  sent: 'bg-muted-foreground/20 text-muted-foreground',
   delivered: 'bg-blue-500/20 text-blue-400',
   opened: 'bg-green-500/20 text-green-400',
   clicked: 'bg-purple-500/20 text-purple-400',
@@ -148,7 +148,7 @@ function StatCard({
 }
 
 function EventBadge({ type }: { type: string }) {
-  const style = EVENT_BADGE_STYLES[type] ?? 'bg-gray-500/20 text-gray-400';
+  const style = EVENT_BADGE_STYLES[type] ?? 'bg-muted-foreground/20 text-muted-foreground';
   return (
     <span
       className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium capitalize ${style}`}

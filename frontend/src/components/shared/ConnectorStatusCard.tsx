@@ -28,7 +28,7 @@ const healthConfig: Record<ConnectionHealth, { color: string; bg: string; label:
   healthy: { color: 'bg-green-500', bg: 'bg-green-500/10', label: 'Healthy' },
   degraded: { color: 'bg-amber-500', bg: 'bg-amber-500/10', label: 'Degraded' },
   unhealthy: { color: 'bg-red-500', bg: 'bg-red-500/10', label: 'Unhealthy' },
-  disconnected: { color: 'bg-gray-500', bg: 'bg-gray-500/10', label: 'Disconnected' },
+  disconnected: { color: 'bg-muted-foreground', bg: 'bg-muted-foreground/10', label: 'Disconnected' },
 };
 
 export function ConnectorStatusCard({
@@ -56,9 +56,9 @@ export function ConnectorStatusCard({
       {/* Header */}
       <div className="flex items-start justify-between mb-4">
         <div className="flex items-center gap-3">
-          <div className="h-10 w-10 rounded-lg bg-gradient-to-br from-gray-100 to-gray-200 dark:from-gray-800 dark:to-gray-700 flex items-center justify-center">
+          <div className="h-10 w-10 rounded-lg bg-gradient-to-br from-muted to-muted/60 flex items-center justify-center">
             {platformIcon || (
-              <span className="text-sm font-bold text-gray-600 dark:text-gray-300">
+              <span className="text-sm font-bold text-muted-foreground">
                 {platform.charAt(0)}
               </span>
             )}

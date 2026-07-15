@@ -130,7 +130,7 @@ export function Rules() {
     const config = {
       active: { color: 'bg-green-500/10 text-green-500', icon: CheckCircle2, label: 'Active' },
       paused: { color: 'bg-amber-500/10 text-amber-500', icon: Pause, label: 'Paused' },
-      draft: { color: 'bg-gray-500/10 text-gray-500', icon: Edit, label: 'Draft' },
+      draft: { color: 'bg-muted-foreground/10 text-muted-foreground', icon: Edit, label: 'Draft' },
     }
     const { color, icon: Icon, label } = config[status]
     return (

@@ -134,9 +134,9 @@ const getNotificationIcon = (type: NotificationType) => {
     case 'segment':
       return { icon: Users, color: 'text-orange-500', bg: 'bg-orange-500/10' };
     case 'system':
-      return { icon: Settings, color: 'text-gray-500', bg: 'bg-gray-500/10' };
+      return { icon: Settings, color: 'text-muted-foreground', bg: 'bg-muted-foreground/10' };
     default:
-      return { icon: Bell, color: 'text-gray-500', bg: 'bg-gray-500/10' };
+      return { icon: Bell, color: 'text-muted-foreground', bg: 'bg-muted-foreground/10' };
   }
 };
 

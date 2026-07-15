@@ -4,24 +4,24 @@
  * Centralized exports for all API hooks.
  */
 
-// Tenant Dashboard hooks
+// Account Dashboard hooks
 export {
-  useTenantOverview,
-  useTenantRecommendations,
-  useTenantAlerts,
-  useTenantSettings,
-  useUpdateTenantSettings,
+  useAccountOverview,
+  useAccountRecommendations,
+  useAccountAlerts,
+  useAccountSettings,
+  useUpdateAccountSettings,
   useAcknowledgeAlert,
   useResolveAlert,
   useCommandCenter,
-  tenantQueryKeys,
+  accountQueryKeys,
   type DashboardOverview,
   type Recommendation,
   type Alert,
-  type TenantSettings,
+  type AccountSettings,
   type CommandCenterItem,
   type CommandCenterResponse,
-} from './useTenantDashboard'
+} from './useAccountDashboard'
 
 // Re-export from API modules
 // Note: Some modules export conflicting types (User, AlertSeverity)

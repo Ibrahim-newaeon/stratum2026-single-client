@@ -991,7 +991,7 @@ export function PlatformSetupModal({ platform, onClose, onConnect }: PlatformSet
               {optionalFields.length > 0 && (
                 <div>
                   <h3 className="text-sm font-semibold text-foreground/90 uppercase tracking-wider mb-3 flex items-center gap-2">
-                    <span className="w-2 h-2 rounded-full bg-gray-400" />
+                    <span className="w-2 h-2 rounded-full bg-muted-foreground" />
                     Optional ({optionalFields.length})
                   </h3>
                   <div className="space-y-3">

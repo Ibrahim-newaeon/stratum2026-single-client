@@ -131,7 +131,7 @@ export default function AIHero() {
             initial="hidden"
             animate="visible"
             variants={fadeUpVariants}
-            className="text-lg sm:text-xl text-gray-400 max-w-3xl mx-auto mb-10 leading-relaxed"
+            className="text-lg sm:text-xl text-muted-foreground max-w-3xl mx-auto mb-10 leading-relaxed"
           >
             Trust-Gated Autopilot executes revenue operations{' '}
             <span className="text-white font-medium">
@@ -195,8 +195,8 @@ export default function AIHero() {
                 <div className="text-3xl sm:text-4xl font-bold text-foreground mb-1">
                   {stat.value}
                 </div>
-                <div className="text-sm text-gray-400">{stat.label}</div>
-                <div className="text-xs text-gray-500">{stat.sublabel}</div>
+                <div className="text-sm text-muted-foreground">{stat.label}</div>
+                <div className="text-xs text-muted-foreground">{stat.sublabel}</div>
               </div>
             ))}
           </motion.div>
@@ -218,7 +218,7 @@ export default function AIHero() {
                   className={`w-4 h-4 bg-gradient-to-r ${badge.color} text-foreground`}
                   style={{ stroke: 'url(#badge-gradient)' }}
                 />
-                <span className="text-sm text-gray-400">{badge.text}</span>
+                <span className="text-sm text-muted-foreground">{badge.text}</span>
               </div>
             ))}
           </motion.div>
@@ -241,7 +241,7 @@ export default function AIHero() {
               <div className="w-3 h-3 rounded-full bg-red-500/80" />
               <div className="w-3 h-3 rounded-full bg-yellow-500/80" />
               <div className="w-3 h-3 rounded-full bg-green-500/80" />
-              <div className="flex-1 text-center text-sm text-gray-500">Stratum AI Dashboard</div>
+              <div className="flex-1 text-center text-sm text-muted-foreground">Stratum AI Dashboard</div>
             </div>
 
             {/* Dashboard Content Mock */}
@@ -249,7 +249,7 @@ export default function AIHero() {
               {/* Signal Health Section */}
               <div className="col-span-1 p-6 rounded-2xl">
                 <div className="flex items-center justify-between mb-4">
-                  <span className="text-sm text-gray-400">Signal Health</span>
+                  <span className="text-sm text-muted-foreground">Signal Health</span>
                   <div className="flex items-center gap-1">
                     <div className="w-2 h-2 rounded-full bg-green-500 animate-pulse" />
                     <span className="text-xs text-green-400">HEALTHY</span>
@@ -269,20 +269,20 @@ export default function AIHero() {
               {/* ROAS Prediction Section */}
               <div className="col-span-1 p-6 rounded-2xl border-l border-foreground/10">
                 <div className="flex items-center justify-between mb-4">
-                  <span className="text-sm text-gray-400">Predicted ROAS</span>
+                  <span className="text-sm text-muted-foreground">Predicted ROAS</span>
                   <ChartBarIcon className="w-4 h-4 text-purple-400" />
                 </div>
                 <div className="text-4xl font-bold text-white mb-2">3.2x</div>
                 <div className="flex items-center gap-2">
                   <span className="text-sm text-green-400">+12%</span>
-                  <span className="text-xs text-gray-500">vs last week</span>
+                  <span className="text-xs text-muted-foreground">vs last week</span>
                 </div>
               </div>
 
               {/* Trust Gate Section */}
               <div className="col-span-1 p-6 rounded-2xl border-l border-foreground/10">
                 <div className="flex items-center justify-between mb-4">
-                  <span className="text-sm text-gray-400">Trust Gate</span>
+                  <span className="text-sm text-muted-foreground">Trust Gate</span>
                   <ShieldCheckIcon className="w-4 h-4 text-cyan-400" />
                 </div>
                 <div className="text-2xl font-bold text-white mb-2">AUTOPILOT</div>
@@ -300,7 +300,7 @@ export default function AIHero() {
         transition={{ delay: 1.5 }}
         className="absolute bottom-8 left-1/2 -translate-x-1/2"
       >
-        <div className="flex flex-col items-center gap-2 text-gray-500">
+        <div className="flex flex-col items-center gap-2 text-muted-foreground">
           <span className="text-xs uppercase tracking-widest">Scroll to explore</span>
           <motion.div
             animate={{ y: [0, 8, 0] }}

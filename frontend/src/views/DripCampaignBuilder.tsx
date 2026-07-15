@@ -105,7 +105,7 @@ const NODE_TEMPLATES = [
     type: 'end' as const,
     label: 'End',
     icon: X,
-    color: 'bg-gray-500',
+    color: 'bg-muted-foreground',
     description: 'End of sequence',
     defaults: {},
   },

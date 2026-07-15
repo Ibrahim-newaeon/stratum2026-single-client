@@ -10,7 +10,10 @@ test.describe('Authentication', () => {
     await expect(page.getByRole('button', { name: /Start Free/i }).first()).toBeVisible()
   })
 
-  test('should navigate to login page', async ({ page }) => {
+  test('should navigate to login page', async ({ page, isMobile }) => {
+    // Desktop header link; the mobile landing header collapses it behind a
+    // menu — mobile flows are covered in mobile.spec.ts.
+    test.skip(isMobile, 'desktop header link; mobile covered by mobile.spec.ts')
     await page.getByRole('link', { name: /Sign In/i }).first().click()
     await expect(page).toHaveURL(/\/login$/)
     await expect(page.locator('input[type="email"]')).toBeVisible()

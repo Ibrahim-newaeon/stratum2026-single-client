@@ -1259,7 +1259,7 @@ export function IntegrationSettings() {
               return {
                 ...p,
                 connected: isConnected,
-                color: isConnected ? p.color.replace('text-gray-400', p.color) : 'text-gray-400',
+                color: isConnected ? p.color.replace('text-muted-foreground', p.color) : 'text-muted-foreground',
               };
             }
             return p;
@@ -1628,7 +1628,7 @@ export function IntegrationSettings() {
                   Connected
                 </span>
               ) : (
-                <span className="px-3 py-1.5 rounded-full bg-gray-500/20 text-gray-400 text-xs font-medium border border-gray-500/30 inline-block">
+                <span className="px-3 py-1.5 rounded-full bg-muted-foreground/20 text-muted-foreground text-xs font-medium border border-border inline-block">
                   Not Connected
                 </span>
               )}

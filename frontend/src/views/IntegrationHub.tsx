@@ -28,7 +28,7 @@ export default function IntegrationHub() {
             <BoltIcon className="w-8 h-8 text-primary" />
             Integration Hub
           </h1>
-          <p className="text-gray-400 mt-2">
+          <p className="text-muted-foreground mt-2">
             Connect Stratum AI to your external tools and data warehouses
           </p>
         </header>
@@ -46,7 +46,7 @@ export default function IntegrationHub() {
                 'flex items-center gap-2 px-4 py-2 rounded-lg font-medium transition-all',
                 activeTab === tab.id
                   ? 'bg-primary text-white'
-                  : 'bg-foreground/[0.03] text-gray-400 hover:bg-foreground/[0.06]'
+                  : 'bg-foreground/[0.03] text-muted-foreground hover:bg-foreground/[0.06]'
               )}
             >
               <tab.icon className="w-5 h-5" />
@@ -137,7 +137,7 @@ function ZapierPanel() {
         <h3 className="text-lg font-semibold mb-4">Zapier / Make.com Webhooks</h3>
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
           <div>
-            <label className="text-xs text-gray-400">Name</label>
+            <label className="text-xs text-muted-foreground">Name</label>
             <input
               value={newWebhook.name}
               onChange={(e) => setNewWebhook({ ...newWebhook, name: e.target.value })}
@@ -146,7 +146,7 @@ function ZapierPanel() {
             />
           </div>
           <div>
-            <label className="text-xs text-gray-400">Webhook URL (https://)</label>
+            <label className="text-xs text-muted-foreground">Webhook URL (https://)</label>
             <input
               value={newWebhook.webhook_url}
               onChange={(e) => setNewWebhook({ ...newWebhook, webhook_url: e.target.value })}
@@ -156,7 +156,7 @@ function ZapierPanel() {
           </div>
         </div>
         <div className="mb-4">
-          <label className="text-xs text-gray-400 block mb-2">Event Types</label>
+          <label className="text-xs text-muted-foreground block mb-2">Event Types</label>
           <div className="flex flex-wrap gap-2">
             {eventOptions.map((e) => (
               <button
@@ -171,7 +171,7 @@ function ZapierPanel() {
                   'text-xs px-3 py-1.5 rounded-full border transition-colors',
                   newWebhook.event_types.includes(e)
                     ? 'bg-primary/20 border-primary text-primary'
-                    : 'bg-foreground/[0.03] border-foreground/10 text-gray-400 hover:bg-foreground/[0.06]'
+                    : 'bg-foreground/[0.03] border-foreground/10 text-muted-foreground hover:bg-foreground/[0.06]'
                 )}
               >
                 {e}
@@ -195,13 +195,13 @@ function ZapierPanel() {
           <div className="flex items-center justify-between mb-3">
             <div>
               <h4 className="font-medium">{wh.name}</h4>
-              <p className="text-xs text-gray-500">{wh.webhook_url}</p>
+              <p className="text-xs text-muted-foreground">{wh.webhook_url}</p>
             </div>
             <div className="flex items-center gap-2">
               <span
                 className={cn(
                   'text-xs px-2 py-0.5 rounded-full',
-                  wh.is_active ? 'bg-green-500/20 text-green-400' : 'bg-gray-500/20 text-gray-400'
+                  wh.is_active ? 'bg-green-500/20 text-green-400' : 'bg-muted-foreground/20 text-muted-foreground'
                 )}
               >
                 {wh.is_active ? 'Active' : 'Inactive'}
@@ -224,7 +224,7 @@ function ZapierPanel() {
             {wh.event_types.map((e: string) => (
               <span
                 key={e}
-                className="text-xs bg-foreground/[0.03] text-gray-400 px-2 py-0.5 rounded-full"
+                className="text-xs bg-foreground/[0.03] text-muted-foreground px-2 py-0.5 rounded-full"
               >
                 {e}
               </span>
@@ -236,7 +236,7 @@ function ZapierPanel() {
       {testResult && (
         <div className="bg-foreground/[0.02] border border-foreground/10 rounded-xl p-4">
           <h4 className="text-sm font-medium mb-2">Test Result</h4>
-          <div className="text-xs text-gray-400 space-y-1">
+          <div className="text-xs text-muted-foreground space-y-1">
             <div>
               Status:{' '}
               <span className={testResult.status === 'success' ? 'text-green-400' : 'text-red-400'}>
@@ -302,7 +302,7 @@ function WarehousePanel() {
             className="bg-foreground/[0.02] border border-foreground/10 rounded-xl p-4 text-center"
           >
             <div className={`text-lg font-bold ${p.color}`}>{p.name}</div>
-            <div className="text-xs text-gray-500 mt-1">Available</div>
+            <div className="text-xs text-muted-foreground mt-1">Available</div>
           </div>
         ))}
       </div>
@@ -315,7 +315,7 @@ function WarehousePanel() {
           <div className="flex items-center justify-between mb-3">
             <div>
               <h4 className="font-medium">{ex.name}</h4>
-              <p className="text-xs text-gray-500">
+              <p className="text-xs text-muted-foreground">
                 {ex.provider} · {ex.dataset}
               </p>
             </div>
@@ -323,7 +323,7 @@ function WarehousePanel() {
               <span
                 className={cn(
                   'text-xs px-2 py-0.5 rounded-full',
-                  ex.is_active ? 'bg-green-500/20 text-green-400' : 'bg-gray-500/20 text-gray-400'
+                  ex.is_active ? 'bg-green-500/20 text-green-400' : 'bg-muted-foreground/20 text-muted-foreground'
                 )}
               >
                 {ex.is_active ? 'Active' : 'Inactive'}
@@ -337,7 +337,7 @@ function WarehousePanel() {
               </button>
             </div>
           </div>
-          <div className="text-xs text-gray-400">
+          <div className="text-xs text-muted-foreground">
             Tables: {ex.tables.join(', ')} · Frequency: {ex.sync_frequency}
           </div>
         </div>
@@ -349,7 +349,7 @@ function WarehousePanel() {
             <CheckCircleIcon className="w-5 h-5 text-green-400" />
             <span className="text-sm font-medium text-green-400">Sync Complete</span>
           </div>
-          <div className="text-xs text-gray-400 space-y-1">
+          <div className="text-xs text-muted-foreground space-y-1">
             <div>Rows exported: {syncResult.rows_exported.toLocaleString()}</div>
             <div>Duration: {syncResult.duration_seconds}s</div>
             <div>Status: {syncResult.status}</div>
@@ -411,13 +411,13 @@ function TeamsPanel() {
           <div className="flex items-center justify-between mb-3">
             <div>
               <h4 className="font-medium">{wh.name}</h4>
-              <p className="text-xs text-gray-500">Channel: {wh.channel_name}</p>
+              <p className="text-xs text-muted-foreground">Channel: {wh.channel_name}</p>
             </div>
             <div className="flex items-center gap-2">
               <span
                 className={cn(
                   'text-xs px-2 py-0.5 rounded-full',
-                  wh.is_active ? 'bg-green-500/20 text-green-400' : 'bg-gray-500/20 text-gray-400'
+                  wh.is_active ? 'bg-green-500/20 text-green-400' : 'bg-muted-foreground/20 text-muted-foreground'
                 )}
               >
                 {wh.is_active ? 'Active' : 'Inactive'}
@@ -440,7 +440,7 @@ function TeamsPanel() {
             {wh.alert_types.map((e: string) => (
               <span
                 key={e}
-                className="text-xs bg-foreground/[0.03] text-gray-400 px-2 py-0.5 rounded-full"
+                className="text-xs bg-foreground/[0.03] text-muted-foreground px-2 py-0.5 rounded-full"
               >
                 {e}
               </span>
@@ -461,7 +461,7 @@ function TeamsPanel() {
           <div className="text-sm font-medium mb-1">
             {testMessage.success ? 'Message Sent' : 'Failed'}
           </div>
-          <div className="text-xs text-gray-400">{JSON.stringify(testMessage.data)}</div>
+          <div className="text-xs text-muted-foreground">{JSON.stringify(testMessage.data)}</div>
         </div>
       )}
     </div>

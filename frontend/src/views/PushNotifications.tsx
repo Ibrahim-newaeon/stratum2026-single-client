@@ -291,10 +291,10 @@ export default function PushNotifications() {
                       <div className="text-sm font-semibold truncate">
                         {form.title || 'Notification Title'}
                       </div>
-                      <div className="text-xs text-gray-400 mt-0.5 line-clamp-2">
+                      <div className="text-xs text-muted-foreground mt-0.5 line-clamp-2">
                         {form.body || 'Notification body text...'}
                       </div>
-                      <div className="text-[10px] text-gray-600 mt-1">{form.url}</div>
+                      <div className="text-[10px] text-muted-foreground mt-1">{form.url}</div>
                     </div>
                   </div>
                 </div>

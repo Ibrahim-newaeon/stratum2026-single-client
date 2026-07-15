@@ -26,7 +26,7 @@ import {
   useEmqIncidents,
   useUpdatePlaybookItem,
 } from '@/api/hooks'
-import { useTenantOverview, useTenantRecommendations } from '@/api/hooks'
+import { useAccountOverview, useAccountRecommendations } from '@/api/hooks'
 import { useApproveAction, useDismissAction, useQueueAction } from '@/api/autopilot'
 import { TrustGatePanel } from '@/components/trust/TrustGatePanel'
 import { EmergencyStop } from '@/components/autopilot/EmergencyStop'
@@ -61,8 +61,8 @@ export default function TenantOverview() {
   const { data: autopilotData, isLoading: autopilotLoading } = useAutopilotState(tid)
   const { data: playbookData } = useEmqPlaybook(tid)
   const { data: incidentsData } = useEmqIncidents(tid, dateRange.start, dateRange.end)
-  const { data: overviewData, isLoading: overviewLoading } = useTenantOverview(tid)
-  const { data: recommendationsData } = useTenantRecommendations(tid)
+  const { data: overviewData, isLoading: overviewLoading } = useAccountOverview(tid)
+  const { data: recommendationsData } = useAccountRecommendations(tid)
 
   // Show loading state when critical data is still being fetched for the first time
   const isInitialLoading = (emqLoading || autopilotLoading || overviewLoading) && !emqData && !overviewData
