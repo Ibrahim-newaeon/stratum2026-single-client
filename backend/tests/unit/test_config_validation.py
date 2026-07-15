@@ -361,3 +361,52 @@ class TestProductionCORSSafety:
     def test_worker_role_still_rejects_mock_ad_data(self) -> None:
         with pytest.raises(ValueError, match="use_mock_ad_data"):
             self._prod_settings(service_role="worker", use_mock_ad_data="true")
+
+    # -- role auto-detection from the running executable ----------------------
+    # Railway startCommand cannot reliably carry an env-var prefix, so celery
+    # processes must be detected from sys.argv (config._detect_service_role).
+
+    def test_detects_celery_worker_from_argv(self, monkeypatch) -> None:
+        import sys as _sys
+
+        from app.core.config import _detect_service_role
+
+        monkeypatch.setattr(
+            _sys,
+            "argv",
+            ["/usr/local/bin/celery", "-A", "app.workers.celery_app", "worker"],
+        )
+        assert _detect_service_role() == "worker"
+
+    def test_detects_celery_beat_from_argv(self, monkeypatch) -> None:
+        import sys as _sys
+
+        from app.core.config import _detect_service_role
+
+        monkeypatch.setattr(
+            _sys,
+            "argv",
+            ["celery", "-A", "app.workers.celery_app", "beat", "--loglevel=info"],
+        )
+        assert _detect_service_role() == "beat"
+
+    def test_non_celery_process_defaults_to_api(self, monkeypatch) -> None:
+        import sys as _sys
+
+        from app.core.config import _detect_service_role
+
+        monkeypatch.setattr(_sys, "argv", ["/usr/local/bin/uvicorn", "app.main:app"])
+        assert _detect_service_role() == "api"
+
+    def test_celery_process_skips_http_checks_without_env(self, monkeypatch) -> None:
+        """End-to-end: a celery argv + no SERVICE_ROLE env yields a Settings
+        that tolerates the localhost defaults in production."""
+        import sys as _sys
+
+        monkeypatch.setattr(
+            _sys,
+            "argv",
+            ["/usr/local/bin/celery", "-A", "app.workers.celery_app", "worker"],
+        )
+        s, _ = self._prod_settings(cors_origins="http://localhost:3000")
+        assert s.service_role == "worker"

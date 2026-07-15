@@ -19,9 +19,11 @@ noCache = true
 # and each prefork child imports the full app, so memory scales with
 # concurrency. Raise it (or scale replicas) once you know the instance size.
 # --max-tasks-per-child recycles children to bound memory growth from ML tasks.
-# SERVICE_ROLE=worker scopes config validation: HTTP-only checks (CORS/
-# FRONTEND_URL) don't apply to non-HTTP roles, so a missing CORS_ORIGINS
-# variable can't crash-loop the worker again.
-startCommand = "SERVICE_ROLE=worker celery -A app.workers.celery_app worker --loglevel=info --concurrency=2 --max-tasks-per-child=200"
+# The worker role is auto-detected from the celery executable (see
+# core/config.py::_detect_service_role), which scopes config validation so
+# HTTP-only checks (CORS/FRONTEND_URL) can't crash-loop the worker. Do NOT
+# add an env-var prefix here — Railway does not reliably shell-interpret
+# startCommand (the SERVICE_ROLE=... prefix made deployment 6fd2202d FAIL).
+startCommand = "celery -A app.workers.celery_app worker --loglevel=info --concurrency=2 --max-tasks-per-child=200"
 restartPolicyType = "ON_FAILURE"
 restartPolicyMaxRetries = 3

@@ -8,12 +8,31 @@ All environment variables are validated and typed.
 
 import re
 import secrets
+import sys
 import warnings
 from functools import lru_cache
 from typing import List, Literal, Optional
 
 from pydantic import Field, field_validator, model_validator
 from pydantic_settings import BaseSettings, SettingsConfigDict
+
+
+def _detect_service_role() -> str:
+    """Default the service role from the running process.
+
+    Celery worker/beat processes import the same Settings but serve no HTTP,
+    so HTTP-only fail-closed checks (CORS/FRONTEND_URL) must not crash-loop
+    them (2026-07-15 prod incident). The SERVICE_ROLE env var wins when set;
+    otherwise a process launched via the ``celery`` executable defaults to
+    "worker". Everything else (uvicorn, pytest, scripts) defaults to "api" —
+    the strictest role.
+    """
+    argv0 = (sys.argv[0] or "").replace("\\", "/").rsplit("/", 1)[-1].lower()
+    if argv0.startswith("celery"):
+        # e.g. ["celery", "-A", "app.workers.celery_app", "beat", "--loglevel=info"]
+        return "beat" if "beat" in sys.argv[1:] else "worker"
+    return "api"
+
 
 # Generate cryptographically secure defaults so the application never
 # silently runs with a well-known, guessable key.  These are regenerated
@@ -42,13 +61,14 @@ class Settings(BaseSettings):
         default="development"
     )
     # Which process role this Settings instance serves. HTTP-serving checks
-    # (CORS/FRONTEND_URL fail-closed validation) only apply to "api" — celery
-    # worker/beat processes import the same Settings but serve no HTTP, and a
-    # missing CORS_ORIGINS must not crash-loop them (2026-07-15 prod incident:
-    # worker+beat never started because the validator rejected the localhost
-    # default). Set via SERVICE_ROLE in each service's start command.
+    # (CORS/FRONTEND_URL fail-closed validation) only apply to "api". The
+    # SERVICE_ROLE env var overrides; when unset, processes launched via the
+    # ``celery`` executable are auto-detected as worker/beat (see
+    # _detect_service_role — Railway start commands can't reliably carry an
+    # env-var prefix, which made the first fix attempt fail to deploy).
     service_role: Literal["api", "worker", "beat", "scheduler"] = Field(
-        default="api", description="Process role: api serves HTTP; others do not"
+        default_factory=_detect_service_role,
+        description="Process role: api serves HTTP; others do not",
     )
     debug: bool = Field(default=False)
     secret_key: str = Field(
