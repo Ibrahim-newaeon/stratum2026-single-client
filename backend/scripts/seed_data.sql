@@ -17,7 +17,7 @@ DELETE FROM campaign_metrics;
 DELETE FROM campaigns;
 DELETE FROM ad_account;
 DELETE FROM platform_connection;
-DELETE FROM tenant_onboarding;
+DELETE FROM organization_onboarding;
 
 -- =============================================================================
 -- Platform Connections
@@ -33,7 +33,7 @@ VALUES
 -- =============================================================================
 -- Onboarding (completed)
 -- =============================================================================
-INSERT INTO tenant_onboarding (
+INSERT INTO organization_onboarding (
   status, current_step, completed_steps,
   industry, monthly_ad_spend, team_size, primary_kpi,
   target_roas, automation_mode, started_at, completed_at

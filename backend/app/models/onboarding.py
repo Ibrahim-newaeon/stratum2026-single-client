@@ -116,13 +116,13 @@ class PrimaryKPI(str, enum.Enum):
 # =============================================================================
 
 
-class TenantOnboarding(Base):
+class OrganizationOnboarding(Base):
     """
     Tracks onboarding progress and stores collected preferences (singleton —
     one record for the organization).
     """
 
-    __tablename__ = "tenant_onboarding"
+    __tablename__ = "organization_onboarding"
 
     id: Mapped[int] = mapped_column(Integer, primary_key=True, autoincrement=True)
 
@@ -224,7 +224,7 @@ class TenantOnboarding(Base):
     # Relationships
     completed_by = relationship("User", foreign_keys=[completed_by_user_id])
 
-    __table_args__ = (Index("ix_tenant_onboarding_status", "status"),)
+    __table_args__ = (Index("ix_organization_onboarding_status", "status"),)
 
     def is_step_completed(self, step: OnboardingStep) -> bool:
         """Check if a step is completed."""

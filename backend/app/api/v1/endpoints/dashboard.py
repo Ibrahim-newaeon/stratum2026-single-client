@@ -42,7 +42,7 @@ from app.models import (
     CampaignStatus,
 )
 from app.models.campaign_builder import ConnectionStatus, PlatformConnection
-from app.models.onboarding import OnboardingStatus, TenantOnboarding
+from app.models.onboarding import OnboardingStatus, OrganizationOnboarding
 from app.schemas import APIResponse
 
 logger = get_logger(__name__)
@@ -528,7 +528,7 @@ async def _build_dashboard_overview(
     prev_start, prev_end = get_previous_period(start_date, end_date)
 
     # Check onboarding status
-    onboarding_result = await db.execute(select(TenantOnboarding))
+    onboarding_result = await db.execute(select(OrganizationOnboarding))
     onboarding = onboarding_result.scalar_one_or_none()
     onboarding_complete = bool(
         onboarding and onboarding.status == OnboardingStatus.COMPLETED
@@ -1223,7 +1223,7 @@ async def get_quick_actions(
     actions = []
 
     # Check onboarding status
-    onboarding_result = await db.execute(select(TenantOnboarding))
+    onboarding_result = await db.execute(select(OrganizationOnboarding))
     onboarding = onboarding_result.scalar_one_or_none()
 
     if not onboarding or onboarding.status != OnboardingStatus.COMPLETED:
@@ -1342,7 +1342,7 @@ async def get_signal_health(
 async def _build_signal_health(db: AsyncSession):
     """Build signal health response (extracted for error handling)."""
     # Get onboarding settings for thresholds
-    onboarding_result = await db.execute(select(TenantOnboarding))
+    onboarding_result = await db.execute(select(OrganizationOnboarding))
     onboarding = onboarding_result.scalar_one_or_none()
 
     # Get connected platforms count

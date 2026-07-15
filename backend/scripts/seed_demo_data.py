@@ -49,7 +49,7 @@ from app.models.onboarding import (
     OnboardingStep,
     PrimaryKPI,
     TeamSize,
-    TenantOnboarding,
+    OrganizationOnboarding,
 )
 from app.models.reporting import (
     ReportFormat,
@@ -281,7 +281,7 @@ async def seed_demo_data():
             print(f"      Created user: {demo_email} (password: demo1234)")
 
             print("\n[2/6] Creating onboarding record...")
-            onboarding = TenantOnboarding(
+            onboarding = OrganizationOnboarding(
                 status=OnboardingStatus.COMPLETED.value,
                 current_step=OnboardingStep.TRUST_GATE_CONFIG.value,
                 completed_steps=[s.value for s in OnboardingStep],

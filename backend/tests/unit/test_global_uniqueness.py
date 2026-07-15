@@ -200,13 +200,13 @@ def make_ltv_cohort(**overrides):
 
 
 def make_enforcement_settings(**overrides):
-    from app.models.autopilot import TenantEnforcementSettings
+    from app.models.autopilot import EnforcementSettings
 
-    return TenantEnforcementSettings(**overrides)
+    return EnforcementSettings(**overrides)
 
 
 def make_enforcement_rule(settings_id, **overrides):
-    from app.models.autopilot import TenantEnforcementRule, ViolationType
+    from app.models.autopilot import EnforcementRule, ViolationType
 
     defaults = dict(
         settings_id=settings_id,
@@ -215,7 +215,7 @@ def make_enforcement_rule(settings_id, **overrides):
         threshold_value=100.0,
     )
     defaults.update(overrides)
-    return TenantEnforcementRule(**defaults)
+    return EnforcementRule(**defaults)
 
 
 def make_platform_connection(**overrides):
@@ -410,7 +410,7 @@ async def test_ltv_cohort_month_globally_unique(db_session) -> None:
 
 
 # =============================================================================
-# 8. models/autopilot.py:199 - TenantEnforcementRule.rule_id
+# 8. models/autopilot.py:199 - EnforcementRule.rule_id
 # =============================================================================
 
 

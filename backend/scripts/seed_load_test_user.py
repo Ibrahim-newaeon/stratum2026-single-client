@@ -40,7 +40,7 @@ from app.models.onboarding import (
     OnboardingStep,
     PrimaryKPI,
     TeamSize,
-    TenantOnboarding,
+    OrganizationOnboarding,
 )
 
 # Load test user credentials (matches k6 test defaults)
@@ -90,12 +90,12 @@ async def seed_load_test_user():
             print(f"      Role: {user.role.value}")
 
             # Check if the singleton onboarding record exists
-            result = await db.execute(select(TenantOnboarding))
+            result = await db.execute(select(OrganizationOnboarding))
             onboarding = result.scalar_one_or_none()
 
             if not onboarding:
                 print("\n[2/3] Creating onboarding record...")
-                onboarding = TenantOnboarding(
+                onboarding = OrganizationOnboarding(
                     status=OnboardingStatus.COMPLETED.value,
                     current_step=OnboardingStep.TRUST_GATE_CONFIG.value,
                     completed_steps=[s.value for s in OnboardingStep],

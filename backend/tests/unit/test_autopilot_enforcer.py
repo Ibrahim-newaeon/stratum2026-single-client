@@ -35,12 +35,10 @@ from app.autopilot.enforcer import (
 )
 from app.models.autopilot import EnforcementAuditLog as EnforcementAuditLogDB
 from app.models.autopilot import EnforcementMode as DBEnforcementMode
+from app.models.autopilot import EnforcementRule as EnforcementRuleDB
+from app.models.autopilot import EnforcementSettings as EnforcementSettingsDB
 from app.models.autopilot import InterventionAction as DBInterventionAction
 from app.models.autopilot import PendingConfirmationToken as PendingConfirmationTokenDB
-from app.models.autopilot import TenantEnforcementRule as TenantEnforcementRuleDB
-from app.models.autopilot import (
-    TenantEnforcementSettings as TenantEnforcementSettingsDB,
-)
 from app.models.autopilot import ViolationType as DBViolationType
 
 # =============================================================================
@@ -957,9 +955,9 @@ def _added_of_type(db: MagicMock, model_cls: type) -> List[Any]:
     ]
 
 
-def _db_settings_row(**overrides: Any) -> TenantEnforcementSettingsDB:
-    """Construct an in-memory TenantEnforcementSettings row (no DB needed)."""
-    row = TenantEnforcementSettingsDB(
+def _db_settings_row(**overrides: Any) -> EnforcementSettingsDB:
+    """Construct an in-memory EnforcementSettings row (no DB needed)."""
+    row = EnforcementSettingsDB(
         enforcement_enabled=True,
         autopilot_frozen=False,
         default_mode=DBEnforcementMode.SOFT_BLOCK,
@@ -983,7 +981,7 @@ class TestGetSettingsDbPaths:
     @pytest.mark.asyncio
     async def test_loads_existing_row_with_rules(self):
         """An existing DB row (with custom rules) maps to the Pydantic model."""
-        rule_row = TenantEnforcementRuleDB(
+        rule_row = EnforcementRuleDB(
             rule_id="min_roas_rule",
             rule_type=DBViolationType.ROAS_BELOW_THRESHOLD,
             threshold_value=2.0,
@@ -1026,7 +1024,7 @@ class TestGetSettingsDbPaths:
 
         settings = await enforcer.get_settings()
 
-        created = _added_of_type(db, TenantEnforcementSettingsDB)
+        created = _added_of_type(db, EnforcementSettingsDB)
         assert len(created) == 1
         assert created[0].enforcement_enabled is True
         # TRUST-003: the persisted first-use default fails safe to SOFT_BLOCK.
@@ -1078,7 +1076,7 @@ class TestUpdateSettingsDbPaths:
             updates={"max_daily_budget": 100.0},
         )
 
-        created = _added_of_type(db, TenantEnforcementSettingsDB)
+        created = _added_of_type(db, EnforcementSettingsDB)
         assert len(created) == 1
         assert created[0].max_daily_budget == 100.0
         db.commit.assert_awaited_once()
@@ -1086,7 +1084,7 @@ class TestUpdateSettingsDbPaths:
     @pytest.mark.asyncio
     async def test_rules_update_replaces_db_rules(self):
         """A rules update deletes existing DB rules and inserts the new set."""
-        existing_rule = TenantEnforcementRuleDB(
+        existing_rule = EnforcementRuleDB(
             rule_id="old_rule",
             rule_type=DBViolationType.BUDGET_EXCEEDED,
             threshold_value=100.0,
@@ -1109,7 +1107,7 @@ class TestUpdateSettingsDbPaths:
         await enforcer.update_settings(updates={"rules": [new_rule]})
 
         db.delete.assert_awaited_once_with(existing_rule)
-        inserted = _added_of_type(db, TenantEnforcementRuleDB)
+        inserted = _added_of_type(db, EnforcementRuleDB)
         assert len(inserted) == 1
         assert inserted[0].rule_id == "new_rule"
         assert inserted[0].rule_type == DBViolationType.BUDGET_EXCEEDED

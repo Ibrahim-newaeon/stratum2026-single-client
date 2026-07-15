@@ -41,7 +41,10 @@ class TestUpdateMetricsAll:
     def test_counts_connected_platforms(self):
         from app.stratum.workers import data_sync
 
-        connected = [_conn(ConnectionStatus.CONNECTED), _conn(ConnectionStatus.CONNECTED)]
+        connected = [
+            _conn(ConnectionStatus.CONNECTED),
+            _conn(ConnectionStatus.CONNECTED),
+        ]
 
         db = MagicMock()
         db.execute.return_value.scalars.return_value.all.return_value = connected

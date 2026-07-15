@@ -27,12 +27,10 @@ from sqlalchemy.orm import selectinload
 from app.core.logging import get_logger
 from app.models.autopilot import EnforcementAuditLog as EnforcementAuditLogDB
 from app.models.autopilot import EnforcementMode as DBEnforcementMode
+from app.models.autopilot import EnforcementRule as EnforcementRuleDB
+from app.models.autopilot import EnforcementSettings as EnforcementSettingsDB
 from app.models.autopilot import InterventionAction as DBInterventionAction
 from app.models.autopilot import PendingConfirmationToken as PendingConfirmationTokenDB
-from app.models.autopilot import TenantEnforcementRule as TenantEnforcementRuleDB
-from app.models.autopilot import (
-    TenantEnforcementSettings as TenantEnforcementSettingsDB,
-)
 from app.models.autopilot import ViolationType as DBViolationType
 from app.services.email_service import get_email_service
 from app.services.notifications.slack_service import SlackNotificationService
@@ -223,8 +221,8 @@ class AutopilotEnforcer:
         # Load from database
         if self.db is not None:
             result = await self.db.execute(
-                select(TenantEnforcementSettingsDB).options(
-                    selectinload(TenantEnforcementSettingsDB.rules)
+                select(EnforcementSettingsDB).options(
+                    selectinload(EnforcementSettingsDB.rules)
                 )
             )
             db_settings = result.scalars().first()
@@ -271,7 +269,7 @@ class AutopilotEnforcer:
                 return settings
 
             # No row exists -- create with defaults and persist
-            new_db_settings = TenantEnforcementSettingsDB(
+            new_db_settings = EnforcementSettingsDB(
                 enforcement_enabled=True,
                 # Fail safe on first use (TRUST-003) — see EnforcementSettings.
                 default_mode=DBEnforcementMode.SOFT_BLOCK,
@@ -343,8 +341,8 @@ class AutopilotEnforcer:
 
             # Load or create the DB settings row
             result = await self.db.execute(
-                select(TenantEnforcementSettingsDB).options(
-                    selectinload(TenantEnforcementSettingsDB.rules)
+                select(EnforcementSettingsDB).options(
+                    selectinload(EnforcementSettingsDB.rules)
                 )
             )
             db_settings = result.scalars().first()
@@ -356,7 +354,7 @@ class AutopilotEnforcer:
                     await self.db.flush()
                 else:
                     # Create a new row if missing (edge case)
-                    new_row = TenantEnforcementSettingsDB(**db_updates)
+                    new_row = EnforcementSettingsDB(**db_updates)
                     self.db.add(new_row)
                     await self.db.flush()
                     db_settings = new_row
@@ -375,7 +373,7 @@ class AutopilotEnforcer:
                         if hasattr(rule, "model_dump")
                         else (rule.dict() if hasattr(rule, "dict") else rule)
                     )
-                    db_rule = TenantEnforcementRuleDB(
+                    db_rule = EnforcementRuleDB(
                         settings_id=db_settings.id,
                         rule_id=rule_dict["rule_id"],
                         rule_type=DBViolationType(rule_dict["rule_type"]),

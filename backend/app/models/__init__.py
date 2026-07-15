@@ -53,11 +53,13 @@ from app.models.autopilot import (
     EnforcementAuditLog,
 )
 from app.models.autopilot import EnforcementMode as AutopilotEnforcementMode
+from app.models.autopilot import (
+    EnforcementRule,
+    EnforcementSettings,
+)
 from app.models.autopilot import InterventionAction as AutopilotInterventionAction
 from app.models.autopilot import (
     PendingConfirmationToken,
-    TenantEnforcementRule,
-    TenantEnforcementSettings,
 )
 from app.models.autopilot import ViolationType as AutopilotViolationType
 
@@ -106,6 +108,9 @@ from app.models.emq_playbook import EmqPlaybookItemState
 
 # Launch Readiness (Go-Live wizard)
 from app.models.launch_readiness import LaunchReadinessEvent, LaunchReadinessItemState
+
+# Onboarding models
+from app.models.onboarding import OrganizationOnboarding
 
 # Pacing & Forecasting models
 from app.models.pacing import (
@@ -239,6 +244,9 @@ __all__ = [
     "DripSequence",
     "EmqPlaybookItemState",
     "EnforcementAuditLog",
+    # Models
+    "EnforcementRule",
+    "EnforcementSettings",
     "ExecutionStatus",
     "FactActionsQueue",
     "FactAttributionVarianceDaily",
@@ -255,6 +263,7 @@ __all__ = [
     "ModelTrainingRun",
     "NotificationPreference",
     "Organization",
+    "OrganizationOnboarding",
     "PacingAlert",
     "PacingSummary",
     "PendingConfirmationToken",
@@ -284,9 +293,6 @@ __all__ = [
     "TargetMetric",
     # Pacing & Forecasting
     "TargetPeriod",
-    # Models
-    "TenantEnforcementRule",
-    "TenantEnforcementSettings",
     "Touchpoint",
     "TrainedAttributionModel",
     "User",

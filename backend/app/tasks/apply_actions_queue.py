@@ -1214,9 +1214,9 @@ async def is_autopilot_frozen(db: AsyncSession) -> bool:
     exactly one settings row. When True, execution paths defer the action
     rather than applying it.
     """
-    from app.models.autopilot import TenantEnforcementSettings
+    from app.models.autopilot import EnforcementSettings
 
-    result = await db.execute(select(TenantEnforcementSettings.autopilot_frozen))
+    result = await db.execute(select(EnforcementSettings.autopilot_frozen))
     return bool(result.scalars().first())
 
 

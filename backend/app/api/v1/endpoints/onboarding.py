@@ -31,9 +31,9 @@ from app.models.onboarding import (
     MonthlyAdSpend,
     OnboardingStatus,
     OnboardingStep,
+    OrganizationOnboarding,
     PrimaryKPI,
     TeamSize,
-    TenantOnboarding,
 )
 from app.schemas import APIResponse
 
@@ -268,13 +268,13 @@ class StepCompletionResponse(BaseModel):
 
 async def get_or_create_onboarding(
     db: AsyncSession,
-) -> TenantOnboarding:
+) -> OrganizationOnboarding:
     """Get or create the singleton onboarding record for the org."""
-    result = await db.execute(select(TenantOnboarding).limit(1))
+    result = await db.execute(select(OrganizationOnboarding).limit(1))
     onboarding = result.scalar_one_or_none()
 
     if not onboarding:
-        onboarding = TenantOnboarding(
+        onboarding = OrganizationOnboarding(
             status=OnboardingStatus.NOT_STARTED,
             current_step=OnboardingStep.BUSINESS_PROFILE,
             completed_steps=[],
@@ -286,7 +286,7 @@ async def get_or_create_onboarding(
 
 
 def mark_step_completed(
-    onboarding: TenantOnboarding,
+    onboarding: OrganizationOnboarding,
     step: OnboardingStep,
 ) -> None:
     """Mark a step as completed and update current step."""
@@ -701,7 +701,7 @@ async def reset_onboarding(
 
     Clears all saved preferences and resets to step 1.
     """
-    result = await db.execute(select(TenantOnboarding).limit(1))
+    result = await db.execute(select(OrganizationOnboarding).limit(1))
     onboarding = result.scalar_one_or_none()
 
     if onboarding:

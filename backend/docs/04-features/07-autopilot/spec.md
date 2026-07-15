@@ -100,12 +100,12 @@ class QueuedAutopilotAction:
     error: str | None
 ```
 
-### TenantEnforcementSettings
+### EnforcementSettings
 
 Per-tenant enforcement configuration.
 
 ```python
-class TenantEnforcementSettings:
+class EnforcementSettings:
     id: UUID
     tenant_id: int
 
@@ -129,12 +129,12 @@ class TenantEnforcementSettings:
     min_hours_between_changes: int = 4
 ```
 
-### TenantEnforcementRule
+### EnforcementRule
 
 Custom enforcement rules per tenant.
 
 ```python
-class TenantEnforcementRule:
+class EnforcementRule:
     id: UUID
     settings_id: UUID
     tenant_id: int
@@ -365,7 +365,7 @@ CREATE TABLE queued_autopilot_actions (
 );
 
 -- Enforcement settings
-CREATE TABLE tenant_enforcement_settings (
+CREATE TABLE enforcement_settings (
     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
     tenant_id INTEGER NOT NULL UNIQUE REFERENCES tenants(id) ON DELETE CASCADE,
 
@@ -387,9 +387,9 @@ CREATE TABLE tenant_enforcement_settings (
 );
 
 -- Custom rules
-CREATE TABLE tenant_enforcement_rules (
+CREATE TABLE enforcement_rules (
     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-    settings_id UUID NOT NULL REFERENCES tenant_enforcement_settings(id) ON DELETE CASCADE,
+    settings_id UUID NOT NULL REFERENCES enforcement_settings(id) ON DELETE CASCADE,
     tenant_id INTEGER NOT NULL REFERENCES tenants(id) ON DELETE CASCADE,
 
     rule_id VARCHAR(100) NOT NULL,

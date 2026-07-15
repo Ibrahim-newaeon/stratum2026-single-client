@@ -5,8 +5,8 @@
 Database models for Autopilot Enforcement settings and audit logging.
 
 Models:
-- TenantEnforcementSettings: Org-level enforcement configuration (singleton)
-- TenantEnforcementRule: Custom enforcement rules
+- EnforcementSettings: Org-level enforcement configuration (singleton)
+- EnforcementRule: Custom enforcement rules
 - EnforcementAuditLog: Intervention audit log
 """
 
@@ -65,16 +65,16 @@ class InterventionAction(str, enum.Enum):
 
 
 # =============================================================================
-# Tenant Enforcement Settings Model
+# Enforcement Settings Model
 # =============================================================================
 
 
-class TenantEnforcementSettings(Base, TimestampMixin):
+class EnforcementSettings(Base, TimestampMixin):
     """
     Org-level enforcement configuration (singleton).
     """
 
-    __tablename__ = "tenant_enforcement_settings"
+    __tablename__ = "enforcement_settings"
 
     id = Column(UUID(as_uuid=True), primary_key=True, default=uuid4)
 
@@ -111,7 +111,7 @@ class TenantEnforcementSettings(Base, TimestampMixin):
 
     # Relationships
     rules = relationship(
-        "TenantEnforcementRule",
+        "EnforcementRule",
         back_populates="settings",
         cascade="all, delete-orphan",
     )
@@ -146,18 +146,18 @@ class TenantEnforcementSettings(Base, TimestampMixin):
 # =============================================================================
 
 
-class TenantEnforcementRule(Base, TimestampMixin):
+class EnforcementRule(Base, TimestampMixin):
     """
     Custom enforcement rules.
     Allows fine-grained control over specific thresholds.
     """
 
-    __tablename__ = "tenant_enforcement_rules"
+    __tablename__ = "enforcement_rules"
 
     id = Column(UUID(as_uuid=True), primary_key=True, default=uuid4)
     settings_id = Column(
         UUID(as_uuid=True),
-        ForeignKey("tenant_enforcement_settings.id", ondelete="CASCADE"),
+        ForeignKey("enforcement_settings.id", ondelete="CASCADE"),
         nullable=False,
     )
 
@@ -177,12 +177,12 @@ class TenantEnforcementRule(Base, TimestampMixin):
     description = Column(Text, nullable=True)
 
     # Relationships
-    settings = relationship("TenantEnforcementSettings", back_populates="rules")
+    settings = relationship("EnforcementSettings", back_populates="rules")
 
     __table_args__ = (
         # was tenant-scoped; now global
         UniqueConstraint("rule_id", name="uq_rule_id"),
-        Index("ix_tenant_enforcement_rules_settings_id", "settings_id"),
+        Index("ix_enforcement_rules_settings_id", "settings_id"),
     )
 
     def to_dict(self) -> dict:

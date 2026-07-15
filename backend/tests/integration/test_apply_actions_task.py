@@ -92,8 +92,8 @@ def seeded(sync_engine):
 
     STRAT-SC-001: no more per-organization ``Tenant`` row — ``User`` /
     ``FactActionsQueue`` / ``FactSignalHealthDaily`` are global rows and
-    ``TenantEnforcementSettings`` is a global singleton (residual name,
-    no per-organization scoping column). Yields a dict with the operator
+    ``EnforcementSettings`` is a global singleton (no per-organization
+    scoping column). Yields a dict with the operator
     user id and an ``add_action`` factory; every row created here is
     deleted on teardown.
     """
@@ -151,11 +151,11 @@ def seeded(sync_engine):
         """Upsert the global enforcement settings singleton with the freeze
         flag so the worker's own session reads the operator emergency-stop
         state."""
-        from app.models.autopilot import TenantEnforcementSettings
+        from app.models.autopilot import EnforcementSettings
 
-        row = session.query(TenantEnforcementSettings).one_or_none()
+        row = session.query(EnforcementSettings).one_or_none()
         if row is None:
-            row = TenantEnforcementSettings(autopilot_frozen=frozen)
+            row = EnforcementSettings(autopilot_frozen=frozen)
             session.add(row)
         else:
             row.autopilot_frozen = frozen
@@ -176,9 +176,9 @@ def seeded(sync_engine):
         "session": session,
     }
 
-    from app.models.autopilot import TenantEnforcementSettings
+    from app.models.autopilot import EnforcementSettings
 
-    settings_row = session.query(TenantEnforcementSettings).one_or_none()
+    settings_row = session.query(EnforcementSettings).one_or_none()
     if settings_row is not None:
         session.delete(settings_row)
         session.commit()
