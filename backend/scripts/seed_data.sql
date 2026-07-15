@@ -15,14 +15,14 @@ BEGIN;
 DELETE FROM fact_platform_daily;
 DELETE FROM campaign_metrics;
 DELETE FROM campaigns;
-DELETE FROM tenant_ad_account;
-DELETE FROM tenant_platform_connection;
+DELETE FROM ad_account;
+DELETE FROM platform_connection;
 DELETE FROM tenant_onboarding;
 
 -- =============================================================================
 -- Platform Connections
 -- =============================================================================
-INSERT INTO tenant_platform_connection (id, platform, status, connected_at, created_at, updated_at)
+INSERT INTO platform_connection (id, platform, status, connected_at, created_at, updated_at)
 VALUES
   (gen_random_uuid(), 'meta',     'connected', NOW() - INTERVAL '60 days', NOW(), NOW()),
   (gen_random_uuid(), 'google',   'connected', NOW() - INTERVAL '55 days', NOW(), NOW()),

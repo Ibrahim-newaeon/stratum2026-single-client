@@ -4,7 +4,7 @@
 """
 REST API endpoints for the conversational onboarding agent.
 
-This provides a chat-like interface for onboarding new users/tenants
+This provides a chat-like interface for onboarding new users
 using the RootAgent and GreetingTool.
 """
 
@@ -46,7 +46,7 @@ class StartConversationRequest(BaseModel):
     company: Optional[str] = Field(None, description="Company name if known")
     language: str = Field(default="en", description="Preferred language (en, ar)")
     is_new_tenant: bool = Field(
-        default=False, description="Whether this is a new tenant setup"
+        default=False, description="Whether this is a new organization setup"
     )
 
 
@@ -171,7 +171,7 @@ async def start_conversation(
         is_new_user=not bool(current_user),
     )
 
-    # If new tenant setup, mark accordingly
+    # If new organization setup, mark accordingly
     if request.is_new_tenant and current_user:
         user_context.is_new_org = True
         user_context.is_new_user = False

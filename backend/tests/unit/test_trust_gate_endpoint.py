@@ -2,7 +2,7 @@
 # Stratum AI - Trust Gate Endpoint Adapter Tests
 # =============================================================================
 """Unit tests for the FactSignalHealthDaily → stratum SignalHealth adapter
-behind GET /trust/tenant/{id}/trust-gate and POST .../trust-gate/evaluate.
+behind GET /trust/trust-gate and POST .../trust-gate/evaluate.
 
 The adapter is the seam between the rolled-up daily table and the real
 trust-gate engine; these lock in the safety default (no data blocks

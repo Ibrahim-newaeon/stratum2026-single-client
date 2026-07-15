@@ -6,7 +6,7 @@ The /ml router (model upload / train / delete) operates on the GLOBAL model
 registry and was completely unauthenticated. It must now require owner.
 
 Tested behaviorally through the api_client fixture (a fresh app with real
-TenantMiddleware + the api_router mounted): a non-owner is rejected, an
+auth middleware + the api_router mounted): a non-owner is rejected, an
 owner is let through, and an unauthenticated request is refused. This is
 more robust than inspecting router internals, which are sensitive to test
 import order / shared-app mutation across the suite.
@@ -19,7 +19,7 @@ pytestmark = pytest.mark.unit
 
 @pytest.mark.asyncio
 async def test_ml_models_rejects_non_owner(api_client, admin_headers):
-    # A tenant admin (role != owner) must be forbidden.
+    # An org admin (role != owner) must be forbidden.
     resp = await api_client.get("/api/v1/ml/models", headers=admin_headers)
     assert resp.status_code == 403
 

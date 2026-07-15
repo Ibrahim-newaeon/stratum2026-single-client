@@ -4,7 +4,7 @@
 """
 Knowledge Graph service for analytics, insights, and problem detection.
 
-Provides graph-based analysis of tenant data to detect problems,
+Provides graph-based analysis of account data to detect problems,
 trace automation decisions, and generate revenue insights.
 """
 

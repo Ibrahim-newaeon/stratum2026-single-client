@@ -847,7 +847,7 @@ class RFMBatchResponse(BaseModel):
 
 
 class RFMSummaryResponse(BaseModel):
-    """RFM summary for tenant."""
+    """RFM summary for the organization."""
 
     total_profiles: int
     profiles_with_rfm: int

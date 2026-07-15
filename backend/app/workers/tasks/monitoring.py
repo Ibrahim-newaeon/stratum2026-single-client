@@ -9,14 +9,14 @@ from datetime import UTC, datetime, timedelta
 
 from celery import shared_task
 from celery.utils.log import get_task_logger
-from sqlalchemy import func, select
+from sqlalchemy import select, text
 
 from app.core.config import settings
 from app.db.session import SyncSessionLocal
 # NOTE(STRAT-SC-001/C3): dead `Tenant` import removed so `app.main` can
-# import (endpoints import worker task functions at module load). Task
-# bodies below still reference the old per-org fan-out and are rewritten
-# in Task C4 — they were already runtime-broken since the model deletion.
+# import (endpoints import worker task functions at module load). The DB
+# health check below now counts ``Campaign`` rows (it counted ``Tenant``
+# rows before the model deletion, which left it runtime-broken).
 from app.models import Campaign
 from app.workers.locks import with_distributed_lock
 
@@ -185,8 +185,7 @@ def check_pipeline_health():
 
         # Check database health
         try:
-            # Note: This is async, so we check differently in sync context
-            db.execute(select(func.count(Tenant.id)))
+            db.execute(text("SELECT 1"))
             db_status = "healthy"
         except (ConnectionError, TimeoutError, OSError) as e:
             db_status = f"unhealthy: {e!s}"

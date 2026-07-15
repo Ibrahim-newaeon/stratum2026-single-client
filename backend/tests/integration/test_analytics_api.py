@@ -5,9 +5,9 @@
 ``/api/v1/analytics/...``: KPI tiles, demographics, heatmap, platform &
 account breakdowns, trends, tenant overview, and executive summary.
 
-All endpoints aggregate tenant-scoped ``CampaignMetric`` rows. The smoke tests
+All endpoints aggregate org-wide ``CampaignMetric`` rows. The smoke tests
 assert each endpoint is reachable and returns a 200 envelope on an empty
-tenant; ``/kpis`` is additionally exercised against a seeded metric.
+database; ``/kpis`` is additionally exercised against a seeded metric.
 """
 
 import datetime as dt
@@ -78,7 +78,7 @@ class TestAuth:
 
 class TestSmoke:
     @pytest.mark.parametrize("path", _ENDPOINTS)
-    async def test_empty_tenant_returns_200(
+    async def test_empty_org_returns_200(
         self, authenticated_client: AsyncClient, organization, path
     ):
         # /tenant-overview calls get_organization(db) internally (STRAT-SC-001:

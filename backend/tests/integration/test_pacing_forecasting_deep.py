@@ -209,7 +209,7 @@ class TestForecastEom:
     async def test_current_month_with_history(
         self, db_session, forecasting
     ):
-        # 45 days of tenant-level (platform=None) revenue through today.
+        # 45 days of org-level (platform=None) revenue through today.
         today = date.today()
         for i in range(45):
             d = today - timedelta(days=i)
@@ -362,10 +362,10 @@ class TestLoadHistoricalData:
         assert hist[-1]["date"] == AS_OF
         assert hist[-1]["dow"] == AS_OF.weekday()
 
-    async def test_tenant_level_scope_excludes_platform_rows(
+    async def test_org_level_scope_excludes_platform_rows(
         self, db_session, forecasting, constant_meta_history
     ):
-        # platform=None loads only tenant-level rows; the 56 meta rows are
+        # platform=None loads only org-level rows; the 56 meta rows are
         # invisible at this scope.
         db_session.add(_kpi(AS_OF, spend=77.0, platform=None))
         await db_session.flush()

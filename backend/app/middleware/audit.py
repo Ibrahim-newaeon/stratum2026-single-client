@@ -40,7 +40,6 @@ class AuditMiddleware(BaseHTTPMiddleware):
 
     Records:
     - User ID (from JWT)
-    - Tenant ID
     - Resource type and ID
     - Action type (CREATE, UPDATE, DELETE)
     - Old and new values (where available)

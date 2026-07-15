@@ -100,7 +100,7 @@ class TestJWTAccessToken:
 
     def test_token_contains_correct_subject(self) -> None:
         """The decoded payload 'sub' field matches the subject used at creation."""
-        subject = "tenant-42::user-7"
+        subject = "org-42::user-7"
         token = create_access_token(subject=subject)
         payload = decode_token(token)
         assert payload is not None

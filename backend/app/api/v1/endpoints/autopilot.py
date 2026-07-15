@@ -70,7 +70,7 @@ def _dispatch_rollback(action_id: str, user_id: Optional[int]) -> None:
         logger.exception("Failed to dispatch rollback_action for action %s", action_id)
 
 
-def _dispatch_tenant_queue() -> None:
+def _dispatch_apply_queue() -> None:
     """Dispatch execution of all approved actions (used by approve-all).
     Same defensive contract as ``_dispatch_single_action``."""
     try:
@@ -623,7 +623,7 @@ async def approve_all_actions(
 
     # Dispatch the apply sweep so the just-approved actions execute.
     if count:
-        _dispatch_tenant_queue()
+        _dispatch_apply_queue()
 
     return APIResponse(
         success=True,

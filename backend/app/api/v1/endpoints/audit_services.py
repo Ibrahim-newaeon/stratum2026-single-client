@@ -16,7 +16,6 @@ API endpoints for all audit-recommended services:
 
 Security features:
 - All endpoints require authentication
-- Tenant isolation on all operations
 - Role-based access for admin operations
 - Rate limiting on write operations
 - Structured audit logging

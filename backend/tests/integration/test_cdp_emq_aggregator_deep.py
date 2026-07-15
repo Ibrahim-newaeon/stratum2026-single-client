@@ -6,19 +6,19 @@
 First tests for the module (previously 0% — it is live code, imported by
 ``app.stratum.core.signal_health``). Covers:
 
-- ``CDPEMQAggregator.get_aggregate_emq``: empty tenant default, healthy stats,
+- ``CDPEMQAggregator.get_aggregate_emq``: empty-deployment default, healthy stats,
   the full issue matrix (low avg / low min / high variance / stale 24h),
   lookback windowing, null-EMQ events, explicit target_date.
 - ``get_emq_trend``: daily grouping, ordering, day-window filter, null-EMQ
   exclusion, empty result.
 - ``get_profile_quality_breakdown``: stage distribution, percentages,
-  identity resolution rate, empty tenant.
+  identity resolution rate, empty deployment.
 - ``get_consent_metrics``: zero-profile early return, per-type grant rates,
   distinct-profile consent rate.
 - ``calculate_cdp_contribution``: every branch of the resolution / recency /
   consent scoring ladders including boundary values and issue emission.
 - ``get_cdp_emq_for_signal_health``: end-to-end composition for empty and
-  populated tenants.
+  populated deployments.
 """
 
 from datetime import UTC, date, datetime, timedelta
@@ -101,7 +101,7 @@ async def aggregator(db_session) -> CDPEMQAggregator:
 
 
 class TestGetAggregateEmq:
-    async def test_empty_tenant_returns_default_with_warning(
+    async def test_empty_org_returns_default_with_warning(
         self, aggregator
     ):
         data = await aggregator.get_aggregate_emq()
@@ -205,7 +205,7 @@ class TestGetAggregateEmq:
         self, aggregator, db_session
     ):
         """An event without an EMQ score contributes to recency but not stats,
-        so the tenant falls back to the default aggregate."""
+        so the org falls back to the default aggregate."""
         db_session.add(_event(emq=None))
         await db_session.flush()
 
@@ -266,7 +266,7 @@ class TestGetEmqTrend:
         assert trend[2]["event_count"] == 2
         assert trend[0]["date"] == str((now - timedelta(days=5)).date())
 
-    async def test_empty_tenant_returns_empty_list(self, aggregator):
+    async def test_empty_org_returns_empty_list(self, aggregator):
         trend = await aggregator.get_emq_trend()
         assert trend == []
 
@@ -302,7 +302,7 @@ class TestProfileQualityBreakdown:
         # (known 1 + customer 1) / 4
         assert data["identity_resolution_rate"] == 50.0
 
-    async def test_empty_tenant(self, aggregator):
+    async def test_empty_org(self, aggregator):
         data = await aggregator.get_profile_quality_breakdown()
 
         assert data["total_profiles"] == 0
@@ -471,7 +471,7 @@ class TestCalculateCdpContribution:
 
 
 class TestGetCdpEmqForSignalHealth:
-    async def test_empty_tenant_composition(self, db_session):
+    async def test_empty_org_composition(self, db_session):
         data = await get_cdp_emq_for_signal_health(db_session)
 
         # aggregate 75 -> 37.5; resolution 0 -> 0; recency 40 -> 6; consent 0 -> 0
@@ -489,7 +489,7 @@ class TestGetCdpEmqForSignalHealth:
             "No CDP events in analysis period - using default EMQ"
         )
 
-    async def test_populated_tenant_composition(self, db_session):
+    async def test_populated_org_composition(self, db_session):
         p1 = _profile(stage="known", total_events=3)
         p2 = _profile(stage="customer", total_events=5)
         db_session.add_all([p1, p2])

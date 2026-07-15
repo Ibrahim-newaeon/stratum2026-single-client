@@ -101,7 +101,7 @@ class AuditLogSearchRequest(BaseModel):
         description="Filter by actions: campaign_create, campaign_update, login, etc.",
     )
     resource_types: Optional[list[str]] = Field(
-        None, description="Filter by resource type: campaign, user, tenant, setting"
+        None, description="Filter by resource type: campaign, user, organization, setting"
     )
     severity: Optional[list[str]] = Field(
         None, description="Filter by severity: info, warning, critical"
@@ -125,7 +125,7 @@ class PermissionRule(BaseModel):
 
     id: str
     name: str
-    resource_type: str  # campaign, tenant, user, report, setting
+    resource_type: str  # campaign, organization, user, report, setting
     action: str  # read, create, update, delete, execute, approve
     conditions: Optional[dict[str, Any]] = None  # e.g. {"status": "ACTIVE"}
     effect: str = "allow"  # allow, deny

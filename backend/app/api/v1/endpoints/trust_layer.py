@@ -137,14 +137,14 @@ async def get_signal_health_by_account(
     )
     records = result.scalars().all()
 
-    # Enrich with account names from TenantAdAccount
-    from app.models.campaign_builder import TenantAdAccount
+    # Enrich with account names from AdAccount
+    from app.models.campaign_builder import AdAccount
 
     account_names_result = await db.execute(
         select(
-            TenantAdAccount.platform_account_id,
-            TenantAdAccount.name,
-            TenantAdAccount.business_name,
+            AdAccount.platform_account_id,
+            AdAccount.name,
+            AdAccount.business_name,
         )
     )
     account_lookup = {

@@ -4,7 +4,7 @@
 """Integration tests for the ``/api-keys`` CRUD endpoints.
 
 All routes are owner-gated and read ``request.state.user_id``; the owner
-JWT carries the role + subject (single-organization, no tenant dimension).
+JWT carries the role + subject (single-organization).
 """
 
 import pytest

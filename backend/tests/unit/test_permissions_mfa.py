@@ -430,7 +430,7 @@ class TestRBACMatrix:
             "analytics",
             "reports",
             "reports.download",
-            "tenants.settings",
+            "account.settings",
             "users.manage",
             "connectors",
             "billing",
@@ -479,8 +479,8 @@ class TestResourceScope:
     def test_owner_global(self) -> None:
         assert get_resource_scope(UserRole.OWNER) == "global"
 
-    def test_admin_tenant(self) -> None:
-        assert get_resource_scope(UserRole.ADMIN) == "tenant"
+    def test_admin_account(self) -> None:
+        assert get_resource_scope(UserRole.ADMIN) == "account"
 
     def test_manager_assigned(self) -> None:
         assert get_resource_scope(UserRole.MANAGER) == "assigned"
@@ -509,7 +509,7 @@ class TestSidebarVisibility:
 
     def test_owner_sees_everything(self) -> None:
         sa = SIDEBAR_VISIBILITY[UserRole.OWNER]
-        assert "tenants" in sa
+        assert "organization" in sa
         assert "audit" in sa
         assert "billing" in sa
         assert "profile" in sa
@@ -518,9 +518,9 @@ class TestSidebarVisibility:
         v = SIDEBAR_VISIBILITY[UserRole.VIEWER]
         assert v == {"dashboard", "campaigns", "analytics", "profile"}
 
-    def test_admin_no_tenants_tab(self) -> None:
-        """Admin can manage their tenant but shouldn't see cross-tenant tab."""
-        assert "tenants" not in SIDEBAR_VISIBILITY[UserRole.ADMIN]
+    def test_admin_no_org_management_tab(self) -> None:
+        """Admin manages the account but shouldn't see the org-management tab."""
+        assert "organization" not in SIDEBAR_VISIBILITY[UserRole.ADMIN]
 
     def test_analyst_no_clients(self) -> None:
         assert "clients" not in SIDEBAR_VISIBILITY[UserRole.ANALYST]

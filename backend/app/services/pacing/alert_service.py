@@ -1098,7 +1098,7 @@ class AlertNotificationService:
     async def notify_alert(self, alert: PacingAlert) -> Dict[str, bool]:
         """Send notifications for an alert based on target settings.
 
-        Resolves Slack webhook URL from the tenant's SlackIntegration
+        Resolves Slack webhook URL from the organization's SlackIntegration
         record and extracts email/phone recipients from the target's
         ``notification_recipients`` JSON field.
 

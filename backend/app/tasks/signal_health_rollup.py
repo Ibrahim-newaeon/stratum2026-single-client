@@ -321,16 +321,16 @@ async def fetch_platform_metrics(
     For now, returns placeholder data if platform connection exists.
     """
     # Check if this platform is connected (single-org: one connection per
-    # platform). (This previously filtered on TenantPlatformConnection.is_connected
+    # platform). (This previously filtered on PlatformConnection.is_connected
     # and read last_sync_at / is_healthy — none of which exist on the model, so
     # every rollup attempt died with AttributeError.)
-    from app.models.campaign_builder import ConnectionStatus, TenantPlatformConnection
+    from app.models.campaign_builder import ConnectionStatus, PlatformConnection
 
     result = await db.execute(
-        select(TenantPlatformConnection).where(
+        select(PlatformConnection).where(
             and_(
-                TenantPlatformConnection.platform == platform,
-                TenantPlatformConnection.status == ConnectionStatus.CONNECTED,
+                PlatformConnection.platform == platform,
+                PlatformConnection.status == ConnectionStatus.CONNECTED,
             )
         )
     )
@@ -382,7 +382,7 @@ async def fetch_platform_metrics(
 @shared_task(name="tasks.schedule_signal_health_rollup")
 def schedule_signal_health_rollup():
     """
-    Scheduled task to trigger signal health rollup for all tenants.
+    Scheduled task to trigger signal health rollup for all connected platforms.
     Should be scheduled to run daily at 2:00 AM UTC.
     """
     return signal_health_rollup.delay()

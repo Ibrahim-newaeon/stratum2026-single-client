@@ -5,8 +5,8 @@
 Role-Based Access Control (RBAC) implementation.
 
 Roles:
-- owner: Full platform access, cross-tenant operations
-- tenant_admin: Full tenant access, user management
+- owner: Full platform access, all operations
+- admin: Full account access, user management
 - media_buyer: Campaign management, budget control
 - analyst: Read-only analytics, reports
 - account_manager: Client relationship, limited campaign access
@@ -162,7 +162,7 @@ ROLE_PERMISSIONS: dict[str, Set[Permission]] = {
         Permission.CLIENT_DELETE,
         Permission.CLIENT_PORTAL,
     },
-    # Tenant Admin: Full tenant access
+    # Admin: Full account access
     "admin": {
         Permission.USER_READ,
         Permission.USER_WRITE,
@@ -330,7 +330,7 @@ RBAC_MATRIX: dict[str, dict[UserRole, PermLevel]] = {
         UserRole.ANALYST: PermLevel.FULL,
         UserRole.VIEWER: PermLevel.FULL,
     },
-    "tenants.settings": {
+    "account.settings": {
         UserRole.OWNER: PermLevel.FULL,
         UserRole.ADMIN: PermLevel.FULL,
         UserRole.MANAGER: PermLevel.NONE,
@@ -414,7 +414,7 @@ def can_manage_role(actor_role: UserRole, target_role: UserRole) -> bool:
 
 _ROLE_SCOPE: dict[UserRole, str] = {
     UserRole.OWNER: "global",
-    UserRole.ADMIN: "tenant",
+    UserRole.ADMIN: "account",
     UserRole.MANAGER: "assigned",
     UserRole.ANALYST: "assigned",
     UserRole.VIEWER: "own_client",
@@ -441,7 +441,7 @@ SIDEBAR_VISIBILITY: dict[UserRole, set[str]] = {
         "connectors",
         "billing",
         "audit",
-        "tenants",
+        "organization",
         "reports",
         "alerts",
         "profile",

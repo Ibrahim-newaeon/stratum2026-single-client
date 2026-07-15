@@ -7,9 +7,9 @@
 
 STRAT-SC-001: these routes used to be scoped under a path-organization
 prefix (``/tenant/<id>/campaign-drafts``); there is now exactly one
-organization, so the path is un-prefixed. ``TenantAdAccount`` /
-``TenantPlatformConnection`` keep their residual "Tenant"-prefixed class
-names but have no per-organization scoping column (global tables).
+organization, so the path is un-prefixed. ``AdAccount`` /
+``PlatformConnection`` (formerly "Tenant"-prefixed class names) are
+global tables with no per-organization scoping column.
 """
 
 import uuid
@@ -24,18 +24,18 @@ pytestmark = [pytest.mark.integration, pytest.mark.asyncio]
 async def ad_account(db_session) -> dict:
     """Seed an enabled ad account (with its platform connection) for drafts."""
     from app.models.campaign_builder import (
-        TenantAdAccount,
-        TenantPlatformConnection,
+        AdAccount,
+        PlatformConnection,
     )
 
-    connection = TenantPlatformConnection(
+    connection = PlatformConnection(
         platform="meta",
         status="connected",
     )
     db_session.add(connection)
     await db_session.flush()
 
-    account = TenantAdAccount(
+    account = AdAccount(
         connection_id=connection.id,
         platform="meta",
         platform_account_id="act_123456",

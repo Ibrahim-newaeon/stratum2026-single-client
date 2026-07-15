@@ -12,7 +12,7 @@ Models:
 - CMSPage: Generic static pages
 - CMSContactSubmission: Contact form submissions
 
-All CMS content is GLOBAL (platform-level, not tenant-scoped).
+All CMS content is GLOBAL (platform-level).
 Managed by superadmins only.
 """
 
@@ -46,7 +46,7 @@ class CMSRole(str, enum.Enum):
     """CMS-specific roles for content management (2026 Standard)."""
 
     SUPER_ADMIN = "super_admin"  # Full system access
-    ADMIN = "admin"  # Tenant-wide CMS access
+    ADMIN = "admin"  # Site-wide CMS access
     EDITOR_IN_CHIEF = "editor_in_chief"  # Approve/reject, publish, manage authors
     EDITOR = "editor"  # Edit all content, schedule, review
     AUTHOR = "author"  # Create/edit own content, submit for review

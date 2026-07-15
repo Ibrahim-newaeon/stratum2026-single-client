@@ -23,7 +23,7 @@ logger = get_logger(__name__)
 router = APIRouter(tags=["capi"])
 
 # Global CAPI service singleton with TTL-based refresh (single-org deployment —
-# there is only ever one instance, so no per-tenant partitioning is needed).
+# there is only ever one instance, so no partitioning is needed).
 _CAPI_SERVICE_TTL_MINUTES = 30
 _capi_service_cache: Optional[tuple[CAPIService, datetime]] = None
 

@@ -190,7 +190,7 @@ class EmqBenchmarkResponse(EMQBaseSchema):
     p25: float
     p50: float
     p75: float
-    tenantScore: float
+    accountScore: float
     percentile: float
 
 
@@ -198,14 +198,14 @@ class EmqBenchmarkResponse(EMQBaseSchema):
 # Portfolio Schemas (Super Admin)
 # =============================================================================
 class TopIssue(EMQBaseSchema):
-    """Top issue affecting tenants."""
+    """Top issue affecting accounts."""
 
     driver: str
     affectedTenants: int
 
 
 class BandDistribution(EMQBaseSchema):
-    """Distribution of tenants by confidence band."""
+    """Distribution of accounts by confidence band."""
 
     reliable: int
     directional: int

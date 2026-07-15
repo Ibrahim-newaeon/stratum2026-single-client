@@ -58,7 +58,7 @@ class OutcomeEstimate:
 
 @dataclass
 class OutcomeSummary:
-    """Aggregate outcome over a period for a tenant."""
+    """Aggregate outcome over a period for the organization."""
 
     period_start: datetime
     period_end: datetime
@@ -278,7 +278,7 @@ async def get_outcome_summary(
     period_start = period_end - timedelta(days=period_days)
 
     # Single aggregate query — much cheaper than fetching rows + summing
-    # in Python on a populated tenant.
+    # in Python on a populated deployment.
     stmt = select(
         func.coalesce(func.sum(EnforcementAuditLog.value_delivered_cents), 0).label(
             "total"

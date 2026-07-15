@@ -350,11 +350,11 @@ async def _get_system_health(db: AsyncSession) -> dict:
 
     try:
         # Check platform connection health
-        from app.models.campaign_builder import TenantPlatformConnection
+        from app.models.campaign_builder import PlatformConnection
 
         result = await db.execute(
-            select(TenantPlatformConnection).where(
-                TenantPlatformConnection.is_connected == True
+            select(PlatformConnection).where(
+                PlatformConnection.is_connected == True
             )
         )
         connections = result.scalars().all()
@@ -429,7 +429,7 @@ async def seed_platforms(
     db: AsyncSession = Depends(get_async_session),
 ):
     """
-    Bootstrap TenantPlatformConnection and TenantAdAccount records from
+    Bootstrap PlatformConnection and AdAccount records from
     environment-variable tokens.  Owner only.
 
     This replaces the normal OAuth callback flow for initial setup when
@@ -442,8 +442,8 @@ async def seed_platforms(
     from app.core.security import encrypt_pii
     from app.models.campaign_builder import (
         ConnectionStatus,
-        TenantAdAccount,
-        TenantPlatformConnection,
+        AdAccount,
+        PlatformConnection,
     )
 
     # Platform config: (platform, access_token_setting, account_ids_fn, extra_fields)
@@ -509,10 +509,10 @@ async def seed_platforms(
 
         platform_name = cfg["platform"]
 
-        # --- Upsert TenantPlatformConnection ---
+        # --- Upsert PlatformConnection ---
         conn_result = await db.execute(
-            select(TenantPlatformConnection).where(
-                TenantPlatformConnection.platform == platform_name,
+            select(PlatformConnection).where(
+                PlatformConnection.platform == platform_name,
             )
         )
         conn = conn_result.scalar_one_or_none()
@@ -525,7 +525,7 @@ async def seed_platforms(
             conn.last_error = None
             conn.error_count = 0
         else:
-            conn = TenantPlatformConnection(
+            conn = PlatformConnection(
                 id=uuid4(),
                 platform=platform_name,
                 status=ConnectionStatus.CONNECTED.value,
@@ -546,15 +546,15 @@ async def seed_platforms(
         await db.flush()
         connections_created.append(platform_name)
 
-        # --- Create TenantAdAccount records ---
+        # --- Create AdAccount records ---
         account_ids = cfg["account_ids_fn"]()
         for acct_id in account_ids:
             if not acct_id:
                 continue
             acct_result = await db.execute(
-                select(TenantAdAccount).where(
-                    TenantAdAccount.platform == platform_name,
-                    TenantAdAccount.platform_account_id == acct_id,
+                select(AdAccount).where(
+                    AdAccount.platform == platform_name,
+                    AdAccount.platform_account_id == acct_id,
                 )
             )
             existing_acct = acct_result.scalar_one_or_none()
@@ -564,7 +564,7 @@ async def seed_platforms(
                 existing_acct.connection_id = conn.id
                 existing_acct.updated_at = now
             else:
-                new_acct = TenantAdAccount(
+                new_acct = AdAccount(
                     id=uuid4(),
                     connection_id=conn.id,
                     platform=platform_name,
@@ -869,7 +869,7 @@ async def credentials_health(request: Request):
 
 
 # =============================================================================
-# Cross-Tenant Anomalies Rollup
+# Anomalies Rollup
 # =============================================================================
 @router.get("/anomalies-rollup", response_model=APIResponse)
 async def get_anomalies_rollup(

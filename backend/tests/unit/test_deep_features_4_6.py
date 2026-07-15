@@ -48,7 +48,7 @@ NOW = datetime.now(timezone.utc)
 
 
 def _mock_connection(*, platform="meta", status="connected"):
-    """Build a mock TenantPlatformConnection row."""
+    """Build a mock PlatformConnection row."""
     conn = MagicMock()
     conn.platform = MagicMock(value=platform)
     conn.status = MagicMock(value=status)
@@ -62,7 +62,7 @@ def _mock_connection(*, platform="meta", status="connected"):
 
 
 def _mock_ad_account(*, platform="meta", is_enabled=True):
-    """Build a mock TenantAdAccount row."""
+    """Build a mock AdAccount row."""
     acc = MagicMock()
     acc.id = uuid.UUID(FAKE_UUID)
     acc.platform = platform

@@ -63,13 +63,13 @@ from app.models.autopilot import ViolationType as AutopilotViolationType
 
 # Campaign Builder models
 from app.models.campaign_builder import (
+    AdAccount,
     CampaignDraft,
     CampaignPublishLog,
     ConnectionStatus,
     DraftStatus,
+    PlatformConnection,
     PublishResult,
-    TenantAdAccount,
-    TenantPlatformConnection,
 )
 
 # Client (Agency → Brand) models
@@ -181,6 +181,7 @@ from app.models import (  # noqa: F401  isort: skip
 
 __all__ = [
     "APIKey",
+    "AdAccount",
     "AdPlatform",
     "AlertSeverity",
     "AlertStatus",
@@ -257,6 +258,7 @@ __all__ = [
     "PacingAlert",
     "PacingSummary",
     "PendingConfirmationToken",
+    "PlatformConnection",
     "ProductCatalog",
     "ProductMargin",
     "ProductStatus",
@@ -283,10 +285,8 @@ __all__ = [
     # Pacing & Forecasting
     "TargetPeriod",
     # Models
-    "TenantAdAccount",
     "TenantEnforcementRule",
     "TenantEnforcementSettings",
-    "TenantPlatformConnection",
     "Touchpoint",
     "TrainedAttributionModel",
     "User",

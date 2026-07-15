@@ -27,7 +27,7 @@ The Campaign Builder enables creating, managing, and publishing advertising camp
 │  ┌──────────────────────────────────────────────────────────┐  │
 │  │                    AD ACCOUNTS                            │  │
 │  │  • Synced from platforms after OAuth                     │  │
-│  │  • Enable/disable per tenant                             │  │
+│  │  • Enable/disable per account                            │  │
 │  │  • Budget caps per account                               │  │
 │  └──────────────────────────┬───────────────────────────────┘  │
 │                            │                                   │
@@ -66,14 +66,13 @@ The Campaign Builder enables creating, managing, and publishing advertising camp
 
 ## Data Models
 
-### TenantPlatformConnection
+### PlatformConnection
 
-Stores OAuth tokens and connection metadata per tenant.
+Stores OAuth tokens and connection metadata. One record per platform.
 
 ```python
-class TenantPlatformConnection:
+class PlatformConnection:
     id: UUID
-    tenant_id: int
     platform: AdPlatform            # meta, google, tiktok, snapchat
 
     # Status
@@ -98,14 +97,13 @@ class TenantPlatformConnection:
     error_count: int = 0
 ```
 
-### TenantAdAccount
+### AdAccount
 
-Ad accounts enabled for use by tenant.
+Ad accounts enabled for use in Stratum AI. Synced from the platform after OAuth.
 
 ```python
-class TenantAdAccount:
+class AdAccount:
     id: UUID
-    tenant_id: int
     connection_id: UUID
     platform: AdPlatform
 
@@ -139,7 +137,6 @@ Campaign drafts with approval workflow.
 ```python
 class CampaignDraft:
     id: UUID
-    tenant_id: int
     ad_account_id: UUID | None
     platform: AdPlatform
 
@@ -174,7 +171,6 @@ Audit trail for publish attempts.
 ```python
 class CampaignPublishLog:
     id: UUID
-    tenant_id: int
     draft_id: UUID | None
     platform: AdPlatform
     platform_account_id: str
@@ -394,9 +390,8 @@ Enforced before publishing any campaign.
 
 ```sql
 -- Platform connections
-CREATE TABLE tenant_platform_connection (
+CREATE TABLE platform_connection (
     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-    tenant_id INTEGER NOT NULL REFERENCES tenants(id) ON DELETE CASCADE,
     platform VARCHAR(50) NOT NULL,
     status VARCHAR(50) NOT NULL DEFAULT 'disconnected',
 
@@ -416,14 +411,13 @@ CREATE TABLE tenant_platform_connection (
     created_at TIMESTAMPTZ DEFAULT NOW(),
     updated_at TIMESTAMPTZ DEFAULT NOW(),
 
-    UNIQUE(tenant_id, platform)
+    UNIQUE(platform)
 );
 
 -- Ad accounts
-CREATE TABLE tenant_ad_account (
+CREATE TABLE ad_account (
     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-    tenant_id INTEGER NOT NULL REFERENCES tenants(id) ON DELETE CASCADE,
-    connection_id UUID NOT NULL REFERENCES tenant_platform_connection(id) ON DELETE CASCADE,
+    connection_id UUID NOT NULL REFERENCES platform_connection(id) ON DELETE CASCADE,
     platform VARCHAR(50) NOT NULL,
 
     platform_account_id VARCHAR(255) NOT NULL,
@@ -446,14 +440,13 @@ CREATE TABLE tenant_ad_account (
     created_at TIMESTAMPTZ DEFAULT NOW(),
     updated_at TIMESTAMPTZ DEFAULT NOW(),
 
-    UNIQUE(tenant_id, platform, platform_account_id)
+    UNIQUE(platform, platform_account_id)
 );
 
 -- Campaign drafts
 CREATE TABLE campaign_draft (
     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-    tenant_id INTEGER NOT NULL REFERENCES tenants(id) ON DELETE CASCADE,
-    ad_account_id UUID REFERENCES tenant_ad_account(id) ON DELETE SET NULL,
+    ad_account_id UUID REFERENCES ad_account(id) ON DELETE SET NULL,
     platform VARCHAR(50) NOT NULL,
 
     name VARCHAR(255) NOT NULL,
@@ -482,7 +475,6 @@ CREATE TABLE campaign_draft (
 -- Publish logs
 CREATE TABLE campaign_publish_log (
     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-    tenant_id INTEGER NOT NULL REFERENCES tenants(id) ON DELETE CASCADE,
     draft_id UUID REFERENCES campaign_draft(id) ON DELETE SET NULL,
     platform VARCHAR(50) NOT NULL,
     platform_account_id VARCHAR(255) NOT NULL,

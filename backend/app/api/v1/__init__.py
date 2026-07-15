@@ -156,7 +156,7 @@ api_router.include_router(
 
 # ML Training & Data Upload
 # Model management operates on the GLOBAL, app-wide model registry (upload,
-# train, delete .pkl artifacts) — a platform operation, not tenant-scoped.
+# train, delete .pkl artifacts) — a platform operation, not org-scoped.
 # Gated to owners (ML-003): previously every endpoint here was
 # unauthenticated, letting anyone upload a pickle (arbitrary-code-execution
 # risk on load) or delete production models.

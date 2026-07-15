@@ -276,13 +276,13 @@ async def fetch_attribution_metrics(
     """
     # Check if this platform is connected (single-org: one connection per
     # platform).
-    from app.models.campaign_builder import ConnectionStatus, TenantPlatformConnection
+    from app.models.campaign_builder import ConnectionStatus, PlatformConnection
 
     result = await db.execute(
-        select(TenantPlatformConnection).where(
+        select(PlatformConnection).where(
             and_(
-                TenantPlatformConnection.platform == platform,
-                TenantPlatformConnection.status == ConnectionStatus.CONNECTED,
+                PlatformConnection.platform == platform,
+                PlatformConnection.status == ConnectionStatus.CONNECTED,
             )
         )
     )
@@ -348,7 +348,7 @@ async def fetch_attribution_metrics(
 @shared_task(name="tasks.schedule_attribution_variance_rollup")
 def schedule_attribution_variance_rollup():
     """
-    Scheduled task to trigger attribution variance rollup for all tenants.
+    Scheduled task to trigger attribution variance rollup for all connected platforms.
     Should be scheduled to run daily at 3:00 AM UTC (after signal health).
     """
     return attribution_variance_rollup.delay()

@@ -2,7 +2,7 @@
 # Stratum AI - Outbound URL / SSRF validation (SEC-001)
 # =============================================================================
 """
-Shared guard for outbound HTTP requests to operator- or tenant-supplied URLs
+Shared guard for outbound HTTP requests to operator- or user-supplied URLs
 (alert webhooks, CDN purge, notification/report webhooks, ...).
 
 A scheme check alone is not enough: ``http://169.254.169.254/latest/meta-data``

@@ -453,7 +453,7 @@ class ReportDelivery(Base):
 
 class DeliveryChannelConfig(Base):
     """
-    Tenant-level configuration for delivery channels.
+    Deployment-level configuration for delivery channels.
     """
 
     __tablename__ = "delivery_channel_configs"

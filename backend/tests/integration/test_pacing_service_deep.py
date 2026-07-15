@@ -305,15 +305,15 @@ class TestGetTargetPacing:
         assert result["status"] == "success"
         assert result["as_of_date"] == today.isoformat()
 
-    async def test_tenant_level_scope_platform_none(
+    async def test_org_level_scope_platform_none(
         self, db_session, pacing_service, target_service
     ):
-        # platform=None target reads only tenant-level KPI rows.
+        # platform=None target reads only org-level KPI rows.
         db_session.add(_kpi(AS_OF, spend=42.0, platform=None))
         await db_session.flush()
 
         target = await _make_target(
-            target_service, name="tenant-wide", platform=None, target_value=100.0
+            target_service, name="org-wide", platform=None, target_value=100.0
         )
         result = await pacing_service.get_target_pacing(target.id, AS_OF)
         assert result["status"] == "success"

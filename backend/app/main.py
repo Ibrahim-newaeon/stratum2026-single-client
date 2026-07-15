@@ -239,7 +239,7 @@ async def lifespan(app: FastAPI) -> AsyncGenerator:
         logger.warning("owner_seed_failed", error=str(e))
 
     # Startup assert: the single global PII Fernet key must derive and be
-    # usable before we accept traffic (single-key model; no per-tenant DEKs).
+    # usable before we accept traffic (single-key model).
     from app.core.security import decrypt_pii, encrypt_pii
 
     _pii_probe = encrypt_pii("stratum_ai_pii_startup_probe")

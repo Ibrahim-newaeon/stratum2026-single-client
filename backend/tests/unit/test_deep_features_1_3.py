@@ -119,7 +119,7 @@ class TestTrustLayerSignalHealthByAccount:
         """With no DB records the endpoint returns an empty accounts list."""
         # mock_db already returns empty results by default
         # We need can_access_feature to return True
-        # Also need the second db.execute (for TenantAdAccount) to return empty
+        # Also need the second db.execute (for AdAccount) to return empty
         mock_account_result = MagicMock()
         mock_account_result.all.return_value = []
         mock_signal_result = MagicMock()

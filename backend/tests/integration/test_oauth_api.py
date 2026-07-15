@@ -42,8 +42,8 @@ import app.api.v1.endpoints.oauth as oauth_ep
 from app.models.campaign_builder import (
     AdPlatform,
     ConnectionStatus,
-    TenantAdAccount,
-    TenantPlatformConnection,
+    AdAccount,
+    PlatformConnection,
 )
 from app.services.oauth import get_oauth_service
 from app.services.oauth.base import AdAccountInfo, OAuthTokens
@@ -125,10 +125,10 @@ async def _make_connection(
     access_token: str | None = "stored-access-token",
     refresh_token: str | None = "stored-refresh-token",
     expires_delta: timedelta | None = timedelta(days=30),
-) -> TenantPlatformConnection:
+) -> PlatformConnection:
     svc = get_oauth_service(platform.value)
     now = datetime.now(UTC)
-    conn = TenantPlatformConnection(
+    conn = PlatformConnection(
         platform=platform,
         status=status,
         access_token_encrypted=(
@@ -148,7 +148,7 @@ async def _make_connection(
 
 
 @pytest.fixture
-async def meta_connection(db_session) -> TenantPlatformConnection:
+async def meta_connection(db_session) -> PlatformConnection:
     """A healthy connected Meta connection (single global row per platform)."""
     return await _make_connection(db_session)
 
@@ -159,8 +159,8 @@ async def _make_ad_account(
     account_id: str = "act_100",
     *,
     is_enabled: bool = True,
-) -> TenantAdAccount:
-    account = TenantAdAccount(
+) -> AdAccount:
+    account = AdAccount(
         connection_id=connection_id,
         platform=AdPlatform.META,
         platform_account_id=account_id,
@@ -412,9 +412,9 @@ class TestCallback:
         assert "status=success" in location
 
         result = await db_session.execute(
-            select(TenantPlatformConnection).where(
+            select(PlatformConnection).where(
                 and_(
-                    TenantPlatformConnection.platform == AdPlatform.META,
+                    PlatformConnection.platform == AdPlatform.META,
                 )
             )
         )
@@ -764,9 +764,9 @@ class TestConnectAdAccounts:
         assert acct["id"] is not None
 
         result = await db_session.execute(
-            select(TenantAdAccount).where(
+            select(AdAccount).where(
                 and_(
-                    TenantAdAccount.platform_account_id == "act_new",
+                    AdAccount.platform_account_id == "act_new",
                 )
             )
         )

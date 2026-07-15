@@ -68,10 +68,10 @@ class TestRBACMatrix:
                 role_map[UserRole.OWNER] == PermLevel.FULL
             ), f"OWNER should have FULL on {resource}"
 
-    def test_viewer_has_no_write_on_tenants(self):
-        """VIEWER should have NONE on tenant settings."""
+    def test_viewer_has_no_write_on_account_settings(self):
+        """VIEWER should have NONE on account settings."""
         assert (
-            get_permission_level(UserRole.VIEWER, "tenants.settings") == PermLevel.NONE
+            get_permission_level(UserRole.VIEWER, "account.settings") == PermLevel.NONE
         )
 
     def test_viewer_can_view_campaigns(self):
@@ -174,9 +174,9 @@ class TestResourceScope:
         """OWNER should have global scope."""
         assert get_resource_scope(UserRole.OWNER) == "global"
 
-    def test_admin_tenant_scope(self):
-        """ADMIN should have tenant scope."""
-        assert get_resource_scope(UserRole.ADMIN) == "tenant"
+    def test_admin_account_scope(self):
+        """ADMIN should have account scope."""
+        assert get_resource_scope(UserRole.ADMIN) == "account"
 
     def test_manager_assigned_scope(self):
         """MANAGER should have assigned scope."""
@@ -262,20 +262,20 @@ class TestSidebarVisibility:
         assert "profile" in items
         assert "users" not in items
         assert "settings" not in items
-        assert "tenants" not in items
+        assert "organization" not in items
 
     def test_owner_sees_all_items(self):
         """OWNER should see the most items."""
         items = SIDEBAR_VISIBILITY[UserRole.OWNER]
-        assert "tenants" in items
+        assert "organization" in items
         assert "users" in items
         assert "settings" in items
         assert "audit" in items
 
-    def test_manager_does_not_see_tenants(self):
-        """MANAGER should not see tenant management."""
+    def test_manager_does_not_see_org_management(self):
+        """MANAGER should not see org management."""
         items = SIDEBAR_VISIBILITY[UserRole.MANAGER]
-        assert "tenants" not in items
+        assert "organization" not in items
 
     def test_admin_sees_clients(self):
         """ADMIN should see clients in sidebar."""
@@ -512,7 +512,7 @@ class TestPermLevelComparisons:
         (UserRole.MANAGER, "clients", PermLevel.EDIT),
         (UserRole.ANALYST, "clients", PermLevel.VIEW),
         (UserRole.VIEWER, "clients", PermLevel.VIEW),
-        (UserRole.VIEWER, "tenants.settings", PermLevel.NONE),
+        (UserRole.VIEWER, "account.settings", PermLevel.NONE),
         (UserRole.VIEWER, "users.manage", PermLevel.NONE),
         (UserRole.MANAGER, "reports", PermLevel.FULL),
         (UserRole.ANALYST, "reports", PermLevel.EDIT),
@@ -546,7 +546,7 @@ class TestGetAccessibleClientIds:
 
     @pytest.mark.asyncio
     async def test_admin_returns_none(self):
-        """ADMIN should get None (unrestricted within tenant)."""
+        """ADMIN should get None (unrestricted within the account)."""
         db = AsyncMock()
         result = await get_accessible_client_ids(
             user_id=1, user_role=UserRole.ADMIN, db=db

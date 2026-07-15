@@ -7,7 +7,7 @@ API endpoints for third-party integrations:
 - Salesforce (future)
 - Pipeline metrics and attribution
 
-All routes enforce tenant isolation and RBAC permissions.
+All routes enforce RBAC permissions.
 """
 
 import hashlib

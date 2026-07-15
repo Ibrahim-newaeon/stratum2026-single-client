@@ -107,7 +107,7 @@ async def list_notifications(
             detail="Not authenticated",
         )
 
-    # Build query - user's notifications + tenant broadcasts
+    # Build query - user's notifications + org-wide broadcasts
     conditions = [
         ((Notification.user_id == user_id) | (Notification.user_id.is_(None))),
     ]

@@ -4,7 +4,7 @@
 """
 Integration tests for the WhatsApp contact lifecycle: create, list, update,
 opt-out/opt-in, and (soft) delete. These exercise real DB writes through the
-tenant-scoped endpoints.
+authenticated endpoints.
 """
 
 import pytest

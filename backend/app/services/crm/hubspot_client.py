@@ -785,7 +785,7 @@ class HubSpotClient:
     # =========================================================================
 
     async def _get_connection(self) -> Optional[CRMConnection]:
-        """Get existing HubSpot connection for tenant."""
+        """Get existing HubSpot connection for the organization."""
         if self._connection:
             return self._connection
 
@@ -798,7 +798,7 @@ class HubSpotClient:
         return self._connection
 
     async def _get_or_create_connection(self) -> CRMConnection:
-        """Get or create HubSpot connection for tenant."""
+        """Get or create HubSpot connection for the organization."""
         connection = await self._get_connection()
         if connection:
             return connection

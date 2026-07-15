@@ -1267,7 +1267,7 @@ async def enforce_before_execute(
 
     This is the trust-gate/enforcement seam in the execution path: even
     though a user (or auto-approval) approved the action, the enforcer has
-    the final say based on the tenant's enforcement mode, budget/ROAS/
+    the final say based on the deployment's enforcement mode, budget/ROAS/
     frequency rules, custom rules, and subscription status.
 
     Returns the EnforcementResult; callers must NOT execute when

@@ -29,8 +29,8 @@ from app.core.security import encrypt_pii, get_password_hash, hash_pii_for_looku
 from app.models import AdPlatform, User, UserRole
 from app.models.campaign_builder import (
     ConnectionStatus,
-    TenantAdAccount,
-    TenantPlatformConnection,
+    AdAccount,
+    PlatformConnection,
 )
 from app.models.onboarding import (
     AutomationMode,
@@ -116,7 +116,7 @@ async def seed_load_test_user():
                 print("\n[2/3] Onboarding record already exists")
 
             # Check if platform connections exist
-            result = await db.execute(select(TenantPlatformConnection))
+            result = await db.execute(select(PlatformConnection))
             connections = result.scalars().all()
 
             if not connections:
@@ -127,7 +127,7 @@ async def seed_load_test_user():
                 ]
 
                 for platform, name, account_id in platforms:
-                    connection = TenantPlatformConnection(
+                    connection = PlatformConnection(
                         platform=platform.value,
                         status=ConnectionStatus.CONNECTED.value,
                         access_token_encrypted="test_token_" + platform.value,
@@ -140,7 +140,7 @@ async def seed_load_test_user():
                     db.add(connection)
                     await db.flush()
 
-                    ad_account = TenantAdAccount(
+                    ad_account = AdAccount(
                         connection_id=connection.id,
                         platform=platform.value,
                         platform_account_id=account_id,

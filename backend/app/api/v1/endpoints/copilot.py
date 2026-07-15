@@ -82,7 +82,7 @@ async def _gather_context(
     db: AsyncSession,
 ) -> Tuple[Optional[dict], dict, Optional[dict]]:
     """
-    Fetch the live tenant signals the copilot needs: campaign rollup,
+    Fetch the live account signals the copilot needs: campaign rollup,
     signal-health snapshot, lightweight anomaly summary. Each block
     fails open — partial context is better than no response.
     """

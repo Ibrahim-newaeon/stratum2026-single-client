@@ -459,7 +459,7 @@ async def save_platform_selection(
     """
     Save Step 2: Platform Selection.
 
-    Captures which ad platforms the tenant wants to use.
+    Captures which ad platforms the organization wants to use.
     """
     onboarding = await get_or_create_onboarding(db)
 
@@ -745,7 +745,7 @@ async def check_onboarding_required(
     db: AsyncSession = Depends(get_async_session),
 ):
     """
-    Check if onboarding is required for the current tenant.
+    Check if onboarding is required for the deployment.
 
     Returns whether to show the onboarding wizard.
     """

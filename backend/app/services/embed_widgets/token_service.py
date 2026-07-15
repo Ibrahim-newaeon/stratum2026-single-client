@@ -30,7 +30,7 @@ from app.models.embed_widgets import (
     TokenStatus,
 )
 
-# Fixed caps — formerly tier-scaled, now flat for every tenant
+# Fixed caps — formerly tier-scaled, now flat for the deployment
 # (Single-Client conversion, STRAT-SC-001).
 MAX_EMBED_DOMAINS = 999999
 DEFAULT_RATE_LIMIT_PER_MINUTE = 1000

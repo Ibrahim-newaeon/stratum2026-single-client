@@ -12,7 +12,7 @@ Provides consolidated endpoints for:
 - Recent activity and alerts
 - Platform breakdown
 
-All data is scoped to the authenticated user's tenant.
+All data is deployment-wide (single organization).
 """
 
 import csv
@@ -41,7 +41,7 @@ from app.models import (
     Campaign,
     CampaignStatus,
 )
-from app.models.campaign_builder import ConnectionStatus, TenantPlatformConnection
+from app.models.campaign_builder import ConnectionStatus, PlatformConnection
 from app.models.onboarding import OnboardingStatus, TenantOnboarding
 from app.schemas import APIResponse
 
@@ -538,8 +538,8 @@ async def _build_dashboard_overview(
 
     # Get connected platforms
     platforms_result = await db.execute(
-        select(TenantPlatformConnection).where(
-            TenantPlatformConnection.status == ConnectionStatus.CONNECTED,
+        select(PlatformConnection).where(
+            PlatformConnection.status == ConnectionStatus.CONNECTED,
         )
     )
     connected_platforms = platforms_result.scalars().all()
@@ -1240,8 +1240,8 @@ async def get_quick_actions(
 
     # Check for connected platforms
     platforms_result = await db.execute(
-        select(TenantPlatformConnection).where(
-            TenantPlatformConnection.status == ConnectionStatus.CONNECTED,
+        select(PlatformConnection).where(
+            PlatformConnection.status == ConnectionStatus.CONNECTED,
         )
     )
     connected = platforms_result.scalars().all()
@@ -1350,8 +1350,8 @@ async def _build_signal_health(db: AsyncSession):
     # Get connected platforms count
     platforms_result = await db.execute(
         select(func.count())
-        .where(TenantPlatformConnection.status == ConnectionStatus.CONNECTED)
-        .select_from(TenantPlatformConnection)
+        .where(PlatformConnection.status == ConnectionStatus.CONNECTED)
+        .select_from(PlatformConnection)
     )
     connected_count = platforms_result.scalar() or 0
 
@@ -2224,8 +2224,8 @@ async def get_signal_recovery(
 
         # 1. Connected platforms
         platforms_result = await db.execute(
-            select(TenantPlatformConnection.platform).where(
-                TenantPlatformConnection.status == ConnectionStatus.CONNECTED,
+            select(PlatformConnection.platform).where(
+                PlatformConnection.status == ConnectionStatus.CONNECTED,
             )
         )
         connected_platforms = [str(row[0]) for row in platforms_result.fetchall()]
@@ -2989,8 +2989,8 @@ async def get_audience_lifecycle(
         connected_platforms = []
         try:
             plat_result = await db.execute(
-                select(TenantPlatformConnection.platform).where(
-                    TenantPlatformConnection.status == ConnectionStatus.CONNECTED,
+                select(PlatformConnection.platform).where(
+                    PlatformConnection.status == ConnectionStatus.CONNECTED,
                 )
             )
             for row in plat_result.scalars():

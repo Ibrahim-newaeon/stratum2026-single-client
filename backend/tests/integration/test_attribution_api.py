@@ -5,7 +5,7 @@
 
 Exercises the real ASGI app against Postgres + Redis: auth enforcement,
 required-parameter validation, and the empty-data response envelopes for
-a tenant with no attribution data yet.
+a deployment with no attribution data yet.
 """
 
 import pytest

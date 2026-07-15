@@ -11,8 +11,8 @@ from app.models.campaign_builder import (
     ConnectionStatus,
     DraftStatus,
     PublishResult,
-    TenantAdAccount,
-    TenantPlatformConnection,
+    AdAccount,
+    PlatformConnection,
 )
 from app.models.trust_layer import (
     AttributionVarianceStatus,

@@ -45,7 +45,7 @@ def test_login_response_supports_mfa_challenge_shape():
 
 def test_login_response_supports_token_shape():
     resp = LoginResponse(
-        access_token="a", refresh_token="r", expires_in=1800, available_tenants=[]
+        access_token="a", refresh_token="r", expires_in=1800
     )
     assert resp.mfa_required is False
     assert resp.access_token == "a"

@@ -2,7 +2,7 @@
 # Stratum AI - Root Agent for Onboarding
 # =============================================================================
 """
-Root Agent that orchestrates user/tenant onboarding conversations.
+Root Agent that orchestrates user onboarding conversations.
 
 The root agent serves as the main entry point for conversational interactions,
 routing to appropriate tools and managing the onboarding flow state.
@@ -29,7 +29,7 @@ logger = get_logger(__name__)
 
 ROOT_AGENT_INSTRUCTIONS = """
 You are the Stratum AI Onboarding Assistant, a helpful and knowledgeable guide
-for new users and tenants setting up the Revenue Operating System.
+for new users setting up the Revenue Operating System.
 
 ## Your Role
 - Welcome new users warmly and professionally
@@ -42,7 +42,7 @@ for new users and tenants setting up the Revenue Operating System.
 ## Onboarding Flow
 
 ### Step 1: Welcome & Greeting
-- Greet the user based on context (new user, returning user, new tenant)
+- Greet the user based on context (new user, returning user, new organization)
 - Introduce yourself and explain what Stratum AI does
 - Ask if they're ready to get started
 

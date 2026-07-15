@@ -2,13 +2,13 @@
 # Stratum AI - Campaign Builder API Router
 # =============================================================================
 """
-Tenant-scoped API endpoints for the Campaign Builder feature:
+API endpoints for the Campaign Builder feature:
 - Platform connectors (OAuth management)
 - Ad accounts (sync and enable/disable)
 - Campaign drafts (CRUD + workflow)
 - Publish logs (audit trail)
 
-All routes enforce tenant isolation and RBAC permissions.
+All routes enforce RBAC permissions.
 """
 
 from datetime import datetime, timezone
@@ -32,8 +32,8 @@ from app.models.campaign_builder import (
     ConnectionStatus,
     DraftStatus,
     PublishResult,
-    TenantAdAccount,
-    TenantPlatformConnection,
+    AdAccount,
+    PlatformConnection,
 )
 from app.schemas.response import APIResponse, PaginatedResponse
 
@@ -164,8 +164,8 @@ async def get_connector_status(
 ):
     """Get connection status for a platform."""
     result = await db.execute(
-        select(TenantPlatformConnection).where(
-            TenantPlatformConnection.platform == platform
+        select(PlatformConnection).where(
+            PlatformConnection.platform == platform
         )
     )
     connection = result.scalar_one_or_none()
@@ -276,8 +276,8 @@ async def refresh_platform_token(
 ):
     """Refresh OAuth token for a platform."""
     result = await db.execute(
-        select(TenantPlatformConnection).where(
-            TenantPlatformConnection.platform == platform
+        select(PlatformConnection).where(
+            PlatformConnection.platform == platform
         )
     )
     connection = result.scalar_one_or_none()
@@ -341,8 +341,8 @@ async def disconnect_platform(
 ):
     """Disconnect a platform (revoke OAuth)."""
     result = await db.execute(
-        select(TenantPlatformConnection).where(
-            TenantPlatformConnection.platform == platform
+        select(PlatformConnection).where(
+            PlatformConnection.platform == platform
         )
     )
     connection = result.scalar_one_or_none()
@@ -377,12 +377,12 @@ async def list_ad_accounts(
     db: AsyncSession = Depends(get_async_session),
 ):
     """List ad accounts for a platform."""
-    query = select(TenantAdAccount).where(TenantAdAccount.platform == platform)
+    query = select(AdAccount).where(AdAccount.platform == platform)
 
     if enabled_only:
-        query = query.where(TenantAdAccount.is_enabled == True)
+        query = query.where(AdAccount.is_enabled == True)
 
-    result = await db.execute(query.order_by(TenantAdAccount.name).limit(1000))
+    result = await db.execute(query.order_by(AdAccount.name).limit(1000))
     accounts = result.scalars().all()
 
     return APIResponse(
@@ -401,10 +401,10 @@ async def sync_ad_accounts(
     """Trigger ad accounts sync from platform."""
     # Check connection exists and is connected
     result = await db.execute(
-        select(TenantPlatformConnection).where(
+        select(PlatformConnection).where(
             and_(
-                TenantPlatformConnection.platform == platform,
-                TenantPlatformConnection.status == ConnectionStatus.CONNECTED,
+                PlatformConnection.platform == platform,
+                PlatformConnection.status == ConnectionStatus.CONNECTED,
             )
         )
     )
@@ -437,7 +437,7 @@ async def update_ad_account(
 ):
     """Update ad account settings (enable/disable, budget cap)."""
     result = await db.execute(
-        select(TenantAdAccount).where(TenantAdAccount.id == ad_account_id)
+        select(AdAccount).where(AdAccount.id == ad_account_id)
     )
     account = result.scalar_one_or_none()
 
@@ -474,10 +474,10 @@ async def create_campaign_draft(
 
     # Validate ad account exists and is enabled
     result = await db.execute(
-        select(TenantAdAccount).where(
+        select(AdAccount).where(
             and_(
-                TenantAdAccount.id == draft_data.ad_account_id,
-                TenantAdAccount.is_enabled == True,
+                AdAccount.id == draft_data.ad_account_id,
+                AdAccount.is_enabled == True,
             )
         )
     )

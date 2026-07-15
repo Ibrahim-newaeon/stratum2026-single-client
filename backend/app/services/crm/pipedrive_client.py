@@ -641,7 +641,7 @@ class PipedriveClient:
     # =========================================================================
 
     async def _get_connection(self) -> Optional[CRMConnection]:
-        """Get existing Pipedrive connection for tenant."""
+        """Get existing Pipedrive connection for the organization."""
         if self._connection:
             return self._connection
 
@@ -654,7 +654,7 @@ class PipedriveClient:
         return self._connection
 
     async def _get_or_create_connection(self) -> CRMConnection:
-        """Get or create Pipedrive connection for tenant."""
+        """Get or create Pipedrive connection for the organization."""
         connection = await self._get_connection()
         if connection:
             return connection

@@ -239,7 +239,7 @@ class TestReadPaths:
 
     @pytest.mark.asyncio
     async def test_get_queued_actions_without_filters(self):
-        """Filters are optional; the base tenant query still runs."""
+        """Filters are optional; the base query still runs."""
         db = _make_db([_scalars_all([])])
         service = AutopilotService(db=db)
 

@@ -154,7 +154,7 @@ class TestPlaybookEndpoint:
         base = f"/api/v1/emq/playbook"
 
         # The playbook is generated from EMQ driver scores; with no signal data
-        # the tenant's score is below the perfect threshold, so at least the
+        # the org's score is below the perfect threshold, so at least the
         # "Add TikTok Events API" item is present.
         response = await authenticated_client.get(base)
         assert response.status_code == 200

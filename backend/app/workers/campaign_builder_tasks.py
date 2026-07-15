@@ -27,8 +27,8 @@ from app.models.campaign_builder import (
     ConnectionStatus,
     DraftStatus,
     PublishResult,
-    TenantAdAccount,
-    TenantPlatformConnection,
+    AdAccount,
+    PlatformConnection,
 )
 from app.services.oauth.factory import get_oauth_service
 
@@ -51,8 +51,8 @@ def sync_ad_accounts(self, platform: str):
     with SessionLocal() as db:
         # Get connection (single-org: one connection per platform)
         connection = db.execute(
-            select(TenantPlatformConnection).where(
-                TenantPlatformConnection.platform == AdPlatform(platform)
+            select(PlatformConnection).where(
+                PlatformConnection.platform == AdPlatform(platform)
             )
         ).scalar_one_or_none()
 
@@ -86,10 +86,10 @@ def sync_ad_accounts(self, platform: str):
             for account_data in mock_accounts:
                 # Check if account exists
                 existing = db.execute(
-                    select(TenantAdAccount).where(
+                    select(AdAccount).where(
                         and_(
-                            TenantAdAccount.platform == AdPlatform(platform),
-                            TenantAdAccount.platform_account_id == account_data["id"],
+                            AdAccount.platform == AdPlatform(platform),
+                            AdAccount.platform_account_id == account_data["id"],
                         )
                     )
                 ).scalar_one_or_none()
@@ -104,7 +104,7 @@ def sync_ad_accounts(self, platform: str):
                     existing.sync_error = None
                 else:
                     # Create new
-                    new_account = TenantAdAccount(
+                    new_account = AdAccount(
                         connection_id=connection.id,
                         platform=AdPlatform(platform),
                         platform_account_id=account_data["id"],
@@ -143,8 +143,8 @@ def sync_all_ad_accounts(self):
         # Get all active connections
         connections = (
             db.execute(
-                select(TenantPlatformConnection).where(
-                    TenantPlatformConnection.status == ConnectionStatus.CONNECTED
+                select(PlatformConnection).where(
+                    PlatformConnection.status == ConnectionStatus.CONNECTED
                 )
             )
             .scalars()
@@ -172,8 +172,8 @@ def refresh_tokens(self, platform: str):
 
     with SessionLocal() as db:
         connection = db.execute(
-            select(TenantPlatformConnection).where(
-                TenantPlatformConnection.platform == AdPlatform(platform)
+            select(PlatformConnection).where(
+                PlatformConnection.platform == AdPlatform(platform)
             )
         ).scalar_one_or_none()
 
@@ -242,10 +242,10 @@ def refresh_expiring_tokens(self):
 
         connections = (
             db.execute(
-                select(TenantPlatformConnection).where(
+                select(PlatformConnection).where(
                     and_(
-                        TenantPlatformConnection.status == ConnectionStatus.CONNECTED,
-                        TenantPlatformConnection.token_expires_at <= expiry_threshold,
+                        PlatformConnection.status == ConnectionStatus.CONNECTED,
+                        PlatformConnection.token_expires_at <= expiry_threshold,
                     )
                 )
             )
@@ -295,7 +295,7 @@ def publish_campaign(self, draft_id: str, publish_log_id: str):
         try:
             # Get ad account for credentials
             ad_account = db.execute(
-                select(TenantAdAccount).where(TenantAdAccount.id == draft.ad_account_id)
+                select(AdAccount).where(AdAccount.id == draft.ad_account_id)
             ).scalar_one_or_none()
 
             if not ad_account:
@@ -303,8 +303,8 @@ def publish_campaign(self, draft_id: str, publish_log_id: str):
 
             # Get connection for access token
             connection = db.execute(
-                select(TenantPlatformConnection).where(
-                    TenantPlatformConnection.platform == draft.platform
+                select(PlatformConnection).where(
+                    PlatformConnection.platform == draft.platform
                 )
             ).scalar_one_or_none()
 
@@ -398,8 +398,8 @@ def connector_health_check(self):
     logger.info("Running connector health check")
 
     with SessionLocal() as db:
-        query = select(TenantPlatformConnection).where(
-            TenantPlatformConnection.status == ConnectionStatus.CONNECTED
+        query = select(PlatformConnection).where(
+            PlatformConnection.status == ConnectionStatus.CONNECTED
         )
 
         connections = db.execute(query).scalars().all()

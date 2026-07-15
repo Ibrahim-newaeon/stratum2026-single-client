@@ -383,13 +383,13 @@ async def update_metrics_all() -> dict[str, Any]:
         from sqlalchemy import select
 
         from app.db.session import sync_session_factory
-        from app.models.campaign_builder import TenantPlatformConnection
+        from app.models.campaign_builder import PlatformConnection
 
         with sync_session_factory() as db:
             connections = (
                 db.execute(
-                    select(TenantPlatformConnection).where(
-                        TenantPlatformConnection.is_connected == True
+                    select(PlatformConnection).where(
+                        PlatformConnection.is_connected == True
                     )
                 )
                 .scalars()
@@ -573,12 +573,12 @@ async def calculate_all_signal_health() -> dict[str, Any]:
 
         from app.analytics.logic.signal_health import calculate_signal_health
         from app.db.session import async_session_factory
-        from app.models.campaign_builder import TenantPlatformConnection
+        from app.models.campaign_builder import PlatformConnection
 
         async with async_session_factory() as db:
             conn_result = await db.execute(
-                select(TenantPlatformConnection).where(
-                    TenantPlatformConnection.is_connected == True
+                select(PlatformConnection).where(
+                    PlatformConnection.is_connected == True
                 )
             )
             connections = conn_result.scalars().all()

@@ -404,7 +404,7 @@ def calculate_data_freshness(
 # =============================================================================
 
 
-# Default EMQ driver weights (sum to 1.0). A tenant may override these via a
+# Default EMQ driver weights (sum to 1.0). An organization may override these via a
 # per-driver weights map passed to calculate_emq_score (ML-06).
 DEFAULT_EMQ_WEIGHTS: Dict[str, float] = {
     "Event Match Rate": 0.30,
@@ -418,7 +418,7 @@ DEFAULT_EMQ_WEIGHTS: Dict[str, float] = {
 def _apply_weight_overrides(
     drivers: "List[EmqDriverResult]", weights: Optional[Dict[str, float]]
 ) -> None:
-    """Override driver weights per-tenant (ML-06), renormalized to sum 1.0.
+    """Override driver weights per-organization (ML-06), renormalized to sum 1.0.
 
     Only positive numeric overrides are honored (non-numeric/negative/bool keep
     the default). Weights are renormalized afterwards so the score remains a
@@ -469,7 +469,7 @@ def calculate_emq_score(
         calculate_data_freshness(metrics, now),
     ]
 
-    # Apply per-tenant weight overrides (ML-06), if any.
+    # Apply per-organization weight overrides (ML-06), if any.
     _apply_weight_overrides(drivers, weights)
 
     # Calculate weighted score

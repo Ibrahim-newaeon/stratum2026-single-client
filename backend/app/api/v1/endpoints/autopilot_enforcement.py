@@ -145,7 +145,7 @@ async def get_enforcement_settings(
     db: AsyncSession = Depends(get_async_session),
 ):
     """
-    Get current enforcement settings for tenant.
+    Get current enforcement settings for the deployment.
 
     Returns full enforcement configuration including:
     - enforcement_enabled (kill switch status)
@@ -159,7 +159,7 @@ async def get_enforcement_settings(
     settings = await enforcer.get_settings()
 
     # get_async_session does not auto-commit; get_settings lazily inserts
-    # the tenant's default settings row on first touch, which is otherwise
+    # the deployment's default settings row on first touch, which is otherwise
     # rolled back on every GET until some other write path commits it.
     await db.commit()
 
@@ -199,7 +199,7 @@ async def update_enforcement_settings(
     db: AsyncSession = Depends(get_async_session),
 ):
     """
-    Update enforcement settings for tenant.
+    Update enforcement settings for the deployment.
 
     Requires admin role.
     """
@@ -342,7 +342,7 @@ async def toggle_kill_switch(
     db: AsyncSession = Depends(get_async_session),
 ):
     """
-    Enable or disable enforcement for the entire tenant.
+    Enable or disable enforcement for the entire deployment.
 
     This is a kill switch that immediately stops all enforcement checks.
     All changes are logged for audit purposes.
@@ -368,7 +368,7 @@ async def toggle_kill_switch(
     return APIResponse(
         success=True,
         data={
-            "message": f"Enforcement {status} for tenant",
+            "message": f"Enforcement {status} for the deployment",
             "enforcement_enabled": settings.enforcement_enabled,
             "changed_by_user_id": user_id,
         },
@@ -382,7 +382,7 @@ async def toggle_freeze(
     db: AsyncSession = Depends(get_async_session),
 ):
     """
-    Emergency stop: freeze or resume all autopilot execution for the tenant.
+    Emergency stop: freeze or resume all autopilot execution for the deployment.
 
     When frozen, the apply queue worker skips approved actions and the
     approve/confirm endpoints refuse — no automation reaches any platform,
@@ -413,7 +413,7 @@ async def toggle_freeze(
     return APIResponse(
         success=True,
         data={
-            "message": f"Autopilot {state} for tenant",
+            "message": f"Autopilot {state} for the deployment",
             "autopilot_frozen": settings.autopilot_frozen,
             "changed_by_user_id": user_id,
         },

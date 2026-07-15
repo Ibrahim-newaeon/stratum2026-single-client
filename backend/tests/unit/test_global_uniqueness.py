@@ -216,11 +216,11 @@ def make_enforcement_rule(settings_id, **overrides):
 
 
 def make_platform_connection(**overrides):
-    from app.models.campaign_builder import TenantPlatformConnection
+    from app.models.campaign_builder import PlatformConnection
 
     defaults = dict(platform="meta")
     defaults.update(overrides)
-    return TenantPlatformConnection(**defaults)
+    return PlatformConnection(**defaults)
 
 
 def make_cdp_profile(**overrides):
@@ -427,7 +427,7 @@ async def test_enforcement_rule_id_globally_unique(db_session) -> None:
 
 
 # =============================================================================
-# 9. models/campaign_builder.py:147 - TenantPlatformConnection.platform
+# 9. models/campaign_builder.py:147 - PlatformConnection.platform
 # =============================================================================
 
 

@@ -5,7 +5,7 @@
 Coordinates campaign sync across Meta, TikTok, and Snapchat.
 
 Responsibilities:
-1. Load TenantPlatformConnection + enabled TenantAdAccount records
+1. Load PlatformConnection + enabled AdAccount records
 2. Decrypt and refresh tokens as needed
 3. Delegate to platform-specific sync services
 4. Upsert Campaign and CampaignMetric rows
@@ -31,8 +31,8 @@ from app.core.config import settings
 from app.core.logging import get_logger
 from app.models.campaign_builder import (
     ConnectionStatus,
-    TenantAdAccount,
-    TenantPlatformConnection,
+    AdAccount,
+    PlatformConnection,
 )
 from app.services.oauth import get_oauth_service
 from app.services.sync.meta_sync import MetaCampaignSyncService, TokenExpiredError
@@ -226,7 +226,7 @@ class PlatformSyncOrchestrator:
         self,
         platform: AdPlatform,
         access_token: str,
-        account: TenantAdAccount,
+        account: AdAccount,
         date_start: date,
         date_end: date,
     ) -> tuple[int, int]:
@@ -588,25 +588,25 @@ class PlatformSyncOrchestrator:
 
     async def _load_connection(
         self, platform: AdPlatform
-    ) -> Optional[TenantPlatformConnection]:
+    ) -> Optional[PlatformConnection]:
         result = await self.db.execute(
-            select(TenantPlatformConnection).where(
+            select(PlatformConnection).where(
                 and_(
-                    TenantPlatformConnection.platform == platform,
-                    TenantPlatformConnection.status == ConnectionStatus.CONNECTED,
+                    PlatformConnection.platform == platform,
+                    PlatformConnection.status == ConnectionStatus.CONNECTED,
                 )
             )
         )
         return result.scalar_one_or_none()
 
     async def _load_ad_accounts(
-        self, connection: TenantPlatformConnection
-    ) -> list[TenantAdAccount]:
+        self, connection: PlatformConnection
+    ) -> list[AdAccount]:
         result = await self.db.execute(
-            select(TenantAdAccount).where(
+            select(AdAccount).where(
                 and_(
-                    TenantAdAccount.connection_id == connection.id,
-                    TenantAdAccount.is_enabled == True,
+                    AdAccount.connection_id == connection.id,
+                    AdAccount.is_enabled == True,
                 )
             )
         )
@@ -614,7 +614,7 @@ class PlatformSyncOrchestrator:
 
     async def _get_valid_token(
         self,
-        conn: TenantPlatformConnection,
+        conn: PlatformConnection,
         platform: AdPlatform,
     ) -> Optional[str]:
         """Decrypt access token, refreshing if expired."""
@@ -633,7 +633,7 @@ class PlatformSyncOrchestrator:
 
     async def _refresh_token(
         self,
-        conn: TenantPlatformConnection,
+        conn: PlatformConnection,
         platform: AdPlatform,
     ) -> Optional[str]:
         """Attempt to refresh the access token."""

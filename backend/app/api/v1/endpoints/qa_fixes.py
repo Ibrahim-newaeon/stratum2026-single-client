@@ -85,11 +85,11 @@ async def get_quality_issues(
     )
 
     # Fetch platform connections
-    from app.models.campaign_builder import TenantPlatformConnection
+    from app.models.campaign_builder import PlatformConnection
 
-    conn_query = select(TenantPlatformConnection)
+    conn_query = select(PlatformConnection)
     if platform:
-        conn_query = conn_query.where(TenantPlatformConnection.platform == platform)
+        conn_query = conn_query.where(PlatformConnection.platform == platform)
 
     result = await db.execute(conn_query)
     connections = result.scalars().all()
@@ -213,12 +213,12 @@ async def get_fix_playbook(
     # Get issues first
     from app.models.campaign_builder import (
         ConnectionStatus,
-        TenantPlatformConnection,
+        PlatformConnection,
     )
 
     result = await db.execute(
-        select(TenantPlatformConnection).where(
-            TenantPlatformConnection.status == ConnectionStatus.CONNECTED,
+        select(PlatformConnection).where(
+            PlatformConnection.status == ConnectionStatus.CONNECTED,
         )
     )
     connections = result.scalars().all()

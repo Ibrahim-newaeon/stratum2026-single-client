@@ -860,7 +860,7 @@ def record_creative_metrics(
     )
 
 
-def get_fatigued_creatives_for_tenant() -> List[Dict[str, Any]]:
+def get_fatigued_creatives() -> List[Dict[str, Any]]:
     """Get fatigued creatives."""
     return creative_service.get_fatigued_creatives()
 

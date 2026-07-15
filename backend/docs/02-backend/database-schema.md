@@ -490,12 +490,12 @@ CREATE TABLE fact_actions_queue (
 
 ## Campaign Builder Models
 
-### TenantPlatformConnection
+### PlatformConnection
 
 OAuth connections to ad platforms.
 
 ```sql
-CREATE TABLE tenant_platform_connections (
+CREATE TABLE platform_connection (
     id SERIAL PRIMARY KEY,
     tenant_id INTEGER REFERENCES tenants(id),
 

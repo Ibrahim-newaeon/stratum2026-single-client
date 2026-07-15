@@ -7,7 +7,7 @@ Services for syncing campaign data from ad platforms (Meta, TikTok).
 Modules:
 - meta_sync: Meta Marketing API campaign and insights sync
 - tiktok_sync: TikTok Marketing API campaign and report sync
-- orchestrator: Coordinates sync across platforms and tenants
+- orchestrator: Coordinates sync across platforms
 """
 
 from app.services.sync.meta_sync import MetaCampaignSyncService

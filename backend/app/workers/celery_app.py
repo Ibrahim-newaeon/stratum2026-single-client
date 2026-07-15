@@ -159,7 +159,7 @@ celery_app.conf.beat_schedule = {
         "options": {"queue": "default"},
     },
     # Daily signal-health rollup at 02:00 UTC — aggregates yesterday's
-    # platform metrics into FactSignalHealthDaily for every live tenant.
+    # platform metrics into FactSignalHealthDaily for the deployment.
     # This table is what the trust gate, the dashboard trust layer, and
     # the autopilot execution-path health check all read; without the
     # rollup they see permanent no_data.

@@ -7,7 +7,7 @@ LLM-backed message generator for the Copilot.
 This is an *optional* upgrade path on top of the keyword classifier in
 `copilot_agent.py`. When `settings.copilot_llm_enabled` is True and a
 working Anthropic API key is configured, we hand the user's question
-plus the tenant's live metrics to Claude and use Claude's prose as the
+plus the organization's live metrics to Claude and use Claude's prose as the
 response text.
 
 When `settings.copilot_rag_enabled` is also True (and OPENAI_API_KEY is
@@ -119,7 +119,7 @@ def _build_user_prompt(
         "anomalies": _safe(anomaly_data),
     }
     parts: List[str] = [
-        f"Live tenant context (JSON):\n```json\n{json.dumps(context, default=str, indent=2)}\n```\n"
+        f"Live account context (JSON):\n```json\n{json.dumps(context, default=str, indent=2)}\n```\n"
     ]
     if docs:
         parts.append(_format_doc_excerpts(docs))

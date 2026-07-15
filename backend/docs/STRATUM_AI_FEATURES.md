@@ -125,7 +125,7 @@ Stratum AI is an enterprise-grade marketing intelligence platform designed for a
 |-------|-------------|
 | `tenant` | Tenant organizations |
 | `user` | User accounts with roles |
-| `tenant_platform_connection` | Platform OAuth connections |
+| `platform_connection` | Platform OAuth connections |
 | `fact_daily_metrics` | Daily campaign performance |
 | `dim_campaign` | Campaign dimension table |
 | `dim_adset` | Ad set dimension table |

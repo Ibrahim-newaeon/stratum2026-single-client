@@ -890,14 +890,14 @@ async def lookup_profile(
     "/sources",
     response_model=SourceListResponse,
     summary="List data sources",
-    description="List all data sources configured for the tenant.",
+    description="List all data sources configured for the organization.",
 )
 async def list_sources(
     db: AsyncSession = Depends(get_async_session),
     current_user=Depends(get_current_user),
     _rate_limit=Depends(check_source_rate_limit),
 ):
-    """List all data sources for tenant."""
+    """List all data sources for the organization."""
 
     result = await db.execute(
         select(CDPSource)
@@ -1264,7 +1264,7 @@ async def get_event_statistics(
     _rate_limit=Depends(check_source_rate_limit),
 ):
     """
-    Get event statistics for the tenant.
+    Get event statistics for the organization.
 
     Returns:
     - Total event counts
@@ -1523,7 +1523,7 @@ async def get_profile_statistics(
     _rate_limit=Depends(check_source_rate_limit),
 ):
     """
-    Get profile statistics for the tenant.
+    Get profile statistics for the organization.
     """
     now = datetime.now(UTC)
 
@@ -2228,14 +2228,14 @@ def _build_webhook_response(
     "/webhooks",
     response_model=WebhookListResponse,
     summary="List webhooks",
-    description="List all webhook destinations configured for the tenant.",
+    description="List all webhook destinations configured for the organization.",
 )
 async def list_webhooks(
     db: AsyncSession = Depends(get_async_session),
     current_user=Depends(get_current_user),
     _rate_limit=Depends(check_webhook_rate_limit),
 ):
-    """List all webhooks for tenant."""
+    """List all webhooks for the organization."""
 
     result = await db.execute(
         select(CDPWebhook)
@@ -3176,7 +3176,7 @@ async def merge_profiles(
     "/merge-history",
     response_model=ProfileMergeHistoryResponse,
     summary="List all profile merges",
-    description="List all profile merges for the tenant.",
+    description="List all profile merges for the organization.",
 )
 async def list_merge_history(
     limit: int = Query(50, ge=1, le=200, description="Max merges to return"),
@@ -3186,7 +3186,7 @@ async def list_merge_history(
     _rate_limit=Depends(check_profile_rate_limit),
 ):
     """
-    List all profile merges for the tenant.
+    List all profile merges for the organization.
 
     Shows a history of all automatic and manual merges.
     """
@@ -3227,7 +3227,7 @@ async def list_merge_history(
 @router.get(
     "/identity-links",
     summary="List identity links",
-    description="List identity links (graph edges) for the tenant.",
+    description="List identity links (graph edges) for the organization.",
 )
 async def list_identity_links(
     limit: int = Query(100, ge=1, le=500, description="Max links to return"),
@@ -3238,7 +3238,7 @@ async def list_identity_links(
     _rate_limit=Depends(check_profile_rate_limit),
 ):
     """
-    List identity links for the tenant.
+    List identity links for the organization.
 
     Identity links represent relationships between identifiers in the graph.
     """
@@ -3374,7 +3374,7 @@ async def create_segment(
     "/segments",
     response_model=SegmentListResponse,
     summary="List segments",
-    description="List all segments for the tenant.",
+    description="List all segments for the organization.",
 )
 async def list_segments(
     status_filter: Optional[str] = Query(
@@ -3387,7 +3387,7 @@ async def list_segments(
     current_user=Depends(get_current_user),
     _rate_limit=Depends(check_segment_rate_limit),
 ):
-    """List all segments for the tenant."""
+    """List all segments for the organization."""
 
     service = SegmentService(db)
     segments, total = await service.list_segments(
@@ -4231,7 +4231,7 @@ async def get_rfm_summary(
     _rate_limit=Depends(check_profile_rate_limit),
 ):
     """
-    Get RFM summary for the tenant.
+    Get RFM summary for the organization.
 
     Returns segment distribution and coverage statistics.
     """
@@ -4338,7 +4338,7 @@ async def create_funnel(
     "/funnels",
     response_model=FunnelListResponse,
     summary="List funnels",
-    description="List all funnels for the tenant.",
+    description="List all funnels for the organization.",
 )
 async def list_funnels(
     status_filter: Optional[str] = Query(
@@ -4350,7 +4350,7 @@ async def list_funnels(
     current_user=Depends(get_current_user),
     _rate_limit=Depends(check_funnel_rate_limit),
 ):
-    """List all funnels for the tenant."""
+    """List all funnels for the organization."""
 
     service = FunnelService(db)
     funnels, total = await service.list_funnels(

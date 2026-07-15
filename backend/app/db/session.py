@@ -3,7 +3,7 @@
 # =============================================================================
 """
 Async and sync database session management with connection pooling.
-Implements proper context management for multi-tenant queries.
+Implements proper context management for database queries.
 """
 
 from contextlib import asynccontextmanager

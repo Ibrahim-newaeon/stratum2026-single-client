@@ -8,7 +8,7 @@ Handles:
 - Fetching EMQ metrics from database
 - Calculating EMQ scores from platform data
 - Storing EMQ results
-- Aggregating EMQ data across tenants (for super admin)
+- Aggregating EMQ data across the deployment (owner console)
 """
 
 import json
@@ -519,7 +519,7 @@ class EmqService:
         score = emq_data["score"]
 
         # Fail closed: when there is no real EMQ/signal data the numeric
-        # ``score`` is only a display placeholder. A tenant with no signals
+        # ``score`` is only a display placeholder. An account with no signals
         # must never reach an execute-capable mode — freeze autopilot so
         # missing data can't be mistaken for a passing gate.
         if emq_data.get("noData"):
@@ -714,7 +714,7 @@ class EmqAdminService:
         target_date: Optional[date] = None,
         platform: Optional[str] = None,
     ) -> List[Dict[str, Any]]:
-        """Get EMQ benchmarks across all tenants."""
+        """Get EMQ benchmarks across all accounts."""
 
         if target_date is None:
             target_date = date.today()
@@ -764,7 +764,7 @@ class EmqAdminService:
                     "p25": round(row.p25 or 62.5, 1),
                     "p50": round(row.p50 or 74.8, 1),
                     "p75": round(row.p75 or 86.2, 1),
-                    "tenantScore": round(avg, 1),
+                    "accountScore": round(avg, 1),
                     "percentile": round(percentile, 1),
                 }
             )
@@ -781,7 +781,7 @@ class EmqAdminService:
                 "p25": 62.5,
                 "p50": 74.8,
                 "p75": 86.2,
-                "tenantScore": 78.5,
+                "accountScore": 78.5,
                 "percentile": 58.3,
             },
             {
@@ -789,7 +789,7 @@ class EmqAdminService:
                 "p25": 68.2,
                 "p50": 79.5,
                 "p75": 89.1,
-                "tenantScore": 82.3,
+                "accountScore": 82.3,
                 "percentile": 62.7,
             },
             {
@@ -797,7 +797,7 @@ class EmqAdminService:
                 "p25": 55.8,
                 "p50": 67.2,
                 "p75": 78.9,
-                "tenantScore": 71.2,
+                "accountScore": 71.2,
                 "percentile": 55.1,
             },
             {
@@ -805,7 +805,7 @@ class EmqAdminService:
                 "p25": 71.5,
                 "p50": 81.2,
                 "p75": 90.5,
-                "tenantScore": 84.8,
+                "accountScore": 84.8,
                 "percentile": 68.9,
             },
         ]

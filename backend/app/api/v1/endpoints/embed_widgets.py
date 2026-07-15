@@ -110,7 +110,7 @@ async def list_widgets(
     is_active: Optional[bool] = None,
     service: EmbedWidgetService = Depends(get_widget_service),
 ):
-    """List all widgets for the current tenant."""
+    """List all widgets."""
     widgets = await service.list_widgets(widget_type, is_active)
     return widgets
 

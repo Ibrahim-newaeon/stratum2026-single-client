@@ -21,8 +21,8 @@ never reaches with seeded rows:
 - ``EmqAdminService.get_benchmarks`` percentile path + platform filter, and
   ``get_portfolio`` band bucketing across signal-health records (STRAT-SC-001:
   single-org — response DTO keys keep their historical ``totalTenants``/
-  ``tenantScore``/``affectedTenants`` names, but the query counts records,
-  not tenants).
+  ``affectedTenants`` names (``tenantScore`` is now ``accountScore``), but
+  the query counts records, not tenants).
 
 Behaviors corrected in #540 and asserted here:
 - Timestamps are valid ISO-8601 with a ``Z`` suffix (no ``+00:00Z``).
@@ -780,7 +780,7 @@ class TestAdminBenchmarks:
         assert meta["p25"] == 67.5
         assert meta["p50"] == 75.0
         assert meta["p75"] == 82.5
-        assert meta["tenantScore"] == 75.0
+        assert meta["accountScore"] == 75.0
         # Real percentile rank: share of platform averages at or below this
         # platform's average. Meta avg 75 vs Google avg 50 -> both <= 75 -> 100.
         assert meta["percentile"] == 100.0

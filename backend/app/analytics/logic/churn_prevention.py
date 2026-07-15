@@ -13,7 +13,7 @@ Architecture:
 3. Generates intervention playbooks per risk profile
 4. Tracks overall portfolio retention health
 
-Builds on: scoring.py, signal_health.py, Tenant.churn_risk_score field
+Builds on: scoring.py, signal_health.py
 """
 
 from datetime import datetime, timezone

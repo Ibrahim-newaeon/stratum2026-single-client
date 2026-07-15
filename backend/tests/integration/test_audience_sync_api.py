@@ -7,7 +7,7 @@ Exercises the real ASGI app against Postgres + Redis: connected-platform
 and audience listing, detail/history lookups, validation (invalid
 platform / sync operation), 404 paths, and auth enforcement.
 
-These cover the deterministic surface — routing, auth, tenant scoping,
+These cover the deterministic surface — routing, auth, scoping,
 validation, and not-found handling. The create/sync happy paths reach
 out to external ad platforms (Meta/Google/...), so they are intentionally
 left to service-level tests rather than exercised here.

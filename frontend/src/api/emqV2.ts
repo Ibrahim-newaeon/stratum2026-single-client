@@ -89,7 +89,7 @@ export interface EmqBenchmark {
   p25: number
   p50: number
   p75: number
-  tenantScore: number
+  accountScore: number
   percentile: number
 }
 

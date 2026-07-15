@@ -6,7 +6,7 @@
 anomaly detection, signal-health, and the DB-backed recommendations / KPIs.
 
 The scoring/anomaly/health endpoints are pure-computation (no DB), driven by
-request payloads; recommendations + kpis read tenant-scoped campaign data.
+request payloads; recommendations + kpis read org-scoped campaign data.
 """
 
 import pytest

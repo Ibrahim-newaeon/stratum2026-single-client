@@ -5,8 +5,8 @@
 Service for managing embed widgets.
 
 Single-Client conversion (STRAT-SC-001): branding level and widget/domain
-caps used to be derived from the tenant's subscription tier. There is no
-tier concept anymore, so every tenant gets the same (formerly
+caps used to be derived from the subscription tier. There is no
+tier concept anymore, so the deployment gets the same (formerly
 "Enterprise") behavior: white-label branding and generous fixed caps.
 
 NOTE: This service is async — the API layer injects an ``AsyncSession``
@@ -41,7 +41,7 @@ WIDGET_DIMENSIONS = {
     WidgetSize.LARGE.value: (400, 300),
 }
 
-# Fixed caps and branding — formerly tier-scaled, now flat for every tenant.
+# Fixed caps and branding — formerly tier-scaled, now flat for the deployment.
 MAX_EMBED_WIDGETS = 999999
 MAX_EMBED_DOMAINS = 999999
 DEFAULT_BRANDING_LEVEL = BrandingLevel.NONE

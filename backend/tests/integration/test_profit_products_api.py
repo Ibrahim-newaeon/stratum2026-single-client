@@ -84,6 +84,6 @@ class TestListDetailCoverage:
 
     @pytest.mark.asyncio
     async def test_coverage_endpoint(self, authenticated_client: AsyncClient):
-        # COGS-coverage report should respond for a tenant (even with no products)
+        # COGS-coverage report should respond (even with no products)
         resp = await authenticated_client.get("/api/v1/profit/products/coverage")
         assert resp.status_code == 200

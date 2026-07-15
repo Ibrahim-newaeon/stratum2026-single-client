@@ -120,7 +120,7 @@ class EnforcementSettings(BaseModel):
 
     enforcement_enabled: bool = True  # Guardrails toggle (False = checks off)
     autopilot_frozen: bool = False  # Emergency stop — True halts all execution
-    # Fail safe (TRUST-003): an unconfigured tenant defaults to SOFT_BLOCK, so a
+    # Fail safe (TRUST-003): an unconfigured deployment defaults to SOFT_BLOCK, so a
     # rule/budget/ROAS violation requires human confirmation instead of being
     # auto-executed with only a warning (the old ADVISORY default). Clean
     # actions with no violations are still allowed.
@@ -463,7 +463,7 @@ class AutopilotEnforcer:
         if not violations:
             # TRUST-004: a high-risk action type (spend/exposure-increasing)
             # requires confirmation even with no threshold violation, unless the
-            # tenant explicitly opted into advisory mode. This complements the
+            # organization explicitly opted into advisory mode. This complements the
             # violation-based gating below.
             if (
                 is_high_risk_action(action_type)

@@ -592,7 +592,7 @@ class TestActivity:
 
 
 class TestQuickActions:
-    async def test_new_tenant_gets_setup_actions(
+    async def test_new_deployment_gets_setup_actions(
         self, authenticated_client: AsyncClient
     ):
         resp = await authenticated_client.get(f"{_BASE}/quick-actions")
@@ -609,7 +609,7 @@ class TestQuickActions:
 
 
 class TestSignalHealth:
-    async def test_empty_tenant_shape(self, authenticated_client: AsyncClient):
+    async def test_empty_org_shape(self, authenticated_client: AsyncClient):
         resp = await authenticated_client.get(f"{_BASE}/signal-health")
         assert resp.status_code == 200, resp.text
         data = resp.json()["data"]

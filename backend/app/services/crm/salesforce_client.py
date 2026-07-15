@@ -134,7 +134,7 @@ class SalesforceClient:
     # =========================================================================
 
     async def _get_connection(self) -> Optional[CRMConnection]:
-        """Get existing Salesforce connection for tenant."""
+        """Get existing Salesforce connection for the organization."""
         if self._connection:
             return self._connection
 

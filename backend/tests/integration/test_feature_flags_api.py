@@ -4,7 +4,7 @@
 """Integration tests for the org + owner feature-flags API.
 
 Exercises the real ASGI app against Postgres + Redis: organization feature
-retrieval/update (single global org, no per-tenant scoping), and the owner
+retrieval/update (single global org), and the owner
 console routes (which gate on the ``owner`` role).
 
 The owner route tests also guard the role-attribute fix: these

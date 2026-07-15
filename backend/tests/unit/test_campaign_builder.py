@@ -48,8 +48,8 @@ from app.models.campaign_builder import (
     ConnectionStatus,
     DraftStatus,
     PublishResult,
-    TenantAdAccount,
-    TenantPlatformConnection,
+    AdAccount,
+    PlatformConnection,
 )
 
 # =============================================================================
@@ -352,8 +352,8 @@ def _make_db():
 
 
 def _make_connection(platform=AdPlatform.META, status=ConnectionStatus.CONNECTED):
-    """Create a mock TenantPlatformConnection."""
-    conn = MagicMock(spec=TenantPlatformConnection)
+    """Create a mock PlatformConnection."""
+    conn = MagicMock(spec=PlatformConnection)
     conn.id = uuid4()
     conn.platform = platform
     conn.status = status
@@ -368,8 +368,8 @@ def _make_connection(platform=AdPlatform.META, status=ConnectionStatus.CONNECTED
 
 
 def _make_ad_account(platform=AdPlatform.META, is_enabled=True, daily_budget_cap=None):
-    """Create a mock TenantAdAccount."""
-    acc = MagicMock(spec=TenantAdAccount)
+    """Create a mock AdAccount."""
+    acc = MagicMock(spec=AdAccount)
     acc.id = uuid4()
     acc.platform = platform
     acc.platform_account_id = "act_meta_001"
@@ -1357,7 +1357,7 @@ class TestRetryPublish:
 
 # NOTE (STRAT-SC-001, closed in C4): app/workers/campaign_builder_tasks.py
 # used to query the per-organization scoping columns on
-# TenantPlatformConnection/TenantAdAccount (and construct TenantAdAccount
+# PlatformConnection/AdAccount (and construct AdAccount
 # with that scoping kwarg), but those columns were removed from the
 # models — the tasks raised AttributeError at runtime. C4's de-fan-out
 # rewrote the tasks to operate on the single org (one connection per

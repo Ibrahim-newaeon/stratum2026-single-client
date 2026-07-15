@@ -361,8 +361,8 @@ class TestApplySingleAction:
         # Budget applied exactly once (10000 + 50), not compounded to 10100.
         assert json.loads(row.after_value)["daily_budget"] == 10050
 
-    def test_frozen_tenant_defers_without_applying(self, seeded):
-        """Emergency stop: a frozen tenant's approved action is refused and
+    def test_frozen_deployment_defers_without_applying(self, seeded):
+        """Emergency stop: a frozen deployment's approved action is refused and
         left APPROVED (not failed), so it resumes once unfrozen."""
         seeded["set_frozen"](True)
         action_id = seeded["add_action"](status="approved")
@@ -380,7 +380,7 @@ class TestApplySingleAction:
 
 
 class TestApplyActionsQueueSweep:
-    def test_sweep_applies_all_approved_for_tenant(self, seeded):
+    def test_sweep_applies_all_approved(self, seeded):
         first = seeded["add_action"](status="approved", amount=10)
         second = seeded["add_action"](
             status="approved", platform="google", action_type="pause_campaign"

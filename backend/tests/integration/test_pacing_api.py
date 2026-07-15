@@ -4,9 +4,9 @@
 """Integration tests for the pacing/forecasting surface under
 ``/api/v1/pacing/...``: target CRUD, pacing reads, forecasting, and alerts.
 
-These endpoints depend on ``app.tenancy.deps.get_db`` (a separate wrapper over
-``get_async_session``); the harness overrides both, so the endpoints share the
-test's savepoint-scoped session and tenant. The pacing tables (``targets``,
+These endpoints depend on ``get_async_session`` (the harness also overrides the
+legacy ``get_db`` wrapper when present), so the endpoints share the
+test's savepoint-scoped session. The pacing tables (``targets``,
 ``daily_kpis``, ``pacing_alerts``, ``forecasts``) are created by the migration chain (see conftest).
 
 With no ``daily_kpis`` seeded, the pacing/forecast math runs against an empty

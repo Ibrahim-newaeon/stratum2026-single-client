@@ -7,7 +7,6 @@ Integration tests for CDP (Customer Data Platform) module.
 Tests:
 - Event ingestion flow (single and batch)
 - Profile lookup by ID and identifier
-- Profile tenant isolation
 - Source creation and listing
 - Duplicate event handling (idempotency)
 """
@@ -1574,7 +1573,7 @@ class TestProfileMerge:
         assert body["merged_profile_id"] == source_id
         assert body["is_rolled_back"] is False
 
-        # Merge appears in the tenant-wide history
+        # Merge appears in the org-wide history
         history = await authenticated_client.get("/api/v1/cdp/merge-history")
         assert history.status_code == 200
         assert history.json()["total"] >= 1

@@ -56,7 +56,7 @@ class TestLaunchReadinessAuth:
     @pytest.mark.asyncio
     async def test_unauthenticated_request_is_rejected(self, client: AsyncClient):
         response = await client.get(BASE)
-        # TenantMiddleware rejects before reaching the endpoint
+        # Auth middleware rejects before reaching the endpoint
         assert response.status_code in (401, 403)
 
     @pytest.mark.asyncio

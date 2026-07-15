@@ -447,16 +447,16 @@ async def get_account_breakdown(
     )
     rows = result.all()
 
-    # Try to enrich with account names from TenantAdAccount
-    from app.models.campaign_builder import TenantAdAccount
+    # Try to enrich with account names from AdAccount
+    from app.models.campaign_builder import AdAccount
 
     account_names_result = await db.execute(
         select(
-            TenantAdAccount.platform_account_id,
-            TenantAdAccount.name,
-            TenantAdAccount.business_name,
-            TenantAdAccount.currency,
-            TenantAdAccount.is_enabled,
+            AdAccount.platform_account_id,
+            AdAccount.name,
+            AdAccount.business_name,
+            AdAccount.currency,
+            AdAccount.is_enabled,
         )
     )
     account_lookup = {
@@ -677,7 +677,7 @@ async def get_executive_summary(
     prev_start = today - timedelta(days=60)
     prev_end = today - timedelta(days=31)
 
-    # Current period - all tenants
+    # Current period - whole deployment
     current_result = await db.execute(
         select(
             func.sum(CampaignMetric.spend_cents).label("spend"),

@@ -2450,7 +2450,7 @@ def upgrade() -> None:
     sa.PrimaryKeyConstraint('id', name=op.f('pk_tenant_onboarding'))
     )
     op.create_index('ix_tenant_onboarding_status', 'tenant_onboarding', ['status'], unique=False)
-    op.create_table('tenant_platform_connection',
+    op.create_table('platform_connection',
     sa.Column('id', sa.UUID(), nullable=False),
     sa.Column('platform', sa.String(length=50), nullable=False),
     sa.Column('status', sa.String(length=50), nullable=False),
@@ -2466,8 +2466,8 @@ def upgrade() -> None:
     sa.Column('updated_at', sa.DateTime(timezone=True), nullable=False),
     sa.Column('last_error', sa.Text(), nullable=True),
     sa.Column('error_count', sa.Integer(), nullable=True),
-    sa.ForeignKeyConstraint(['granted_by_user_id'], ['users.id'], name=op.f('fk_tenant_platform_connection_granted_by_user_id_users'), ondelete='SET NULL'),
-    sa.PrimaryKeyConstraint('id', name=op.f('pk_tenant_platform_connection')),
+    sa.ForeignKeyConstraint(['granted_by_user_id'], ['users.id'], name=op.f('fk_platform_connection_granted_by_user_id_users'), ondelete='SET NULL'),
+    sa.PrimaryKeyConstraint('id', name=op.f('pk_platform_connection')),
     sa.UniqueConstraint('platform', name='uq_platform_connection')  # was tenant-scoped; now global
     )
     op.create_table('touchpoints',
@@ -2945,7 +2945,7 @@ def upgrade() -> None:
     op.create_index('ix_scheduled_report_template', 'scheduled_reports', ['template_id'], unique=False)
     op.create_index(op.f('ix_scheduled_reports_created_by_user_id'), 'scheduled_reports', ['created_by_user_id'], unique=False)
     op.create_index(op.f('ix_scheduled_reports_template_id'), 'scheduled_reports', ['template_id'], unique=False)
-    op.create_table('tenant_ad_account',
+    op.create_table('ad_account',
     sa.Column('id', sa.UUID(), nullable=False),
     sa.Column('connection_id', sa.UUID(), nullable=False),
     sa.Column('platform', sa.String(length=50), nullable=False),
@@ -2963,11 +2963,11 @@ def upgrade() -> None:
     sa.Column('sync_error', sa.Text(), nullable=True),
     sa.Column('created_at', sa.DateTime(timezone=True), nullable=False),
     sa.Column('updated_at', sa.DateTime(timezone=True), nullable=False),
-    sa.ForeignKeyConstraint(['connection_id'], ['tenant_platform_connection.id'], name=op.f('fk_tenant_ad_account_connection_id_tenant_platform_connection'), ondelete='CASCADE'),
-    sa.PrimaryKeyConstraint('id', name=op.f('pk_tenant_ad_account')),
+    sa.ForeignKeyConstraint(['connection_id'], ['platform_connection.id'], name=op.f('fk_ad_account_connection_id_platform_connection'), ondelete='CASCADE'),
+    sa.PrimaryKeyConstraint('id', name=op.f('pk_ad_account')),
     sa.UniqueConstraint('platform', 'platform_account_id', name='uq_ad_account')  # was tenant-scoped; now global
     )
-    op.create_index('ix_ad_account_enabled', 'tenant_ad_account', ['is_enabled'], unique=False)
+    op.create_index('ix_ad_account_enabled', 'ad_account', ['is_enabled'], unique=False)
     op.create_table('whatsapp_conversations',
     sa.Column('id', sa.Integer(), autoincrement=True, nullable=False),
     sa.Column('contact_id', sa.Integer(), nullable=False),
@@ -3035,7 +3035,7 @@ def upgrade() -> None:
     sa.Column('published_at', sa.DateTime(timezone=True), nullable=True),
     sa.Column('created_at', sa.DateTime(timezone=True), nullable=False),
     sa.Column('updated_at', sa.DateTime(timezone=True), nullable=False),
-    sa.ForeignKeyConstraint(['ad_account_id'], ['tenant_ad_account.id'], name=op.f('fk_campaign_draft_ad_account_id_tenant_ad_account'), ondelete='SET NULL'),
+    sa.ForeignKeyConstraint(['ad_account_id'], ['ad_account.id'], name=op.f('fk_campaign_draft_ad_account_id_ad_account'), ondelete='SET NULL'),
     sa.ForeignKeyConstraint(['approved_by_user_id'], ['users.id'], name=op.f('fk_campaign_draft_approved_by_user_id_users'), ondelete='SET NULL'),
     sa.ForeignKeyConstraint(['created_by_user_id'], ['users.id'], name=op.f('fk_campaign_draft_created_by_user_id_users'), ondelete='SET NULL'),
     sa.ForeignKeyConstraint(['rejected_by_user_id'], ['users.id'], name=op.f('fk_campaign_draft_rejected_by_user_id_users'), ondelete='SET NULL'),
@@ -3222,9 +3222,9 @@ def upgrade() -> None:
     op.create_index('ix_launch_readiness_item_state_checked_by_user_id', 'launch_readiness_item_state', ['checked_by_user_id'], unique=False)
     op.create_index('ix_ml_predictions_campaign_id', 'ml_predictions', ['campaign_id'], unique=False)
     op.create_index('ix_rule_executions_campaign_id', 'rule_executions', ['campaign_id'], unique=False)
-    op.create_index('ix_tenant_ad_account_connection_id', 'tenant_ad_account', ['connection_id'], unique=False)
+    op.create_index('ix_ad_account_connection_id', 'ad_account', ['connection_id'], unique=False)
     op.create_index('ix_tenant_onboarding_completed_by_user_id', 'tenant_onboarding', ['completed_by_user_id'], unique=False)
-    op.create_index('ix_tenant_platform_connection_granted_by_user_id', 'tenant_platform_connection', ['granted_by_user_id'], unique=False)
+    op.create_index('ix_platform_connection_granted_by_user_id', 'platform_connection', ['granted_by_user_id'], unique=False)
     op.create_index('ix_users_client_id', 'users', ['client_id'], unique=False)
     op.create_index('ix_whatsapp_messages_template_id', 'whatsapp_messages', ['template_id'], unique=False)
 
@@ -3412,9 +3412,9 @@ def downgrade() -> None:
     # --- FK index audit drops (reverse of the block added at the end of upgrade()) ---
     op.drop_index('ix_whatsapp_messages_template_id', table_name='whatsapp_messages')
     op.drop_index('ix_users_client_id', table_name='users')
-    op.drop_index('ix_tenant_platform_connection_granted_by_user_id', table_name='tenant_platform_connection')
+    op.drop_index('ix_platform_connection_granted_by_user_id', table_name='platform_connection')
     op.drop_index('ix_tenant_onboarding_completed_by_user_id', table_name='tenant_onboarding')
-    op.drop_index('ix_tenant_ad_account_connection_id', table_name='tenant_ad_account')
+    op.drop_index('ix_ad_account_connection_id', table_name='ad_account')
     op.drop_index('ix_rule_executions_campaign_id', table_name='rule_executions')
     op.drop_index('ix_ml_predictions_campaign_id', table_name='ml_predictions')
     op.drop_index('ix_launch_readiness_item_state_checked_by_user_id', table_name='launch_readiness_item_state')
@@ -3477,8 +3477,8 @@ def downgrade() -> None:
     op.drop_index('ix_wa_conversations_contact', table_name='whatsapp_conversations')
     op.drop_index('ix_wa_conversations_active', table_name='whatsapp_conversations')
     op.drop_table('whatsapp_conversations')
-    op.drop_index('ix_ad_account_enabled', table_name='tenant_ad_account')
-    op.drop_table('tenant_ad_account')
+    op.drop_index('ix_ad_account_enabled', table_name='ad_account')
+    op.drop_table('ad_account')
     op.drop_index(op.f('ix_scheduled_reports_template_id'), table_name='scheduled_reports')
     op.drop_index(op.f('ix_scheduled_reports_created_by_user_id'), table_name='scheduled_reports')
     op.drop_index('ix_scheduled_report_template', table_name='scheduled_reports')
@@ -3566,7 +3566,7 @@ def downgrade() -> None:
     op.drop_index('ix_touchpoints_click_ids', table_name='touchpoints')
     op.drop_index('ix_touchpoints_campaign', table_name='touchpoints')
     op.drop_table('touchpoints')
-    op.drop_table('tenant_platform_connection')
+    op.drop_table('platform_connection')
     op.drop_index('ix_tenant_onboarding_status', table_name='tenant_onboarding')
     op.drop_table('tenant_onboarding')
     op.drop_index('ix_targets_period', table_name='targets')

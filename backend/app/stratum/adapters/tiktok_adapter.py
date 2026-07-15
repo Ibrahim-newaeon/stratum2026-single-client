@@ -150,9 +150,8 @@ class TikTokAdapter(BaseAdapter):
         """
         Initialize the TikTok adapter with API credentials.
 
-        The access_token is the key credential that authorizes API access. If you're
-        building a multi-tenant system, each advertiser would have their own access
-        token obtained through TikTok's OAuth flow.
+        The access_token is the key credential that authorizes API access. Each
+        advertiser has their own access token obtained through TikTok's OAuth flow.
         """
         super().__init__(credentials)
 

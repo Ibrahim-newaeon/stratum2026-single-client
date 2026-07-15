@@ -5,7 +5,7 @@
 
 Exercises the real ASGI app against Postgres + Redis: live predictions,
 prediction alerts, budget optimization, and per-campaign prediction /
-scenarios, plus auth and not-found paths. A fresh tenant has no campaigns
+scenarios, plus auth and not-found paths. A fresh deployment has no campaigns
 or stored predictions, so the read endpoints return empty/default results.
 """
 

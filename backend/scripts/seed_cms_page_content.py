@@ -253,7 +253,7 @@ FAQ_ITEMS = [
     # Integrations
     {
         "title": "How do I connect my ad accounts?",
-        "content": "Go to Tenant Settings > Connect Platforms. Click 'Connect' on any platform to start the OAuth flow. You'll be redirected to the platform to grant permissions, then automatically returned to Stratum AI.",
+        "content": "Go to Settings > Connect Platforms. Click 'Connect' on any platform to start the OAuth flow. You'll be redirected to the platform to grant permissions, then automatically returned to Stratum AI.",
         "faq_category": "integrations",
         "display_order": 10,
     },

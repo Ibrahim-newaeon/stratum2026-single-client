@@ -38,8 +38,8 @@ from app.models import (
 )
 from app.models.campaign_builder import (
     ConnectionStatus,
-    TenantAdAccount,
-    TenantPlatformConnection,
+    AdAccount,
+    PlatformConnection,
 )
 from app.models.onboarding import (
     AutomationMode,
@@ -308,7 +308,7 @@ async def seed_demo_data():
             ]
 
             for platform, name, account_id in platforms_to_connect:
-                connection = TenantPlatformConnection(
+                connection = PlatformConnection(
                     platform=platform.value,
                     status=ConnectionStatus.CONNECTED.value,
                     access_token_encrypted="demo_token_" + platform.value,
@@ -322,7 +322,7 @@ async def seed_demo_data():
                 await db.flush()
 
                 # Add ad account
-                ad_account = TenantAdAccount(
+                ad_account = AdAccount(
                     connection_id=connection.id,
                     platform=platform.value,
                     platform_account_id=account_id,

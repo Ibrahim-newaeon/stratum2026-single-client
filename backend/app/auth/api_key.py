@@ -10,7 +10,7 @@ production callers, so keys authenticated nothing (audit P0-4).
 
 `get_api_key_principal` is the missing validator: it reads the ``X-API-Key``
 header, looks the SHA-256 hash up against active, non-expired keys, records
-``last_used_at``, and populates tenant context for downstream middleware.
+``last_used_at``, and populates auth context for downstream middleware.
 Apply it (or ``require_api_key_scope``) to any programmatic endpoint.
 """
 

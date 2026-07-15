@@ -5,7 +5,7 @@
 Conversational AI Agents for Stratum AI.
 
 This package contains the agent implementations for:
-- User/Tenant onboarding conversations
+- User onboarding conversations
 - Support interactions
 - Guided configuration flows
 """

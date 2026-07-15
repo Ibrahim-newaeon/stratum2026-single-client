@@ -11,7 +11,7 @@ Handles the complete OAuth flow for Meta, Google, TikTok, and Snapchat:
 - Connect selected accounts
 - Refresh and revoke tokens
 
-All endpoints require authentication (single-org deployment; no tenant scoping).
+All endpoints require authentication (single-org deployment).
 """
 
 from datetime import UTC, datetime
@@ -32,8 +32,8 @@ from app.db.session import get_async_session
 from app.models.campaign_builder import (
     AdPlatform,
     ConnectionStatus,
-    TenantAdAccount,
-    TenantPlatformConnection,
+    AdAccount,
+    PlatformConnection,
 )
 from app.schemas import APIResponse
 from app.services.oauth import (
@@ -46,7 +46,7 @@ router = APIRouter(prefix="/oauth", tags=["oauth"])
 
 
 def _column_str(raw: object) -> str:
-    """Normalize TenantPlatformConnection.platform/.status to str.
+    """Normalize PlatformConnection.platform/.status to str.
 
     Both are plain String(50) columns: rows loaded fresh from Postgres hold
     str, while objects still in the creating session hold the enum that was
@@ -55,7 +55,7 @@ def _column_str(raw: object) -> str:
     return raw.value if hasattr(raw, "value") else str(raw)
 
 
-# Auth gate for tenant-scoped OAuth endpoints. Agency admins manage
+# Auth gate for the OAuth management endpoints. Agency admins manage
 # their own platform connections — Connect Platform / Refresh Token /
 # Disconnect — so the gate must permit `admin` and `owner`.
 # Originally was `require_owner` which 403'd agency admins from
@@ -309,9 +309,9 @@ async def oauth_callback(
     # Store or update connection
     try:
         result = await db.execute(
-            select(TenantPlatformConnection).where(
+            select(PlatformConnection).where(
                 and_(
-                    TenantPlatformConnection.platform == platform,
+                    PlatformConnection.platform == platform,
                 )
             )
         )
@@ -338,7 +338,7 @@ async def oauth_callback(
             connection.granted_by_user_id = oauth_state.user_id
         else:
             # Create new connection
-            connection = TenantPlatformConnection(
+            connection = PlatformConnection(
                 platform=platform,
                 status=ConnectionStatus.CONNECTED,
                 access_token_encrypted=oauth_service.encrypt_token(tokens.access_token),
@@ -414,9 +414,9 @@ async def get_connection_status(
     Returns the current connection status, token expiry, and ad accounts count.
     """
     result = await db.execute(
-        select(TenantPlatformConnection).where(
+        select(PlatformConnection).where(
             and_(
-                TenantPlatformConnection.platform == platform,
+                PlatformConnection.platform == platform,
             )
         )
     )
@@ -433,10 +433,10 @@ async def get_connection_status(
 
     # Count connected ad accounts
     accounts_result = await db.execute(
-        select(TenantAdAccount).where(
+        select(AdAccount).where(
             and_(
-                TenantAdAccount.connection_id == connection.id,
-                TenantAdAccount.is_enabled == True,
+                AdAccount.connection_id == connection.id,
+                AdAccount.is_enabled == True,
             )
         )
     )
@@ -469,17 +469,17 @@ async def get_all_connection_statuses(
     """
     Get connection status for all platforms.
     """
-    result = await db.execute(select(TenantPlatformConnection))
+    result = await db.execute(select(PlatformConnection))
     connections = result.scalars().all()
 
     statuses = []
     for connection in connections:
         # Count enabled accounts
         accounts_result = await db.execute(
-            select(TenantAdAccount).where(
+            select(AdAccount).where(
                 and_(
-                    TenantAdAccount.connection_id == connection.id,
-                    TenantAdAccount.is_enabled == True,
+                    AdAccount.connection_id == connection.id,
+                    AdAccount.is_enabled == True,
                 )
             )
         )
@@ -538,9 +538,9 @@ async def list_ad_accounts(
     """
     # Get connection
     result = await db.execute(
-        select(TenantPlatformConnection).where(
+        select(PlatformConnection).where(
             and_(
-                TenantPlatformConnection.platform == platform,
+                PlatformConnection.platform == platform,
             )
         )
     )
@@ -626,7 +626,7 @@ async def list_ad_accounts(
 
     # Get locally stored accounts
     local_result = await db.execute(
-        select(TenantAdAccount).where(TenantAdAccount.connection_id == connection.id)
+        select(AdAccount).where(AdAccount.connection_id == connection.id)
     )
     local_accounts = {a.platform_account_id: a for a in local_result.scalars().all()}
 
@@ -673,9 +673,9 @@ async def connect_ad_accounts(
     """
     # Get connection
     result = await db.execute(
-        select(TenantPlatformConnection).where(
+        select(PlatformConnection).where(
             and_(
-                TenantPlatformConnection.platform == platform,
+                PlatformConnection.platform == platform,
             )
         )
     )
@@ -722,10 +722,10 @@ async def connect_ad_accounts(
 
         # Check if already exists
         result = await db.execute(
-            select(TenantAdAccount).where(
+            select(AdAccount).where(
                 and_(
-                    TenantAdAccount.platform == platform,
-                    TenantAdAccount.platform_account_id == account_id,
+                    AdAccount.platform == platform,
+                    AdAccount.platform_account_id == account_id,
                 )
             )
         )
@@ -743,7 +743,7 @@ async def connect_ad_accounts(
             account = existing
         else:
             # Create new
-            account = TenantAdAccount(
+            account = AdAccount(
                 connection_id=connection.id,
                 platform=platform,
                 platform_account_id=account_id,
@@ -810,9 +810,9 @@ async def refresh_token(
     Refresh OAuth token for a platform.
     """
     result = await db.execute(
-        select(TenantPlatformConnection).where(
+        select(PlatformConnection).where(
             and_(
-                TenantPlatformConnection.platform == platform,
+                PlatformConnection.platform == platform,
             )
         )
     )
@@ -902,9 +902,9 @@ async def disconnect_platform(
     - Disable all connected ad accounts
     """
     result = await db.execute(
-        select(TenantPlatformConnection).where(
+        select(PlatformConnection).where(
             and_(
-                TenantPlatformConnection.platform == platform,
+                PlatformConnection.platform == platform,
             )
         )
     )
@@ -936,11 +936,11 @@ async def disconnect_platform(
 
     # Disable all ad accounts
     await db.execute(
-        select(TenantAdAccount).where(TenantAdAccount.connection_id == connection.id)
+        select(AdAccount).where(AdAccount.connection_id == connection.id)
     )
     # Update all related ad accounts
     accounts_result = await db.execute(
-        select(TenantAdAccount).where(TenantAdAccount.connection_id == connection.id)
+        select(AdAccount).where(AdAccount.connection_id == connection.id)
     )
     for account in accounts_result.scalars().all():
         account.is_enabled = False

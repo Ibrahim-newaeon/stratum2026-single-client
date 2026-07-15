@@ -5,7 +5,7 @@
 WebSocket connection manager for real-time updates.
 
 Handles:
-- Client connections (single-org deployment; no tenant partitioning)
+- Client connections (single-org deployment)
 - Message broadcasting to all clients, or to specific channels
 - Action status updates
 - EMQ score changes
@@ -106,7 +106,7 @@ class WebSocketManager:
     Manages WebSocket connections and message broadcasting.
 
     Features:
-    - Single-org connections (no tenant partitioning)
+    - Single-org connections
     - Channel-based subscriptions
     - Redis Pub/Sub for multi-instance support
     - Automatic heartbeat
