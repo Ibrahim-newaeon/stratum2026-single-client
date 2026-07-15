@@ -18,7 +18,9 @@ dockerfilePath = "Dockerfile"
 noCache = true
 
 [deploy]
-startCommand = "celery -A app.workers.celery_app beat --loglevel=info"
+# SERVICE_ROLE=beat scopes config validation: HTTP-only checks (CORS/
+# FRONTEND_URL) don't apply to non-HTTP roles (see railway.worker.toml).
+startCommand = "SERVICE_ROLE=beat celery -A app.workers.celery_app beat --loglevel=info"
 numReplicas = 1
 restartPolicyType = "ON_FAILURE"
 restartPolicyMaxRetries = 3

@@ -41,6 +41,15 @@ class Settings(BaseSettings):
     app_env: Literal["development", "staging", "production", "test"] = Field(
         default="development"
     )
+    # Which process role this Settings instance serves. HTTP-serving checks
+    # (CORS/FRONTEND_URL fail-closed validation) only apply to "api" — celery
+    # worker/beat processes import the same Settings but serve no HTTP, and a
+    # missing CORS_ORIGINS must not crash-loop them (2026-07-15 prod incident:
+    # worker+beat never started because the validator rejected the localhost
+    # default). Set via SERVICE_ROLE in each service's start command.
+    service_role: Literal["api", "worker", "beat", "scheduler"] = Field(
+        default="api", description="Process role: api serves HTTP; others do not"
+    )
     debug: bool = Field(default=False)
     secret_key: str = Field(
         default_factory=lambda: _DEV_SECRET_KEY,
@@ -550,25 +559,30 @@ class Settings(BaseSettings):
                     f"use_mock_ad_data must be False in {self.app_env} — production must use real API data"
                 )
 
-            # CORS: reject localhost, 127.0.0.1, and wildcard origins
-            for origin in self.cors_origins.split(","):
-                origin = origin.strip()
-                if not origin:
-                    continue
-                lower = origin.lower()
-                if "localhost" in lower or "127.0.0.1" in lower or "*" in lower:
-                    raise ValueError(
-                        f"CORS_ORIGINS contains insecure origin '{origin}' in {self.app_env}. "
-                        "Localhost, 127.0.0.1, and wildcard (*) origins are not allowed in production/staging."
-                    )
+            # CORS / FRONTEND_URL are HTTP-serving concerns — enforce them only
+            # for the api role. Worker/beat/scheduler import the same Settings
+            # but serve no HTTP; failing them on a missing CORS_ORIGINS crash-
+            # loops the whole task pipeline (2026-07-15 prod incident).
+            if self.service_role == "api":
+                # CORS: reject localhost, 127.0.0.1, and wildcard origins
+                for origin in self.cors_origins.split(","):
+                    origin = origin.strip()
+                    if not origin:
+                        continue
+                    lower = origin.lower()
+                    if "localhost" in lower or "127.0.0.1" in lower or "*" in lower:
+                        raise ValueError(
+                            f"CORS_ORIGINS contains insecure origin '{origin}' in {self.app_env}. "
+                            "Localhost, 127.0.0.1, and wildcard (*) origins are not allowed in production/staging."
+                        )
 
-            frontend = self.frontend_url.strip().rstrip("/")
-            if frontend:
-                lower = frontend.lower()
-                if "localhost" in lower or "127.0.0.1" in lower:
-                    raise ValueError(
-                        f"FRONTEND_URL ('{frontend}') must not reference localhost or 127.0.0.1 in {self.app_env}"
-                    )
+                frontend = self.frontend_url.strip().rstrip("/")
+                if frontend:
+                    lower = frontend.lower()
+                    if "localhost" in lower or "127.0.0.1" in lower:
+                        raise ValueError(
+                            f"FRONTEND_URL ('{frontend}') must not reference localhost or 127.0.0.1 in {self.app_env}"
+                        )
 
         return self
 

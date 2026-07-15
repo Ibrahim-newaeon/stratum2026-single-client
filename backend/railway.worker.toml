@@ -19,6 +19,9 @@ noCache = true
 # and each prefork child imports the full app, so memory scales with
 # concurrency. Raise it (or scale replicas) once you know the instance size.
 # --max-tasks-per-child recycles children to bound memory growth from ML tasks.
-startCommand = "celery -A app.workers.celery_app worker --loglevel=info --concurrency=2 --max-tasks-per-child=200"
+# SERVICE_ROLE=worker scopes config validation: HTTP-only checks (CORS/
+# FRONTEND_URL) don't apply to non-HTTP roles, so a missing CORS_ORIGINS
+# variable can't crash-loop the worker again.
+startCommand = "SERVICE_ROLE=worker celery -A app.workers.celery_app worker --loglevel=info --concurrency=2 --max-tasks-per-child=200"
 restartPolicyType = "ON_FAILURE"
 restartPolicyMaxRetries = 3

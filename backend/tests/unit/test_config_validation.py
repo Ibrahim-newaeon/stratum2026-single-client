@@ -337,3 +337,27 @@ class TestProductionCORSSafety:
     def test_staging_also_rejects_localhost(self) -> None:
         with pytest.raises(ValueError, match="CORS_ORIGINS contains insecure origin"):
             self._prod_settings(app_env="staging", cors_origins="http://localhost:3000")
+
+    # -- non-HTTP roles: CORS/FRONTEND_URL checks are api-only ----------------
+    # (2026-07-15 prod incident: worker+beat crash-looped on the localhost
+    # default because their Railway services had no CORS_ORIGINS variable.)
+
+    def test_worker_role_ignores_localhost_cors(self) -> None:
+        s, _ = self._prod_settings(
+            service_role="worker", cors_origins="http://localhost:3000"
+        )
+        assert s.service_role == "worker"
+
+    def test_beat_role_ignores_localhost_frontend_url(self) -> None:
+        s, _ = self._prod_settings(
+            service_role="beat", frontend_url="http://localhost:5173"
+        )
+        assert s.service_role == "beat"
+
+    def test_worker_role_still_enforces_secrets(self) -> None:
+        with pytest.raises(ValueError, match="SECRET_KEY"):
+            self._prod_settings(service_role="worker", secret_key="dev-autogen-abc123")
+
+    def test_worker_role_still_rejects_mock_ad_data(self) -> None:
+        with pytest.raises(ValueError, match="use_mock_ad_data"):
+            self._prod_settings(service_role="worker", use_mock_ad_data="true")
