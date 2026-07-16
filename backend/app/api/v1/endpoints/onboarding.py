@@ -93,8 +93,10 @@ class PlatformSelectionRequest(BaseModel):
 
     platforms: list[str] = Field(
         ...,
-        min_length=1,
-        description="List of platforms: meta, google, tiktok, snapchat",
+        description=(
+            "List of platforms: meta, google, tiktok, snapchat. "
+            "May be empty — onboarding is soft-gated on connections."
+        ),
     )
 
     @field_validator("platforms")
