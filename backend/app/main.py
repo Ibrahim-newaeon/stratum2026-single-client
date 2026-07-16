@@ -594,7 +594,10 @@ def create_application() -> FastAPI:
             "redis": readiness["redis"],
             "worker": worker_status,
             "email_provider": (
-                "configured" if settings.sendgrid_api_key else "not_configured"
+                "configured"
+                if settings.sendgrid_api_key
+                or (settings.smtp_user and settings.smtp_password)
+                else "not_configured"
             ),
         }
 
