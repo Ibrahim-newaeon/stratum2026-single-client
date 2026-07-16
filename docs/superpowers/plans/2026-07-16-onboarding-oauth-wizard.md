@@ -116,7 +116,7 @@ git commit -m "feat(onboarding): allow empty platform selection for soft-gated w
 - Consumes: `apiClient`, `ApiResponse` from `@/api/client`.
 - Produces (used by Tasks 3–7):
   - `type AdPlatform = 'meta' | 'google' | 'tiktok' | 'snapchat'`
-  - `interface PlatformConnection { platform: AdPlatform; status: 'connected' | 'expired' | 'error' | 'disconnected'; connected_at?: string | null; token_expires_at?: string | null; ad_accounts_count?: number | null; error?: string | null }`
+  - `interface PlatformConnection { platform: AdPlatform; status: 'connected' | 'expired' | 'error' | 'disconnected'; connected_at?: string | null; token_expires_at?: string | null; ad_accounts_count?: number | null; last_error?: string | null }`
   - `useConnections(enabled?: boolean): UseQueryResult<PlatformConnection[]> & { hasLiveConnection: boolean; connectedPlatforms: AdPlatform[] }` — well, exposed as a plain object: `{ connections, isLoading, hasLiveConnection, connectedPlatforms }` (see code).
   - `startOAuthConnect(platform: AdPlatform, returnTo: string): Promise<string | null>` — sets `sessionStorage['stratum_oauth_return'] = returnTo`, POSTs authorize, returns `authorization_url` (also accepting legacy `auth_url`/`redirect_url` keys) or `null` if the response has no URL.
   - `OAUTH_RETURN_KEY = 'stratum_oauth_return'`
@@ -302,7 +302,7 @@ git commit -m "feat(connections): useConnections hook + startOAuthConnect helper
 
 **Interfaces:**
 - Consumes: `OAUTH_RETURN_KEY` from `@/api/connections` (Task 2).
-- Produces: routes `/connect` and `/dashboard/campaigns/connect` that consume `?platform=&status=&error=`, invalidate `['connections']` + `['onboarding']`, toast, and `navigate(returnTo, { replace: true })` with fallback `/dashboard/settings?tab=integrations`.
+- Produces: routes `/connect` and `/dashboard/campaigns/connect` that consume `?platform=&status=&error=`, invalidate `['connections']` + `['onboarding']`, toast, and `navigate(returnTo, { replace: true })` with fallback `/dashboard/settings/integrations`.
 
 - [ ] **Step 1: Write the failing test**
 
@@ -402,7 +402,7 @@ import { Loader2 } from 'lucide-react';
 import { useToast } from '@/components/ui/use-toast';
 import { OAUTH_RETURN_KEY } from '@/api/connections';
 
-const FALLBACK_RETURN = '/dashboard/settings?tab=integrations';
+const FALLBACK_RETURN = '/dashboard/settings/integrations';
 
 const PLATFORM_LABELS: Record<string, string> = {
   meta: 'Meta Ads',
@@ -902,7 +902,7 @@ describe('ConnectNudgeBanner', () => {
     expect(screen.getByText(/demo data/i)).toBeInTheDocument();
     expect(screen.getByRole('link', { name: /connect now/i })).toHaveAttribute(
       'href',
-      '/dashboard/settings?tab=integrations'
+      '/dashboard/settings/integrations'
     );
   });
 
@@ -969,7 +969,7 @@ export function ConnectNudgeBanner() {
         You&apos;re viewing demo data — connect your first ad platform to go live.
       </p>
       <Link
-        to="/dashboard/settings?tab=integrations"
+        to="/dashboard/settings/integrations"
         className="shrink-0 rounded-full px-4 py-1.5 text-sm font-medium bg-primary text-primary-foreground hover:opacity-90"
       >
         Connect now

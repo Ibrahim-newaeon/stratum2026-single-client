@@ -70,11 +70,16 @@ IntegrationsHub migrates from its local-useState fetch to this hook.
 
 Registered in `App.tsx` inside the authenticated area. Behavior:
 
-- Parse `?platform=&status=&error=`.
+- Parse `?platform=&status=&error=&message=`. NOTE (corrected 2026-07-16):
+  the backend signals success as `status=success` but signals FAILURE as
+  `error=<code>&message=<text>` — it never sends `status=error`. Treat the
+  presence of `error` as failure and prefer `message` for the toast text.
 - `queryClient.invalidateQueries(['connections'])` and `(['onboarding'])`.
-- Toast: success → "«Platform» connected"; error → the error param.
+- Toast: success → "«Platform» connected"; failure → destructive with the
+  `message`/`error` param.
 - Redirect (replace) to `sessionStorage['stratum_oauth_return']`, falling
-  back to `/dashboard/settings?tab=integrations`; clear the key.
+  back to `/dashboard/settings/integrations` (path-param tab — the settings
+  index redirect drops query strings); clear the key.
 - Renders only a brief spinner; it is a router, not a page.
 - Also register the same component at `/dashboard/campaigns/connect` to
   un-dead the existing links from IntegrationsHub (`:313, :350`) and
@@ -97,8 +102,9 @@ Render condition (all must hold):
 
 Slim `Card` bar: warning icon + "You're viewing demo data — connect your
 first ad platform to go live" + **Connect now** (→
-`/dashboard/settings?tab=integrations`) + X (sets the sessionStorage key).
-While connection status is loading, render nothing (no flash).
+`/dashboard/settings/integrations`) + X (sets the sessionStorage key).
+While connection status is loading OR the status query errored (non-admin
+roles get 403 from the admin-gated /oauth/status), render nothing.
 
 ### 6. OnboardingChecklist touch-up (one line of honesty)
 
