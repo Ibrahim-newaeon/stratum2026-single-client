@@ -17,7 +17,7 @@ export interface PlatformConnection {
   connected_at?: string | null;
   token_expires_at?: string | null;
   ad_accounts_count?: number | null;
-  error?: string | null;
+  last_error?: string | null;
 }
 
 /** sessionStorage key holding the in-app path to resume after OAuth. */
