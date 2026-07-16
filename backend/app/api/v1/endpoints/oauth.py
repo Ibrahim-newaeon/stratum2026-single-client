@@ -292,8 +292,26 @@ async def oauth_callback(
             f"{frontend_url}/connect?platform={platform.value}&error=invalid_request&message=Missing code or state"
         )
 
+    # Resolve app credentials directly here instead of via
+    # `_resolved_oauth_service` (which raises a typed HTTPException 400).
+    # This endpoint is reached by a BROWSER redirect from the ad platform,
+    # not an API caller - a JSON 400 would strand the user on a blank
+    # error page instead of the frontend's error banner. Every other
+    # failure branch in this endpoint redirects; unconfigured credentials
+    # must too.
     try:
-        oauth_service = await _resolved_oauth_service(platform.value, db)
+        credentials = await resolve_app_credentials(platform.value, db)
+    except CredentialsNotConfigured as exc:
+        logger.warning(
+            "oauth_credentials_not_configured",
+            platform=platform.value,
+        )
+        return RedirectResponse(
+            f"{frontend_url}/connect?platform={platform.value}&error=credentials_not_configured&message={credentials_message(exc.platform)}"
+        )
+
+    try:
+        oauth_service = get_oauth_service(platform.value, credentials=credentials)
     except ValueError:
         return RedirectResponse(
             f"{frontend_url}/connect?platform={platform.value}&error=invalid_platform"

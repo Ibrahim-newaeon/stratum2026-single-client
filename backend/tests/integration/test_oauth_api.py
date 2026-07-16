@@ -19,13 +19,35 @@ Covers ``backend/app/api/v1/endpoints/oauth.py``:
 Mocking strategy: the provider services (Meta/Google/TikTok/Snapchat) make
 their outbound HTTP calls with **aiohttp**, which respx cannot intercept
 (respx patches httpx only). Provider HTTP is therefore stubbed at the
-service-method boundary on the factory singletons
-(``exchange_code_for_tokens`` / ``refresh_access_token`` /
-``fetch_ad_accounts`` / ``revoke_access``) — the provider internals have
-dedicated aiohttp-mocked unit tests in
+service-method boundary (``exchange_code_for_tokens`` /
+``refresh_access_token`` / ``fetch_ad_accounts`` / ``revoke_access``) — the
+provider internals have dedicated aiohttp-mocked unit tests in
 ``tests/unit/test_oauth_integrations.py``. Everything else is real:
 Postgres, Redis-backed OAuth state (create/validate/CSRF), Fernet token
 encryption, JWT auth, and the admin role gate.
+
+NOTE on the factory (STRAT-PC-001): ``get_oauth_service`` no longer
+caches a singleton per platform — every call (including the ones the
+endpoint makes internally via ``_resolved_oauth_service``) builds a
+*fresh* instance. Patching an instance obtained by calling
+``get_oauth_service("meta")`` in a test therefore does **not** affect the
+separate instance the endpoint constructs for itself. Two patching
+strategies are used here instead:
+
+- **App credentials** (``app_id``/``app_secret``/etc.): the ``oauth_creds``
+  autouse fixture patches ``resolve_app_credentials`` (the DB-first/
+  env-fallback resolver the endpoint calls before constructing its own
+  service instance), so every freshly-built instance is handed the same
+  fake credentials via ``apply_credentials``.
+- **Provider behavior** (``exchange_code_for_tokens``,
+  ``refresh_access_token``, ``fetch_ad_accounts``, ``revoke_access``,
+  ``create_state``, ``encrypt_token``): patched on the **service class**
+  (e.g. ``MetaOAuthService``), not an instance, so any instance — including
+  ones the endpoint builds internally — picks it up. ``AsyncMock``/lambda
+  values aren't descriptors, so attribute access via an instance doesn't
+  auto-bind ``self``; call-signature assertions (e.g.
+  ``mock.assert_awaited_once_with("token")``) are unaffected by patching at
+  the class instead of the instance.
 
 NOTE: run with the session-scoped event loop CI uses
 (``-o asyncio_default_test_loop_scope=session``).
@@ -47,6 +69,8 @@ from app.models.campaign_builder import (
 )
 from app.services.oauth import get_oauth_service
 from app.services.oauth.base import AdAccountInfo, OAuthTokens
+from app.services.oauth.credentials import AppCredentials, CredentialsNotConfigured
+from app.services.oauth.meta import MetaOAuthService
 
 pytestmark = [pytest.mark.integration, pytest.mark.asyncio]
 
@@ -86,25 +110,58 @@ def _account(account_id: str = "act_100", name: str = "Acct 100") -> AdAccountIn
     )
 
 
-@pytest.fixture
+_FAKE_APP_CREDENTIALS: dict[str, AppCredentials] = {
+    "meta": AppCredentials(
+        platform="meta",
+        client_id="test_meta_app_id",
+        client_secret="test_meta_app_secret",
+        developer_token=None,
+        source="database",
+    ),
+    "google": AppCredentials(
+        platform="google",
+        client_id="test_google_client_id",
+        client_secret="test_google_client_secret",
+        developer_token="test_google_dev_token",
+        source="database",
+    ),
+    "tiktok": AppCredentials(
+        platform="tiktok",
+        client_id="test_tiktok_app_id",
+        client_secret="test_tiktok_app_secret",
+        developer_token=None,
+        source="database",
+    ),
+    "snapchat": AppCredentials(
+        platform="snapchat",
+        client_id="test_snap_client_id",
+        client_secret="test_snap_client_secret",
+        developer_token=None,
+        source="database",
+    ),
+}
+
+
+@pytest.fixture(autouse=True)
 def oauth_creds(monkeypatch):
-    """Set fake app credentials on the factory singletons so config checks pass."""
-    meta = get_oauth_service("meta")
-    monkeypatch.setattr(meta, "app_id", "test_meta_app_id")
-    monkeypatch.setattr(meta, "app_secret", "test_meta_app_secret")
+    """Make every fresh OAuth service instance the endpoint builds carry
+    fake app credentials, by patching the resolver it calls rather than an
+    instance (see the module docstring's factory note).
 
-    google = get_oauth_service("google")
-    monkeypatch.setattr(google, "client_id", "test_google_client_id")
-    monkeypatch.setattr(google, "client_secret", "test_google_client_secret")
-    monkeypatch.setattr(google, "developer_token", "test_google_dev_token")
+    autouse=True: with the singleton cache gone, *every* endpoint call
+    resolves credentials from scratch, so any test hitting the router
+    needs this - previously it only worked for tests that happened to run
+    after a test which had configured the shared singleton. Tests that
+    specifically want "credentials not configured" behavior re-patch
+    ``resolve_app_credentials`` themselves after this fixture runs (see
+    ``test_authorize_unconfigured_platform_400``), since a later
+    ``monkeypatch.setattr`` in the same test overrides this one.
+    """
 
-    tiktok = get_oauth_service("tiktok")
-    monkeypatch.setattr(tiktok, "app_id", "test_tiktok_app_id")
-    monkeypatch.setattr(tiktok, "app_secret", "test_tiktok_app_secret")
+    async def _fake_resolve(platform: str, db):
+        return _FAKE_APP_CREDENTIALS[platform.lower()]
 
-    snapchat = get_oauth_service("snapchat")
-    monkeypatch.setattr(snapchat, "client_id", "test_snap_client_id")
-    monkeypatch.setattr(snapchat, "client_secret", "test_snap_client_secret")
+    monkeypatch.setattr(oauth_ep, "resolve_app_credentials", _fake_resolve)
 
 
 @pytest.fixture
@@ -272,18 +329,22 @@ class TestAuthorize:
     async def test_authorize_unconfigured_platform_400(
         self, authenticated_client: AsyncClient, monkeypatch
     ):
-        meta = get_oauth_service("meta")
-        monkeypatch.setattr(meta, "app_id", None)
+        async def _raise(platform: str, db):
+            raise CredentialsNotConfigured(platform)
+
+        # Overrides the autouse oauth_creds patch for this test only.
+        monkeypatch.setattr(oauth_ep, "resolve_app_credentials", _raise)
         resp = await authenticated_client.post(f"{_BASE}/meta/authorize", json={})
         assert resp.status_code == 400
-        assert "not configured" in resp.json()["detail"]
+        detail = resp.json()["detail"]
+        assert detail["code"] == "credentials_not_configured"
+        assert "not configured" in detail["message"]
 
     async def test_authorize_state_storage_failure_500(
         self, authenticated_client: AsyncClient, oauth_creds, monkeypatch
     ):
-        meta = get_oauth_service("meta")
         monkeypatch.setattr(
-            meta,
+            MetaOAuthService,
             "create_state",
             AsyncMock(side_effect=ConnectionError("redis down")),
         )
@@ -361,7 +422,7 @@ class TestCallback:
             redirect_uri="http://localhost:5173",
         )
         monkeypatch.setattr(
-            meta,
+            MetaOAuthService,
             "exchange_code_for_tokens",
             AsyncMock(side_effect=ConnectionError("provider unreachable")),
         )
@@ -392,7 +453,7 @@ class TestCallback:
 
         meta = get_oauth_service("meta")
         monkeypatch.setattr(
-            meta,
+            MetaOAuthService,
             "exchange_code_for_tokens",
             AsyncMock(return_value=_tokens(access="meta-long-lived")),
         )
@@ -440,7 +501,7 @@ class TestCallback:
             redirect_uri="http://localhost:5173",
         )
         monkeypatch.setattr(
-            meta, "exchange_code_for_tokens", AsyncMock(return_value=_tokens())
+            MetaOAuthService, "exchange_code_for_tokens", AsyncMock(return_value=_tokens())
         )
 
         first = await client.get(
@@ -478,7 +539,7 @@ class TestCallback:
             redirect_uri="http://localhost:5173",
         )
         monkeypatch.setattr(
-            meta,
+            MetaOAuthService,
             "exchange_code_for_tokens",
             AsyncMock(return_value=_tokens(access="reconnected-token")),
         )
@@ -509,12 +570,12 @@ class TestCallback:
             redirect_uri="http://localhost:5173",
         )
         monkeypatch.setattr(
-            meta, "exchange_code_for_tokens", AsyncMock(return_value=_tokens())
+            MetaOAuthService, "exchange_code_for_tokens", AsyncMock(return_value=_tokens())
         )
         monkeypatch.setattr(
-            meta,
+            MetaOAuthService,
             "encrypt_token",
-            lambda token: (_ for _ in ()).throw(ValueError("bad key")),
+            lambda self, token: (_ for _ in ()).throw(ValueError("bad key")),
         )
         resp = await client.get(
             f"{_BASE}/meta/callback",
@@ -628,11 +689,10 @@ class TestListAdAccounts:
         monkeypatch,
     ):
         local = await _make_ad_account(db_session, meta_connection.id, "act_1")
-        meta = get_oauth_service("meta")
         fetch = AsyncMock(
             return_value=[_account("act_1", "Connected"), _account("act_2", "Fresh")]
         )
-        monkeypatch.setattr(meta, "fetch_ad_accounts", fetch)
+        monkeypatch.setattr(MetaOAuthService, "fetch_ad_accounts", fetch)
 
         resp = await authenticated_client.get(f"{_BASE}/meta/accounts")
         assert resp.status_code == 200, resp.text
@@ -655,9 +715,9 @@ class TestListAdAccounts:
         conn = await _make_connection(db_session, expires_delta=timedelta(hours=-1))
         meta = get_oauth_service("meta")
         refresh = AsyncMock(return_value=_tokens(access="refreshed-access"))
-        monkeypatch.setattr(meta, "refresh_access_token", refresh)
+        monkeypatch.setattr(MetaOAuthService, "refresh_access_token", refresh)
         fetch = AsyncMock(return_value=[_account()])
-        monkeypatch.setattr(meta, "fetch_ad_accounts", fetch)
+        monkeypatch.setattr(MetaOAuthService, "fetch_ad_accounts", fetch)
 
         resp = await authenticated_client.get(f"{_BASE}/meta/accounts")
         assert resp.status_code == 200, resp.text
@@ -674,9 +734,8 @@ class TestListAdAccounts:
         monkeypatch,
     ):
         conn = await _make_connection(db_session, expires_delta=timedelta(hours=-1))
-        meta = get_oauth_service("meta")
         monkeypatch.setattr(
-            meta,
+            MetaOAuthService,
             "refresh_access_token",
             AsyncMock(side_effect=ConnectionError("refresh rejected")),
         )
@@ -706,9 +765,8 @@ class TestListAdAccounts:
         meta_connection,
         monkeypatch,
     ):
-        meta = get_oauth_service("meta")
         monkeypatch.setattr(
-            meta,
+            MetaOAuthService,
             "fetch_ad_accounts",
             AsyncMock(side_effect=ConnectionError("graph API down")),
         )
@@ -745,9 +803,8 @@ class TestConnectAdAccounts:
     ):
         from sqlalchemy import and_, select
 
-        meta = get_oauth_service("meta")
         monkeypatch.setattr(
-            meta,
+            MetaOAuthService,
             "fetch_ad_accounts",
             AsyncMock(return_value=[_account("act_new", "Brand New")]),
         )
@@ -788,9 +845,8 @@ class TestConnectAdAccounts:
             "act_exist",
             is_enabled=False,
         )
-        meta = get_oauth_service("meta")
         monkeypatch.setattr(
-            meta,
+            MetaOAuthService,
             "fetch_ad_accounts",
             AsyncMock(return_value=[_account("act_exist", "Renamed Upstream")]),
         )
@@ -809,9 +865,8 @@ class TestConnectAdAccounts:
         meta_connection,
         monkeypatch,
     ):
-        meta = get_oauth_service("meta")
         monkeypatch.setattr(
-            meta,
+            MetaOAuthService,
             "fetch_ad_accounts",
             AsyncMock(return_value=[_account("act_real")]),
         )
@@ -827,9 +882,8 @@ class TestConnectAdAccounts:
         meta_connection,
         monkeypatch,
     ):
-        meta = get_oauth_service("meta")
         monkeypatch.setattr(
-            meta,
+            MetaOAuthService,
             "fetch_ad_accounts",
             AsyncMock(side_effect=TimeoutError("slow provider")),
         )
@@ -872,7 +926,7 @@ class TestRefreshToken:
         refresh = AsyncMock(
             return_value=_tokens(access="post-refresh", refresh="rotated-refresh")
         )
-        monkeypatch.setattr(meta, "refresh_access_token", refresh)
+        monkeypatch.setattr(MetaOAuthService, "refresh_access_token", refresh)
 
         resp = await authenticated_client.post(f"{_BASE}/meta/refresh")
         assert resp.status_code == 200, resp.text
@@ -894,9 +948,8 @@ class TestRefreshToken:
         monkeypatch,
     ):
         conn = await _make_connection(db_session)
-        meta = get_oauth_service("meta")
         monkeypatch.setattr(
-            meta,
+            MetaOAuthService,
             "refresh_access_token",
             AsyncMock(side_effect=ConnectionError("invalid_grant")),
         )
@@ -928,9 +981,8 @@ class TestDisconnect:
         monkeypatch,
     ):
         account = await _make_ad_account(db_session, meta_connection.id, "act_1")
-        meta = get_oauth_service("meta")
         revoke = AsyncMock(return_value=True)
-        monkeypatch.setattr(meta, "revoke_access", revoke)
+        monkeypatch.setattr(MetaOAuthService, "revoke_access", revoke)
 
         resp = await authenticated_client.delete(f"{_BASE}/meta/disconnect")
         assert resp.status_code == 200, resp.text
@@ -949,9 +1001,8 @@ class TestDisconnect:
         meta_connection,
         monkeypatch,
     ):
-        meta = get_oauth_service("meta")
         monkeypatch.setattr(
-            meta,
+            MetaOAuthService,
             "revoke_access",
             AsyncMock(side_effect=ConnectionError("revoke endpoint down")),
         )

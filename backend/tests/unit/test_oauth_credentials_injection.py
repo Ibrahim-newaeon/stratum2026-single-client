@@ -6,7 +6,7 @@
 import pytest
 
 from app.services.oauth.base import OAuthState
-from app.services.oauth.credentials import AppCredentials
+from app.services.oauth.credentials import AppCredentials, CredentialsNotConfigured
 from app.services.oauth.factory import get_oauth_service
 
 
@@ -76,3 +76,36 @@ def test_no_credentials_falls_back_to_env_configured_attrs() -> None:
     # settings in __init__ exactly as before this change.
     svc = get_oauth_service("meta")
     assert svc.platform == "meta"
+
+
+# =============================================================================
+# Callback redirect when credentials are unconfigured (not a raw 400)
+# =============================================================================
+# GET /oauth/{platform}/callback is reached by a BROWSER redirect from the ad
+# platform, not an API caller. A JSON 400 would strand the user on a blank
+# error page instead of the frontend's /connect error banner - every other
+# failure branch in that endpoint redirects, so unconfigured app credentials
+# must too (see app/api/v1/endpoints/oauth.py::oauth_callback).
+
+
+async def test_callback_redirects_when_credentials_not_configured(
+    api_client, monkeypatch
+) -> None:
+    import app.api.v1.endpoints.oauth as oauth_ep
+
+    async def _raise(platform: str, db):
+        raise CredentialsNotConfigured(platform)
+
+    monkeypatch.setattr(oauth_ep, "resolve_app_credentials", _raise)
+
+    resp = await api_client.get(
+        "/api/v1/oauth/meta/callback",
+        params={"code": "authcode", "state": "some-state-token"},
+        follow_redirects=False,
+    )
+
+    assert resp.status_code in (302, 307)
+    location = resp.headers["location"]
+    assert "error=credentials_not_configured" in location
+    assert "platform=meta" in location
+    assert "/connect" in location
