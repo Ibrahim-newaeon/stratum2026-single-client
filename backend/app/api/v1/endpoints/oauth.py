@@ -38,11 +38,32 @@ from app.models.campaign_builder import (
 from app.schemas import APIResponse
 from app.services.oauth import (
     OAuthProviderError,
+    OAuthService,
     get_oauth_service,
+)
+from app.services.oauth.credentials import (
+    CredentialsNotConfigured,
+    credentials_message,
+    resolve_app_credentials,
 )
 
 logger = get_logger(__name__)
 router = APIRouter(prefix="/oauth", tags=["oauth"])
+
+
+async def _resolved_oauth_service(platform: str, db: AsyncSession) -> OAuthService:
+    """get_oauth_service with DB-first credentials; typed 400 when missing."""
+    try:
+        credentials = await resolve_app_credentials(platform, db)
+    except CredentialsNotConfigured as exc:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail={
+                "code": "credentials_not_configured",
+                "message": credentials_message(exc.platform),
+            },
+        ) from exc
+    return get_oauth_service(platform, credentials=credentials)
 
 
 def _column_str(raw: object) -> str:
@@ -179,7 +200,7 @@ async def start_oauth(
         Authorization URL and state token
     """
     try:
-        oauth_service = get_oauth_service(platform.value)
+        oauth_service = await _resolved_oauth_service(platform.value, db)
     except ValueError as e:
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=str(e))
 
@@ -272,7 +293,7 @@ async def oauth_callback(
         )
 
     try:
-        oauth_service = get_oauth_service(platform.value)
+        oauth_service = await _resolved_oauth_service(platform.value, db)
     except ValueError:
         return RedirectResponse(
             f"{frontend_url}/connect?platform={platform.value}&error=invalid_platform"
@@ -554,7 +575,7 @@ async def list_ad_accounts(
 
     # Decrypt access token
     try:
-        oauth_service = get_oauth_service(platform.value)
+        oauth_service = await _resolved_oauth_service(platform.value, db)
         access_token = oauth_service.decrypt_token(connection.access_token_encrypted)
     except (ValueError, OSError, KeyError) as e:
         logger.error("Failed to decrypt token", error=str(e))
@@ -689,7 +710,7 @@ async def connect_ad_accounts(
 
     # Fetch accounts from platform to validate
     try:
-        oauth_service = get_oauth_service(platform.value)
+        oauth_service = await _resolved_oauth_service(platform.value, db)
         access_token = oauth_service.decrypt_token(connection.access_token_encrypted)
         platform_accounts = await oauth_service.fetch_ad_accounts(access_token)
     except (
@@ -831,7 +852,7 @@ async def refresh_token(
         )
 
     try:
-        oauth_service = get_oauth_service(platform.value)
+        oauth_service = await _resolved_oauth_service(platform.value, db)
         refresh_token = oauth_service.decrypt_token(connection.refresh_token_encrypted)
         new_tokens = await oauth_service.refresh_access_token(refresh_token)
 
@@ -919,7 +940,7 @@ async def disconnect_platform(
     # Try to revoke access with platform
     if connection.access_token_encrypted:
         try:
-            oauth_service = get_oauth_service(platform.value)
+            oauth_service = await _resolved_oauth_service(platform.value, db)
             access_token = oauth_service.decrypt_token(
                 connection.access_token_encrypted
             )
@@ -930,9 +951,12 @@ async def disconnect_platform(
             OSError,
             ValueError,
             OAuthProviderError,
+            HTTPException,
         ) as e:
             logger.warning("Failed to revoke access with platform", error=str(e))
-            # Continue with local disconnect anyway
+            # Continue with local disconnect anyway (including when app
+            # credentials are unconfigured - revoke is best-effort here;
+            # the connection is still removed locally).
 
     # Disable all ad accounts
     await db.execute(select(AdAccount).where(AdAccount.connection_id == connection.id))

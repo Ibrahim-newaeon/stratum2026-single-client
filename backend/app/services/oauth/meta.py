@@ -34,6 +34,7 @@ from app.services.oauth.base import (
     OAuthState,
     OAuthTokens,
 )
+from app.services.oauth.credentials import AppCredentials
 
 logger = get_logger(__name__)
 
@@ -62,6 +63,10 @@ class MetaOAuthService(OAuthService):
         self.app_id = settings.meta_app_id
         self.app_secret = settings.meta_app_secret
         self.api_version = settings.meta_api_version
+
+    def apply_credentials(self, credentials: AppCredentials) -> None:
+        self.app_id = credentials.client_id
+        self.app_secret = credentials.client_secret
 
     def _get_auth_url(self) -> str:
         """Get versioned auth URL."""

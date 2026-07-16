@@ -36,6 +36,7 @@ from app.services.oauth.base import (
     OAuthState,
     OAuthTokens,
 )
+from app.services.oauth.credentials import AppCredentials
 
 logger = get_logger(__name__)
 
@@ -68,6 +69,10 @@ class TikTokOAuthService(OAuthService):
         super().__init__()
         self.app_id = settings.tiktok_app_id
         self.app_secret = settings.tiktok_secret
+
+    def apply_credentials(self, credentials: AppCredentials) -> None:
+        self.app_id = credentials.client_id
+        self.app_secret = credentials.client_secret
 
     def get_authorization_url(
         self,

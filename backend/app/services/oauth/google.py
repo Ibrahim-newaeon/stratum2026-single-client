@@ -32,6 +32,7 @@ from app.services.oauth.base import (
     OAuthState,
     OAuthTokens,
 )
+from app.services.oauth.credentials import AppCredentials
 
 logger = get_logger(__name__)
 
@@ -59,6 +60,12 @@ class GoogleOAuthService(OAuthService):
         self.client_id = settings.google_ads_client_id
         self.client_secret = settings.google_ads_client_secret
         self.developer_token = settings.google_ads_developer_token
+
+    def apply_credentials(self, credentials: AppCredentials) -> None:
+        self.client_id = credentials.client_id
+        self.client_secret = credentials.client_secret
+        if credentials.developer_token:
+            self.developer_token = credentials.developer_token
 
     def get_authorization_url(
         self,

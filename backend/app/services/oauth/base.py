@@ -19,6 +19,7 @@ import redis.asyncio as redis
 from app.core.config import settings
 from app.core.logging import get_logger
 from app.core.security import decrypt_pii, encrypt_pii
+from app.services.oauth.credentials import AppCredentials
 
 logger = get_logger(__name__)
 
@@ -120,6 +121,11 @@ class OAuthService(ABC):
 
     def __init__(self) -> None:
         self.logger = get_logger(f"{__name__}.{self.platform}")
+
+    def apply_credentials(self, credentials: AppCredentials) -> None:
+        """Inject resolved app credentials (DB-first/env). Subclasses map the
+        generic fields onto their own attribute names."""
+        raise NotImplementedError
 
     # =========================================================================
     # State Management (Redis-based)

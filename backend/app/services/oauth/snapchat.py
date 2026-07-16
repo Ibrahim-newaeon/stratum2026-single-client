@@ -33,6 +33,7 @@ from app.services.oauth.base import (
     OAuthState,
     OAuthTokens,
 )
+from app.services.oauth.credentials import AppCredentials
 
 logger = get_logger(__name__)
 
@@ -58,6 +59,10 @@ class SnapchatOAuthService(OAuthService):
         super().__init__()
         self.client_id = settings.snapchat_client_id
         self.client_secret = settings.snapchat_client_secret
+
+    def apply_credentials(self, credentials: AppCredentials) -> None:
+        self.client_id = credentials.client_id
+        self.client_secret = credentials.client_secret
 
     def get_authorization_url(
         self,

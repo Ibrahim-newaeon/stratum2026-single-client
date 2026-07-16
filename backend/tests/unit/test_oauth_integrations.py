@@ -6,7 +6,7 @@ Comprehensive tests for OAuth integrations (Feature #8):
 
 1. OAuth Data Models (OAuthState, OAuthTokens, AdAccountInfo)
 2. OAuthService base class (token encryption, build_url, get_redirect_uri)
-3. OAuth Factory (get_oauth_service, get_supported_platforms, singleton caching)
+3. OAuth Factory (get_oauth_service, get_supported_platforms, fresh instance per call)
 4. Platform-specific services (Meta, Google, TikTok, Snapchat):
    - Authorization URL generation
    - Platform identity & scopes
@@ -413,10 +413,13 @@ class TestOAuthFactory:
         with pytest.raises(ValueError, match="Unsupported platform"):
             get_oauth_service("twitter")
 
-    def test_singleton_caching(self) -> None:
+    def test_fresh_instance_per_call(self) -> None:
+        # Singleton caching was removed (STRAT-PC-001): each call must
+        # build a fresh instance so per-request resolved credentials
+        # never leak across requests.
         svc1 = get_oauth_service("meta")
         svc2 = get_oauth_service("meta")
-        assert svc1 is svc2
+        assert svc1 is not svc2
 
     def test_registry_has_four_platforms(self) -> None:
         assert len(_OAUTH_SERVICES) == 4
