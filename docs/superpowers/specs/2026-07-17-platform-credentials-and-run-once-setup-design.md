@@ -62,10 +62,10 @@ access ever required. Invited team members never see setup.
   create; on update an empty/omitted secret keeps the stored one).
 - `DELETE /platform-credentials/{platform}` — removes the DB row (env
   fallback, if any, then applies again).
-- `GET /platform-credentials/callback-url` → `{ callback_url_template:
-  "{oauth_redirect_base_url}/api/v1/oauth/{platform}/callback" }` resolved
-  per platform — the value each customer must register in their developer
-  app for THEIR domain.
+- Each item in `GET /platform-credentials` carries its resolved
+  `callback_url` (`{oauth_redirect_base_url}/api/v1/oauth/{platform}/callback`)
+  — the value each customer must register in their developer app for THEIR
+  domain. (Folded into the list response; no separate endpoint.)
 - Audit-log every write (existing audit middleware/pattern).
 
 ## Component 3: Credentials manager UI (frontend)
