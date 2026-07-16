@@ -17,7 +17,7 @@
  */
 
 import { useEffect, useState } from 'react';
-import { Link } from 'react-router-dom';
+import { Link, useLocation } from 'react-router-dom';
 import {
   CheckCircle2,
   Cable,
@@ -34,6 +34,7 @@ import { Card } from '@/components/primitives/Card';
 import { StatusPill } from '@/components/primitives/StatusPill';
 import { ConfirmDrawer } from '@/components/primitives/ConfirmDrawer';
 import { apiClient } from '@/api/client';
+import { startOAuthConnect } from '@/api/connections';
 import { useCRMConnections, useTriggerCRMSync } from '@/api/hooks';
 import { cn } from '@/lib/utils';
 
@@ -47,9 +48,9 @@ interface PlatformStatusRow {
   platform: AdPlatform;
   status: 'connected' | 'expired' | 'error' | 'disconnected';
   connected_at?: string;
-  expires_at?: string;
-  account_count?: number;
-  error?: string;
+  token_expires_at?: string;
+  ad_accounts_count?: number;
+  last_error?: string;
 }
 
 interface AdPlatformDef {
@@ -95,6 +96,7 @@ export default function IntegrationsHub() {
   const [loading, setLoading] = useState(true);
   const [actionPlatform, setActionPlatform] = useState<AdPlatform | null>(null);
   const [confirmDisconnect, setConfirmDisconnect] = useState<AdPlatformDef | null>(null);
+  const location = useLocation();
 
   const crmConnections = useCRMConnections();
   const triggerSync = useTriggerCRMSync();
@@ -127,17 +129,13 @@ export default function IntegrationsHub() {
   const handleConnect = async (platform: AdPlatform) => {
     setActionPlatform(platform);
     try {
-      const res = await apiClient.post<{ data: { auth_url?: string; redirect_url?: string } }>(
-        `/oauth/${platform}/authorize`,
-        {}
-      );
-      const url = res.data.data?.auth_url || res.data.data?.redirect_url;
+      const url = await startOAuthConnect(platform, location.pathname + location.search);
       if (url) {
-        window.location.href = url;
+        window.location.assign(url);
         return;
       }
+      await fetchStatuses();
     } catch {
-      // surface in UI via status refresh
       await fetchStatuses();
     } finally {
       setActionPlatform(null);
@@ -449,12 +447,14 @@ function PlatformCard({
           <p className="text-xs text-muted-foreground mt-0.5">{platform.description}</p>
           {isConnected && (
             <div className="text-xs text-muted-foreground font-mono mt-2">
-              {status?.account_count ?? 0} account{status?.account_count === 1 ? '' : 's'} ·{' '}
-              {status?.expires_at ? `expires ${formatRelative(status.expires_at)}` : 'no expiry'}
+              {status?.ad_accounts_count ?? 0} account{status?.ad_accounts_count === 1 ? '' : 's'} ·{' '}
+              {status?.token_expires_at
+                ? `expires ${formatRelative(status.token_expires_at)}`
+                : 'no expiry'}
             </div>
           )}
-          {(isExpired || isError) && status?.error && (
-            <div className="text-xs text-destructive mt-2">{status.error}</div>
+          {(isExpired || isError) && status?.last_error && (
+            <div className="text-xs text-destructive mt-2">{status.last_error}</div>
           )}
         </div>
       </div>
