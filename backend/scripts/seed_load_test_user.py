@@ -38,9 +38,9 @@ from app.models.onboarding import (
     MonthlyAdSpend,
     OnboardingStatus,
     OnboardingStep,
+    OrganizationOnboarding,
     PrimaryKPI,
     TeamSize,
-    OrganizationOnboarding,
 )
 
 # Load test user credentials (matches k6 test defaults)

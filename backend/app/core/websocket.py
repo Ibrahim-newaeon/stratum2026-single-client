@@ -130,12 +130,13 @@ class WebSocketManager:
 
         # Try to connect to Redis for cross-instance pub/sub
         try:
-            self._redis = redis.from_url(
+            redis_client = redis.from_url(
                 settings.redis_url,
                 socket_connect_timeout=5,
                 socket_timeout=5,
             )
-            await asyncio.wait_for(self._redis.ping(), timeout=5.0)
+            self._redis = redis_client
+            await asyncio.wait_for(redis_client.ping(), timeout=5.0)
             self._pubsub_task = asyncio.create_task(self._redis_listener())
             logger.info("websocket_redis_connected")
         except (ConnectionError, TimeoutError, OSError) as e:

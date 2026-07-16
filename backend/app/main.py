@@ -147,7 +147,7 @@ async def lifespan(app: FastAPI) -> AsyncGenerator:
             traces_sample_rate=settings.sentry_traces_sample_rate,
             profiles_sample_rate=settings.sentry_profiles_sample_rate,
             send_default_pii=False,
-            before_send=_before_send,  # type: ignore[arg-type]
+            before_send=_before_send,
             integrations=[
                 FastApiIntegration(transaction_style="endpoint"),
                 SqlalchemyIntegration(),

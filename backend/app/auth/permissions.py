@@ -725,7 +725,7 @@ def require_resource_level(resource: str, level: PermLevel) -> Callable:
 async def enforce_client_access(
     *,
     user_id: int,
-    user_role: str,
+    user_role: str | UserRole,
     client_id: int,
     db: "AsyncSession",
     user_client_id: Optional[int] = None,
@@ -737,7 +737,7 @@ async def enforce_client_access(
     Other roles must be explicitly assigned to the client, or have a
     matching ``client_id`` on their user record.
     """
-    role = user_role if isinstance(user_role, str) else user_role.value
+    role = user_role.value if isinstance(user_role, UserRole) else user_role
     if role.lower() in {"owner", "admin"}:
         return
 
@@ -768,7 +768,7 @@ async def enforce_client_access(
 async def get_accessible_client_ids(
     *,
     user_id: int,
-    user_role: str,
+    user_role: str | UserRole,
     db: "AsyncSession",
     client_id: Optional[int] = None,
 ) -> Optional[List[int]]:
@@ -782,7 +782,7 @@ async def get_accessible_client_ids(
     """
     from sqlalchemy import select
 
-    role = user_role if isinstance(user_role, str) else user_role.value
+    role = user_role.value if isinstance(user_role, UserRole) else user_role
     if role.lower() in {"owner", "admin"}:
         return None  # unrestricted
 

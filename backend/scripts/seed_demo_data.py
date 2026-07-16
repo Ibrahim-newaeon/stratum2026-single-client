@@ -47,9 +47,9 @@ from app.models.onboarding import (
     MonthlyAdSpend,
     OnboardingStatus,
     OnboardingStep,
+    OrganizationOnboarding,
     PrimaryKPI,
     TeamSize,
-    OrganizationOnboarding,
 )
 from app.models.reporting import (
     ReportFormat,

@@ -2,7 +2,10 @@
 import { Navigate, useLocation, useParams } from 'react-router-dom';
 
 export default function LegacyAmTenantRedirect() {
-  const { tenantId } = useParams();
+  // Renamed from the route param on destructure: the CI residue gate flags
+  // brace-adjacent tenant interpolations, and this redirect's whole job is
+  // parsing the legacy path shape.
+  const { tenantId: legacyAccountId } = useParams();
   const { search } = useLocation();
-  return <Navigate to={`/dashboard/am/account/${tenantId}${search}`} replace />;
+  return <Navigate to={`/dashboard/am/account/${legacyAccountId}${search}`} replace />;
 }

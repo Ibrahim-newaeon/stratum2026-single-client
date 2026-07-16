@@ -17,7 +17,7 @@ from pydantic import Field, field_validator, model_validator
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
 
-def _detect_service_role() -> str:
+def _detect_service_role() -> Literal["api", "worker", "beat", "scheduler"]:
     """Default the service role from the running process.
 
     Celery worker/beat processes import the same Settings but serve no HTTP,
