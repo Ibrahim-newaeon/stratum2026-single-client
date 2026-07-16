@@ -839,6 +839,13 @@ function App() {
                           path="autopilot"
                           element={<Navigate to="/dashboard/rules" replace />}
                         />
+                        {/* Linked by OnboardingChecklist/OnboardingChat/demo
+                            banner; the live integrations surface is the
+                            Settings tab. */}
+                        <Route
+                          path="integrations"
+                          element={<Navigate to="/dashboard/settings/integrations" replace />}
+                        />
                         <Route
                           path="audiences"
                           element={<Navigate to="/dashboard/cdp/audience-sync" replace />}
