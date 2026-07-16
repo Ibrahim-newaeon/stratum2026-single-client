@@ -108,9 +108,10 @@ localStorage mark. No other checklist changes.
 
 ## Backend changes
 
-None. All endpoints exist and behave correctly; the callback's redirect
-target and response field names are consumed properly by the new frontend
-pieces.
+One line: `PlatformSelectionRequest.platforms` currently has `min_length=1`
+(`endpoints/onboarding.py:94-98`), which would 422 the soft-gate
+zero-connection Continue. Relax to allow an empty list (validator for
+platform names stays). All other endpoints are used as-is.
 
 ## Error handling
 
