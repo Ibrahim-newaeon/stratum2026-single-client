@@ -522,6 +522,10 @@ jobs:
   secrets:
     name: Secret Scanning
     runs-on: ubuntu-latest
+    # gitleaks-action crashes on Dependabot-actor PRs (read-only token breaks
+    # its PR-comment API calls). Dependency bumps can't introduce repo secrets;
+    # gitleaks still runs on pushes and human PRs.
+    if: github.actor != 'dependabot[bot]'
 
     steps:
       - name: Checkout code
@@ -559,7 +563,7 @@ jobs:
              [[ "${{ needs.backend-security.result }}" != "success" ]] || \
              [[ "${{ needs.frontend.result }}" != "success" ]] || \
              [[ "${{ needs.security.result }}" != "success" ]] || \
-             [[ "${{ needs.secrets.result }}" != "success" ]]; then
+             [[ "${{ needs.secrets.result }}" != "success" && "${{ needs.secrets.result }}" != "skipped" ]]; then
             echo "::error::One or more required jobs failed — merge blocked"
             exit 1
           fi
