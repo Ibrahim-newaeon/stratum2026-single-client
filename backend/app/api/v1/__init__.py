@@ -55,6 +55,7 @@ from app.api.v1.endpoints import (  # Previously unregistered endpoints; Gap end
     onboarding_agent,
     outbound_integrations,
     pacing,
+    platform_credentials,
     predictions,
     profit,
     programmatic,
@@ -360,6 +361,13 @@ api_router.include_router(
 api_router.include_router(
     oauth.router,
     tags=["OAuth"],
+)
+
+# Platform Credentials (Owner/admin OAuth app credential management)
+# Note: platform_credentials.router already has prefix="/platform-credentials"
+api_router.include_router(
+    platform_credentials.router,
+    tags=["Platform Credentials"],
 )
 
 # Notifications (In-app notifications)
