@@ -24,6 +24,7 @@ import { DemoBanner } from '@/components/demo/DemoBanner';
 import { NotificationCenter } from '@/components/notifications/NotificationCenter';
 import { useWhatsNew, WhatsNewModal } from '@/components/changelog/WhatsNew';
 import { KeyboardShortcutsModal } from '@/components/ui/keyboard-shortcuts';
+import { ConnectNudgeBanner } from '@/components/onboarding/ConnectNudgeBanner';
 import { OnboardingChecklist } from '@/components/onboarding/OnboardingChecklist';
 import { useAuth } from '@/contexts/AuthContext';
 import type { AppRole } from '@/components/auth/ProtectedRoute';
@@ -299,6 +300,7 @@ export default function DashboardLayout() {
             </div>
           </header>
 
+          <ConnectNudgeBanner />
           <OnboardingChecklist variant="horizontal" />
 
           <main className="flex-1 overflow-y-auto p-6 lg:p-8">
