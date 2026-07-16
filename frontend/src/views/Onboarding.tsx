@@ -45,6 +45,8 @@ import {
   useSubmitPlatformSelection,
   useSubmitTrustGateConfig,
 } from '@/api/onboarding';
+import { useConnections, startOAuthConnect } from '@/api/connections';
+import { StatusPill } from '@/components/primitives/StatusPill';
 import { useToast } from '@/components/ui/use-toast';
 
 // Step configuration
@@ -220,6 +222,37 @@ export default function Onboarding() {
   const submitTrustGateConfig = useSubmitTrustGateConfig();
   const skipOnboarding = useSkipOnboarding();
 
+  const { connections, connectedPlatforms, hasLiveConnection } = useConnections();
+  const [connectingPlatform, setConnectingPlatform] = useState<AdPlatform | null>(null);
+
+  const handleConnectPlatform = async (platform: AdPlatform) => {
+    setConnectingPlatform(platform);
+    try {
+      const url = await startOAuthConnect(platform, '/onboarding');
+      if (url) {
+        window.location.assign(url);
+        return;
+      }
+      toast({
+        title: 'Connection unavailable',
+        description: 'Could not start the connection. Try again or continue without connecting.',
+        variant: 'destructive',
+      });
+    } catch {
+      toast({
+        title: 'Connection failed',
+        description: 'Could not start the connection. Try again or continue without connecting.',
+        variant: 'destructive',
+      });
+    } finally {
+      setConnectingPlatform(null);
+    }
+  };
+
+  const effectivePlatforms = Array.from(
+    new Set<AdPlatform>([...connectedPlatforms, ...formData.platforms])
+  );
+
   // Set current step based on status
   useEffect(() => {
     if (status) {
@@ -264,16 +297,8 @@ export default function Onboarding() {
           break;
 
         case 'platform_selection':
-          if (formData.platforms.length === 0) {
-            toast({
-              title: 'Select Platforms',
-              description: 'Please select at least one ad platform.',
-              variant: 'destructive',
-            });
-            return;
-          }
           await submitPlatformSelection.mutateAsync({
-            platforms: formData.platforms,
+            platforms: effectivePlatforms,
           });
           break;
 
@@ -360,6 +385,7 @@ export default function Onboarding() {
   };
 
   const togglePlatform = (platform: AdPlatform) => {
+    if (connectedPlatforms.includes(platform)) return;
     setFormData((prev) => ({
       ...prev,
       platforms: prev.platforms.includes(platform)
@@ -585,41 +611,76 @@ export default function Onboarding() {
 
             {/* Step 2: Platform Selection */}
             {step.id === 'platform_selection' && (
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                {PLATFORMS.map((p) => (
-                  <button
-                    key={p.value}
-                    type="button"
-                    onClick={() => togglePlatform(p.value)}
-                    className={cn(
-                      'p-4 rounded-xl border-2 text-left transition-colors',
-                      formData.platforms.includes(p.value)
-                        ? 'border-primary bg-primary/5'
-                        : 'border-muted hover:border-muted-foreground/50'
-                    )}
-                  >
-                    <div className="flex items-center gap-3">
+              <>
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                  {PLATFORMS.map((p) => {
+                    const connection = connections.find((c) => c.platform === p.value);
+                    const isConnected = connectedPlatforms.includes(p.value);
+                    const isSelected = isConnected || formData.platforms.includes(p.value);
+                    const isUnhealthy =
+                      !isConnected &&
+                      (connection?.status === 'error' || connection?.status === 'expired');
+                    const chipVariant = isConnected ? 'healthy' : isUnhealthy ? 'unhealthy' : 'neutral';
+                    return (
                       <div
+                        key={p.value}
+                        role="button"
+                        tabIndex={0}
+                        onClick={() => togglePlatform(p.value)}
+                        onKeyDown={(e) => e.key === 'Enter' && togglePlatform(p.value)}
                         className={cn(
-                          'w-10 h-10 rounded-lg flex items-center justify-center text-white',
-                          p.color
+                          'p-4 rounded-xl border-2 text-left transition-colors cursor-pointer',
+                          isSelected
+                            ? 'border-primary bg-primary/5'
+                            : 'border-muted hover:border-muted-foreground/50'
                         )}
                       >
-                        {p.value[0].toUpperCase()}
+                        <div className="flex items-center gap-3">
+                          <div
+                            className={cn(
+                              'w-10 h-10 rounded-lg flex items-center justify-center text-white',
+                              p.color
+                            )}
+                          >
+                            {p.value[0].toUpperCase()}
+                          </div>
+                          <div className="min-w-0 flex-1">
+                            <p className="font-medium">{p.label}</p>
+                            <StatusPill variant={chipVariant} size="sm">
+                              {isConnected
+                                ? 'Connected'
+                                : isUnhealthy
+                                  ? 'Needs attention'
+                                  : 'Not connected'}
+                            </StatusPill>
+                          </div>
+                          {!isConnected && (
+                            <button
+                              type="button"
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                handleConnectPlatform(p.value);
+                              }}
+                              onKeyDown={(e) => e.stopPropagation()}
+                              disabled={connectingPlatform === p.value}
+                              className="ml-auto shrink-0 rounded-full px-4 py-1.5 text-sm font-medium bg-primary text-primary-foreground hover:opacity-90 disabled:opacity-50"
+                            >
+                              {connectingPlatform === p.value ? 'Opening…' : 'Connect'}
+                            </button>
+                          )}
+                          {isConnected && <Check className="w-5 h-5 text-primary ml-auto shrink-0" />}
+                        </div>
                       </div>
-                      <div>
-                        <p className="font-medium">{p.label}</p>
-                        <p className="text-sm text-muted-foreground">
-                          {formData.platforms.includes(p.value) ? 'Selected' : 'Click to select'}
-                        </p>
-                      </div>
-                      {formData.platforms.includes(p.value) && (
-                        <Check className="w-5 h-5 text-primary ml-auto" />
-                      )}
-                    </div>
-                  </button>
-                ))}
-              </div>
+                    );
+                  })}
+                </div>
+                {!hasLiveConnection && (
+                  <p className="mt-4 text-sm text-warning" role="status">
+                    No platform connected yet — your dashboard will show demo data until you
+                    connect one. You can always connect later from Settings → Integrations.
+                  </p>
+                )}
+              </>
             )}
 
             {/* Step 3: Goals Setup */}
@@ -999,7 +1060,9 @@ export default function Onboarding() {
                   </>
                 ) : (
                   <>
-                    Continue
+                    {step.id === 'platform_selection' && effectivePlatforms.length === 0
+                      ? 'Continue without connecting'
+                      : 'Continue'}
                     <ChevronRight className="w-4 h-4" />
                   </>
                 )}
