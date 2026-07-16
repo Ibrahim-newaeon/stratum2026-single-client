@@ -12,7 +12,7 @@ import os
 import secrets
 import time
 from contextlib import asynccontextmanager
-from typing import AsyncGenerator, Optional
+from typing import Any, AsyncGenerator, Optional
 
 import sentry_sdk
 import structlog
@@ -120,11 +120,13 @@ async def lifespan(app: FastAPI) -> AsyncGenerator:
         from sentry_sdk.integrations.logging import LoggingIntegration
         from sentry_sdk.integrations.redis import RedisIntegration
         from sentry_sdk.integrations.sqlalchemy import SqlalchemyIntegration
+        from sentry_sdk.types import Event, Hint
 
-        def _before_send(event: dict, hint: dict) -> dict | None:
+        def _before_send(event: Event, hint: Hint) -> Event | None:
             """Strip PII from Sentry events before transmission."""
-            if "request" in event and "data" in event["request"]:
-                data = event["request"]["data"]
+            request: Any = event.get("request")
+            if isinstance(request, dict) and "data" in request:
+                data = request["data"]
                 if isinstance(data, dict):
                     for key in list(data.keys()):
                         if any(
