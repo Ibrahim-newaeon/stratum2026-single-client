@@ -112,6 +112,9 @@ from app.models.launch_readiness import LaunchReadinessEvent, LaunchReadinessIte
 # Onboarding models
 from app.models.onboarding import OrganizationOnboarding
 
+# Platform App Credentials (OAuth)
+from app.models.platform_app_credential import PlatformAppCredential
+
 # Pacing & Forecasting models
 from app.models.pacing import (
     AlertSeverity,
@@ -181,6 +184,7 @@ from app.models import (  # noqa: F401  isort: skip
     embed_widgets,
     newsletter,
     onboarding,
+    platform_app_credential,
     settings,
 )
 
@@ -267,6 +271,7 @@ __all__ = [
     "PacingAlert",
     "PacingSummary",
     "PendingConfirmationToken",
+    "PlatformAppCredential",
     "PlatformConnection",
     "ProductCatalog",
     "ProductMargin",
