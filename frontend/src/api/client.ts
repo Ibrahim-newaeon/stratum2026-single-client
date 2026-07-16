@@ -143,6 +143,27 @@ apiClient.interceptors.response.use(
   }
 );
 
+/**
+ * Extract the human-readable message from an API error.
+ *
+ * Axios's own `error.message` is the useless "Request failed with status
+ * code N" — the backend's actual explanation lives in the response body as
+ * FastAPI's `detail` (HTTPException) or the ApiResponse wrapper's `message`.
+ */
+export function getApiErrorMessage(
+  error: unknown,
+  fallback = 'Something went wrong. Please try again.'
+): string {
+  if (axios.isAxiosError(error)) {
+    const data = error.response?.data as { detail?: unknown; message?: unknown } | undefined;
+    if (typeof data?.detail === 'string' && data.detail) return data.detail;
+    if (typeof data?.message === 'string' && data.message) return data.message;
+    return error.message || fallback;
+  }
+  if (error instanceof Error && error.message) return error.message;
+  return fallback;
+}
+
 // API Response types
 export interface ApiResponse<T> {
   success: boolean;

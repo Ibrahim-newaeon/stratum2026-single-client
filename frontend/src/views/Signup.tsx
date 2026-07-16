@@ -26,6 +26,8 @@ import {
   useSendEmailOTP,
   useVerifyEmailOTP,
 } from '@/api/auth';
+import { isAxiosError } from 'axios';
+import { getApiErrorMessage } from '@/api/client';
 import { pageSEO, SEO } from '@/components/common/SEO';
 import AuthLeftPanel from '@/components/auth/AuthLeftPanel';
 
@@ -119,8 +121,13 @@ export default function Signup() {
 
   const isLoading = signupMutation.isPending || sendWhatsAppOTP.isPending || sendEmailOTP.isPending;
   const isSuccess = signupMutation.isSuccess;
-  const apiError =
-    signupMutation.error?.message || sendWhatsAppOTP.error?.message || sendEmailOTP.error?.message;
+  const rawApiError = signupMutation.error || sendWhatsAppOTP.error || sendEmailOTP.error;
+  const apiError = rawApiError ? getApiErrorMessage(rawApiError) : undefined;
+
+  // Register is policy-gated: a 403 means ENABLE_PUBLIC_SIGNUP is off — the
+  // flow can never succeed, so replace the form instead of inviting retries.
+  const signupDisabled =
+    isAxiosError(signupMutation.error) && signupMutation.error.response?.status === 403;
 
   const {
     register,
@@ -234,7 +241,7 @@ export default function Signup() {
           completeRegistration(response.verification_token || '');
         },
         onError: (error) => {
-          setOtpError(error.message || 'Invalid OTP code');
+          setOtpError(getApiErrorMessage(error, 'Invalid OTP code'));
         },
       }
     );
@@ -253,7 +260,7 @@ export default function Signup() {
           completeRegistration(response.verification_token || '');
         },
         onError: (error) => {
-          setOtpError(error.message || 'Invalid OTP code');
+          setOtpError(getApiErrorMessage(error, 'Invalid OTP code'));
         },
       }
     );
@@ -327,7 +334,7 @@ export default function Signup() {
           {(sendEmailOTP.error || sendWhatsAppOTP.error) && (
             <div className="flex items-center gap-2 p-3 rounded-[12px] text-sm bg-red-500/10 border border-red-500/30 text-red-400 mb-6">
               <AlertCircle className="w-4 h-4 flex-shrink-0" />
-              <span>{sendEmailOTP.error?.message || sendWhatsAppOTP.error?.message}</span>
+              <span>{getApiErrorMessage(sendEmailOTP.error ?? sendWhatsAppOTP.error)}</span>
             </div>
           )}
 
@@ -533,6 +540,36 @@ export default function Signup() {
               </button>
             </div>
           </div>
+        </div>
+      </AuthLayout>
+    );
+  }
+
+  // ─── Signup Disabled (register 403) ───
+  // Checked before every other branch: this state is terminal for the flow.
+  if (signupDisabled) {
+    return (
+      <AuthLayout>
+        <div className="w-full max-w-[440px] relative z-10 text-center">
+          <div className="w-16 h-16 rounded-full bg-[rgba(255,90,31,0.08)] border border-[#FF5A1F]/30 flex items-center justify-center mx-auto mb-6">
+            <Lock className="w-8 h-8 text-[#FF5A1F]" />
+          </div>
+          <h2 className="text-[28px] leading-[1.1] tracking-tight font-medium">
+            Signup is invite-only
+          </h2>
+          <p className="text-[14.5px] text-[#9A9A9A] mt-3 mb-6">
+            {getApiErrorMessage(
+              signupMutation.error,
+              'Public signup is disabled. Ask your organization owner for an invite.'
+            )}
+          </p>
+          <Link
+            to="/login"
+            className="inline-flex items-center justify-center gap-2 w-full h-12 rounded-full bg-[#FF5A1F] text-white text-sm font-medium hover:bg-[#FF8A4A] transition-colors"
+          >
+            Log in
+            <ArrowRight className="w-4 h-4" />
+          </Link>
         </div>
       </AuthLayout>
     );
