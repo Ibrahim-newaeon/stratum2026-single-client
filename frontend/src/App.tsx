@@ -59,6 +59,7 @@ const ForgotPassword = lazyWithRetry(() => import('./views/ForgotPassword'));
 const ResetPassword = lazyWithRetry(() => import('./views/ResetPassword'));
 const VerifyEmail = lazyWithRetry(() => import('./views/VerifyEmail'));
 const Onboarding = lazyWithRetry(() => import('./views/Onboarding'));
+const OAuthConnectResult = lazyWithRetry(() => import('./views/OAuthConnectResult'));
 const Overview = lazyWithRetry(() => import('./views/dashboard/Overview'));
 const CustomDashboard = lazyWithRetry(() => import('./views/CustomDashboard'));
 const Campaigns = lazyWithRetry(() => import('./views/Campaigns'));
@@ -804,6 +805,19 @@ function App() {
                         }
                       />
 
+                      {/* OAuth callback landing route (outside OnboardingGuard —
+                          the guard could redirect before the handler runs) */}
+                      <Route
+                        path="/connect"
+                        element={
+                          <ProtectedRoute>
+                            <LazyRoute>
+                              <OAuthConnectResult />
+                            </LazyRoute>
+                          </ProtectedRoute>
+                        }
+                      />
+
                       {/* Protected dashboard routes - wrapped with onboarding guard + ErrorBoundary */}
                       <Route
                         path="/dashboard"
@@ -862,6 +876,14 @@ function App() {
                           element={
                             <LazyRoute>
                               <CampaignDetail />
+                            </LazyRoute>
+                          }
+                        />
+                        <Route
+                          path="campaigns/connect"
+                          element={
+                            <LazyRoute>
+                              <OAuthConnectResult />
                             </LazyRoute>
                           }
                         />
