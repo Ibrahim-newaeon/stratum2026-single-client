@@ -112,9 +112,6 @@ from app.models.launch_readiness import LaunchReadinessEvent, LaunchReadinessIte
 # Onboarding models
 from app.models.onboarding import OrganizationOnboarding
 
-# Platform App Credentials (OAuth)
-from app.models.platform_app_credential import PlatformAppCredential
-
 # Pacing & Forecasting models
 from app.models.pacing import (
     AlertSeverity,
@@ -128,6 +125,9 @@ from app.models.pacing import (
     TargetMetric,
     TargetPeriod,
 )
+
+# Platform App Credentials (OAuth)
+from app.models.platform_app_credential import PlatformAppCredential
 
 # Profit ROAS models
 from app.models.profit import (

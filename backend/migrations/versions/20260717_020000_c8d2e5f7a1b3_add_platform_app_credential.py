@@ -10,6 +10,7 @@ from typing import Sequence, Union
 
 import sqlalchemy as sa
 from alembic import op
+import app.db.types
 
 # revision identifiers, used by Alembic.
 revision: str = "c8d2e5f7a1b3"
@@ -24,10 +25,8 @@ def upgrade() -> None:
         sa.Column("id", sa.Integer(), primary_key=True, autoincrement=True),
         sa.Column("platform", sa.String(length=20), nullable=False),
         sa.Column("client_id", sa.String(length=255), nullable=False),
-        # EncryptedString maps to a sized String/Text at the DB layer; the
-        # encryption happens in the type decorator, so plain String here.
-        sa.Column("client_secret", sa.String(length=1024), nullable=False),
-        sa.Column("developer_token", sa.String(length=1024), nullable=True),
+        sa.Column("client_secret", app.db.types.EncryptedString(length=1024), nullable=False),
+        sa.Column("developer_token", app.db.types.EncryptedString(length=1024), nullable=True),
         sa.Column("updated_by_user_id", sa.Integer(), nullable=True),
         sa.Column(
             "created_at",
