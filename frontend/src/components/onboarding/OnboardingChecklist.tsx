@@ -26,6 +26,7 @@ import {
   Zap,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
+import { useConnections } from '@/api/connections';
 
 interface ChecklistItem {
   id: string;
@@ -117,6 +118,11 @@ export function OnboardingChecklist({
   const [isExpanded, setIsExpanded] = useState(true);
   const [showCelebration, setShowCelebration] = useState(false);
   const [isDismissed, setIsDismissed] = useState(false);
+  const { hasLiveConnection } = useConnections();
+
+  const displayChecklist = checklist.map((item) =>
+    item.id === 'connect_platform' ? { ...item, completed: hasLiveConnection } : item
+  );
 
   // Load progress from localStorage
   useEffect(() => {
@@ -153,8 +159,8 @@ export function OnboardingChecklist({
     localStorage.setItem('stratum_onboarding_progress', JSON.stringify(progress));
   };
 
-  const completedCount = checklist.filter((item) => item.completed).length;
-  const totalCount = checklist.length;
+  const completedCount = displayChecklist.filter((item) => item.completed).length;
+  const totalCount = displayChecklist.length;
   const progress = Math.round((completedCount / totalCount) * 100);
 
   const markComplete = (id: string) => {
@@ -279,7 +285,7 @@ export function OnboardingChecklist({
 
           {/* Horizontal steps */}
           <div className="flex-1 flex items-center gap-2 overflow-x-auto">
-            {checklist.slice(0, 4).map((item) => {
+            {displayChecklist.slice(0, 4).map((item) => {
               const Icon = item.icon;
               return (
                 <button
@@ -372,7 +378,7 @@ export function OnboardingChecklist({
             transition={{ duration: 0.2 }}
           >
             <div className="px-4 pb-4 space-y-2">
-              {checklist.map((item) => (
+              {displayChecklist.map((item) => (
                 <div
                   key={item.id}
                   className={cn(
