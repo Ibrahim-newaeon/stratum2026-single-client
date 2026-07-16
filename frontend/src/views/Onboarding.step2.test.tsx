@@ -103,4 +103,17 @@ describe('Onboarding step 2 (platform connections)', () => {
       expect(submitPlatformSelection).toHaveBeenCalledWith({ platforms: ['meta'] })
     );
   });
+
+  it('Enter on Connect does not toggle the card selection', async () => {
+    startOAuthConnectMock.mockResolvedValue(null);
+    renderWizard();
+    const buttons = await screen.findAllByRole('button', { name: /^connect$/i });
+    fireEvent.keyDown(buttons[0], { key: 'Enter' });
+    // keydown must not bubble into togglePlatform: submit still sends []
+    const cont = screen.getByRole('button', { name: /continue without connecting/i });
+    fireEvent.click(cont);
+    await waitFor(() =>
+      expect(submitPlatformSelection).toHaveBeenCalledWith({ platforms: [] })
+    );
+  });
 });

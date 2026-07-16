@@ -661,6 +661,7 @@ export default function Onboarding() {
                                 e.stopPropagation();
                                 handleConnectPlatform(p.value);
                               }}
+                              onKeyDown={(e) => e.stopPropagation()}
                               disabled={connectingPlatform === p.value}
                               className="ml-auto shrink-0 rounded-full px-4 py-1.5 text-sm font-medium bg-primary text-primary-foreground hover:opacity-90 disabled:opacity-50"
                             >
