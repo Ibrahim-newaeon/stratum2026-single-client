@@ -3,7 +3,7 @@ import { render, screen, fireEvent } from '@testing-library/react';
 import { MemoryRouter } from 'react-router-dom';
 
 let mockOnboarding: { data?: { required: boolean }; isLoading: boolean };
-let mockConn: { hasLiveConnection: boolean; isLoading: boolean };
+let mockConn: { hasLiveConnection: boolean; isLoading: boolean; isError: boolean };
 
 vi.mock('@/api/onboarding', () => ({
   useOnboardingCheck: () => mockOnboarding,
@@ -25,7 +25,7 @@ function renderBanner() {
 beforeEach(() => {
   sessionStorage.clear();
   mockOnboarding = { data: { required: false }, isLoading: false };
-  mockConn = { hasLiveConnection: false, isLoading: false };
+  mockConn = { hasLiveConnection: false, isLoading: false, isError: false };
 });
 
 describe('ConnectNudgeBanner', () => {
@@ -34,19 +34,24 @@ describe('ConnectNudgeBanner', () => {
     expect(screen.getByText(/demo data/i)).toBeInTheDocument();
     expect(screen.getByRole('link', { name: /connect now/i })).toHaveAttribute(
       'href',
-      '/dashboard/settings?tab=integrations'
+      '/dashboard/settings/integrations'
     );
   });
 
   it('hidden while loading, when connected, or when onboarding still required', () => {
-    mockConn = { hasLiveConnection: false, isLoading: true };
+    mockConn = { hasLiveConnection: false, isLoading: true, isError: false };
     expect(renderBanner().container).toBeEmptyDOMElement();
 
-    mockConn = { hasLiveConnection: true, isLoading: false };
+    mockConn = { hasLiveConnection: true, isLoading: false, isError: false };
     expect(renderBanner().container).toBeEmptyDOMElement();
 
-    mockConn = { hasLiveConnection: false, isLoading: false };
+    mockConn = { hasLiveConnection: false, isLoading: false, isError: false };
     mockOnboarding = { data: { required: true }, isLoading: false };
+    expect(renderBanner().container).toBeEmptyDOMElement();
+  });
+
+  it('hidden when the connections query errored (non-admin 403)', () => {
+    mockConn = { hasLiveConnection: false, isLoading: false, isError: true };
     expect(renderBanner().container).toBeEmptyDOMElement();
   });
 

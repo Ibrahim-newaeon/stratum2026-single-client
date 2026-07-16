@@ -1,10 +1,12 @@
 /**
  * OAuth callback landing route (/connect and /dashboard/campaigns/connect).
  *
- * The backend OAuth callback redirects the browser here with
- * ?platform=&status=success|error[&error=message]. This view is a router,
- * not a page: it refreshes connection/onboarding state, toasts the outcome,
- * and sends the user back to where the handshake started.
+ * The backend OAuth callback redirects the browser here with either
+ * ?platform=&status=success on success, or ?platform=&error=&message= on
+ * failure (never status=error — see backend/app/api/v1/endpoints/oauth.py).
+ * This view is a router, not a page: it refreshes connection/onboarding
+ * state, toasts the outcome, and sends the user back to where the handshake
+ * started.
  */
 
 import { useEffect, useRef } from 'react';
@@ -14,7 +16,7 @@ import { Loader2 } from 'lucide-react';
 import { useToast } from '@/components/ui/use-toast';
 import { OAUTH_RETURN_KEY } from '@/api/connections';
 
-const FALLBACK_RETURN = '/dashboard/settings?tab=integrations';
+const FALLBACK_RETURN = '/dashboard/settings/integrations';
 
 const PLATFORM_LABELS: Record<string, string> = {
   meta: 'Meta Ads',
@@ -36,6 +38,7 @@ export default function OAuthConnectResult() {
 
     const platform = params.get('platform') ?? '';
     const status = params.get('status');
+    const error = params.get('error');
     const label = PLATFORM_LABELS[platform] ?? platform;
 
     queryClient.invalidateQueries({ queryKey: ['connections'] });
@@ -46,10 +49,11 @@ export default function OAuthConnectResult() {
         title: `${label} connected`,
         description: 'Campaign data sync has started in the background.',
       });
-    } else if (status === 'error') {
+    } else if (error || status === 'error') {
       toast({
         title: `Couldn't connect ${label}`,
-        description: params.get('error') ?? 'The platform reported an error. Try again.',
+        description:
+          params.get('message') ?? error ?? 'The platform reported an error. Try again.',
         variant: 'destructive',
       });
     }

@@ -118,10 +118,10 @@ export function OnboardingChecklist({
   const [isExpanded, setIsExpanded] = useState(true);
   const [showCelebration, setShowCelebration] = useState(false);
   const [isDismissed, setIsDismissed] = useState(false);
-  const { hasLiveConnection } = useConnections();
+  const { hasLiveConnection, isError } = useConnections();
 
   const displayChecklist = checklist.map((item) =>
-    item.id === 'connect_platform' ? { ...item, completed: hasLiveConnection } : item
+    item.id === 'connect_platform' && !isError ? { ...item, completed: hasLiveConnection } : item
   );
 
   // Load progress from localStorage

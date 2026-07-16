@@ -19,7 +19,7 @@ function renderAt(url: string, qc: QueryClient) {
         <Routes>
           <Route path="/connect" element={<OAuthConnectResult />} />
           <Route path="/onboarding" element={<div>WIZARD</div>} />
-          <Route path="/dashboard/settings" element={<div>SETTINGS</div>} />
+          <Route path="/dashboard/settings/integrations" element={<div>SETTINGS</div>} />
         </Routes>
       </MemoryRouter>
     </QueryClientProvider>
@@ -47,15 +47,18 @@ describe('OAuthConnectResult', () => {
     expect(sessionStorage.getItem(OAUTH_RETURN_KEY)).toBeNull();
   });
 
-  it('on error: destructive toast, still returns', async () => {
+  it('on error: destructive toast with backend message, still returns', async () => {
     sessionStorage.setItem(OAUTH_RETURN_KEY, '/onboarding');
     const { findByText } = renderAt(
-      '/connect?platform=google&status=error&error=access_denied',
+      '/connect?platform=google&error=access_denied&message=Authorization%20denied',
       new QueryClient()
     );
     await findByText('WIZARD');
     expect(toastSpy).toHaveBeenCalledWith(
-      expect.objectContaining({ variant: 'destructive' })
+      expect.objectContaining({
+        variant: 'destructive',
+        description: 'Authorization denied',
+      })
     );
   });
 
@@ -64,5 +67,13 @@ describe('OAuthConnectResult', () => {
     await waitFor(async () => {
       await findByText('SETTINGS');
     });
+  });
+
+  it('no query params at all: no toast, silently redirects to fallback', async () => {
+    const { findByText } = renderAt('/connect', new QueryClient());
+    await waitFor(async () => {
+      await findByText('SETTINGS');
+    });
+    expect(toastSpy).not.toHaveBeenCalled();
   });
 });

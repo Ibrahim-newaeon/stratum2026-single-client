@@ -16,10 +16,10 @@ export function ConnectNudgeBanner() {
     () => sessionStorage.getItem(DISMISS_KEY) === 'true'
   );
   const onboarding = useOnboardingCheck();
-  const { hasLiveConnection, isLoading } = useConnections();
+  const { hasLiveConnection, isLoading, isError } = useConnections();
 
   const onboardingSettled = !onboarding.isLoading && onboarding.data?.required === false;
-  if (dismissed || isLoading || hasLiveConnection || !onboardingSettled) return null;
+  if (dismissed || isLoading || isError || hasLiveConnection || !onboardingSettled) return null;
 
   return (
     <div
@@ -31,7 +31,7 @@ export function ConnectNudgeBanner() {
         You&apos;re viewing demo data — connect your first ad platform to go live.
       </p>
       <Link
-        to="/dashboard/settings?tab=integrations"
+        to="/dashboard/settings/integrations"
         className="shrink-0 rounded-full px-4 py-1.5 text-sm font-medium bg-primary text-primary-foreground hover:opacity-90"
       >
         Connect now

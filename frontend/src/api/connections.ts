@@ -33,6 +33,7 @@ export function useConnections(enabled = true) {
     },
     enabled,
     staleTime: 30 * 1000,
+    retry: false,
   });
 
   const connections = query.data ?? [];
