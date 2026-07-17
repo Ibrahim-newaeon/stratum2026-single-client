@@ -9,6 +9,7 @@
 
 import { Navigate, useLocation } from 'react-router-dom';
 import { useOnboardingCheck } from '@/api/onboarding';
+import { useAuth } from '@/contexts/AuthContext';
 import LoadingSpinner from '@/components/common/LoadingSpinner';
 
 const SKIP_KEY = 'stratum_onboarding_skipped';
@@ -19,7 +20,9 @@ interface OnboardingGuardProps {
 
 export default function OnboardingGuard({ children }: OnboardingGuardProps) {
   const location = useLocation();
+  const { user } = useAuth();
   const { data, isLoading, error } = useOnboardingCheck();
+  const canRunSetup = user?.role === 'owner' || user?.role === 'admin';
 
   // Show loading while checking onboarding status
   if (isLoading) {
@@ -41,8 +44,8 @@ export default function OnboardingGuard({ children }: OnboardingGuardProps) {
     return <>{children}</>;
   }
 
-  // If onboarding is required, redirect to onboarding
-  if (data?.required) {
+  // If onboarding is required and user can run setup, redirect to onboarding
+  if (data?.required && canRunSetup) {
     // Preserve the intended destination so we can redirect after onboarding
     return <Navigate to="/onboarding" state={{ from: location }} replace />;
   }

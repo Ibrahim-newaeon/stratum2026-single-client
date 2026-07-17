@@ -10,7 +10,7 @@
  */
 
 import { useEffect, useState, useRef } from 'react';
-import { useNavigate, Link } from 'react-router-dom';
+import { useNavigate, Link, Navigate } from 'react-router-dom';
 import {
   AlertCircle,
   BarChart3,
@@ -415,6 +415,11 @@ export default function Onboarding() {
         <Loader2 className="w-8 h-8 animate-spin text-primary" />
       </div>
     );
+  }
+
+  // Non-admin users cannot access onboarding directly
+  if (user && user.role !== 'owner' && user.role !== 'admin') {
+    return <Navigate to="/dashboard/overview" replace />;
   }
 
   const step = STEPS[currentStep];
