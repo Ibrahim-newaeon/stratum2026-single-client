@@ -155,13 +155,35 @@ export function getApiErrorMessage(
   fallback = 'Something went wrong. Please try again.'
 ): string {
   if (axios.isAxiosError(error)) {
-    const data = error.response?.data as { detail?: unknown; message?: unknown } | undefined;
-    if (typeof data?.detail === 'string' && data.detail) return data.detail;
+    const data = error.response?.data as
+      | { detail?: unknown; message?: unknown }
+      | undefined;
+    const detail = data?.detail;
+    if (typeof detail === 'string' && detail) return detail;
+    if (detail && typeof detail === 'object') {
+      const msg = (detail as { message?: unknown }).message;
+      if (typeof msg === 'string' && msg) return msg;
+    }
     if (typeof data?.message === 'string' && data.message) return data.message;
     return error.message || fallback;
   }
   if (error instanceof Error && error.message) return error.message;
   return fallback;
+}
+
+/** Machine-readable error code from typed backend errors (detail.code). */
+export function getApiErrorCode(error: unknown): string | null {
+  if (!axios.isAxiosError(error)) return null;
+  const data = error.response?.data as
+    | { detail?: unknown; code?: unknown }
+    | undefined;
+  const detail = data?.detail;
+  if (detail && typeof detail === 'object') {
+    const code = (detail as { code?: unknown }).code;
+    if (typeof code === 'string') return code;
+  }
+  if (typeof data?.code === 'string') return data.code;
+  return null;
 }
 
 // API Response types

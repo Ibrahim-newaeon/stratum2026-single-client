@@ -1,6 +1,6 @@
 import { describe, it, expect } from 'vitest';
 import { AxiosError, AxiosHeaders } from 'axios';
-import { getApiErrorMessage } from './client';
+import { getApiErrorMessage, getApiErrorCode } from './client';
 
 function axiosErrorWith(data: unknown, status = 400): AxiosError {
   const config = { headers: new AxiosHeaders() };
@@ -43,5 +43,21 @@ describe('getApiErrorMessage', () => {
   it('handles plain Errors and unknowns with a fallback', () => {
     expect(getApiErrorMessage(new Error('boom'))).toBe('boom');
     expect(getApiErrorMessage(undefined, 'fallback text')).toBe('fallback text');
+  });
+});
+
+describe('object-shaped detail (typed backend errors)', () => {
+  it('reads detail.message and detail.code', () => {
+    const err = axiosErrorWith(
+      { detail: { code: 'credentials_not_configured', message: 'Meta app credentials are not configured.' } },
+      400
+    );
+    expect(getApiErrorMessage(err)).toBe('Meta app credentials are not configured.');
+    expect(getApiErrorCode(err)).toBe('credentials_not_configured');
+  });
+
+  it('getApiErrorCode returns null when absent', () => {
+    expect(getApiErrorCode(axiosErrorWith({ detail: 'plain' }))).toBeNull();
+    expect(getApiErrorCode(new Error('x'))).toBeNull();
   });
 });
