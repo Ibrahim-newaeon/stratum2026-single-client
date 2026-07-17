@@ -1,3 +1,9 @@
 # Force LF line endings for shell scripts (required for Linux containers)
 *.sh text eol=lf
 Dockerfile text eol=lf
+
+# deploy/ (client installer kit): these are consumed by bash on the client's
+# Linux server (docker compose --env-file, Caddy config parsing) — CRLF in
+# any of them corrupts values (e.g. a trailing \r on STRATUM_DOMAIN) or
+# breaks parsing outright.
+deploy/* text eol=lf

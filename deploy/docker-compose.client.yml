@@ -1,0 +1,431 @@
+# =============================================================================
+# Stratum AI - Client Installer Stack (registry pull-only)
+# -----------------------------------------------------------------------------
+# This compose file NEVER builds images. It pulls prebuilt, domain-generic
+# images from a private registry (see deploy/build-and-push.sh, run once by
+# the vendor) and wires them together behind Caddy, which terminates TLS on
+# a single client domain and path-routes to the api/frontend services.
+#
+# Mirrors backend service definitions (env, command, healthcheck, depends_on)
+# from the root docker-compose.yml so the client stack behaves identically to
+# the reference dev/deploy stack, minus dev-only bind mounts, host port
+# publishing, and the optional flower monitoring profile.
+#
+# Deliberate deviations from the root compose (all required for a
+# single-domain, APP_ENV=production deployment — see deploy/INSTALL.md):
+#   - No `build:` keys; every service pulls STRATUM_REGISTRY/*:STRATUM_VERSION.
+#   - No dev bind mounts (./backend:/app, ./frontend:/app) — code ships
+#     inside the image.
+#   - Only Caddy publishes host ports (80/443). db/redis/api/frontend are
+#     internal-network-only.
+#   - CORS_ORIGINS/FRONTEND_URL are required client-supplied values (root
+#     compose hardcodes localhost origins, which core/config.py's
+#     enforce_production_safety() rejects outright under APP_ENV=production).
+#   - APP_ENV=production means core/config.py's enforce_production_safety()
+#     validator runs for every service that imports Settings (api, worker,
+#     beat) — not just api — so SECRET_KEY/JWT_SECRET_KEY/PII_ENCRYPTION_KEY
+#     must reach worker and beat too, even though the root compose only wires
+#     them into the api service (there APP_ENV defaults to development, so
+#     the validator never fires for worker/beat locally).
+#   - USE_MOCK_AD_DATA defaults to false (the same validator hard-rejects
+#     `true` once APP_ENV=production) instead of the root compose's dev
+#     default of true.
+#   - ML_AUTO_TRAIN defaults to false: models are pre-trained into the image
+#     at build time (backend/Dockerfile); runtime auto-train is a ~9.5GB,
+#     /health-blocking dev fallback that should never fire in a client
+#     install.
+#   - The "scheduler" service is named "beat" per the installer-kit spec.
+#   - A named volume backs asset uploads (config.py: asset_upload_dir is
+#     "only durable if that path is a mounted volume" — the root compose
+#     gets this for free via its ./backend:/app dev bind mount, which the
+#     client stack intentionally does not have).
+#   - Frontend healthcheck targets port 80 (nginx, the Dockerfile's
+#     production stage) instead of the root compose's port 5173 (Vite dev
+#     server, the "development" build target) — build-and-push.sh builds the
+#     default (production/nginx) stage.
+# =============================================================================
+
+services:
+  # ===========================================================================
+  # PostgreSQL 16 + pgvector (same image as root compose)
+  # ===========================================================================
+  db:
+    image: pgvector/pgvector:pg16
+    container_name: stratum_db
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER:?POSTGRES_USER must be set}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?POSTGRES_PASSWORD must be set}
+      POSTGRES_DB: ${POSTGRES_DB:-stratum_ai}
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+      - ./init-db.sql:/docker-entrypoint-initdb.d/init.sql:ro
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-stratum} -d ${POSTGRES_DB:-stratum_ai}"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    deploy:
+      resources:
+        limits:
+          cpus: '1.0'
+          memory: 1G
+    logging:
+      driver: json-file
+      options:
+        max-size: "10m"
+        max-file: "3"
+    networks:
+      - stratum_network
+
+  # ===========================================================================
+  # Redis (Caching & Celery Broker)
+  # ===========================================================================
+  redis:
+    image: redis:7-alpine
+    container_name: stratum_redis
+    restart: unless-stopped
+    command: redis-server --appendonly yes --maxmemory 256mb --maxmemory-policy allkeys-lru --requirepass ${REDIS_PASSWORD:?REDIS_PASSWORD must be set}
+    volumes:
+      - redis_data:/data
+    healthcheck:
+      test: ["CMD", "redis-cli", "-a", "${REDIS_PASSWORD:?}", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    deploy:
+      resources:
+        limits:
+          cpus: '0.5'
+          memory: 512M
+    logging:
+      driver: json-file
+      options:
+        max-size: "10m"
+        max-file: "3"
+    networks:
+      - stratum_network
+
+  # ===========================================================================
+  # FastAPI Backend (image built + pushed by deploy/build-and-push.sh)
+  # ===========================================================================
+  api:
+    image: ${STRATUM_REGISTRY}/stratum-backend:${STRATUM_VERSION:-latest}
+    container_name: stratum_api
+    restart: unless-stopped
+    user: "1000:1000"
+    security_opt:
+      - no-new-privileges:true
+    environment:
+      - APP_ENV=${APP_ENV:-production}
+      - DEBUG=${DEBUG:-false}
+      - SECRET_KEY=${SECRET_KEY:?SECRET_KEY must be set}
+      - JWT_SECRET_KEY=${JWT_SECRET_KEY:?JWT_SECRET_KEY must be set}
+      - PII_ENCRYPTION_KEY=${PII_ENCRYPTION_KEY:?PII_ENCRYPTION_KEY must be set}
+      - DATABASE_URL=postgresql+asyncpg://${POSTGRES_USER:?}:${POSTGRES_PASSWORD:?}@db:5432/${POSTGRES_DB:-stratum_ai}
+      - DATABASE_URL_SYNC=postgresql://${POSTGRES_USER:?}:${POSTGRES_PASSWORD:?}@db:5432/${POSTGRES_DB:-stratum_ai}
+      - REDIS_URL=redis://:${REDIS_PASSWORD:?REDIS_PASSWORD must be set}@redis:6379/0
+      - CELERY_BROKER_URL=redis://:${REDIS_PASSWORD:?REDIS_PASSWORD must be set}@redis:6379/1
+      # Without this the API-side Celery producer falls back to the
+      # localhost default for the result backend, exhausts its reconnect
+      # budget, and permanently fails every subsequent task dispatch.
+      - CELERY_RESULT_BACKEND=redis://:${REDIS_PASSWORD:?REDIS_PASSWORD must be set}@redis:6379/2
+      # Attach HTTP latency/size/per-tenant collectors to /metrics (#508)
+      - ENABLE_METRICS=${ENABLE_METRICS:-true}
+      # Bearer key gating /metrics (route/status-labeled series). Empty = open;
+      # set it if you intend to scrape /metrics from outside the stack.
+      - METRICS_API_KEY=${METRICS_API_KEY:-}
+      - ML_PROVIDER=${ML_PROVIDER:-local}
+      - ML_MODELS_PATH=/app/ml_service/models
+      - ML_AUTO_TRAIN=${ML_AUTO_TRAIN:-false}
+      - USE_MOCK_AD_DATA=${USE_MOCK_AD_DATA:-false}
+      - MARKET_INTEL_PROVIDER=${MARKET_INTEL_PROVIDER:-mock}
+      # Seeds/updates the single Organization + owner user on every boot
+      # (idempotent — see backend/scripts/seed_owner.py). Always on for the
+      # client installer: without it there is no way to log in after a
+      # fresh install.
+      - SEED_SUPERADMIN=true
+      - SUPERADMIN_EMAIL=${SUPERADMIN_EMAIL:?SUPERADMIN_EMAIL must be set}
+      - SUPERADMIN_PASSWORD=${SUPERADMIN_PASSWORD:?SUPERADMIN_PASSWORD must be set}
+      - SUPERADMIN_NAME=${SUPERADMIN_NAME:-Platform Owner}
+      - CORS_ORIGINS=${CORS_ORIGINS:?CORS_ORIGINS must be set}
+      - FRONTEND_URL=${FRONTEND_URL:?FRONTEND_URL must be set}
+      - OAUTH_REDIRECT_BASE_URL=${OAUTH_REDIRECT_BASE_URL:?OAUTH_REDIRECT_BASE_URL must be set}
+      - LOG_LEVEL=${LOG_LEVEL:-INFO}
+      - LOG_FORMAT=${LOG_FORMAT:-json}
+      - SENTRY_DSN=${SENTRY_DSN:-}
+      # Asset uploads: local backend, backed by the asset_uploads volume
+      # below (mounted at /app/uploads, the image's default writable dir).
+      - ASSET_UPLOAD_DIR=${ASSET_UPLOAD_DIR:-uploads/assets}
+      # Ad Platform Credentials — left empty here; the client configures
+      # these post-install via Settings -> Integrations in the app itself.
+      - META_APP_ID=${META_APP_ID:-}
+      - META_APP_SECRET=${META_APP_SECRET:-}
+      - META_ACCESS_TOKEN=${META_ACCESS_TOKEN:-}
+      - META_AD_ACCOUNT_IDS=${META_AD_ACCOUNT_IDS:-}
+      - GOOGLE_ADS_DEVELOPER_TOKEN=${GOOGLE_ADS_DEVELOPER_TOKEN:-}
+      - GOOGLE_ADS_CLIENT_ID=${GOOGLE_ADS_CLIENT_ID:-}
+      - GOOGLE_ADS_CLIENT_SECRET=${GOOGLE_ADS_CLIENT_SECRET:-}
+      - GOOGLE_ADS_REFRESH_TOKEN=${GOOGLE_ADS_REFRESH_TOKEN:-}
+      - GOOGLE_ADS_CUSTOMER_ID=${GOOGLE_ADS_CUSTOMER_ID:-}
+      - TIKTOK_APP_ID=${TIKTOK_APP_ID:-}
+      - TIKTOK_SECRET=${TIKTOK_SECRET:-}
+      - TIKTOK_ACCESS_TOKEN=${TIKTOK_ACCESS_TOKEN:-}
+      - TIKTOK_ADVERTISER_ID=${TIKTOK_ADVERTISER_ID:-}
+      - SNAPCHAT_CLIENT_ID=${SNAPCHAT_CLIENT_ID:-}
+      - SNAPCHAT_CLIENT_SECRET=${SNAPCHAT_CLIENT_SECRET:-}
+      - SNAPCHAT_ACCESS_TOKEN=${SNAPCHAT_ACCESS_TOKEN:-}
+      - SNAPCHAT_AD_ACCOUNT_ID=${SNAPCHAT_AD_ACCOUNT_ID:-}
+      # Market Intelligence
+      - SERPAPI_KEY=${SERPAPI_KEY:-}
+      # WhatsApp
+      - WHATSAPP_PHONE_NUMBER_ID=${WHATSAPP_PHONE_NUMBER_ID:-}
+      - WHATSAPP_ACCESS_TOKEN=${WHATSAPP_ACCESS_TOKEN:-}
+      - WHATSAPP_BUSINESS_ACCOUNT_ID=${WHATSAPP_BUSINESS_ACCOUNT_ID:-}
+      - WHATSAPP_VERIFY_TOKEN=${WHATSAPP_VERIFY_TOKEN:?WHATSAPP_VERIFY_TOKEN must be set}
+      - WHATSAPP_APP_SECRET=${WHATSAPP_APP_SECRET:-}
+      - WHATSAPP_API_VERSION=${WHATSAPP_API_VERSION:-v24.0}
+      # SMTP / Email
+      - SMTP_HOST=${SMTP_HOST:-}
+      - SMTP_PORT=${SMTP_PORT:-587}
+      - SMTP_USER=${SMTP_USER:-}
+      - SMTP_PASSWORD=${SMTP_PASSWORD:-}
+      - SMTP_TLS=${SMTP_TLS:-true}
+      - SMTP_SSL=${SMTP_SSL:-false}
+      - EMAIL_FROM_NAME=${EMAIL_FROM_NAME:-Stratum AI}
+      - EMAIL_FROM_ADDRESS=${EMAIL_FROM_ADDRESS:-noreply@stratumhq.com}
+    volumes:
+      - asset_uploads:/app/uploads
+    depends_on:
+      db:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8000/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+    deploy:
+      resources:
+        limits:
+          cpus: '1.0'
+          memory: 1G
+    logging:
+      driver: json-file
+      options:
+        max-size: "10m"
+        max-file: "3"
+    networks:
+      - stratum_network
+    # No command override: the image entrypoint (start.sh) owns the API boot
+    # path — DB wait, alembic_version column widening, migrations, seeds,
+    # uvicorn.
+
+  # ===========================================================================
+  # Celery Worker (Background Tasks)
+  # ===========================================================================
+  worker:
+    image: ${STRATUM_REGISTRY}/stratum-backend:${STRATUM_VERSION:-latest}
+    container_name: stratum_worker
+    restart: unless-stopped
+    user: "1000:1000"
+    security_opt:
+      - no-new-privileges:true
+    environment:
+      - APP_ENV=${APP_ENV:-production}
+      # Required so Settings' enforce_production_safety() validator (which
+      # runs for every service under APP_ENV=production, not just api)
+      # doesn't reject an auto-generated dev key.
+      - SECRET_KEY=${SECRET_KEY:?SECRET_KEY must be set}
+      - JWT_SECRET_KEY=${JWT_SECRET_KEY:?JWT_SECRET_KEY must be set}
+      - PII_ENCRYPTION_KEY=${PII_ENCRYPTION_KEY:?PII_ENCRYPTION_KEY must be set}
+      - DATABASE_URL=postgresql+asyncpg://${POSTGRES_USER:?}:${POSTGRES_PASSWORD:?}@db:5432/${POSTGRES_DB:-stratum_ai}
+      - DATABASE_URL_SYNC=postgresql://${POSTGRES_USER:?}:${POSTGRES_PASSWORD:?}@db:5432/${POSTGRES_DB:-stratum_ai}
+      - REDIS_URL=redis://:${REDIS_PASSWORD:?}@redis:6379/0
+      - CELERY_BROKER_URL=redis://:${REDIS_PASSWORD:?}@redis:6379/1
+      - CELERY_RESULT_BACKEND=redis://:${REDIS_PASSWORD:?}@redis:6379/2
+      - ML_PROVIDER=${ML_PROVIDER:-local}
+      - ML_MODELS_PATH=/app/ml_service/models
+      - ML_AUTO_TRAIN=${ML_AUTO_TRAIN:-false}
+      - USE_MOCK_AD_DATA=${USE_MOCK_AD_DATA:-false}
+      - LOG_LEVEL=${LOG_LEVEL:-INFO}
+      - ASSET_UPLOAD_DIR=${ASSET_UPLOAD_DIR:-uploads/assets}
+      # Ad Platform Credentials (needed for sync tasks)
+      - META_APP_ID=${META_APP_ID:-}
+      - META_APP_SECRET=${META_APP_SECRET:-}
+      - META_ACCESS_TOKEN=${META_ACCESS_TOKEN:-}
+      - META_AD_ACCOUNT_IDS=${META_AD_ACCOUNT_IDS:-}
+      - GOOGLE_ADS_DEVELOPER_TOKEN=${GOOGLE_ADS_DEVELOPER_TOKEN:-}
+      - GOOGLE_ADS_CLIENT_ID=${GOOGLE_ADS_CLIENT_ID:-}
+      - GOOGLE_ADS_CLIENT_SECRET=${GOOGLE_ADS_CLIENT_SECRET:-}
+      - GOOGLE_ADS_REFRESH_TOKEN=${GOOGLE_ADS_REFRESH_TOKEN:-}
+      - GOOGLE_ADS_CUSTOMER_ID=${GOOGLE_ADS_CUSTOMER_ID:-}
+      - TIKTOK_APP_ID=${TIKTOK_APP_ID:-}
+      - TIKTOK_SECRET=${TIKTOK_SECRET:-}
+      - TIKTOK_ACCESS_TOKEN=${TIKTOK_ACCESS_TOKEN:-}
+      - TIKTOK_ADVERTISER_ID=${TIKTOK_ADVERTISER_ID:-}
+      - SNAPCHAT_CLIENT_ID=${SNAPCHAT_CLIENT_ID:-}
+      - SNAPCHAT_CLIENT_SECRET=${SNAPCHAT_CLIENT_SECRET:-}
+      - SNAPCHAT_ACCESS_TOKEN=${SNAPCHAT_ACCESS_TOKEN:-}
+      - SNAPCHAT_AD_ACCOUNT_ID=${SNAPCHAT_AD_ACCOUNT_ID:-}
+      - SERPAPI_KEY=${SERPAPI_KEY:-}
+      - WHATSAPP_PHONE_NUMBER_ID=${WHATSAPP_PHONE_NUMBER_ID:-}
+      - WHATSAPP_ACCESS_TOKEN=${WHATSAPP_ACCESS_TOKEN:-}
+      - WHATSAPP_BUSINESS_ACCOUNT_ID=${WHATSAPP_BUSINESS_ACCOUNT_ID:-}
+      - WHATSAPP_APP_SECRET=${WHATSAPP_APP_SECRET:-}
+      - WHATSAPP_API_VERSION=${WHATSAPP_API_VERSION:-v24.0}
+    volumes:
+      - asset_uploads:/app/uploads
+    depends_on:
+      db:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+      api:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD-SHELL", "celery -A app.workers.celery_app inspect ping --timeout 10"]
+      interval: 30s
+      timeout: 15s
+      retries: 3
+      start_period: 30s
+    deploy:
+      resources:
+        limits:
+          cpus: '2.0'
+          memory: 2G
+    logging:
+      driver: json-file
+      options:
+        max-size: "10m"
+        max-file: "3"
+    networks:
+      - stratum_network
+    command: celery -A app.workers.celery_app worker --loglevel=info --concurrency=4
+
+  # ===========================================================================
+  # Celery Beat (Scheduler)
+  # ===========================================================================
+  beat:
+    image: ${STRATUM_REGISTRY}/stratum-backend:${STRATUM_VERSION:-latest}
+    container_name: stratum_beat
+    restart: unless-stopped
+    user: "1000:1000"
+    security_opt:
+      - no-new-privileges:true
+    environment:
+      - APP_ENV=${APP_ENV:-production}
+      # See worker: required by enforce_production_safety() under
+      # APP_ENV=production, even though beat doesn't serve HTTP or touch PII.
+      - SECRET_KEY=${SECRET_KEY:?SECRET_KEY must be set}
+      - JWT_SECRET_KEY=${JWT_SECRET_KEY:?JWT_SECRET_KEY must be set}
+      - PII_ENCRYPTION_KEY=${PII_ENCRYPTION_KEY:?PII_ENCRYPTION_KEY must be set}
+      - DATABASE_URL_SYNC=postgresql://${POSTGRES_USER:?}:${POSTGRES_PASSWORD:?}@db:5432/${POSTGRES_DB:-stratum_ai}
+      - REDIS_URL=redis://:${REDIS_PASSWORD:?}@redis:6379/0
+      - CELERY_BROKER_URL=redis://:${REDIS_PASSWORD:?}@redis:6379/1
+      - CELERY_RESULT_BACKEND=redis://:${REDIS_PASSWORD:?}@redis:6379/2
+    depends_on:
+      worker:
+        condition: service_started
+      api:
+        condition: service_healthy
+    healthcheck:
+      # `inspect ping` queries WORKERS over the broker — a beat-only container
+      # can never answer it, so probe the beat process itself via its pidfile.
+      test: ["CMD-SHELL", "test -f /tmp/celerybeat.pid && kill -0 $(cat /tmp/celerybeat.pid)"]
+      interval: 60s
+      timeout: 15s
+      retries: 3
+      start_period: 30s
+    deploy:
+      resources:
+        limits:
+          cpus: '0.25'
+          memory: 256M
+    logging:
+      driver: json-file
+      options:
+        max-size: "10m"
+        max-file: "3"
+    networks:
+      - stratum_network
+    command: celery -A app.workers.celery_app beat --loglevel=info --pidfile=/tmp/celerybeat.pid
+
+  # ===========================================================================
+  # React Frontend (static build served by nginx; image built + pushed by
+  # deploy/build-and-push.sh with VITE_API_URL=/api/v1 and VITE_WS_URL=empty
+  # baked in at build time — Vite env vars cannot be changed at container
+  # runtime, so none are set here)
+  # ===========================================================================
+  frontend:
+    image: ${STRATUM_REGISTRY}/stratum-frontend:${STRATUM_VERSION:-latest}
+    container_name: stratum_frontend
+    restart: unless-stopped
+    depends_on:
+      - api
+    healthcheck:
+      test: ["CMD-SHELL", "wget -q --spider http://127.0.0.1:80/health || exit 1"]
+      interval: 15s
+      timeout: 5s
+      retries: 3
+      start_period: 20s
+    deploy:
+      resources:
+        limits:
+          cpus: '0.5'
+          memory: 512M
+    logging:
+      driver: json-file
+      options:
+        max-size: "10m"
+        max-file: "3"
+    networks:
+      - stratum_network
+
+  # ===========================================================================
+  # Caddy (TLS termination + path routing on the single client domain)
+  # ===========================================================================
+  caddy:
+    image: caddy:2
+    container_name: stratum_caddy
+    restart: unless-stopped
+    environment:
+      - STRATUM_DOMAIN=${STRATUM_DOMAIN:?STRATUM_DOMAIN must be set}
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      - ./Caddyfile:/etc/caddy/Caddyfile:ro
+      - caddy_data:/data
+      - caddy_config:/config
+    depends_on:
+      api:
+        condition: service_healthy
+      frontend:
+        condition: service_healthy
+    logging:
+      driver: json-file
+      options:
+        max-size: "10m"
+        max-file: "3"
+    networks:
+      - stratum_network
+
+# =============================================================================
+# Networks
+# =============================================================================
+networks:
+  stratum_network:
+    driver: bridge
+
+# =============================================================================
+# Volumes
+# =============================================================================
+volumes:
+  postgres_data:
+  redis_data:
+  asset_uploads:
+  caddy_data:
+  caddy_config:

@@ -1,0 +1,58 @@
+# =============================================================================
+# Stratum AI - Client Caddyfile
+# -----------------------------------------------------------------------------
+# One domain per client. Caddy automatically obtains and renews a Let's
+# Encrypt certificate for {$STRATUM_DOMAIN} (set STRATUM_DOMAIN in .env) and
+# path-routes on that single domain:
+#   /api/*, /ws*, /health  -> api:8000   (FastAPI, same-origin, no CORS hop)
+#   everything else        -> frontend:80 (the React SPA)
+#
+# This is what makes the frontend's default relative API base (/api/v1) and
+# same-origin WebSocket fallback (wss://<host>/ws) work with zero per-client
+# rebuild — see frontend/src/api/client.ts and
+# frontend/src/hooks/useWebSocket.ts:32-33.
+# =============================================================================
+
+{$STRATUM_DOMAIN} {
+	encode zstd gzip
+
+	# Security headers applied to every response on this site.
+	header {
+		Strict-Transport-Security "max-age=31536000; includeSubDomains; preload"
+		X-Content-Type-Options "nosniff"
+		X-Frame-Options "SAMEORIGIN"
+		Referrer-Policy "strict-origin-when-cross-origin"
+		# Caddy sets Server itself; explicitly drop the header some CDNs use
+		# for fingerprinting.
+		-Server
+	}
+
+	# --- Backend: REST API -----------------------------------------------
+	handle /api/* {
+		reverse_proxy api:8000
+	}
+
+	# --- Backend: WebSocket ------------------------------------------------
+	# reverse_proxy detects the Connection: Upgrade / Upgrade: websocket
+	# headers automatically and proxies the upgrade — no extra directives
+	# needed for WS support.
+	handle /ws* {
+		reverse_proxy api:8000
+	}
+
+	# --- Backend: health check ----------------------------------------------
+	handle /health {
+		reverse_proxy api:8000
+	}
+
+	# --- Everything else: the frontend SPA --------------------------------
+	handle {
+		reverse_proxy frontend:80
+	}
+
+	# Structured access logs to stdout (captured by `docker compose logs`).
+	log {
+		output stdout
+		format json
+	}
+}
