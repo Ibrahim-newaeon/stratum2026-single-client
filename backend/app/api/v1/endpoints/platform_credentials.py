@@ -13,6 +13,7 @@ from typing import Optional
 from fastapi import APIRouter, Depends, HTTPException, Request, status
 from pydantic import BaseModel, Field, field_validator
 from sqlalchemy import select
+from sqlalchemy.exc import IntegrityError
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.auth.deps import VerifiedUserDep, require_admin
@@ -137,6 +138,7 @@ async def upsert_credentials(
             detail="client_secret is required when adding credentials",
         )
 
+    created = row is None
     if row is None:
         row = PlatformAppCredential(
             platform=platform,
@@ -166,13 +168,62 @@ async def upsert_credentials(
             user_agent=request.headers.get("User-Agent", "")[:500],
         )
     )
-    await db.commit()
+
+    if created:
+        try:
+            await db.commit()
+        except IntegrityError:
+            # Another concurrent request won the race on the unique
+            # `platform` constraint between our SELECT and our INSERT.
+            # Roll back, re-select the row that now exists, and apply the
+            # same field updates as the update branch instead of a 500.
+            await db.rollback()
+            result = await db.execute(
+                select(PlatformAppCredential).where(
+                    PlatformAppCredential.platform == platform
+                )
+            )
+            row = result.scalar_one_or_none()
+            if row is None:
+                raise
+            row.client_id = data.client_id
+            if secret:
+                row.client_secret = secret
+            if data.developer_token is not None:
+                row.developer_token = data.developer_token.strip() or None
+            row.updated_by_user_id = current_user.user.id
+            db.add(
+                AuditLog(
+                    user_id=current_user.user.id,
+                    action=AuditAction.UPDATE,
+                    resource_type="platform_app_credential",
+                    resource_id=platform,
+                    ip_address=request.client.host if request.client else None,
+                    user_agent=request.headers.get("User-Agent", "")[:500],
+                )
+            )
+            await db.commit()
+    else:
+        await db.commit()
+
     logger.info(
         "platform_app_credentials_saved",
         platform=platform,
         source="database",
         user_id=current_user.user.id,
     )
+
+    has_developer_token = bool(
+        (data.developer_token or "").strip()
+        or (row.developer_token if row else None)
+    )
+    message = f"{PLATFORM_LABELS[platform]} credentials saved"
+    if platform == "google" and not has_developer_token:
+        message = (
+            "Google Ads credentials saved. Warning: no developer token set — "
+            "Google Ads API calls will fail until one is added."
+        )
+
     return APIResponse(
         success=True,
         data=CredentialStatus(
@@ -180,13 +231,10 @@ async def upsert_credentials(
             configured=True,
             source="database",
             client_id=data.client_id,
-            has_developer_token=bool(
-                (data.developer_token or "").strip()
-                or (row.developer_token if row else None)
-            ),
+            has_developer_token=has_developer_token,
             callback_url=_callback_url(platform),
         ),
-        message=f"{PLATFORM_LABELS[platform]} credentials saved",
+        message=message,
     )
 
 

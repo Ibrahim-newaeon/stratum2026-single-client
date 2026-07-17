@@ -8,7 +8,7 @@
  */
 
 import { useState } from 'react';
-import { Copy, KeyRound, Trash2 } from 'lucide-react';
+import { AlertTriangle, Copy, KeyRound, Trash2 } from 'lucide-react';
 import { useAuth } from '@/contexts/AuthContext';
 import {
   AppCredentialStatus,
@@ -142,6 +142,13 @@ function CredentialCard({ status }: { status: AppCredentialStatus }) {
               autoComplete="new-password"
             />
           </div>
+        )}
+        {meta.hasDevToken && status.configured && !status.has_developer_token && (
+          <p className="flex items-center gap-1.5 text-xs text-warning">
+            <AlertTriangle className="w-3.5 h-3.5 shrink-0" />
+            No developer token — Google Ads API calls will fail until one is
+            added.
+          </p>
         )}
       </div>
 

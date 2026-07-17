@@ -67,9 +67,14 @@ from app.models.campaign_builder import (
     ConnectionStatus,
     PlatformConnection,
 )
+from app.models.platform_app_credential import PlatformAppCredential
 from app.services.oauth import get_oauth_service
 from app.services.oauth.base import AdAccountInfo, OAuthTokens
-from app.services.oauth.credentials import AppCredentials, CredentialsNotConfigured
+from app.services.oauth.credentials import (
+    AppCredentials,
+    CredentialsNotConfigured,
+    resolve_app_credentials,
+)
 from app.services.oauth.meta import MetaOAuthService
 
 pytestmark = [pytest.mark.integration, pytest.mark.asyncio]
@@ -339,6 +344,36 @@ class TestAuthorize:
         detail = resp.json()["detail"]
         assert detail["code"] == "credentials_not_configured"
         assert "not configured" in detail["message"]
+
+    async def test_authorize_uses_real_db_stored_credentials(
+        self, authenticated_client: AsyncClient, db_session, monkeypatch
+    ):
+        """DB→authorize wiring, exercised end-to-end without patching the
+        resolver (STRAT-PC-001 finding 5): a real ``PlatformAppCredential``
+        row should be picked up by the real ``resolve_app_credentials`` and
+        flow through to the generated authorization URL.
+
+        Bypasses the autouse ``oauth_creds`` fixture by re-patching
+        ``resolve_app_credentials`` back to the real implementation for this
+        test only (same override pattern as
+        ``test_authorize_unconfigured_platform_400``).
+        """
+        monkeypatch.setattr(oauth_ep, "resolve_app_credentials", resolve_app_credentials)
+
+        db_session.add(
+            PlatformAppCredential(
+                platform="meta",
+                client_id="dbcid-e2e",
+                client_secret="db-secret-e2e",
+            )
+        )
+        await db_session.flush()
+
+        resp = await authenticated_client.post(f"{_BASE}/meta/authorize", json={})
+        assert resp.status_code == 200, resp.text
+        body = resp.json()
+        assert body["success"] is True
+        assert "dbcid-e2e" in body["data"]["authorization_url"]
 
     async def test_authorize_state_storage_failure_500(
         self, authenticated_client: AsyncClient, oauth_creds, monkeypatch

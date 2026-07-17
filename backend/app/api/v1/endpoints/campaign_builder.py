@@ -283,9 +283,23 @@ async def refresh_platform_token(
 
     # Attempt token refresh via platform OAuth
     try:
+        from app.services.oauth.credentials import (
+            CredentialsNotConfigured,
+            resolve_app_credentials,
+        )
         from app.services.oauth.factory import get_oauth_service
 
-        oauth_service = get_oauth_service(platform)
+        try:
+            credentials = await resolve_app_credentials(platform.value, db)
+        except CredentialsNotConfigured:
+            logger.warning(
+                "app_credentials_not_configured",
+                platform=platform.value,
+                context="campaign_builder_refresh",
+            )
+            credentials = None
+
+        oauth_service = get_oauth_service(platform.value, credentials=credentials)
         refresh_token = connection.refresh_token_encrypted
 
         if not refresh_token:

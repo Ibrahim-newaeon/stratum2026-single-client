@@ -13,13 +13,14 @@ Background tasks for the Campaign Builder feature:
 import asyncio
 import logging
 from datetime import datetime, timedelta, timezone
+from typing import Optional
 from uuid import UUID
 
 from celery import shared_task
 from sqlalchemy import and_, select
 from sqlalchemy.orm import Session
 
-from app.db.session import SessionLocal
+from app.db.session import SessionLocal, async_session_context
 from app.models.campaign_builder import (
     AdAccount,
     AdPlatform,
@@ -30,9 +31,37 @@ from app.models.campaign_builder import (
     PlatformConnection,
     PublishResult,
 )
+from app.services.oauth.credentials import (
+    AppCredentials,
+    CredentialsNotConfigured,
+    resolve_app_credentials,
+)
 from app.services.oauth.factory import get_oauth_service
 
 logger = logging.getLogger(__name__)
+
+
+async def _resolve_platform_credentials(platform: str) -> Optional[AppCredentials]:
+    """Resolve DB-first, env-fallback app credentials for a platform.
+
+    Opens its own async session (this module's tasks otherwise use the
+    sync engine via SessionLocal). Returns None — instead of raising — both
+    when nothing is configured and when resolution itself fails (e.g. the
+    async engine can't reach the DB), so callers always fall back to the
+    oauth service's own env-based init. That preserves this task's
+    pre-existing behavior for unconfigured/DB-unavailable deployments: a
+    resolution failure here must not crash a token refresh any harder than
+    it did before this DB-credentials lookup existed.
+    """
+    try:
+        async with async_session_context() as db:
+            return await resolve_app_credentials(platform, db)
+    except CredentialsNotConfigured:
+        logger.warning(f"App credentials not configured for platform {platform}")
+        return None
+    except Exception as e:  # noqa: BLE001 - degrade gracefully, don't crash refresh
+        logger.warning(f"Failed to resolve DB app credentials for {platform}: {e}")
+        return None
 
 
 # =============================================================================
@@ -195,7 +224,8 @@ def refresh_tokens(self, platform: str):
             # the returned tokens + real expiry. refresh_access_token uses its
             # own aiohttp session (no app DB engine), so asyncio.run here carries
             # no event-loop-pool hazard.
-            service = get_oauth_service(platform)
+            credentials = asyncio.run(_resolve_platform_credentials(platform))
+            service = get_oauth_service(platform, credentials=credentials)
             refresh_token = service.decrypt_token(connection.refresh_token_encrypted)
             new_tokens = asyncio.run(service.refresh_access_token(refresh_token))
 

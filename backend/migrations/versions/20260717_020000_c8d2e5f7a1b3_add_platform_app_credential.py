@@ -39,11 +39,6 @@ def upgrade() -> None:
             nullable=False,
         ),
     )
-    op.create_index(
-        "ix_platform_app_credential_platform",
-        "platform_app_credential",
-        ["platform"],
-    )
     op.create_unique_constraint(
         "uq_platform_app_credential_platform",
         "platform_app_credential",

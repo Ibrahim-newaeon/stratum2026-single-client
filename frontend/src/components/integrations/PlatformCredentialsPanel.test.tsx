@@ -41,6 +41,15 @@ const metaStatus = {
   callback_url: 'https://api.example/api/v1/oauth/meta/callback',
 };
 
+const googleStatusNoDevToken = {
+  platform: 'google',
+  configured: true,
+  source: 'database',
+  client_id: 'gcid-1',
+  has_developer_token: false,
+  callback_url: 'https://api.example/api/v1/oauth/google/callback',
+};
+
 beforeEach(() => {
   vi.clearAllMocks();
   mockState.role = 'owner';
@@ -78,5 +87,23 @@ describe('PlatformCredentialsPanel', () => {
         developer_token: undefined,
       })
     );
+  });
+
+  it('shows a caution line when Google is configured without a developer token', () => {
+    mockState.credentials = [googleStatusNoDevToken];
+    render(<PlatformCredentialsPanel />);
+    expect(
+      screen.getByText(/no developer token.*google ads api calls will fail/i)
+    ).toBeInTheDocument();
+  });
+
+  it('does not show the caution line when Google has a developer token', () => {
+    mockState.credentials = [
+      { ...googleStatusNoDevToken, has_developer_token: true },
+    ];
+    render(<PlatformCredentialsPanel />);
+    expect(
+      screen.queryByText(/no developer token.*google ads api calls will fail/i)
+    ).not.toBeInTheDocument();
   });
 });

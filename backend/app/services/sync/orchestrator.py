@@ -35,6 +35,11 @@ from app.models.campaign_builder import (
     PlatformConnection,
 )
 from app.services.oauth import get_oauth_service
+from app.services.oauth.credentials import (
+    AppCredentials,
+    CredentialsNotConfigured,
+    resolve_app_credentials,
+)
 from app.services.sync.meta_sync import MetaCampaignSyncService, TokenExpiredError
 from app.services.sync.snapchat_sync import SnapchatCampaignSyncService
 from app.services.sync.tiktok_sync import TikTokCampaignSyncService
@@ -643,7 +648,16 @@ class PlatformSyncOrchestrator:
             return None
 
         try:
-            oauth = get_oauth_service(platform.value)
+            credentials: Optional[AppCredentials] = None
+            try:
+                credentials = await resolve_app_credentials(platform.value, self.db)
+            except CredentialsNotConfigured:
+                logger.warning(
+                    "app_credentials_not_configured",
+                    platform=platform.value,
+                    context="token_refresh",
+                )
+            oauth = get_oauth_service(platform.value, credentials=credentials)
             refresh_token = oauth.decrypt_token(conn.refresh_token_encrypted)
             new_tokens = await oauth.refresh_access_token(refresh_token)
 

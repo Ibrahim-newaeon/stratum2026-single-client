@@ -26,7 +26,7 @@ class PlatformAppCredential(Base, TimestampMixin):
     )
 
     id: Mapped[int] = mapped_column(Integer, primary_key=True, autoincrement=True)
-    platform: Mapped[str] = mapped_column(String(20), nullable=False, index=True)
+    platform: Mapped[str] = mapped_column(String(20), nullable=False)
     client_id: Mapped[str] = mapped_column(String(255), nullable=False)
     client_secret: Mapped[str] = mapped_column(EncryptedString(1024), nullable=False)
     developer_token: Mapped[str | None] = mapped_column(
