@@ -53,6 +53,10 @@ vi.mock('@/api/connections', async (importOriginal) => {
   };
 });
 
+vi.mock('@/contexts/AuthContext', () => ({
+  useAuth: () => ({ user: { role: 'owner' } }),
+}));
+
 import Onboarding from './Onboarding';
 
 function renderWizard() {
@@ -114,6 +118,35 @@ describe('Onboarding step 2 (platform connections)', () => {
     fireEvent.click(cont);
     await waitFor(() =>
       expect(submitPlatformSelection).toHaveBeenCalledWith({ platforms: [] })
+    );
+  });
+
+  it('credentials-missing error shows setup callout instead of generic toast', async () => {
+    const err = {
+      isAxiosError: true,
+      name: 'AxiosError',
+      message: 'Request failed with status code 400',
+      response: {
+        status: 400,
+        data: {
+          detail: {
+            code: 'credentials_not_configured',
+            message:
+              'Meta app credentials are not configured. An owner or admin can add them under Settings → Integrations.',
+          },
+        },
+      },
+    };
+    startOAuthConnectMock.mockRejectedValueOnce(err);
+    renderWizard();
+    const buttons = await screen.findAllByRole('button', { name: /^connect$/i });
+    fireEvent.click(buttons[0]);
+    expect(
+      await screen.findByText(/app credentials are not configured/i)
+    ).toBeInTheDocument();
+    expect(screen.getByRole('link', { name: /set up credentials/i })).toHaveAttribute(
+      'href',
+      '/dashboard/settings/integrations'
     );
   });
 });

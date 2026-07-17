@@ -34,9 +34,10 @@ import { Card } from '@/components/primitives/Card';
 import { StatusPill } from '@/components/primitives/StatusPill';
 import { ConfirmDrawer } from '@/components/primitives/ConfirmDrawer';
 import { PlatformCredentialsPanel } from '@/components/integrations/PlatformCredentialsPanel';
-import { apiClient } from '@/api/client';
+import { apiClient, getApiErrorMessage } from '@/api/client';
 import { startOAuthConnect } from '@/api/connections';
 import { useCRMConnections, useTriggerCRMSync } from '@/api/hooks';
+import { useToast } from '@/components/ui/use-toast';
 import { cn } from '@/lib/utils';
 
 // =============================================================================
@@ -98,6 +99,7 @@ export default function IntegrationsHub() {
   const [actionPlatform, setActionPlatform] = useState<AdPlatform | null>(null);
   const [confirmDisconnect, setConfirmDisconnect] = useState<AdPlatformDef | null>(null);
   const location = useLocation();
+  const { toast } = useToast();
 
   const crmConnections = useCRMConnections();
   const triggerSync = useTriggerCRMSync();
@@ -136,7 +138,12 @@ export default function IntegrationsHub() {
         return;
       }
       await fetchStatuses();
-    } catch {
+    } catch (error) {
+      toast({
+        title: 'Connection failed',
+        description: getApiErrorMessage(error),
+        variant: 'destructive',
+      });
       await fetchStatuses();
     } finally {
       setActionPlatform(null);

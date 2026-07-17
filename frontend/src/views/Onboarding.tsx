@@ -10,8 +10,9 @@
  */
 
 import { useEffect, useState, useRef } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, Link } from 'react-router-dom';
 import {
+  AlertCircle,
   BarChart3,
   Bell,
   Building2,
@@ -46,6 +47,9 @@ import {
   useSubmitTrustGateConfig,
 } from '@/api/onboarding';
 import { useConnections, startOAuthConnect } from '@/api/connections';
+import { getApiErrorCode, getApiErrorMessage } from '@/api/client';
+import { CREDENTIALS_NOT_CONFIGURED } from '@/api/appCredentials';
+import { useAuth } from '@/contexts/AuthContext';
 import { StatusPill } from '@/components/primitives/StatusPill';
 import { useToast } from '@/components/ui/use-toast';
 
@@ -171,6 +175,8 @@ const AUTOMATION_MODES: {
 export default function Onboarding() {
   const navigate = useNavigate();
   const { toast } = useToast();
+  const { user } = useAuth();
+  const isAdmin = user?.role === 'owner' || user?.role === 'admin';
   const timeoutsRef = useRef<Set<ReturnType<typeof setTimeout>>>(new Set());
 
   useEffect(() => {
@@ -224,9 +230,11 @@ export default function Onboarding() {
 
   const { connections, connectedPlatforms, hasLiveConnection } = useConnections();
   const [connectingPlatform, setConnectingPlatform] = useState<AdPlatform | null>(null);
+  const [credsCallout, setCredsCallout] = useState<string | null>(null);
 
   const handleConnectPlatform = async (platform: AdPlatform) => {
     setConnectingPlatform(platform);
+    setCredsCallout(null);
     try {
       const url = await startOAuthConnect(platform, '/onboarding');
       if (url) {
@@ -238,12 +246,19 @@ export default function Onboarding() {
         description: 'Could not start the connection. Try again or continue without connecting.',
         variant: 'destructive',
       });
-    } catch {
-      toast({
-        title: 'Connection failed',
-        description: 'Could not start the connection. Try again or continue without connecting.',
-        variant: 'destructive',
-      });
+    } catch (error) {
+      if (getApiErrorCode(error) === CREDENTIALS_NOT_CONFIGURED) {
+        setCredsCallout(getApiErrorMessage(error));
+      } else {
+        toast({
+          title: 'Connection failed',
+          description: getApiErrorMessage(
+            error,
+            'Could not start the connection. Try again or continue without connecting.'
+          ),
+          variant: 'destructive',
+        });
+      }
     } finally {
       setConnectingPlatform(null);
     }
@@ -612,6 +627,29 @@ export default function Onboarding() {
             {/* Step 2: Platform Selection */}
             {step.id === 'platform_selection' && (
               <>
+                {credsCallout && (
+                  <div
+                    role="status"
+                    className="mb-4 flex items-start gap-2 rounded-xl border border-warning/40 bg-warning/10 px-4 py-3 text-sm"
+                  >
+                    <AlertCircle className="w-4 h-4 shrink-0 mt-0.5 text-warning" />
+                    <div className="flex-1">
+                      <p className="text-foreground">{credsCallout}</p>
+                      {isAdmin ? (
+                        <Link
+                          to="/dashboard/settings/integrations"
+                          className="mt-1 inline-block font-medium text-primary hover:underline"
+                        >
+                          Set up credentials →
+                        </Link>
+                      ) : (
+                        <p className="mt-1 text-muted-foreground">
+                          Ask your organization owner to configure this platform.
+                        </p>
+                      )}
+                    </div>
+                  </div>
+                )}
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                   {PLATFORMS.map((p) => {
                     const connection = connections.find((c) => c.platform === p.value);
