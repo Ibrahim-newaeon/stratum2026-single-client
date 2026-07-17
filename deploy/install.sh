@@ -207,7 +207,18 @@ wait_for_health() {
     done
     warn "Timed out waiting for /health after ${timeout}s. The stack may still be starting (DNS propagation and first-boot migrations can take a few minutes)."
     warn "Check status with: docker compose -f $COMPOSE_FILE logs -f"
+    warn "Leaving SEED_SUPERADMIN=true in $ENV_FILE so the next 'docker compose ... up -d' retries seeding the admin account. Re-run './install.sh' (or 'docker compose -f $COMPOSE_FILE --env-file $ENV_FILE up -d') once the stack is reachable."
     return 1
+}
+
+# -----------------------------------------------------------------------------
+# One-shot seed flag: flip SEED_SUPERADMIN back off once the stack is
+# confirmed healthy, so the owner's password_hash is never force-reverted by
+# a later `api` restart. Idempotent — safe to call even if already false.
+# -----------------------------------------------------------------------------
+disable_seed_superadmin() {
+    sed -i "s|^SEED_SUPERADMIN=.*|SEED_SUPERADMIN=false|" "$ENV_FILE"
+    info "First-boot admin seeding complete — set SEED_SUPERADMIN=false in $ENV_FILE."
 }
 
 # -----------------------------------------------------------------------------
@@ -262,13 +273,14 @@ do_install() {
         fi
 
         info "Generating secrets..."
-        local secret_key jwt_secret pii_key pg_password redis_password whatsapp_verify
+        local secret_key jwt_secret pii_key pg_password redis_password whatsapp_verify metrics_api_key
         secret_key="$(gen_secret)"
         jwt_secret="$(gen_secret)"
         pii_key="$(gen_secret)"
         pg_password="$(gen_password)"
         redis_password="$(gen_password)"
         whatsapp_verify="$(gen_secret)"
+        metrics_api_key="$(gen_secret)"
 
         set_env_var "STRATUM_DOMAIN" "$OPT_DOMAIN" "$ENV_FILE"
         set_env_var "FRONTEND_URL" "https://${OPT_DOMAIN}" "$ENV_FILE"
@@ -284,9 +296,17 @@ do_install() {
         set_env_var "POSTGRES_PASSWORD" "$pg_password" "$ENV_FILE"
         set_env_var "REDIS_PASSWORD" "$redis_password" "$ENV_FILE"
         set_env_var "WHATSAPP_VERIFY_TOKEN" "$whatsapp_verify" "$ENV_FILE"
+        set_env_var "METRICS_API_KEY" "$metrics_api_key" "$ENV_FILE"
         if [ -n "$smtp_password" ]; then
             set_env_var "SMTP_PASSWORD" "$smtp_password" "$ENV_FILE"
         fi
+        # One-shot seed: true for this first boot only. wait_for_health (below)
+        # flips this back to false once the health check confirms the owner
+        # user was seeded — see docker-compose.client.yml's SEED_SUPERADMIN
+        # comment and INSTALL.md's password-reset section. If left on, any
+        # password the client changes in-app would be silently reverted on
+        # every subsequent api restart.
+        set_env_var "SEED_SUPERADMIN" "true" "$ENV_FILE"
         chmod 600 "$ENV_FILE"
 
         if [ "$generated_password" = true ]; then
@@ -303,7 +323,9 @@ do_install() {
     info "Starting the stack..."
     docker compose -f "$COMPOSE_FILE" --env-file "$ENV_FILE" up -d
 
-    wait_for_health || true
+    if wait_for_health; then
+        disable_seed_superadmin
+    fi
 
     print_success_box
 }

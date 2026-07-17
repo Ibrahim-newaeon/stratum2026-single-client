@@ -110,7 +110,7 @@ services:
   # FastAPI Backend (image built + pushed by deploy/build-and-push.sh)
   # ===========================================================================
   api:
-    image: ${STRATUM_REGISTRY}/stratum-backend:${STRATUM_VERSION:-latest}
+    image: ${STRATUM_REGISTRY:?STRATUM_REGISTRY must be set (your private registry, e.g. ghcr.io/yourorg)}/stratum-backend:${STRATUM_VERSION:-latest}
     container_name: stratum_api
     restart: unless-stopped
     user: "1000:1000"
@@ -140,11 +140,17 @@ services:
       - ML_AUTO_TRAIN=${ML_AUTO_TRAIN:-false}
       - USE_MOCK_AD_DATA=${USE_MOCK_AD_DATA:-false}
       - MARKET_INTEL_PROVIDER=${MARKET_INTEL_PROVIDER:-mock}
-      # Seeds/updates the single Organization + owner user on every boot
-      # (idempotent — see backend/scripts/seed_owner.py). Always on for the
-      # client installer: without it there is no way to log in after a
-      # fresh install.
-      - SEED_SUPERADMIN=true
+      # Seeds/force-updates the single Organization + owner user, INCLUDING
+      # overwriting password_hash from SUPERADMIN_PASSWORD, on every boot
+      # this is true (idempotent — see backend/scripts/seed_owner.py). This
+      # must be a one-shot flag, not a permanent setting: if left on, any
+      # password the client changes in-app gets silently reverted on the
+      # next api restart. install.sh writes this as `true` in the generated
+      # .env for the first boot only, then flips it to `false` once the
+      # health check confirms the seed ran — see deploy/install.sh and
+      # deploy/INSTALL.md's password-reset section. Never hardcode `true`
+      # here.
+      - SEED_SUPERADMIN=${SEED_SUPERADMIN:-false}
       - SUPERADMIN_EMAIL=${SUPERADMIN_EMAIL:?SUPERADMIN_EMAIL must be set}
       - SUPERADMIN_PASSWORD=${SUPERADMIN_PASSWORD:?SUPERADMIN_PASSWORD must be set}
       - SUPERADMIN_NAME=${SUPERADMIN_NAME:-Platform Owner}
@@ -227,7 +233,7 @@ services:
   # Celery Worker (Background Tasks)
   # ===========================================================================
   worker:
-    image: ${STRATUM_REGISTRY}/stratum-backend:${STRATUM_VERSION:-latest}
+    image: ${STRATUM_REGISTRY:?STRATUM_REGISTRY must be set (your private registry, e.g. ghcr.io/yourorg)}/stratum-backend:${STRATUM_VERSION:-latest}
     container_name: stratum_worker
     restart: unless-stopped
     user: "1000:1000"
@@ -309,7 +315,7 @@ services:
   # Celery Beat (Scheduler)
   # ===========================================================================
   beat:
-    image: ${STRATUM_REGISTRY}/stratum-backend:${STRATUM_VERSION:-latest}
+    image: ${STRATUM_REGISTRY:?STRATUM_REGISTRY must be set (your private registry, e.g. ghcr.io/yourorg)}/stratum-backend:${STRATUM_VERSION:-latest}
     container_name: stratum_beat
     restart: unless-stopped
     user: "1000:1000"
@@ -360,7 +366,7 @@ services:
   # runtime, so none are set here)
   # ===========================================================================
   frontend:
-    image: ${STRATUM_REGISTRY}/stratum-frontend:${STRATUM_VERSION:-latest}
+    image: ${STRATUM_REGISTRY:?STRATUM_REGISTRY must be set (your private registry, e.g. ghcr.io/yourorg)}/stratum-frontend:${STRATUM_VERSION:-latest}
     container_name: stratum_frontend
     restart: unless-stopped
     depends_on:

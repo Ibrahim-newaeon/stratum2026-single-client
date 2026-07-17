@@ -61,9 +61,9 @@ Prefer no prompts? Run it non-interactively:
    `docker-compose.client.yml`. Re-running `install.sh` reuses this `.env`
    instead of asking again, unless you pass `--force`.
 3. Generates every secret (session signing key, JWT key, PII encryption
-   key, database password, Redis password, WhatsApp webhook token) with
-   `openssl rand`. Nothing is hardcoded and nothing is shared between
-   clients.
+   key, database password, Redis password, WhatsApp webhook token, metrics
+   API key) with `openssl rand`. Nothing is hardcoded and nothing is shared
+   between clients.
 4. Pulls the prebuilt application images (`docker compose pull`) and starts
    the stack (`docker compose up -d`): PostgreSQL, Redis, the API, a
    background worker, a task scheduler, the web frontend, and Caddy (which
@@ -112,12 +112,14 @@ never needs to be touched by hand.
 | `SUPERADMIN_EMAIL` | prompted | Your admin login email |
 | `SUPERADMIN_PASSWORD` | **auto** (or prompted) | Your admin login password |
 | `SUPERADMIN_NAME` | default: "Platform Owner" | Display name for the admin account |
+| `SEED_SUPERADMIN` | **auto** (`true` for first boot only, then flipped back to `false`) | One-shot switch that (re)writes the admin account from `SUPERADMIN_EMAIL`/`SUPERADMIN_PASSWORD`. Must stay `false` day-to-day — see "forgot admin password" in Troubleshooting. |
 | `SMTP_HOST` / `SMTP_PORT` / `SMTP_USER` / `SMTP_PASSWORD` | prompted (optional) | Outbound email for password resets, invites, reports |
 | `EMAIL_FROM_NAME` / `EMAIL_FROM_ADDRESS` | default | "From" identity on outbound email |
 | `WHATSAPP_VERIFY_TOKEN` | **auto** | Secures WhatsApp webhook callbacks |
 | `LOG_LEVEL` / `LOG_FORMAT` | default | Application logging verbosity/format |
 | `SENTRY_DSN` | optional | Error tracking, if you use Sentry |
-| `ENABLE_METRICS` / `METRICS_API_KEY` | optional | Prometheus-style `/metrics` endpoint |
+| `ENABLE_METRICS` | default | Enables the Prometheus-style `/metrics` endpoint |
+| `METRICS_API_KEY` | **auto** | Bearer key required to read `/metrics` from outside the stack |
 | `ML_PROVIDER` / `ML_AUTO_TRAIN` / `MARKET_INTEL_PROVIDER` / `SERPAPI_KEY` | default | Intelligence engine configuration |
 | `META_*` / `GOOGLE_ADS_*` / `TIKTOK_*` / `SNAPCHAT_*` | leave blank | Ad platform credentials — configure these in-app under Settings → Integrations instead |
 | `WHATSAPP_PHONE_NUMBER_ID` / `WHATSAPP_ACCESS_TOKEN` / `WHATSAPP_BUSINESS_ACCOUNT_ID` / `WHATSAPP_APP_SECRET` | leave blank unless using WhatsApp | WhatsApp Business API credentials |
@@ -181,13 +183,26 @@ errors, check `docker compose -f docker-compose.client.yml ps` for any
 service that isn't `healthy`, then check that service's logs.
 
 **I forgot the admin password / need to reset it.**
-Edit `.env`, set `SUPERADMIN_PASSWORD` to a new value (16+ characters), then
-restart the API:
-```bash
-docker compose -f docker-compose.client.yml up -d api
-```
-The password is re-applied to the admin account on every API start — no
-database surgery required.
+In normal use, changing your password in-app (Settings → Account) is the
+only thing you need — it is never overwritten. Only use this procedure if
+you're locked out and can't log in at all:
+
+1. Edit `.env`: set `SUPERADMIN_PASSWORD` to a new value (16+ characters).
+2. In the same `.env`, set `SEED_SUPERADMIN=true`.
+3. Restart (or start) just the API:
+   ```bash
+   docker compose -f docker-compose.client.yml up -d api
+   ```
+4. Wait for it to report healthy (`docker compose -f docker-compose.client.yml
+   ps` should show `api` as `healthy`, or `curl -I https://your-domain.com/health`
+   returns `200`) — this is when the new password is actually written.
+5. **Set `SEED_SUPERADMIN=false` again in `.env`.** This step matters:
+   `SEED_SUPERADMIN=true` force-overwrites the owner's password on *every*
+   API boot, so leaving it on would silently revert any password the client
+   sets in-app the next time the API restarts (a deploy, a crash, a host
+   reboot). `./install.sh` sets this back to `false` for you automatically
+   right after a successful first install — this manual reset is the only
+   time you should need to touch the flag yourself.
 
 **A service keeps restarting.**
 ```bash
