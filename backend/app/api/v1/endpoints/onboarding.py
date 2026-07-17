@@ -22,7 +22,7 @@ from pydantic import BaseModel, Field, field_validator
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from app.auth.deps import CurrentUserDep, VerifiedUserDep
+from app.auth.deps import CurrentUserDep, VerifiedUserDep, require_admin
 from app.core.logging import get_logger
 from app.db.session import get_async_session
 from app.models.onboarding import (
@@ -39,6 +39,10 @@ from app.schemas import APIResponse
 
 logger = get_logger(__name__)
 router = APIRouter(prefix="/onboarding", tags=["onboarding"])
+
+# Onboarding writes mutate org-wide setup state; restrict to admin/owner.
+# Reads (/status, /check) stay open — the onboarding guard depends on them.
+_admin_deps = [Depends(require_admin())]
 
 
 # =============================================================================
@@ -407,7 +411,11 @@ async def get_onboarding_status(
     )
 
 
-@router.post("/business-profile", response_model=APIResponse[StepCompletionResponse])
+@router.post(
+    "/business-profile",
+    response_model=APIResponse[StepCompletionResponse],
+    dependencies=_admin_deps,
+)
 async def save_business_profile(
     data: BusinessProfileRequest,
     current_user: VerifiedUserDep,
@@ -452,7 +460,11 @@ async def save_business_profile(
     )
 
 
-@router.post("/platform-selection", response_model=APIResponse[StepCompletionResponse])
+@router.post(
+    "/platform-selection",
+    response_model=APIResponse[StepCompletionResponse],
+    dependencies=_admin_deps,
+)
 async def save_platform_selection(
     data: PlatformSelectionRequest,
     current_user: VerifiedUserDep,
@@ -492,7 +504,11 @@ async def save_platform_selection(
     )
 
 
-@router.post("/goals-setup", response_model=APIResponse[StepCompletionResponse])
+@router.post(
+    "/goals-setup",
+    response_model=APIResponse[StepCompletionResponse],
+    dependencies=_admin_deps,
+)
 async def save_goals_setup(
     data: GoalsSetupRequest,
     current_user: VerifiedUserDep,
@@ -542,7 +558,9 @@ async def save_goals_setup(
 
 
 @router.post(
-    "/automation-preferences", response_model=APIResponse[StepCompletionResponse]
+    "/automation-preferences",
+    response_model=APIResponse[StepCompletionResponse],
+    dependencies=_admin_deps,
 )
 async def save_automation_preferences(
     data: AutomationPreferencesRequest,
@@ -596,7 +614,11 @@ async def save_automation_preferences(
     )
 
 
-@router.post("/trust-gate-config", response_model=APIResponse[StepCompletionResponse])
+@router.post(
+    "/trust-gate-config",
+    response_model=APIResponse[StepCompletionResponse],
+    dependencies=_admin_deps,
+)
 async def save_trust_gate_config(
     data: TrustGateConfigRequest,
     current_user: VerifiedUserDep,
@@ -653,7 +675,7 @@ async def save_trust_gate_config(
     )
 
 
-@router.post("/skip", response_model=APIResponse[dict])
+@router.post("/skip", response_model=APIResponse[dict], dependencies=_admin_deps)
 async def skip_onboarding(
     current_user: VerifiedUserDep,
     db: AsyncSession = Depends(get_async_session),
@@ -693,7 +715,7 @@ async def skip_onboarding(
     )
 
 
-@router.post("/reset", response_model=APIResponse[dict])
+@router.post("/reset", response_model=APIResponse[dict], dependencies=_admin_deps)
 async def reset_onboarding(
     current_user: VerifiedUserDep,
     db: AsyncSession = Depends(get_async_session),

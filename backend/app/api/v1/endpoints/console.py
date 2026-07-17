@@ -26,6 +26,7 @@ from app.core.config import settings
 from app.core.logging import get_logger
 from app.db.session import get_async_session
 from app.models import Campaign, User, UserRole
+from app.models.platform_app_credential import PlatformAppCredential
 from app.schemas import APIResponse
 
 logger = get_logger(__name__)
@@ -793,7 +794,10 @@ WHERE campaigns.id = sub.campaign_id"""),
 
 
 @router.get("/credentials/health", response_model=APIResponse)
-async def credentials_health(request: Request):
+async def credentials_health(
+    request: Request,
+    db: AsyncSession = Depends(get_async_session),
+):
     """Presence-only health check across every external-credential setting."""
     require_owner(request)
 
@@ -804,32 +808,62 @@ async def credentials_health(request: Request):
             return bool(value.strip())
         return bool(value)
 
+    result = await db.execute(select(PlatformAppCredential))
+    db_creds = {r.platform: r for r in result.scalars().all()}
+
+    def _source(platform: str, env_configured: bool) -> Optional[str]:
+        if platform in db_creds:
+            return "database"
+        return "environment" if env_configured else None
+
     sections = {
         "ad_platforms": {
             "meta": {
-                "app_id": present(settings.meta_app_id),
-                "app_secret": present(settings.meta_app_secret),
+                "app_id": present(settings.meta_app_id) or "meta" in db_creds,
+                "app_secret": present(settings.meta_app_secret) or "meta" in db_creds,
                 "api_version": settings.meta_api_version or None,
                 "long_lived_token": present(settings.meta_access_token),
+                "source": _source(
+                    "meta",
+                    present(settings.meta_app_id) and present(settings.meta_app_secret),
+                ),
             },
             "google_ads": {
                 "developer_token": present(settings.google_ads_developer_token),
-                "client_id": present(settings.google_ads_client_id),
-                "client_secret": present(settings.google_ads_client_secret),
+                "client_id": present(settings.google_ads_client_id)
+                or "google" in db_creds,
+                "client_secret": present(settings.google_ads_client_secret)
+                or "google" in db_creds,
                 "refresh_token": present(settings.google_ads_refresh_token),
                 "customer_id_default": present(settings.google_ads_customer_id),
+                "source": _source(
+                    "google",
+                    present(settings.google_ads_client_id)
+                    and present(settings.google_ads_client_secret),
+                ),
             },
             "tiktok": {
-                "app_id": present(settings.tiktok_app_id),
-                "secret": present(settings.tiktok_secret),
+                "app_id": present(settings.tiktok_app_id) or "tiktok" in db_creds,
+                "secret": present(settings.tiktok_secret) or "tiktok" in db_creds,
                 "long_lived_token": present(settings.tiktok_access_token),
                 "advertiser_id_default": present(settings.tiktok_advertiser_id),
+                "source": _source(
+                    "tiktok",
+                    present(settings.tiktok_app_id) and present(settings.tiktok_secret),
+                ),
             },
             "snapchat": {
-                "client_id": present(settings.snapchat_client_id),
-                "client_secret": present(settings.snapchat_client_secret),
+                "client_id": present(settings.snapchat_client_id)
+                or "snapchat" in db_creds,
+                "client_secret": present(settings.snapchat_client_secret)
+                or "snapchat" in db_creds,
                 "long_lived_token": present(settings.snapchat_access_token),
                 "ad_account_id_default": present(settings.snapchat_ad_account_id),
+                "source": _source(
+                    "snapchat",
+                    present(settings.snapchat_client_id)
+                    and present(settings.snapchat_client_secret),
+                ),
             },
         },
         "email": {
