@@ -7,7 +7,7 @@
 <meta name="description" content="Revenue Operating System with Trust-Gated Autopilot. AI-powered ad optimization with human oversight. Every decision is auditable, explainable, and reversible."/>
 <link rel="preconnect" href="https://fonts.googleapis.com"/>
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin/>
-<link href="https://fonts.googleapis.com/css2?family=Geist:wght@300..700&family=Geist+Mono:wght@400;500&display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Libre+Baskerville:ital,wght@0,400;0,700;1,400&family=Geist+Mono:wght@400;500&display=swap" rel="stylesheet"/>
 <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@20..48,100..700,0..1,-50..200&display=swap" rel="stylesheet"/>
 <script src="https://cdn.tailwindcss.com"></script>
 <script>
@@ -15,33 +15,36 @@ tailwind.config = {
   theme: {
     extend: {
       fontFamily: {
-        sans:  ['"Geist"', 'system-ui', 'sans-serif'],
+        sans:  ['"Helvetica Neue"', 'Helvetica', 'Arial', '"Segoe UI"', 'sans-serif'],
+        serif: ['"Didot"', '"Bodoni MT"', 'Baskerville', '"Libre Baskerville"', 'Georgia', 'serif'],
         mono:  ['"Geist Mono"', 'monospace'],
       },
       colors: {
-        ink:       '#0B0B0B',
-        surface:   '#141414',
-        line:      '#1F1F1F',
-        line2:     '#262626',
-        muted:     '#9A9A9A',
+        ink:       '#000000',
+        surface:   '#1A1A1A',
+        line:      '#2C2C2C',
+        line2:     '#3D3D3D',
+        muted:     '#CCCCCC',
         micro:     '#6B6B6B',
-        ember:     '#FF5A1F',
-        'ember-2': '#FF8A4A',
+        ember:     '#C2A670',
+        'ember-2': '#C1A15A',
       },
-      maxWidth: { content: '1200px' },
+      maxWidth: { content: '1224px' },
     }
   }
 }
 </script>
 <style>
+  /* Opal Hotel brand (opal-hotel-theme.xml): serif headings, weight 400 */
+  h1, h2, h3, h4, h5, h6 { font-family: Didot, 'Bodoni MT', Baskerville, 'Libre Baskerville', Georgia, serif; font-weight: 400; }
   :root {
-    --ink: #0B0B0B;
-    --surface: #141414;
-    --line: #1F1F1F;
-    --line2: #262626;
-    --muted: #9A9A9A;
+    --ink: #000000;
+    --surface: #1A1A1A;
+    --line: #2C2C2C;
+    --line2: #3D3D3D;
+    --muted: #CCCCCC;
     --micro: #6B6B6B;
-    --ember: #FF5A1F;
+    --ember: #C2A670;
   }
   html, body { background: var(--ink); }
   body { font-feature-settings: 'ss01', 'cv11'; -webkit-font-smoothing: antialiased; }
@@ -54,7 +57,7 @@ tailwind.config = {
     border: 1px solid var(--line);
     border-radius: 999px;
     font-size: 11.5px; letter-spacing: 0.06em; text-transform: uppercase;
-    color: #ECECEC; font-weight: 500;
+    color: #F5F5DC; font-weight: 500;
   }
   .pill .dot { width: 6px; height: 6px; border-radius: 999px; background: var(--ember); box-shadow: 0 0 8px var(--ember); }
 
@@ -67,18 +70,18 @@ tailwind.config = {
 
   /* Hero radial glow */
   .glow-warm {
-    background: radial-gradient(60% 60% at 50% 0%, rgba(255, 90, 31, 0.16) 0%, rgba(255, 90, 31, 0.04) 40%, transparent 70%);
+    background: radial-gradient(60% 60% at 50% 0%, rgba(194, 166, 112, 0.16) 0%, rgba(194, 166, 112, 0.04) 40%, transparent 70%);
   }
   /* Strong warm wash beneath the mockup — matches the reference's bottom-half orange bleed */
   .glow-mockup {
     background:
-      radial-gradient(80% 60% at 50% 95%, rgba(255, 90, 31, 0.55) 0%, rgba(255, 90, 31, 0.25) 30%, rgba(255, 90, 31, 0.06) 55%, transparent 75%),
-      radial-gradient(60% 40% at 50% 100%, rgba(255, 138, 74, 0.4) 0%, transparent 70%);
+      radial-gradient(80% 60% at 50% 95%, rgba(194, 166, 112, 0.55) 0%, rgba(194, 166, 112, 0.25) 30%, rgba(194, 166, 112, 0.06) 55%, transparent 75%),
+      radial-gradient(60% 40% at 50% 100%, rgba(193, 161, 90, 0.4) 0%, transparent 70%);
     filter: blur(28px);
   }
   /* Soft glow for security modal */
   .glow-security {
-    background: radial-gradient(60% 60% at 50% 60%, rgba(255, 90, 31, 0.32) 0%, rgba(255, 90, 31, 0.08) 45%, transparent 75%);
+    background: radial-gradient(60% 60% at 50% 60%, rgba(194, 166, 112, 0.32) 0%, rgba(194, 166, 112, 0.08) 45%, transparent 75%);
     filter: blur(24px);
   }
 
@@ -121,7 +124,7 @@ tailwind.config = {
 
   /* CTA pills */
   .btn-light {
-    background: #fff; color: #0B0B0B;
+    background: #fff; color: #000000;
     padding: 0.85rem 1.5rem; border-radius: 999px;
     font-weight: 500; font-size: 14.5px;
     display: inline-flex; align-items: center; gap: 0.5rem;
@@ -135,7 +138,7 @@ tailwind.config = {
     display: inline-flex; align-items: center; gap: 0.5rem;
   }
   .btn-ghost {
-    color: #ECECEC;
+    color: #F5F5DC;
     padding: 0.85rem 1.5rem; border-radius: 999px;
     font-weight: 500; font-size: 14.5px;
     border: 1px solid var(--line);
@@ -150,21 +153,21 @@ tailwind.config = {
     padding: 0.65rem 1.2rem; border-radius: 999px;
     font-weight: 500; font-size: 13px;
     display: inline-flex; align-items: center; gap: 0.4rem;
-    box-shadow: 0 4px 14px rgba(255, 90, 31, 0.3);
+    box-shadow: 0 4px 14px rgba(194, 166, 112, 0.3);
     transition: transform 0.2s ease, box-shadow 0.2s ease, background 0.2s ease;
   }
   .btn-ember-fill:hover {
     transform: translateY(-1px);
-    background: #FF6E3A;
-    box-shadow: 0 8px 22px rgba(255, 90, 31, 0.42);
+    background: #BD8C41;
+    box-shadow: 0 8px 22px rgba(194, 166, 112, 0.42);
   }
 
   /* CTA banner gradient (full-bleed orange) */
   .cta-banner-bg {
     background:
-      radial-gradient(120% 100% at 0% 50%, #FF7A3A 0%, transparent 50%),
-      radial-gradient(120% 100% at 100% 50%, #FF3D00 0%, transparent 55%),
-      linear-gradient(95deg, #FF5A1F 0%, #FF8A4A 50%, #FF5A1F 100%);
+      radial-gradient(120% 100% at 0% 50%, #C1A15A 0%, transparent 50%),
+      radial-gradient(120% 100% at 100% 50%, #BB8B41 0%, transparent 55%),
+      linear-gradient(95deg, #C2A670 0%, #C1A15A 50%, #C2A670 100%);
   }
 
   /* Verification code input cells */
@@ -180,7 +183,7 @@ tailwind.config = {
   }
   .vc-cell.active {
     border-color: var(--ember);
-    box-shadow: 0 0 0 4px rgba(255, 90, 31, 0.12), 0 0 24px rgba(255, 90, 31, 0.25);
+    box-shadow: 0 0 0 4px rgba(194, 166, 112, 0.12), 0 0 24px rgba(194, 166, 112, 0.25);
   }
   .vc-cell .digit {
     display: inline-block;
@@ -222,7 +225,7 @@ tailwind.config = {
   }
 
   /* Bar chart bars (legacy) */
-  .bar { background: linear-gradient(180deg, var(--ember) 0%, #B33A0F 100%); border-radius: 4px 4px 0 0; }
+  .bar { background: linear-gradient(180deg, var(--ember) 0%, #9A7335 100%); border-radius: 4px 4px 0 0; }
 
   /* Slider drag-hint indicator */
   .slider-wrap {
@@ -280,7 +283,7 @@ tailwind.config = {
     background: var(--ember);
     border-radius: 50%;
     margin-top: -6px;
-    box-shadow: 0 0 0 4px rgba(255, 90, 31, 0.15), 0 2px 8px rgba(255, 90, 31, 0.45);
+    box-shadow: 0 0 0 4px rgba(194, 166, 112, 0.15), 0 2px 8px rgba(194, 166, 112, 0.45);
     transition: transform 0.15s ease;
   }
   input[type="range"]#spend-slider::-webkit-slider-thumb:active { transform: scale(1.12); }
@@ -289,7 +292,7 @@ tailwind.config = {
     background: var(--ember);
     border: none;
     border-radius: 50%;
-    box-shadow: 0 0 0 4px rgba(255, 90, 31, 0.15), 0 2px 8px rgba(255, 90, 31, 0.45);
+    box-shadow: 0 0 0 4px rgba(194, 166, 112, 0.15), 0 2px 8px rgba(194, 166, 112, 0.45);
   }
 
   /* Scroll-triggered line chart animation */
@@ -366,20 +369,20 @@ tailwind.config = {
   }
   .card-lift:hover {
     transform: translateY(-3px);
-    border-color: rgba(255, 90, 31, 0.25) !important;
-    box-shadow: 0 12px 36px -12px rgba(255, 90, 31, 0.18);
+    border-color: rgba(194, 166, 112, 0.25) !important;
+    box-shadow: 0 12px 36px -12px rgba(194, 166, 112, 0.18);
   }
 
   /* Warm gradient fill on AI Model cards (the alternative to glass-brown) */
   .card-warm {
     background:
-      radial-gradient(80% 100% at 50% 100%, rgba(255, 90, 31, 0.06) 0%, transparent 60%),
+      radial-gradient(80% 100% at 50% 100%, rgba(194, 166, 112, 0.06) 0%, transparent 60%),
       var(--surface) !important;
   }
 
   /* Logo cloud item */
   .lc { color: #6B6B6B; transition: color 0.2s ease; }
-  .lc:hover { color: #ECECEC; }
+  .lc:hover { color: #F5F5DC; }
 
   /* Footer giant wordmark */
   .giant-wordmark {
@@ -432,10 +435,10 @@ tailwind.config = {
     transition: height 0.3s ease;
   }
   nav.nav-scrolled {
-    background: rgba(11, 11, 11, 0.88);
+    background: rgba(0, 0, 0, 0.88);
     backdrop-filter: blur(16px);
     -webkit-backdrop-filter: blur(16px);
-    border-color: rgba(31, 31, 31, 0.95);
+    border-color: rgba(44, 44, 44, 0.95);
   }
   nav.nav-scrolled > div { height: 3.25rem; }
   nav.nav-hidden { transform: translateY(-100%); }
@@ -464,7 +467,7 @@ tailwind.config = {
     top: 0; left: 0;
     margin-left: -350px;
     margin-top: -350px;
-    background: radial-gradient(circle, rgba(255, 90, 31, 0.18) 0%, rgba(255, 90, 31, 0.05) 40%, transparent 65%);
+    background: radial-gradient(circle, rgba(194, 166, 112, 0.18) 0%, rgba(194, 166, 112, 0.05) 40%, transparent 65%);
     filter: blur(20px);
     pointer-events: none;
     opacity: 0;
@@ -502,8 +505,8 @@ tailwind.config = {
   }
   /* Pulse on the latest dot */
   @keyframes dot-pulse {
-    0%   { box-shadow: 0 0 0 0 rgba(255, 90, 31, 0.6); }
-    100% { box-shadow: 0 0 0 8px rgba(255, 90, 31, 0); }
+    0%   { box-shadow: 0 0 0 0 rgba(194, 166, 112, 0.6); }
+    100% { box-shadow: 0 0 0 8px rgba(194, 166, 112, 0); }
   }
   .activity-item.fresh .dot-pulse { animation: dot-pulse 1.4s ease-out 1; }
 
@@ -524,16 +527,16 @@ tailwind.config = {
       <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 195 40" class="h-10 w-auto" role="img" aria-label="Stratum AI">
         <defs>
           <linearGradient id="stratumEmberNav" x1="0%" y1="0%" x2="100%" y2="0%">
-            <stop offset="0%" stop-color="#FF8A4A"/>
-            <stop offset="55%" stop-color="#FF5A1F"/>
-            <stop offset="100%" stop-color="#FF3D00"/>
+            <stop offset="0%" stop-color="#C1A15A"/>
+            <stop offset="55%" stop-color="#C2A670"/>
+            <stop offset="100%" stop-color="#BB8B41"/>
           </linearGradient>
         </defs>
         <g>
           <path d="M3 10 L26 10 L31 18 L8 18 Z" fill="url(#stratumEmberNav)"/>
-          <path d="M6 22 L29 22 L34 30 L11 30 Z" fill="#1E2A47"/>
+          <path d="M6 22 L29 22 L34 30 L11 30 Z" fill="#394E6C"/>
         </g>
-        <text x="42" y="27" font-family="'Geist', system-ui, sans-serif" font-weight="600" font-size="20" letter-spacing="-0.5">
+        <text x="42" y="27" font-family="Didot, 'Bodoni MT', Baskerville, 'Libre Baskerville', Georgia, serif" font-weight="600" font-size="20" letter-spacing="-0.5">
           <tspan fill="#ffffff">Stratum </tspan>
           <tspan fill="url(#stratumEmberNav)">AI</tspan>
         </text>
@@ -599,7 +602,7 @@ tailwind.config = {
         <!-- Sidebar -->
         <aside class="hidden lg:flex lg:col-span-2 flex-col gap-1.5 text-[12px]">
           <div class="text-micro text-[10px] uppercase tracking-widest mb-2 px-2">Workspace</div>
-          <a class="flex items-center gap-2 px-2 py-1.5 rounded-md text-white" style="background: rgba(255, 90, 31, 0.08); border: 1px solid rgba(255, 90, 31, 0.2);"><span class="material-symbols-outlined" style="font-size:15px;">monitor_heart</span> Trust Engine</a>
+          <a class="flex items-center gap-2 px-2 py-1.5 rounded-md text-white" style="background: rgba(194, 166, 112, 0.08); border: 1px solid rgba(194, 166, 112, 0.2);"><span class="material-symbols-outlined" style="font-size:15px;">monitor_heart</span> Trust Engine</a>
           <a class="flex items-center gap-2 px-2 py-1.5 rounded-md text-muted hover:text-white"><span class="material-symbols-outlined" style="font-size:15px;">campaign</span> Campaigns</a>
           <a class="flex items-center gap-2 px-2 py-1.5 rounded-md text-muted hover:text-white"><span class="material-symbols-outlined" style="font-size:15px;">insights</span> Attribution</a>
           <a class="flex items-center gap-2 px-2 py-1.5 rounded-md text-muted hover:text-white"><span class="material-symbols-outlined" style="font-size:15px;">history</span> Audit Log</a>
@@ -619,11 +622,11 @@ tailwind.config = {
             </div>
           </div>
           <div class="mt-4 grid grid-cols-2 gap-3 w-full text-center">
-            <div class="card p-2.5" style="background:#0B0B0B;">
+            <div class="card p-2.5" style="background:#000000;">
               <div class="text-[10px] uppercase tracking-widest text-micro">Total Spend</div>
               <div class="font-mono text-[15px] mt-1">$182,440</div>
             </div>
-            <div class="card p-2.5" style="background:#0B0B0B;">
+            <div class="card p-2.5" style="background:#000000;">
               <div class="text-[10px] uppercase tracking-widest text-micro">Conversions</div>
               <div class="font-mono text-[15px] mt-1">2,418</div>
             </div>
@@ -728,8 +731,8 @@ tailwind.config = {
         <svg class="w-16 h-16 shrink-0" viewBox="0 0 64 64" fill="none">
           <rect x="6"  y="40" width="8" height="18" fill="#2A2A2A" rx="1.5"/>
           <rect x="20" y="32" width="8" height="26" fill="#3A3A3A" rx="1.5"/>
-          <rect x="34" y="22" width="8" height="36" fill="#FF8A4A" rx="1.5"/>
-          <rect x="48" y="10" width="8" height="48" fill="#FF5A1F" rx="1.5"/>
+          <rect x="34" y="22" width="8" height="36" fill="#C1A15A" rx="1.5"/>
+          <rect x="48" y="10" width="8" height="48" fill="#C2A670" rx="1.5"/>
         </svg>
       </article>
 
@@ -743,8 +746,8 @@ tailwind.config = {
         <!-- Mini coin/savings glyph -->
         <svg class="w-16 h-16 shrink-0" viewBox="0 0 64 64" fill="none">
           <circle cx="32" cy="32" r="20" stroke="#2A2A2A" stroke-width="2"/>
-          <circle cx="32" cy="32" r="20" stroke="#FF5A1F" stroke-width="2" stroke-dasharray="125.6" stroke-dashoffset="40" transform="rotate(-90 32 32)"/>
-          <path d="M28 26h6a3 3 0 010 6h-4a3 3 0 000 6h6M32 22v4M32 38v4" stroke="#FF8A4A" stroke-width="2" stroke-linecap="round"/>
+          <circle cx="32" cy="32" r="20" stroke="#C2A670" stroke-width="2" stroke-dasharray="125.6" stroke-dashoffset="40" transform="rotate(-90 32 32)"/>
+          <path d="M28 26h6a3 3 0 010 6h-4a3 3 0 000 6h6M32 22v4M32 38v4" stroke="#C1A15A" stroke-width="2" stroke-linecap="round"/>
         </svg>
       </article>
 
@@ -758,7 +761,7 @@ tailwind.config = {
         <!-- Mini gauge ring -->
         <svg class="w-16 h-16 shrink-0" viewBox="0 0 64 64" fill="none">
           <circle cx="32" cy="32" r="22" stroke="#2A2A2A" stroke-width="6"/>
-          <circle cx="32" cy="32" r="22" stroke="#FF5A1F" stroke-width="6" stroke-linecap="round" stroke-dasharray="138.2" stroke-dashoffset="4" transform="rotate(-90 32 32)"/>
+          <circle cx="32" cy="32" r="22" stroke="#C2A670" stroke-width="6" stroke-linecap="round" stroke-dasharray="138.2" stroke-dashoffset="4" transform="rotate(-90 32 32)"/>
         </svg>
       </article>
     </div>
@@ -785,7 +788,7 @@ tailwind.config = {
       <!-- Feature: Trust Gate System -->
       <article class="card p-7">
         <div class="flex items-center gap-2.5 mb-5">
-          <span class="w-7 h-7 rounded-md flex items-center justify-center" style="background: rgba(255,90,31,0.1); border: 1px solid rgba(255,90,31,0.25);">
+          <span class="w-7 h-7 rounded-md flex items-center justify-center" style="background: rgba(194,166,112,0.1); border: 1px solid rgba(194,166,112,0.25);">
             <span class="material-symbols-outlined text-ember" style="font-size:16px;">security</span>
           </span>
           <h3 class="text-[17px] font-medium">Trust Gate System</h3>
@@ -796,7 +799,7 @@ tailwind.config = {
         <div class="card p-4 font-mono text-[12px]" style="background: #0F0F0F;">
           <div class="flex items-center justify-between mb-3">
             <span class="text-micro text-[10px] uppercase tracking-widest">Decision · gate eval</span>
-            <span class="px-1.5 py-0.5 text-[10px] rounded" style="background: rgba(255,90,31,0.1); color: var(--ember);">PASS</span>
+            <span class="px-1.5 py-0.5 text-[10px] rounded" style="background: rgba(194,166,112,0.1); color: var(--ember);">PASS</span>
           </div>
           <div class="space-y-2">
             <div class="flex justify-between"><span class="text-muted">Signal strength</span><span>0.92</span></div>
@@ -811,7 +814,7 @@ tailwind.config = {
       <!-- Feature: Human Override -->
       <article class="card p-7">
         <div class="flex items-center gap-2.5 mb-5">
-          <span class="w-7 h-7 rounded-md flex items-center justify-center" style="background: rgba(255,90,31,0.1); border: 1px solid rgba(255,90,31,0.25);">
+          <span class="w-7 h-7 rounded-md flex items-center justify-center" style="background: rgba(194,166,112,0.1); border: 1px solid rgba(194,166,112,0.25);">
             <span class="material-symbols-outlined text-ember" style="font-size:16px;">person_check</span>
           </span>
           <h3 class="text-[17px] font-medium">Human Override</h3>
@@ -838,7 +841,7 @@ tailwind.config = {
       <div class="grid lg:grid-cols-12 gap-8 items-center">
         <div class="lg:col-span-4">
           <div class="flex items-center gap-2.5 mb-5">
-            <span class="w-7 h-7 rounded-md flex items-center justify-center" style="background: rgba(255,90,31,0.1); border: 1px solid rgba(255,90,31,0.25);">
+            <span class="w-7 h-7 rounded-md flex items-center justify-center" style="background: rgba(194,166,112,0.1); border: 1px solid rgba(194,166,112,0.25);">
               <span class="material-symbols-outlined text-ember" style="font-size:16px;">bolt</span>
             </span>
             <h3 class="text-[17px] font-medium">Real-Time Optimization</h3>
@@ -861,12 +864,12 @@ tailwind.config = {
             <svg id="revenue-chart" class="line-chart w-full" viewBox="0 0 700 200" preserveAspectRatio="none" style="height: 160px;" aria-label="Revenue and spend trends over 14 days">
               <defs>
                 <linearGradient id="revenue-fill" x1="0" y1="0" x2="0" y2="1">
-                  <stop offset="0%"   stop-color="rgba(255,90,31,0.35)"/>
-                  <stop offset="100%" stop-color="rgba(255,90,31,0)"/>
+                  <stop offset="0%"   stop-color="rgba(194,166,112,0.35)"/>
+                  <stop offset="100%" stop-color="rgba(194,166,112,0)"/>
                 </linearGradient>
                 <linearGradient id="revenue-stroke" x1="0" y1="0" x2="1" y2="0">
-                  <stop offset="0%"   stop-color="#FF8A4A"/>
-                  <stop offset="100%" stop-color="#FF5A1F"/>
+                  <stop offset="0%"   stop-color="#C1A15A"/>
+                  <stop offset="100%" stop-color="#C2A670"/>
                 </linearGradient>
               </defs>
 
@@ -905,16 +908,16 @@ tailwind.config = {
               />
 
               <!-- Data dots on revenue line -->
-              <circle class="data-dot" cx="50"  cy="148" r="3" fill="#FF5A1F"/>
-              <circle class="data-dot" cx="140" cy="136" r="3" fill="#FF5A1F"/>
-              <circle class="data-dot" cx="240" cy="124" r="3" fill="#FF5A1F"/>
-              <circle class="data-dot" cx="340" cy="108" r="3" fill="#FF5A1F"/>
-              <circle class="data-dot" cx="450" cy="86"  r="3" fill="#FF5A1F"/>
-              <circle class="data-dot" cx="560" cy="56"  r="3" fill="#FF5A1F"/>
+              <circle class="data-dot" cx="50"  cy="148" r="3" fill="#C2A670"/>
+              <circle class="data-dot" cx="140" cy="136" r="3" fill="#C2A670"/>
+              <circle class="data-dot" cx="240" cy="124" r="3" fill="#C2A670"/>
+              <circle class="data-dot" cx="340" cy="108" r="3" fill="#C2A670"/>
+              <circle class="data-dot" cx="450" cy="86"  r="3" fill="#C2A670"/>
+              <circle class="data-dot" cx="560" cy="56"  r="3" fill="#C2A670"/>
 
               <!-- Live "today" point with pulse -->
-              <circle class="live-pulse" cx="700" cy="28" r="6" fill="none" stroke="#FF5A1F" stroke-width="2"/>
-              <circle class="data-dot live-dot" cx="700" cy="28" r="5" fill="#FF5A1F" stroke="#0F0F0F" stroke-width="2"/>
+              <circle class="live-pulse" cx="700" cy="28" r="6" fill="none" stroke="#C2A670" stroke-width="2"/>
+              <circle class="data-dot live-dot" cx="700" cy="28" r="5" fill="#C2A670" stroke="#0F0F0F" stroke-width="2"/>
             </svg>
 
             <div class="mt-3 grid grid-cols-7 text-[10px] text-micro font-mono">
@@ -947,7 +950,7 @@ tailwind.config = {
       <div class="lg:col-span-5 card p-7 lg:p-9 flex flex-col justify-between">
         <div class="space-y-7">
           <div class="flex gap-4">
-            <span class="w-9 h-9 rounded-md flex items-center justify-center shrink-0" style="background: rgba(255,90,31,0.1); border: 1px solid rgba(255,90,31,0.25);">
+            <span class="w-9 h-9 rounded-md flex items-center justify-center shrink-0" style="background: rgba(194,166,112,0.1); border: 1px solid rgba(194,166,112,0.25);">
               <span class="material-symbols-outlined text-ember" style="font-size:18px;">database</span>
             </span>
             <div>
@@ -956,7 +959,7 @@ tailwind.config = {
             </div>
           </div>
           <div class="flex gap-4">
-            <span class="w-9 h-9 rounded-md flex items-center justify-center shrink-0" style="background: rgba(255,90,31,0.1); border: 1px solid rgba(255,90,31,0.25);">
+            <span class="w-9 h-9 rounded-md flex items-center justify-center shrink-0" style="background: rgba(194,166,112,0.1); border: 1px solid rgba(194,166,112,0.25);">
               <span class="material-symbols-outlined text-ember" style="font-size:18px;">visibility</span>
             </span>
             <div>
@@ -965,7 +968,7 @@ tailwind.config = {
             </div>
           </div>
           <div class="flex gap-4">
-            <span class="w-9 h-9 rounded-md flex items-center justify-center shrink-0" style="background: rgba(255,90,31,0.1); border: 1px solid rgba(255,90,31,0.25);">
+            <span class="w-9 h-9 rounded-md flex items-center justify-center shrink-0" style="background: rgba(194,166,112,0.1); border: 1px solid rgba(194,166,112,0.25);">
               <span class="material-symbols-outlined text-ember" style="font-size:18px;">verified</span>
             </span>
             <div>
@@ -979,7 +982,7 @@ tailwind.config = {
 
       <!-- RIGHT: calculator -->
       <div class="lg:col-span-7 card p-7 lg:p-9 relative overflow-hidden" style="background: linear-gradient(180deg, #161616 0%, #0F0F0F 100%);">
-        <div class="absolute top-0 right-0 w-40 h-40 rounded-full blur-3xl pointer-events-none" style="background: rgba(255, 90, 31, 0.15);"></div>
+        <div class="absolute top-0 right-0 w-40 h-40 rounded-full blur-3xl pointer-events-none" style="background: rgba(194, 166, 112, 0.15);"></div>
 
         <div class="flex items-center justify-between mb-7 relative z-10">
           <h3 class="text-[18px] font-medium">See your potential returns</h3>
@@ -1035,12 +1038,12 @@ tailwind.config = {
 
           <!-- Result cards -->
           <div class="grid grid-cols-2 gap-3 pt-4">
-            <div class="card p-5" style="background: rgba(255, 90, 31, 0.06); border-color: rgba(255, 90, 31, 0.2);">
+            <div class="card p-5" style="background: rgba(194, 166, 112, 0.06); border-color: rgba(194, 166, 112, 0.2);">
               <div class="text-[10.5px] uppercase tracking-widest text-ember mb-2 font-mono">Additional Revenue</div>
               <div class="text-[28px] font-medium tracking-tight text-white" id="revenue-display">$3,000</div>
               <div class="text-[11px] text-micro mt-1">per month</div>
             </div>
-            <div class="card p-5" style="background: rgba(255, 90, 31, 0.06); border-color: rgba(255, 90, 31, 0.2);">
+            <div class="card p-5" style="background: rgba(194, 166, 112, 0.06); border-color: rgba(194, 166, 112, 0.2);">
               <div class="text-[10.5px] uppercase tracking-widest text-ember mb-2 font-mono">Additional Profit</div>
               <div class="text-[28px] font-medium tracking-tight text-white" id="profit-display">$1,200</div>
               <div class="text-[11px] text-micro mt-1">per month</div>
@@ -1068,7 +1071,7 @@ tailwind.config = {
       <div class="absolute inset-0 -m-12 glow-security pointer-events-none"></div>
       <div class="card p-9 relative z-10 text-left max-w-md" style="background: linear-gradient(180deg, #161616 0%, #0F0F0F 100%);">
         <div class="flex items-center gap-3 mb-5">
-          <span class="w-9 h-9 rounded-lg flex items-center justify-center" style="background: rgba(255,90,31,0.1); border: 1px solid rgba(255,90,31,0.25);">
+          <span class="w-9 h-9 rounded-lg flex items-center justify-center" style="background: rgba(194,166,112,0.1); border: 1px solid rgba(194,166,112,0.25);">
             <span class="material-symbols-outlined text-ember" style="font-size:20px;">lock</span>
           </span>
           <div>
@@ -1086,7 +1089,7 @@ tailwind.config = {
           <div class="vc-cell"><span class="digit"></span><span class="vc-cursor"></span></div>
         </div>
 
-        <button class="w-full py-3.5 rounded-full font-medium text-[14px]" style="background: var(--ember); color: white; box-shadow: 0 8px 32px rgba(255, 90, 31, 0.3);">Verify access</button>
+        <button class="w-full py-3.5 rounded-full font-medium text-[14px]" style="background: var(--ember); color: white; box-shadow: 0 8px 32px rgba(194, 166, 112, 0.3);">Verify access</button>
         <div class="mt-4 flex items-center justify-between text-[12px] text-micro">
           <span>Resend code in 0:42</span>
           <span class="flex items-center gap-1.5"><span class="material-symbols-outlined" style="font-size:13px;">shield_lock</span> SOC 2 Type II</span>
@@ -1117,7 +1120,7 @@ tailwind.config = {
       <!-- 1. ROAS Predictor -->
       <article class="card card-lift card-warm p-7 relative overflow-hidden group">
         <div class="absolute top-0 left-0 right-0 h-[2px] bg-ember opacity-50"></div>
-        <span class="w-11 h-11 rounded-xl flex items-center justify-center mb-6" style="background: rgba(255,90,31,0.1); border: 1px solid rgba(255,90,31,0.25);">
+        <span class="w-11 h-11 rounded-xl flex items-center justify-center mb-6" style="background: rgba(194,166,112,0.1); border: 1px solid rgba(194,166,112,0.25);">
           <span class="material-symbols-outlined text-ember" style="font-size:22px;">paid</span>
         </span>
         <h3 class="text-[17px] font-medium mb-1">ROAS Predictor</h3>
@@ -1132,7 +1135,7 @@ tailwind.config = {
       <!-- 2. LTV Predictor -->
       <article class="card card-lift card-warm p-7 relative overflow-hidden group">
         <div class="absolute top-0 left-0 right-0 h-[2px] bg-ember opacity-50"></div>
-        <span class="w-11 h-11 rounded-xl flex items-center justify-center mb-6" style="background: rgba(255,90,31,0.1); border: 1px solid rgba(255,90,31,0.25);">
+        <span class="w-11 h-11 rounded-xl flex items-center justify-center mb-6" style="background: rgba(194,166,112,0.1); border: 1px solid rgba(194,166,112,0.25);">
           <span class="material-symbols-outlined text-ember" style="font-size:22px;">groups</span>
         </span>
         <h3 class="text-[17px] font-medium mb-1">LTV Predictor</h3>
@@ -1147,7 +1150,7 @@ tailwind.config = {
       <!-- 3. Churn Predictor -->
       <article class="card card-lift card-warm p-7 relative overflow-hidden group">
         <div class="absolute top-0 left-0 right-0 h-[2px] bg-ember opacity-50"></div>
-        <span class="w-11 h-11 rounded-xl flex items-center justify-center mb-6" style="background: rgba(255,90,31,0.1); border: 1px solid rgba(255,90,31,0.25);">
+        <span class="w-11 h-11 rounded-xl flex items-center justify-center mb-6" style="background: rgba(194,166,112,0.1); border: 1px solid rgba(194,166,112,0.25);">
           <span class="material-symbols-outlined text-ember" style="font-size:22px;">warning</span>
         </span>
         <h3 class="text-[17px] font-medium mb-1">Churn Predictor</h3>
@@ -1162,7 +1165,7 @@ tailwind.config = {
       <!-- 4. Conversion Predictor -->
       <article class="card card-lift card-warm p-7 relative overflow-hidden group">
         <div class="absolute top-0 left-0 right-0 h-[2px] bg-ember opacity-50"></div>
-        <span class="w-11 h-11 rounded-xl flex items-center justify-center mb-6" style="background: rgba(255,90,31,0.1); border: 1px solid rgba(255,90,31,0.25);">
+        <span class="w-11 h-11 rounded-xl flex items-center justify-center mb-6" style="background: rgba(194,166,112,0.1); border: 1px solid rgba(194,166,112,0.25);">
           <span class="material-symbols-outlined text-ember" style="font-size:22px;">trending_up</span>
         </span>
         <h3 class="text-[17px] font-medium mb-1">Conversion Predictor</h3>
@@ -1177,7 +1180,7 @@ tailwind.config = {
       <!-- 5. Creative Lifecycle -->
       <article class="card card-lift card-warm p-7 relative overflow-hidden group">
         <div class="absolute top-0 left-0 right-0 h-[2px] bg-ember opacity-50"></div>
-        <span class="w-11 h-11 rounded-xl flex items-center justify-center mb-6" style="background: rgba(255,90,31,0.1); border: 1px solid rgba(255,90,31,0.25);">
+        <span class="w-11 h-11 rounded-xl flex items-center justify-center mb-6" style="background: rgba(194,166,112,0.1); border: 1px solid rgba(194,166,112,0.25);">
           <span class="material-symbols-outlined text-ember" style="font-size:22px;">auto_awesome</span>
         </span>
         <h3 class="text-[17px] font-medium mb-1">Creative Lifecycle</h3>
@@ -1192,7 +1195,7 @@ tailwind.config = {
       <!-- 6. ROAS Forecaster -->
       <article class="card card-lift card-warm p-7 relative overflow-hidden group">
         <div class="absolute top-0 left-0 right-0 h-[2px] bg-ember opacity-50"></div>
-        <span class="w-11 h-11 rounded-xl flex items-center justify-center mb-6" style="background: rgba(255,90,31,0.1); border: 1px solid rgba(255,90,31,0.25);">
+        <span class="w-11 h-11 rounded-xl flex items-center justify-center mb-6" style="background: rgba(194,166,112,0.1); border: 1px solid rgba(194,166,112,0.25);">
           <span class="material-symbols-outlined text-ember" style="font-size:22px;">show_chart</span>
         </span>
         <h3 class="text-[17px] font-medium mb-1">ROAS Forecaster</h3>
@@ -1257,16 +1260,16 @@ tailwind.config = {
           <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 195 40" class="h-12 w-auto" role="img" aria-label="Stratum AI">
             <defs>
               <linearGradient id="stratumEmberFooter" x1="0%" y1="0%" x2="100%" y2="0%">
-                <stop offset="0%" stop-color="#FF8A4A"/>
-                <stop offset="55%" stop-color="#FF5A1F"/>
-                <stop offset="100%" stop-color="#FF3D00"/>
+                <stop offset="0%" stop-color="#C1A15A"/>
+                <stop offset="55%" stop-color="#C2A670"/>
+                <stop offset="100%" stop-color="#BB8B41"/>
               </linearGradient>
             </defs>
             <g>
               <path d="M3 10 L26 10 L31 18 L8 18 Z" fill="url(#stratumEmberFooter)"/>
-              <path d="M6 22 L29 22 L34 30 L11 30 Z" fill="#1E2A47"/>
+              <path d="M6 22 L29 22 L34 30 L11 30 Z" fill="#394E6C"/>
             </g>
-            <text x="42" y="27" font-family="'Geist', system-ui, sans-serif" font-weight="600" font-size="20" letter-spacing="-0.5">
+            <text x="42" y="27" font-family="Didot, 'Bodoni MT', Baskerville, 'Libre Baskerville', Georgia, serif" font-weight="600" font-size="20" letter-spacing="-0.5">
               <tspan fill="#ffffff">Stratum </tspan>
               <tspan fill="url(#stratumEmberFooter)">AI</tspan>
             </text>
