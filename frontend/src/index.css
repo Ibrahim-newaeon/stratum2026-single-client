@@ -21,148 +21,162 @@
   :root,
   .dark {
     /* ═══════════════════════════════════════════════════════════════
-       STRATUM AI — FIGMA THEME (DARK, default)
-       Bloomberg-density · Apple restraint · ember warmth
+       OPAL HOTEL — BRAND THEME (DARK, default)
+       Source of truth: opal-hotel-theme.xml v3.0
+       Dark mode derived from the "reversed" logo variant (white on
+       #000000) + charcoal/gray-dark neutrals from the verified palette.
+       The XML defines no full dark spec — derivation choices are
+       flagged in the changelog.
        ═══════════════════════════════════════════════════════════════ */
 
     /* Surfaces */
-    --background: 0 0% 4.3%; /* #0B0B0B ink */
-    --foreground: 0 0% 100%; /* #FFFFFF */
+    --background: 0 0% 0%; /* #000000 — reversed-logo background (was #0B0B0B ink) */
+    --foreground: 0 0% 100%; /* #FFFFFF — reversed-logo mark color */
 
-    --card: 0 0% 7.8%; /* #141414 surface */
+    --card: 0 0% 10.2%; /* #1A1A1A — live-site text-dark, reused as dark surface (was #141414) */
     --card-foreground: 0 0% 100%;
 
-    --popover: 0 0% 7.8%;
+    --popover: 0 0% 10.2%;
     --popover-foreground: 0 0% 100%;
 
-    /* Primary — ember (CTA, accent, focus ring) */
-    --primary: 15 100% 56%; /* #FF5A1F */
-    --primary-foreground: 0 0% 100%;
+    /* Primary — palette gold #C2A670 (verified brand-primary board).
+       Light mode uses the deployed UI gold #BB8B41; dark mode uses the
+       lighter palette gold for contrast on black. Two intentional golds
+       per XML <resolutions>. */
+    --primary: 40 40% 60%; /* #C2A670 (was #FF5A1F ember) */
+    --primary-foreground: 0 0% 10.2%; /* dark text on gold — white fails contrast */
 
-    /* Secondary — ember-2 (gradient stop, hover) */
-    --secondary: 21 100% 64%; /* #FF8A4A */
-    --secondary-foreground: 0 0% 4.3%;
+    /* Secondary — strip gold #C1A15A (brand-extended, gradient stop / hover) */
+    --secondary: 41 45% 55%; /* #C1A15A (was #FF8A4A ember-2) */
+    --secondary-foreground: 0 0% 0%;
 
-    /* Muted — line2 surface for subtle fills */
-    --muted: 0 0% 15%; /* #262626 */
-    --muted-foreground: 0 0% 60%; /* #9A9A9A */
+    /* Muted — charcoal surface for subtle fills */
+    --muted: 0 0% 17.3%; /* #2C2C2C charcoal (was #262626) */
+    --muted-foreground: 0 0% 80%; /* #CCCCCC live-site gray-border, reused as secondary text on dark (was #9A9A9A) */
 
-    /* Accent — info cyan (multi-series charts, neutral signals) */
-    --accent: 187 95% 43%; /* #06B6D4 */
+    /* Accent — slate-blue #394E6C (brand-primary board; multi-series charts,
+       neutral signals). CONTRAST NOTE: dark value on dark bg is low —
+       acceptable as a fill, avoid as small text. */
+    --accent: 215 31% 32%; /* #394E6C (was #06B6D4 cyan) */
     --accent-foreground: 0 0% 100%;
 
-    /* Destructive */
-    --destructive: 0 84% 60%; /* #EF4444 */
+    /* Destructive — brand burgundy #800020 (only red in the XML palette).
+       CONTRAST NOTE: use as fill with white text, not as text on black. */
+    --destructive: 345 100% 25%; /* #800020 (was #EF4444) */
     --destructive-foreground: 0 0% 100%;
 
     /* Borders / inputs / focus ring */
-    --border: 0 0% 12%; /* #1F1F1F line */
-    --input: 0 0% 12%;
-    --ring: 15 100% 56%; /* ember */
+    --border: 0 0% 17.3%; /* #2C2C2C charcoal hairline (was #1F1F1F) */
+    --input: 0 0% 17.3%;
+    --ring: 40 40% 60%; /* palette gold */
 
-    --radius: 1rem; /* 16px (rounded-2xl) */
+    --radius: 1.5625rem; /* 25px — XML <card border-radius="25px"> (was 1rem) */
 
-    /* Status — semantic */
-    --success: 158 80% 39%; /* #10B981 healthy */
-    --warning: 38 92% 50%; /* #F59E0B hold / degraded */
-    --danger: 0 84% 60%; /* #EF4444 block / unhealthy */
-    --info: 187 95% 43%; /* #06B6D4 insight */
-    --insight: 21 100% 64%; /* ember-2 */
+    /* Status — semantic. success/warning retained from the previous theme:
+       the XML defines no green/amber and the Trust Engine UI requires them
+       (system-compatibility carve-out, flagged in changelog). */
+    --success: 158 80% 39%; /* #10B981 healthy — retained, no XML source */
+    --warning: 38 92% 50%; /* #F59E0B hold / degraded — retained, no XML source */
+    --danger: 345 100% 25%; /* #800020 burgundy block / unhealthy */
+    --info: 215 31% 32%; /* #394E6C slate-blue */
+    --insight: 41 45% 55%; /* #C1A15A strip gold */
 
     /* Status (legacy aliases used by widgets) */
     --status-healthy: 158 80% 39%;
-    --status-critical: 0 84% 60%;
+    --status-critical: 345 100% 25%;
 
     /* Surface tier (cards, panels, elevated surfaces) */
-    --surface-primary: 0 0% 4.3%; /* page bg */
-    --surface-secondary: 0 0% 7.8%; /* card bg */
-    --surface-tertiary: 0 0% 10.2%; /* #1A1A1A elevated */
-    --surface-elevated: 0 0% 12%; /* line tier */
+    --surface-primary: 0 0% 0%; /* page bg */
+    --surface-secondary: 0 0% 10.2%; /* card bg #1A1A1A */
+    --surface-tertiary: 0 0% 17.3%; /* #2C2C2C charcoal elevated */
+    --surface-elevated: 0 0% 23.9%; /* #3D3D3D gray-dark tier */
 
-    /* Platform colors — kept for ad-platform badges */
+    /* Platform colors — kept for ad-platform badges (not theme-driven) */
     --meta: 214 89% 52%;
     --google: 4 90% 58%;
     --tiktok: 180 100% 30%;
     --snapchat: 54 100% 50%;
     --whatsapp: 142 70% 45%;
 
-    /* Glow tokens — ember radial bleed for primary surfaces */
-    --glow-brand: 15 100% 56% / 0.16;
-    --glow-insight: 21 100% 64% / 0.14;
+    /* Glow tokens — gold radial bleed for primary surfaces */
+    --glow-brand: 40 40% 60% / 0.16;
+    --glow-insight: 41 45% 55% / 0.14;
 
     /* Landing / marketing tokens (used by figma static HTML in /public) */
-    --landing-bg: #0b0b0b;
-    --landing-card: #141414;
-    --landing-border: #1f1f1f;
-    --landing-text: #9a9a9a;
-    --landing-text-dim: rgba(154, 154, 154, 0.7);
-    --landing-text-faint: rgba(154, 154, 154, 0.5);
-    --landing-accent-primary: #ff5a1f;
-    --landing-accent-primary-light: #ff8a4a;
-    --landing-accent-cyan: #06b6d4;
-    --landing-accent-blue: #5b8def;
+    --landing-bg: #000000;
+    --landing-card: #1a1a1a;
+    --landing-border: #2c2c2c;
+    --landing-text: #cccccc;
+    --landing-text-dim: rgba(204, 204, 204, 0.7);
+    --landing-text-faint: rgba(204, 204, 204, 0.5);
+    --landing-accent-primary: #c2a670; /* palette gold (was ember #ff5a1f) */
+    --landing-accent-primary-light: #c1a15a; /* strip gold (was #ff8a4a) */
+    --landing-accent-cyan: #394e6c; /* slate-blue — key kept for compat (was cyan #06b6d4) */
+    --landing-accent-blue: #394e6c; /* slate-blue (was #5b8def) */
     --landing-surface-glass: rgba(255, 255, 255, 0.02);
     --landing-border-glass: rgba(255, 255, 255, 0.08);
     --landing-text-white-soft: rgba(255, 255, 255, 0.5);
     --landing-text-white-mid: rgba(255, 255, 255, 0.8);
     --landing-border-white-dim: rgba(255, 255, 255, 0.06);
-    --landing-bg-deep: #050505;
-    --landing-glow-primary: 0 4px 24px rgba(255, 90, 31, 0.25);
+    --landing-bg-deep: #000000;
+    --landing-glow-primary: 0 4px 24px rgba(194, 166, 112, 0.25);
     --landing-status-green: #10b981;
-    --landing-status-red: #ef4444;
+    --landing-status-red: #800020; /* burgundy (was #ef4444) */
     --landing-status-yellow: #f59e0b;
   }
 
   .light {
     /* ═══════════════════════════════════════════════════════════════
-       STRATUM AI — FIGMA THEME (LIGHT, designed coherent)
-       Warm off-white surfaces · charcoal text · desaturated ember
+       OPAL HOTEL — BRAND THEME (LIGHT, brand-native mode)
+       Cream surfaces · text-dark · deployed UI gold #BB8B41
+       Source of truth: opal-hotel-theme.xml v3.0 (live-site group +
+       verified brand-primary board)
        ═══════════════════════════════════════════════════════════════ */
 
-    --background: 60 12% 97%; /* #FAFAF7 warm off-white */
-    --foreground: 0 0% 10%; /* #1A1A1A charcoal */
+    --background: 45 100% 98%; /* #FFFCF3 — logo card-background cream (was #FAFAF7) */
+    --foreground: 0 0% 10.2%; /* #1A1A1A live-site text-dark */
 
     --card: 0 0% 100%; /* #FFFFFF */
-    --card-foreground: 0 0% 10%;
+    --card-foreground: 0 0% 10.2%;
 
     --popover: 0 0% 100%;
-    --popover-foreground: 0 0% 10%;
+    --popover-foreground: 0 0% 10.2%;
 
-    --primary: 15 87% 51%; /* #E84F1F slightly desaturated ember */
-    --primary-foreground: 0 0% 100%;
+    --primary: 36 48% 49%; /* #BB8B41 — deployed UI gold: nav, buttons, icons (was #E84F1F ember) */
+    --primary-foreground: 0 0% 100%; /* white — per XML button hover text */
 
-    --secondary: 21 100% 64%; /* ember-2 */
-    --secondary-foreground: 0 0% 10%;
+    --secondary: 40 40% 60%; /* #C2A670 palette gold */
+    --secondary-foreground: 0 0% 17.3%; /* #2C2C2C charcoal */
 
-    --muted: 60 14% 92%; /* #F0EFE8 */
-    --muted-foreground: 0 0% 35%; /* #5A5A55 */
+    --muted: 0 0% 94.9%; /* #F2F2F2 live-site gray-light-bg (was #F0EFE8) */
+    --muted-foreground: 99 11% 29%; /* #485342 olive-sage — deployed secondary text; NOT in brand guide (flagged conflict) */
 
-    --accent: 187 95% 35%; /* #0891B2 darker cyan */
+    --accent: 215 31% 32%; /* #394E6C slate-blue (was #0891B2 cyan) */
     --accent-foreground: 0 0% 100%;
 
-    --destructive: 0 75% 50%; /* #DC2626 */
+    --destructive: 345 100% 25%; /* #800020 burgundy (was #DC2626) */
     --destructive-foreground: 0 0% 100%;
 
-    --border: 60 14% 87%; /* #E8E8E0 */
-    --input: 60 14% 87%;
-    --ring: 15 87% 51%;
+    --border: 0 0% 80%; /* #CCCCCC live-site gray-border (was #E8E8E0 — noticeably heavier hairlines) */
+    --input: 0 0% 80%;
+    --ring: 36 48% 49%;
 
-    --success: 158 84% 31%; /* #059669 */
-    --warning: 30 95% 44%; /* #D97706 */
-    --danger: 0 75% 50%; /* #DC2626 */
-    --info: 187 95% 35%;
-    --insight: 21 90% 55%;
+    --success: 158 84% 31%; /* #059669 — retained, no XML source */
+    --warning: 30 95% 44%; /* #D97706 — retained, no XML source */
+    --danger: 345 100% 25%; /* #800020 burgundy */
+    --info: 215 31% 32%;
+    --insight: 41 45% 55%; /* #C1A15A strip gold */
 
     --status-healthy: 158 84% 31%;
-    --status-critical: 0 75% 50%;
+    --status-critical: 345 100% 25%;
 
-    --surface-primary: 60 12% 97%;
+    --surface-primary: 45 100% 98%;
     --surface-secondary: 0 0% 100%;
-    --surface-tertiary: 60 14% 92%;
+    --surface-tertiary: 60 56% 91%; /* #F5F5DC cream — verified palette swatch */
     --surface-elevated: 0 0% 100%;
 
-    --glow-brand: 15 87% 51% / 0.1;
-    --glow-insight: 21 90% 55% / 0.1;
+    --glow-brand: 36 48% 49% / 0.1;
+    --glow-insight: 41 45% 55% / 0.1;
   }
 
   * {
@@ -195,16 +209,33 @@
 
   body {
     @apply bg-background text-foreground;
-    font-feature-settings: 'ss01', 'cv11';
+    /* XML typography: secondary/body = Helvetica Neue (recommended web stack).
+       Replaces Geist; the ss01/cv11 feature settings were Geist-specific. */
     font-family:
-      'Geist',
-      system-ui,
-      -apple-system,
-      BlinkMacSystemFont,
+      'Helvetica Neue',
+      Helvetica,
+      Arial,
+      'Segoe UI',
       sans-serif;
+    font-size: 16px; /* XML <body size="16px" line-height="1.5em"> */
+    line-height: 1.5;
   }
 
-  /* Selection — ember tint */
+  /* XML typography: primary/headings = elegant serif (Baskerville / Didot).
+     Recommended web stack from the XML; weight 400 / 1.3 line-height per
+     the deployed <headings> spec. */
+  h1,
+  h2,
+  h3,
+  h4,
+  h5,
+  h6 {
+    font-family: Didot, 'Bodoni MT', Baskerville, 'Libre Baskerville', Georgia, serif;
+    font-weight: 400;
+    line-height: 1.3;
+  }
+
+  /* Selection — gold tint */
   ::selection {
     background: hsl(var(--primary) / 0.25);
     color: hsl(var(--foreground));
@@ -219,28 +250,43 @@
     @apply hover:border-primary/30;
   }
 
-  /* Primary button — ember fill */
+  /* Primary button — XML <button id="primary" style="outline/ghost">:
+     transparent bg, gold text + 3px gold border, pill radius, uppercase
+     0.22em tracking, 14px/500, hover fills gold with white text.
+     (Was a solid ember fill — restyled to match the brand spec.) */
   .btn-primary {
     @apply inline-flex items-center justify-center gap-2;
-    @apply px-5 py-2.5 rounded-full;
-    @apply bg-primary text-primary-foreground font-medium;
-    @apply transition-colors duration-200;
-    @apply hover:brightness-110;
+    @apply rounded-full uppercase;
+    @apply bg-transparent text-primary font-medium;
+    @apply border-[3px] border-primary; /* XML width="3px" (width-alt 2px for compact contexts) */
+    padding: 5px 40px; /* XML padding desktop (mobile: 7px 36px) */
+    font-size: 14px;
+    letter-spacing: 0.22em;
+    transition:
+      background-color 0.2s ease,
+      color 0.2s ease; /* XML transition duration/timing */
+    @apply hover:bg-primary hover:text-primary-foreground;
     @apply active:scale-[0.98];
   }
 
-  /* Secondary button — subtle border */
+  /* Secondary button — XML <button id="secondary">: outline/ghost,
+     pill radius, weight 600, padding 6px 40px */
   .btn-secondary {
     @apply inline-flex items-center justify-center gap-2;
-    @apply px-5 py-2.5 rounded-full;
-    @apply bg-card text-foreground font-medium;
-    @apply border border-border;
-    @apply transition-colors duration-200;
-    @apply hover:border-primary/40;
+    @apply rounded-full uppercase;
+    @apply bg-transparent text-primary font-semibold;
+    @apply border-2 border-primary;
+    padding: 6px 40px; /* XML padding-desktop */
+    font-size: 14px;
+    letter-spacing: 0.22em;
+    transition:
+      background-color 0.2s ease,
+      color 0.2s ease;
+    @apply hover:bg-primary hover:text-primary-foreground;
     @apply active:scale-[0.98];
   }
 
-  /* Ghost button — text only */
+  /* Ghost button — text only (system class, token-driven; not in XML) */
   .btn-ghost {
     @apply inline-flex items-center justify-center gap-2;
     @apply px-4 py-2 rounded-full;
@@ -258,10 +304,10 @@
     @apply focus:outline-none focus:ring-4 focus:ring-primary/15 focus:border-primary/50;
   }
 
-  /* Gradient text — ember */
+  /* Gradient text — gold family (palette → deployed → strip gold) */
   .text-gradient-primary {
     @apply bg-clip-text text-transparent;
-    background-image: linear-gradient(135deg, #ff8a4a 0%, #ff5a1f 50%, #ff6e3a 100%);
+    background-image: linear-gradient(135deg, #c2a670 0%, #bb8b41 50%, #c1a15a 100%);
   }
 
   /* Subtle grid background pattern */
@@ -272,7 +318,8 @@
     background-size: 48px 48px;
   }
 
-  /* Ambient glow — ember-2 (used for hero / KPI primary card) */
+  /* Ambient glow — secondary gold (used for hero / KPI primary card).
+     Class name kept for compat; renders gold, not orange. */
   .ambient-orange {
     position: relative;
   }
@@ -285,7 +332,7 @@
     z-index: -1;
   }
 
-  /* Ambient glow — primary (ember) */
+  /* Ambient glow — primary (gold) */
   .ambient-primary {
     position: relative;
   }
@@ -298,7 +345,7 @@
     z-index: -1;
   }
 
-  /* Hairline divider — figma signature */
+  /* Hairline divider — signature */
   .divider-gradient {
     height: 1px;
     background: linear-gradient(90deg, transparent 0%, hsl(var(--border)) 50%, transparent 100%);
