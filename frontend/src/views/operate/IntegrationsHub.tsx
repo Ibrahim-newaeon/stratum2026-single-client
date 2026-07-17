@@ -33,6 +33,7 @@ import {
 import { Card } from '@/components/primitives/Card';
 import { StatusPill } from '@/components/primitives/StatusPill';
 import { ConfirmDrawer } from '@/components/primitives/ConfirmDrawer';
+import { PlatformCredentialsPanel } from '@/components/integrations/PlatformCredentialsPanel';
 import { apiClient } from '@/api/client';
 import { startOAuthConnect } from '@/api/connections';
 import { useCRMConnections, useTriggerCRMSync } from '@/api/hooks';
@@ -199,6 +200,8 @@ export default function IntegrationsHub() {
           Refresh
         </button>
       </div>
+
+      <PlatformCredentialsPanel />
 
       {/* Section: Ad Platforms */}
       <Section
