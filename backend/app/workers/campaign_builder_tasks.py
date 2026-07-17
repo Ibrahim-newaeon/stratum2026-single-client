@@ -20,7 +20,7 @@ from celery import shared_task
 from sqlalchemy import and_, select
 from sqlalchemy.orm import Session
 
-from app.db.session import SessionLocal, async_session_context
+from app.db.session import SessionLocal, async_session_context, dispose_stale_async_pool
 from app.models.campaign_builder import (
     AdAccount,
     AdPlatform,
@@ -53,6 +53,7 @@ async def _resolve_platform_credentials(platform: str) -> Optional[AppCredential
     resolution failure here must not crash a token refresh any harder than
     it did before this DB-credentials lookup existed.
     """
+    await dispose_stale_async_pool()
     try:
         async with async_session_context() as db:
             return await resolve_app_credentials(platform, db)
