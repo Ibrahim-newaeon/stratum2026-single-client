@@ -32,7 +32,6 @@ import { TrustGateIndicator } from '@/components/ui/TrustGateIndicator';
 import { OnboardingChat, OnboardingChatButton } from '@/components/onboarding';
 import { FeedbackWidget } from '@/components/feedback/FeedbackWidget';
 import { CopilotChat } from '@/components/dashboard/CopilotChat';
-import ClientContextSwitcher from '@/components/client/ClientContextSwitcher';
 import { Sidebar } from '@/components/primitives/nav/Sidebar';
 import { ThemeToggle } from '@/components/primitives/theme/ThemeToggle';
 import { buildDashboardNav } from '@/components/primitives/nav/dashboardNav';
@@ -174,8 +173,10 @@ export default function DashboardLayout() {
             </div>
 
             <div className="flex items-center gap-2">
-              <ClientContextSwitcher />
-
+              {/* ClientContextSwitcher removed (STRAT-SC-001 fix 11-3): it called
+                  GET /users/me/assigned-clients, which has no backend route, so it
+                  showed a permanently-empty "Select Client" dropdown. Re-add once
+                  a real client-assignment endpoint exists. */}
               <ThemeToggle />
 
               <button

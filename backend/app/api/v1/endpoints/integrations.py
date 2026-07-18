@@ -59,6 +59,47 @@ router = APIRouter(prefix="/integrations", tags=["integrations"])
 _owner_deps = [Depends(require_owner)]
 logger = get_logger(__name__)
 
+# HubSpot OAuth CSRF-state store (fix 3-3). Mirrors the ad-platform OAuth state
+# pattern (services/oauth/base.py): the connect endpoint stores a one-time state
+# token in Redis; the callback consumes+validates it before exchanging the code.
+_HUBSPOT_OAUTH_STATE_PREFIX = "hubspot_oauth_state:"
+_HUBSPOT_OAUTH_STATE_TTL = 600  # 10 minutes
+
+
+async def _store_hubspot_oauth_state(state: str) -> None:
+    """Persist a HubSpot OAuth state token for later callback validation."""
+    import redis.asyncio as aioredis
+
+    client = aioredis.from_url(settings.redis_url, decode_responses=True)
+    try:
+        await client.setex(
+            f"{_HUBSPOT_OAUTH_STATE_PREFIX}{state}", _HUBSPOT_OAUTH_STATE_TTL, "1"
+        )
+    finally:
+        await client.aclose()
+
+
+async def _consume_hubspot_oauth_state(state: str) -> bool:
+    """Atomically validate + delete a HubSpot OAuth state token (one-time use).
+
+    Returns True only if the exact state was previously stored (not yet expired
+    or consumed). Fails closed on a missing/forged state.
+    """
+    if not state:
+        return False
+    import redis.asyncio as aioredis
+
+    client = aioredis.from_url(settings.redis_url, decode_responses=True)
+    try:
+        key = f"{_HUBSPOT_OAUTH_STATE_PREFIX}{state}"
+        pipe = client.pipeline()
+        pipe.get(key)
+        pipe.delete(key)
+        got, _ = await pipe.execute()
+        return got is not None
+    finally:
+        await client.aclose()
+
 
 # =============================================================================
 # Pydantic Schemas
@@ -192,10 +233,13 @@ async def hubspot_connect(
     """
     client = HubSpotClient(db)
 
-    # Generate state token for CSRF protection
+    # Generate state token for CSRF protection and store it so the callback can
+    # validate it (STRAT-SC-001 fix 3-3: the callback previously accepted any
+    # state, allowing an attacker to bind their own HubSpot account to the org).
     import secrets
 
     state = secrets.token_urlsafe(32)
+    await _store_hubspot_oauth_state(state)
 
     auth_url = client.get_authorization_url(
         redirect_uri=request.redirect_uri,
@@ -226,6 +270,12 @@ async def hubspot_callback(
     Handle HubSpot OAuth callback.
     Exchanges authorization code for tokens and stores connection.
     """
+    # Validate the CSRF state against the value stored at connect time and
+    # consume it (one-time use) BEFORE exchanging the code (fix 3-3).
+    if not await _consume_hubspot_oauth_state(state):
+        logger.warning("hubspot_oauth_state_invalid")
+        raise HTTPException(status_code=400, detail="Invalid or expired OAuth state")
+
     client = HubSpotClient(db)
 
     try:

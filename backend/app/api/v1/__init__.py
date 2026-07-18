@@ -232,7 +232,10 @@ api_router.include_router(
 # Owner Analytics (Platform-wide analytics)
 api_router.include_router(
     console_analytics.router,
-    prefix="/console/analytics",
+    # prefix intentionally empty: console_analytics.router already declares
+    # prefix="/console"; a registry prefix here double-nests to
+    # /console/analytics/console/* and 404s the frontend (STRAT-SC-001 fix 5-1).
+    prefix="",
     tags=["Owner Analytics"],
 )
 
@@ -331,7 +334,10 @@ api_router.include_router(
 # Audit Services (EMQ, Offline Conversions, A/B Testing, LTV, etc.)
 api_router.include_router(
     audit_services.router,
-    prefix="/audit",
+    # prefix intentionally empty: audit_services.router already declares
+    # prefix="/audit-services"; a registry prefix double-nests to
+    # /audit/audit-services/* and 404s the frontend (STRAT-SC-001 fix 5-1).
+    prefix="",
     tags=["Audit Services"],
 )
 
@@ -457,6 +463,15 @@ api_router.include_router(
     embed_widgets.router,
     tags=["Embed Widgets"],
 )
+# Public widget-serving router (STRAT-SC-001 fix 5-4). Previously defined but
+# never mounted, so every embed code the UI issued (/embed/v1/widget/{id},
+# /embed/v1/loader.js) 404'd. It self-authenticates via a signed widget token,
+# so it stays unauthenticated by design (embed_widgets.py). Full path is
+# /api/v1/embed/v1/*.
+api_router.include_router(
+    embed_widgets.public_router,
+    tags=["Embed Widgets (Public)"],
+)
 
 # CDP Audience Sync (Push segments to ad platforms)
 # Note: audience_sync.router already has prefix="/cdp/audience-sync"
@@ -475,7 +490,9 @@ api_router.include_router(
 # AI Intelligence (Gap #3)
 api_router.include_router(
     intelligence.router,
-    prefix="/intelligence",
+    # prefix intentionally empty: intelligence.router already declares
+    # prefix="/analytics/insights"; a registry prefix double-nests to
+    # /intelligence/analytics/insights/* and 404s the frontend (STRAT-SC-001 fix 5-1).
     tags=["AI Intelligence"],
 )
 
@@ -490,7 +507,9 @@ api_router.include_router(
 # Compliance (Gap #5)
 api_router.include_router(
     compliance.router,
-    prefix="/compliance",
+    # prefix intentionally empty: compliance.router already declares
+    # prefix="/admin/compliance"; a registry prefix double-nests to
+    # /compliance/admin/compliance/* and 404s the frontend (STRAT-SC-001 fix 5-1).
     tags=["Compliance"],
 )
 

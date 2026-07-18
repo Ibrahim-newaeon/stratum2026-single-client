@@ -18,7 +18,7 @@ from redis import asyncio as aioredis
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from app.auth.deps import CurrentUserDep, OptionalUserDep
+from app.auth.deps import CurrentUserDep
 from app.core.config import settings
 from app.core.logging import get_logger
 from app.db.session import get_async_session
@@ -149,7 +149,7 @@ async def delete_session(
 @router.post("/start", response_model=StartConversationResponse)
 async def start_conversation(
     request: StartConversationRequest,
-    current_user: OptionalUserDep = None,
+    current_user: CurrentUserDep,
 ):
     """
     Start a new onboarding conversation.
@@ -218,7 +218,7 @@ async def start_conversation(
 @router.post("/message", response_model=SendMessageResponse)
 async def send_message(
     request: SendMessageRequest,
-    current_user: OptionalUserDep = None,
+    current_user: CurrentUserDep,
 ):
     """
     Send a message to the onboarding agent.
@@ -285,7 +285,7 @@ async def send_message(
 @router.get("/status/{session_id}", response_model=ConversationStatusResponse)
 async def get_conversation_status(
     session_id: str,
-    current_user: OptionalUserDep = None,
+    current_user: CurrentUserDep,
 ):
     """
     Get the current status of an onboarding conversation.
@@ -393,7 +393,7 @@ async def complete_onboarding(
 @router.delete("/session/{session_id}")
 async def cancel_conversation(
     session_id: str,
-    current_user: OptionalUserDep = None,
+    current_user: CurrentUserDep,
 ):
     """
     Cancel and delete an onboarding conversation.
@@ -422,6 +422,7 @@ async def cancel_conversation(
 @router.get("/quick-replies/{state}")
 async def get_quick_replies(
     state: str,
+    current_user: CurrentUserDep,
 ):
     """
     Get available quick replies for a conversation state.

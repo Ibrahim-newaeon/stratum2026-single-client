@@ -42,23 +42,35 @@ SUPERADMIN_NAME = os.environ.get("SUPERADMIN_NAME", "Platform Owner")
 ORG_NAME = os.environ.get("SUPERADMIN_TENANT_NAME", "Stratum AI")
 ORG_SLUG = os.environ.get("SUPERADMIN_TENANT_SLUG", "stratum-ai")
 
-if not SUPERADMIN_EMAIL or not SUPERADMIN_PASSWORD:
-    print(
-        "ERROR: SUPERADMIN_EMAIL and SUPERADMIN_PASSWORD environment variables are required."
-    )
-    print(
-        "Example: SUPERADMIN_EMAIL=admin@example.com SUPERADMIN_PASSWORD=$(openssl rand -base64 32) python scripts/seed_owner.py"
-    )
-    sys.exit(1)
 
-# Enforce strong password policy
-if len(SUPERADMIN_PASSWORD) < 16:
-    print("ERROR: SUPERADMIN_PASSWORD must be at least 16 characters.")
-    sys.exit(1)
+class OwnerSeedConfigError(RuntimeError):
+    """Raised when the owner-seed env vars are missing or invalid.
+
+    A normal exception — NOT sys.exit — so importing this module is
+    side-effect-free. The app lifespan imports ``create_owner`` and wraps it in
+    a best-effort ``except Exception``; a bare ``SystemExit`` from a module-level
+    ``sys.exit`` would escape that guard (SystemExit is not an Exception) and
+    crash startup when the env vars are unset (STRAT-SC-001 fix 13-1). The CLI
+    entrypoint still fail-fasts by catching this and exiting.
+    """
+
+
+def _validate_owner_config() -> None:
+    """Validate SUPERADMIN_* env vars; raise OwnerSeedConfigError if unusable."""
+    if not SUPERADMIN_EMAIL or not SUPERADMIN_PASSWORD:
+        raise OwnerSeedConfigError(
+            "SUPERADMIN_EMAIL and SUPERADMIN_PASSWORD environment variables are required."
+        )
+    if len(SUPERADMIN_PASSWORD) < 16:
+        raise OwnerSeedConfigError(
+            "SUPERADMIN_PASSWORD must be at least 16 characters."
+        )
 
 
 async def create_owner():
     """Create the Organization singleton and owner user using raw SQL."""
+
+    _validate_owner_config()
 
     # Create async engine
     engine = create_async_engine(
@@ -179,4 +191,12 @@ if __name__ == "__main__":
     print("Stratum AI - Owner Seed Script")
     print("=" * 50 + "\n")
 
-    asyncio.run(create_owner())
+    try:
+        asyncio.run(create_owner())
+    except OwnerSeedConfigError as exc:
+        print(f"ERROR: {exc}")
+        print(
+            "Example: SUPERADMIN_EMAIL=admin@example.com "
+            "SUPERADMIN_PASSWORD=$(openssl rand -base64 32) python scripts/seed_owner.py"
+        )
+        sys.exit(1)

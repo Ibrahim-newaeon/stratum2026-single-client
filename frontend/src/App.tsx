@@ -3,7 +3,6 @@ import { ComponentType, lazy } from 'react';
 import { HelmetProvider } from 'react-helmet-async';
 import DashboardLayout from './views/DashboardLayout';
 import LegacyTenantRedirect from './components/routing/LegacyTenantRedirect';
-import LegacyAmTenantRedirect from './components/routing/LegacyAmTenantRedirect';
 import LegacySuperadminRedirect from './components/routing/LegacySuperadminRedirect';
 import { Toaster } from './components/ui/toaster';
 import { TooltipProvider } from './components/ui/tooltip';
@@ -187,10 +186,6 @@ const CustomReportBuilder = lazyWithRetry(() => import('./views/CustomReportBuil
 
 // Embed Widgets
 const EmbedWidgets = lazyWithRetry(() => import('./views/operate/EmbedWidgets'));
-
-// Account Manager views
-const AMPortfolio = lazyWithRetry(() => import('./views/am/Portfolio'));
-const AMAccountNarrative = lazyWithRetry(() => import('./views/am/AccountNarrative'));
 
 // Portal views (client VIEWER users)
 const PortalLayout = lazyWithRetry(() => import('./views/portal/PortalLayout'));
@@ -1465,29 +1460,6 @@ function App() {
                             Sibling-level redirects from /dashboard/owner/*
                             preserve old links. See route block below the
                             dashboard route closer. */}
-
-                        {/* Account Manager routes */}
-                        <Route
-                          path="am/portfolio"
-                          element={
-                            <LazyRoute>
-                              <AMPortfolio />
-                            </LazyRoute>
-                          }
-                        />
-                        <Route
-                          path="am/account/:accountId"
-                          element={
-                            <LazyRoute>
-                              <AMAccountNarrative />
-                            </LazyRoute>
-                          }
-                        />
-                        {/* Legacy bookmark: am/tenant/:tenantId -> am/account/:accountId */}
-                        <Route
-                          path="am/tenant/:tenantId"
-                          element={<LegacyAmTenantRedirect />}
-                        />
                       </Route>
 
                       {/* Legacy multi-tenant bookmarks: /app/7/campaigns -> /dashboard/campaigns

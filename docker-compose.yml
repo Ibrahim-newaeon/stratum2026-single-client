@@ -268,7 +268,10 @@ services:
         max-file: "3"
     networks:
       - stratum_network
-    command: celery -A app.workers.celery_app worker --loglevel=info --concurrency=4
+    # -Q lists every queue the beat schedule / task_routes dispatch to; without
+    # it the worker binds only to task_default_queue ("default") and beat jobs
+    # routed to sync/ml/intel/rules strand unconsumed (STRAT-SC-001 fix 6-1).
+    command: celery -A app.workers.celery_app worker --loglevel=info --concurrency=4 -Q default,sync,ml,intel,rules
 
   # ===========================================================================
   # Celery Beat (Scheduler)

@@ -341,9 +341,9 @@ Profile → Events
 
 **Current Flags**:
 ```python
-feature_competitor_intel: bool = True
+feature_competitor_intel: bool = False
 feature_what_if_simulator: bool = True
-feature_automation_rules: bool = True
+feature_automation_rules: bool = False
 feature_gdpr_compliance: bool = True
 ```
 

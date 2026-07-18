@@ -17,6 +17,7 @@ from typing import Optional
 from uuid import UUID
 
 from fastapi import APIRouter, Depends, HTTPException, Query, Request, status
+from fastapi.responses import Response
 from sqlalchemy import func, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
@@ -344,6 +345,33 @@ async def get_embed_code(
 
 # This would be in a separate router for public access
 public_router = APIRouter(prefix="/embed/v1", tags=["embed-public"])
+
+
+@public_router.get("/loader.js")
+async def widget_loader_js() -> Response:
+    """Serve the embed loader script (STRAT-SC-001 fix 5-4).
+
+    Customers include
+    ``<script src=".../embed/v1/loader.js" data-widget-id="..." data-token="..."></script>``;
+    the loader injects an iframe pointing at the widget endpoint. The embed UI
+    handed out this URL but no handler existed, so every loader embed 404'd.
+    """
+    js = (
+        "(function(){\n"
+        "  var s=document.currentScript; if(!s){return;}\n"
+        "  var id=s.getAttribute('data-widget-id');\n"
+        "  var token=s.getAttribute('data-token')||'';\n"
+        "  if(!id){return;}\n"
+        "  var i=s.src.indexOf('/loader.js');\n"
+        "  var base=i>=0?s.src.substring(0,i):s.src;\n"
+        "  var f=document.createElement('iframe');\n"
+        "  f.src=base+'/widget/'+encodeURIComponent(id)+'?token='+encodeURIComponent(token);\n"
+        "  f.style.border='0'; f.style.width='100%'; f.setAttribute('loading','lazy');\n"
+        "  f.setAttribute('title','Stratum widget');\n"
+        "  s.parentNode.insertBefore(f,s);\n"
+        "})();"
+    )
+    return Response(content=js, media_type="application/javascript")
 
 
 @public_router.get("/widget/{widget_id}")

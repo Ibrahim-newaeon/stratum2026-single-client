@@ -48,14 +48,9 @@ export {
   useDeleteUser,
   type UserRole,
   type User as AdminUser,
-  type Tenant,
-  type TenantWithMetrics,
   type UserFilters,
-  type TenantFilters,
   type CreateUserRequest,
   type UpdateUserRequest,
-  type TenantStatus,
-  type PlanTier,
 } from '../admin'
 
 // Pacing module - export with renamed AlertSeverity to avoid conflict

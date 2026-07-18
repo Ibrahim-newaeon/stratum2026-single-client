@@ -858,17 +858,17 @@ class EmqAdminService:
         if not row or row.total == 0:
             return self._get_default_portfolio()
 
-        # Get top issues (drivers with low scores)
-        # This would require more detailed driver-level storage
+        # Top issues (illustrative driver labels). Driver-level "affected"
+        # counts are not tracked yet (would require per-driver storage), so
+        # `affectedTenants` is reported as 0 rather than a fabricated fraction
+        # of the row total. The field name is a legacy shape kept for the
+        # frontend/schema; the value stays 0 until a real source exists.
         top_issues = [
-            {"driver": "iOS Signal Loss", "affectedTenants": int(row.total * 0.5)},
-            {
-                "driver": "Consent Mode v2 Migration",
-                "affectedTenants": int(row.total * 0.3),
-            },
-            {"driver": "CAPI Implementation", "affectedTenants": int(row.total * 0.25)},
-            {"driver": "Conversion Latency", "affectedTenants": int(row.total * 0.2)},
-            {"driver": "Event Deduplication", "affectedTenants": int(row.total * 0.15)},
+            {"driver": "iOS Signal Loss", "affectedTenants": 0},
+            {"driver": "Consent Mode v2 Migration", "affectedTenants": 0},
+            {"driver": "CAPI Implementation", "affectedTenants": 0},
+            {"driver": "Conversion Latency", "affectedTenants": 0},
+            {"driver": "Event Deduplication", "affectedTenants": 0},
         ]
 
         # Estimate budget at risk (would come from actual budget data)
@@ -887,21 +887,27 @@ class EmqAdminService:
         }
 
     def _get_default_portfolio(self) -> Dict[str, Any]:
-        """Return default portfolio data."""
+        """Return an empty portfolio when there is no signal-health data.
+
+        All counts are 0 — this deployment is single-org and has no real
+        source for these figures, so no fabricated placeholders are emitted.
+        `totalTenants` / `affectedTenants` are legacy field names kept for
+        the frontend/schema; their values are honest zeros.
+        """
         return {
-            "totalTenants": 156,
+            "totalTenants": 0,
             "byBand": {
-                "reliable": 89,
-                "directional": 52,
-                "unsafe": 15,
+                "reliable": 0,
+                "directional": 0,
+                "unsafe": 0,
             },
-            "atRiskBudget": 2450000.00,
-            "avgScore": 76.8,
+            "atRiskBudget": 0,
+            "avgScore": 0.0,
             "topIssues": [
-                {"driver": "iOS Signal Loss", "affectedTenants": 78},
-                {"driver": "Consent Mode v2 Migration", "affectedTenants": 45},
-                {"driver": "CAPI Implementation", "affectedTenants": 38},
-                {"driver": "Conversion Latency", "affectedTenants": 29},
-                {"driver": "Event Deduplication", "affectedTenants": 21},
+                {"driver": "iOS Signal Loss", "affectedTenants": 0},
+                {"driver": "Consent Mode v2 Migration", "affectedTenants": 0},
+                {"driver": "CAPI Implementation", "affectedTenants": 0},
+                {"driver": "Conversion Latency", "affectedTenants": 0},
+                {"driver": "Event Deduplication", "affectedTenants": 0},
             ],
         }

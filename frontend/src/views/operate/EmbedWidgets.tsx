@@ -148,6 +148,15 @@ export default function EmbedWidgets() {
     timeoutsRef.current.add(id);
   };
 
+  // Derive the public embed base from THIS deployment's API origin instead of a
+  // hardcoded SaaS host (fix 5-4 / 11-4). Public widget routes live at
+  // <api-root>/embed/v1 (registered under /api/v1 on the backend).
+  const embedBaseUrl = () => {
+    const api = (import.meta.env.VITE_API_URL as string | undefined) || '/api/v1';
+    const root = api.startsWith('http') ? api : `${window.location.origin}${api}`;
+    return `${root.replace(/\/$/, '')}/embed/v1`;
+  };
+
   const generateIframeCode = (widget: EmbedWidget) => {
     const { width, height } =
       widget.widget_size === 'custom'
@@ -155,7 +164,7 @@ export default function EmbedWidgets() {
         : WIDGET_DIMENSIONS[widget.widget_size];
 
     return `<iframe
-  src="https://app.stratum.ai/embed/v1/widget/${widget.id}?token={YOUR_TOKEN}"
+  src="${embedBaseUrl()}/widget/${widget.id}?token={YOUR_TOKEN}"
   width="${width}"
   height="${height}"
   frameborder="0"
@@ -170,7 +179,7 @@ export default function EmbedWidgets() {
 <script>
 (function() {
   var w = document.createElement('script');
-  w.src = 'https://app.stratum.ai/embed/v1/loader.js';
+  w.src = '${embedBaseUrl()}/loader.js';
   w.async = true;
   w.dataset.widgetId = '${widget.id}';
   w.dataset.token = '{YOUR_TOKEN}';

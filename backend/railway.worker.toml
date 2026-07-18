@@ -24,6 +24,6 @@ noCache = true
 # HTTP-only checks (CORS/FRONTEND_URL) can't crash-loop the worker. Do NOT
 # add an env-var prefix here — Railway does not reliably shell-interpret
 # startCommand (the SERVICE_ROLE=... prefix made deployment 6fd2202d FAIL).
-startCommand = "celery -A app.workers.celery_app worker --loglevel=info --concurrency=2 --max-tasks-per-child=200"
+startCommand = "celery -A app.workers.celery_app worker --loglevel=info --concurrency=2 --max-tasks-per-child=200 -Q default,sync,ml,intel,rules"
 restartPolicyType = "ON_FAILURE"
 restartPolicyMaxRetries = 3

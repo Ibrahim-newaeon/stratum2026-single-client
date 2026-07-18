@@ -461,6 +461,11 @@ class Settings(BaseSettings):
     # (The manual send endpoint works independently once the task module is
     # registered in the Celery include.)
     enable_newsletter_beat: bool = Field(default=False)
+    # CRM sync + attribution writeback beat (HubSpot/Zoho/Pipedrive) hits live
+    # CRM APIs — opt-in, default off (STRAT-SC-001 fix 6-2). The tasks are
+    # registered in the Celery include unconditionally so manual/on-demand
+    # syncs work; only the recurring schedule is gated here.
+    enable_crm_beat: bool = Field(default=False)
     # Drip campaigns have no execution engine (no drip Celery task exists;
     # activate flips a flag and manual_trigger writes a "simulated" record) —
     # shelved off for launch; the whole /drip-campaigns router returns 503.

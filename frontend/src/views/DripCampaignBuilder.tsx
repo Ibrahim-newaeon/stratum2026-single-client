@@ -255,7 +255,7 @@ export default function DripCampaignBuilder() {
 
   const saveSequence = async () => {
     const token = sessionStorage.getItem('access_token') || '';
-    const API_URL = import.meta.env.VITE_API_URL || 'https://api.stratumai.app/api/v1';
+    const API_URL = import.meta.env.VITE_API_URL || '/api/v1';
 
     const body = {
       name: sequenceName,

@@ -24,6 +24,7 @@ from sqlalchemy import (
     String,
     Text,
     UniqueConstraint,
+    text,
 )
 from sqlalchemy.dialects.postgresql import JSONB, UUID
 from sqlalchemy.orm import relationship
@@ -116,7 +117,14 @@ class EnforcementSettings(Base, TimestampMixin):
         cascade="all, delete-orphan",
     )
 
-    __table_args__ = ()
+    # Single-row guard (STRAT-SC-001 fix 4-1). This is a per-org singleton but
+    # has a random UUID PK (no fixed key), so a unique index on the constant
+    # expression (true) lets at most one row exist. That makes the unordered
+    # .first() reads of autopilot_frozen deterministic — the operator's
+    # emergency-stop write and the execution-path read can no longer disagree.
+    __table_args__ = (
+        Index("uq_enforcement_settings_singleton", text("(true)"), unique=True),
+    )
 
     def to_dict(self) -> dict:
         """Convert to dictionary for API responses."""

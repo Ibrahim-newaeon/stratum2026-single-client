@@ -31,7 +31,6 @@ import {
   Calculator,
   Clock,
   Code2,
-  CreditCard,
   Database,
   DollarSign,
   FileBarChart,
@@ -523,7 +522,9 @@ const navConfig: NavGroup[] = [
       },
       { label: 'Settings', href: '/dashboard/settings', icon: Settings, section: 'settings' },
       { label: 'Team', href: '/dashboard/team', icon: Users, section: 'team' },
-      { label: 'Billing', href: '/dashboard/settings/billing', icon: CreditCard, section: 'billing' },
+      // Billing removed (STRAT-SC-001 fix): the payments/billing subsystem was
+      // dropped in the single-client conversion; the /dashboard/settings/billing
+      // link was dead (no route or backend answered it).
     ],
   },
 ];

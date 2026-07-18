@@ -1,0 +1,30 @@
+# PHASE 9 — BILLING, INTEGRATIONS & WEBHOOKS
+Audit date: 2026-07-18.
+
+## Scope declared
+Billing removal completeness (dead plan/tier/entitlement gate? Stripe residue?); per-tenant third-party credentials (where the surviving client's creds live + whether loaded/decryptable); OAuth-app credential storage; outbound/inbound webhook identity & routing. Healthy = billing cleanly removed with no dead gate, single-client creds load + decrypt, webhooks self-auth without tenant routing. Findings: **0 net-new** (all issues here are cross-refs to FINDING-3-3, 4-3, 6-2). 3 NEEDS-REMOVAL dead-code items.
+
+## BILLING — OPERATIONAL (removal is complete and clean)
+- **Tier/subscription gating fully removed**: `core/subscription.py` and `core/tiers.py` are **deleted** (feature_gate.py:8-10 documents it). `FeatureGate`/`require_feature` are now env-flag-only; `_FEATURE_SETTINGS_MAP` maps only `WHAT_IF_SIMULATOR`→`feature_what_if_simulator` and `GDPR_TOOLS`→`feature_gdpr_compliance` (feature_gate.py:54-56). No 402-payment-required path survives.
+- **No Stripe**: zero `import stripe` / `stripe.` / stripe webhook route in live code (grep = 0). CI residue-gate holds the line.
+- **No dead entitlement gate blocks features** (the audit's key billing risk): the tier-derived caps `max_campaigns`/`max_users`/`data_retention_days` in `DEFAULT_ORG_FEATURES` are **never enforced** — zero call sites in api/services (grep = 0). They are inert config values, not a gate that could lock the single client out.
+- **Embed-widget tier→flat conversion is explicit and clean**: `widget_service.py:7-10` documents that branding/caps "used to be derived from the subscription tier … no tier concept anymore … same (formerly Enterprise) behavior: white-label + generous fixed caps." Uses `DEFAULT_BRANDING_LEVEL` (widget_service.py:91), no dead tier lookup. (The embed *public serving* is broken per FINDING-5-4 — a routing bug, unrelated to this branding logic which is correct.)
+
+## INTEGRATIONS / CREDENTIALS — OPERATIONAL (agent-verified end-to-end)
+The highest-risk Phase 9 check (do the surviving client's credentials load, and is decryption still possible?) is **clean**:
+- **Single global encryption key — no per-tenant derivation lost.** `core/security.py:176-191` `_get_fernet_key` = PBKDF2HMAC over `settings.pii_encryption_key` + a **static** salt `b"stratum_ai_pii_salt_v2"` (:171-173). No tenant input ever fed the key, so nothing became undecryptable. Prod refuses the dev-default key (config.py:554-556). Decrypt never leaks ciphertext (security.py:233-242); legacy-plaintext tolerance re-encrypts on next write (db/types.py:38-46). **The CRITICAL "secrets undecryptable after conversion" scenario does NOT occur.**
+- **Ad-platform OAuth *app* credentials** (`PlatformAppCredential`): `UniqueConstraint("platform")` (models/platform_app_credential.py:25-26); resolved by provider via `scalar_one_or_none`, DB-first with env fallback (services/oauth/credentials.py:65-98); secrets `EncryptedString` (Fernet). Resolves to exactly one credential per platform. **Works.**
+- **Ad-platform connection tokens** (`PlatformConnection`): `UniqueConstraint("platform")` (models/campaign_builder.py:137-140); use-time lookup by provider via `scalar_one_or_none` across oauth.py / orchestrator.py / campaign_builder.py / console.py; global-key decrypt (services/oauth/base.py:220-226). **Works** — and is *better*-keyed than CRM (proper unique constraint, no singleton-by-first). Minor cosmetic residue: `oauth.py:580` `where(and_(PlatformConnection.platform == platform))` — single-arg `and_()` is a harmless leftover of the dropped tenant clause.
+- **Webhooks all self-auth + single-org route**: outbound URLs are user-supplied (SSRF-guarded, no tenant subdomain templating — webhooks.py:49-107, outbound_integrations.py); inbound (WhatsApp/Meta HMAC, SendGrid URL-token, HubSpot HMAC) authenticate via global settings secrets and route by message/portal id, never by a tenant identifier.
+
+## Cross-references (issues already filed — not double-counted here)
+- **CRM credential load** (`CRMConnection`): the LOAD + global-key decrypt path works when exactly one connection exists — but the missing `UniqueConstraint` (models/crm.py:162-165) means a duplicate row makes `scalar_one_or_none` raise `MultipleResultsError`, breaking the load. This is **FINDING-4-3** (Phase 4), and the CRM sync tasks that would populate/use it are unregistered (**FINDING-6-2**, Phase 6). Phase 9 confirms the decrypt path itself is NOT additionally broken.
+- **HubSpot OAuth callback state-validation gap** + webhook-HMAC-only-if-secret-set = **FINDING-3-3** (Phase 3).
+
+## Dead code (NEEDS-REMOVAL — billing-removal leftovers)
+- **N9-1**: `email_service.py:452-556` `send_payment_failed` (payment-failure email, links to `/dashboard/settings/billing`) — **no callers** (grep = 0). Dead since billing removal; harmless (never sent) but should be removed with the billing surface.
+- **N9-2**: `DEFAULT_ORG_FEATURES` caps `max_campaigns`/`max_users`/`data_retention_days` (features/flags.py) — inert, never enforced. Remove or wire intentionally.
+- **N9-3**: dead `Billing` nav item `/dashboard/settings/billing` (dashboardNav.ts:526) — the destination the dead payment email links to; documented known-gap. Filed for Phase 11 cleanup (FEAT-155).
+
+## Phase 9 summary
+Billing/licensing/Stripe is **cleanly and completely removed** — no dead entitlement gate can lock the single client out (the tier caps are inert), no Stripe residue, embed-widget tiering correctly collapsed to flat "Enterprise" behavior. The integration credential architecture is **healthy and arguably improved** by the conversion: a single global encryption key (no lost tenant derivation → no undecryptable secrets), ad-platform creds/tokens properly unique-keyed per provider, and webhooks self-authenticating with single-org routing. The only credential weakness is the CRM missing-unique-constraint already captured as FINDING-4-3, plus the HubSpot OAuth-state gap (FINDING-3-3) and unregistered CRM tasks (FINDING-6-2). Net-new findings: 0; three dead-code cleanups noted.

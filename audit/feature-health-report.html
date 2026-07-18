@@ -1,0 +1,685 @@
+<title>Feature Health Report — Stratum AI Post-Conversion Audit</title>
+<style>
+  :root{
+    --bg:#FBFAF8; --surface:#FFFFFF; --surface-2:#F6F3EE; --surface-3:#F1EDE5;
+    --ink:#17150F; --ink-2:#57534A; --ink-3:#8B857A;
+    --line:#E7E2D8; --line-2:#EFEBE2;
+    --accent:#DD4B14; --accent-2:#B83C10; --accent-soft:#FBEDE6;
+    --ok:#0F9D6B; --ok-soft:#E4F4EE;
+    --warn:#B9790E; --warn-soft:#F8EFDA;
+    --bad:#CF3A28; --bad-soft:#FAE8E5;
+    --unt:#64707C; --unt-soft:#ECEFF2;
+    --shadow:0 1px 2px rgba(20,18,12,.04),0 4px 16px rgba(20,18,12,.05);
+    --radius:14px;
+    --sans:ui-sans-serif,system-ui,-apple-system,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;
+    --mono:ui-monospace,"SF Mono","JetBrains Mono","Cascadia Code",Menlo,Consolas,monospace;
+    --maxw:1180px;
+  }
+  @media (prefers-color-scheme:dark){
+    :root{
+      --bg:#0B0B0A; --surface:#141311; --surface-2:#1B1916; --surface-3:#211E1A;
+      --ink:#F4F2EC; --ink-2:#A9A395; --ink-3:#726C60;
+      --line:#272420; --line-2:#211E1A;
+      --accent:#FF5A1F; --accent-2:#FF7A45; --accent-soft:#2A1710;
+      --ok:#26C58C; --ok-soft:#10241C;
+      --warn:#E0A426; --warn-soft:#2A2110;
+      --bad:#F15A4B; --bad-soft:#2A1512;
+      --unt:#8B95A1; --unt-soft:#1A1D20;
+      --shadow:0 1px 2px rgba(0,0,0,.3),0 6px 22px rgba(0,0,0,.35);
+    }
+  }
+  :root[data-theme="light"]{
+    --bg:#FBFAF8; --surface:#FFFFFF; --surface-2:#F6F3EE; --surface-3:#F1EDE5;
+    --ink:#17150F; --ink-2:#57534A; --ink-3:#8B857A;
+    --line:#E7E2D8; --line-2:#EFEBE2;
+    --accent:#DD4B14; --accent-2:#B83C10; --accent-soft:#FBEDE6;
+    --ok:#0F9D6B; --ok-soft:#E4F4EE; --warn:#B9790E; --warn-soft:#F8EFDA;
+    --bad:#CF3A28; --bad-soft:#FAE8E5; --unt:#64707C; --unt-soft:#ECEFF2;
+    --shadow:0 1px 2px rgba(20,18,12,.04),0 4px 16px rgba(20,18,12,.05);
+  }
+  :root[data-theme="dark"]{
+    --bg:#0B0B0A; --surface:#141311; --surface-2:#1B1916; --surface-3:#211E1A;
+    --ink:#F4F2EC; --ink-2:#A9A395; --ink-3:#726C60;
+    --line:#272420; --line-2:#211E1A;
+    --accent:#FF5A1F; --accent-2:#FF7A45; --accent-soft:#2A1710;
+    --ok:#26C58C; --ok-soft:#10241C; --warn:#E0A426; --warn-soft:#2A2110;
+    --bad:#F15A4B; --bad-soft:#2A1512; --unt:#8B95A1; --unt-soft:#1A1D20;
+    --shadow:0 1px 2px rgba(0,0,0,.3),0 6px 22px rgba(0,0,0,.35);
+  }
+
+  *{box-sizing:border-box}
+  html{scroll-behavior:smooth}
+  @media (prefers-reduced-motion:reduce){html{scroll-behavior:auto}}
+  body{
+    margin:0;background:var(--bg);color:var(--ink);
+    font-family:var(--sans);font-size:16px;line-height:1.6;
+    -webkit-font-smoothing:antialiased;text-rendering:optimizeLegibility;
+  }
+  .wrap{max-width:var(--maxw);margin:0 auto;padding:0 clamp(18px,4vw,44px)}
+  h1,h2,h3{text-wrap:balance;line-height:1.15;letter-spacing:-.02em;font-weight:650;margin:0}
+  a{color:var(--accent);text-decoration:none}
+  a:hover{text-decoration:underline;text-underline-offset:3px}
+  .mono{font-family:var(--mono);font-variant-numeric:tabular-nums}
+  .eyebrow{font-family:var(--mono);font-size:11.5px;letter-spacing:.22em;text-transform:uppercase;color:var(--ink-3);font-weight:600}
+
+  /* ---- top bar ---- */
+  .topbar{position:sticky;top:0;z-index:50;background:color-mix(in srgb,var(--bg) 88%,transparent);backdrop-filter:blur(10px);border-bottom:1px solid var(--line)}
+  .topbar-in{max-width:var(--maxw);margin:0 auto;padding:11px clamp(18px,4vw,44px);display:flex;align-items:center;gap:16px}
+  .brandmark{display:flex;align-items:center;gap:9px;font-weight:650;letter-spacing:-.02em;font-size:15px}
+  .dot{width:9px;height:9px;border-radius:50%;background:var(--accent);box-shadow:0 0 0 3px var(--accent-soft)}
+  .topnav{margin-left:auto;display:flex;gap:2px;overflow-x:auto;scrollbar-width:none}
+  .topnav::-webkit-scrollbar{display:none}
+  .topnav a{font-family:var(--mono);font-size:11.5px;letter-spacing:.04em;color:var(--ink-2);padding:6px 10px;border-radius:8px;white-space:nowrap;text-transform:uppercase}
+  .topnav a:hover{background:var(--surface-2);text-decoration:none;color:var(--ink)}
+  .topnav a.active{color:var(--accent);background:var(--accent-soft)}
+  .themebtn{flex:none;width:34px;height:34px;border-radius:9px;border:1px solid var(--line);background:var(--surface);color:var(--ink-2);cursor:pointer;display:grid;place-items:center;font-size:15px}
+  .themebtn:hover{color:var(--ink);border-color:var(--ink-3)}
+
+  /* ---- masthead ---- */
+  .mast{padding:clamp(40px,7vw,76px) 0 30px;border-bottom:1px solid var(--line)}
+  .mast .eyebrow{margin-bottom:20px}
+  .mast h1{font-size:clamp(30px,5.4vw,52px);letter-spacing:-.035em;font-weight:680}
+  .mast .sub{margin-top:14px;font-size:clamp(15px,2vw,18px);color:var(--ink-2);max-width:60ch}
+  .mast .sub b{color:var(--ink);font-weight:600}
+  .mastgrid{display:grid;grid-template-columns:1.4fr .9fr;gap:36px;align-items:end}
+  @media(max-width:760px){.mastgrid{grid-template-columns:1fr;gap:26px}}
+  .verdict{background:var(--surface);border:1px solid var(--line);border-radius:var(--radius);padding:22px 24px;box-shadow:var(--shadow)}
+  .verdict .vlabel{font-family:var(--mono);font-size:11px;letter-spacing:.18em;text-transform:uppercase;color:var(--ink-3)}
+  .verdict .vbadge{display:inline-flex;align-items:center;gap:9px;margin-top:10px;font-size:22px;font-weight:680;letter-spacing:-.02em;color:var(--warn)}
+  .verdict .vbadge::before{content:"";width:11px;height:11px;border-radius:50%;background:var(--warn);box-shadow:0 0 0 4px var(--warn-soft)}
+  .verdict .vwhy{margin-top:12px;font-size:13.5px;color:var(--ink-2);line-height:1.5}
+  .metarow{margin-top:22px;display:flex;flex-wrap:wrap;gap:8px 22px;font-family:var(--mono);font-size:12px;color:var(--ink-3)}
+  .metarow b{color:var(--ink-2);font-weight:500}
+
+  /* ---- section ---- */
+  section{padding:clamp(40px,6vw,64px) 0;border-bottom:1px solid var(--line)}
+  .sechead{display:flex;align-items:baseline;gap:14px;margin-bottom:26px}
+  .sechead .num{font-family:var(--mono);font-size:12px;color:var(--accent);font-weight:600}
+  .sechead h2{font-size:clamp(21px,3vw,29px)}
+  .sechead .note{margin-left:auto;font-family:var(--mono);font-size:11.5px;color:var(--ink-3);text-align:right}
+  .lead{font-size:clamp(15.5px,1.8vw,17.5px);color:var(--ink-2);max-width:72ch;line-height:1.62}
+  .lead b{color:var(--ink);font-weight:600}
+  .prose{max-width:72ch;color:var(--ink-2)}
+  .prose p{margin:0 0 14px}
+
+  /* ---- stat tiles ---- */
+  .stats{display:grid;grid-template-columns:repeat(4,1fr);gap:14px;margin:6px 0 30px}
+  @media(max-width:720px){.stats{grid-template-columns:repeat(2,1fr)}}
+  .stat{background:var(--surface);border:1px solid var(--line);border-radius:var(--radius);padding:18px 18px 16px;position:relative;overflow:hidden}
+  .stat::before{content:"";position:absolute;left:0;top:0;bottom:0;width:4px;background:var(--sc)}
+  .stat .n{font-size:38px;font-weight:680;letter-spacing:-.03em;font-variant-numeric:tabular-nums;line-height:1;color:var(--sc)}
+  .stat .k{margin-top:9px;font-family:var(--mono);font-size:11px;letter-spacing:.13em;text-transform:uppercase;color:var(--ink-2)}
+  .stat .p{margin-top:3px;font-size:12px;color:var(--ink-3)}
+  .stat.ok{--sc:var(--ok)} .stat.deg{--sc:var(--warn)} .stat.brk{--sc:var(--bad)} .stat.unt{--sc:var(--unt)}
+
+  .bar{height:12px;border-radius:7px;overflow:hidden;display:flex;border:1px solid var(--line);margin:0 0 8px}
+  .bar i{display:block;height:100%}
+  .barleg{display:flex;flex-wrap:wrap;gap:6px 18px;font-family:var(--mono);font-size:11.5px;color:var(--ink-2)}
+  .barleg span{display:inline-flex;align-items:center;gap:7px}
+  .barleg span::before{content:"";width:9px;height:9px;border-radius:2px;background:var(--c)}
+
+  /* severity + status chips */
+  .pill{display:inline-flex;align-items:center;gap:6px;font-family:var(--mono);font-size:11px;font-weight:600;letter-spacing:.04em;padding:3px 9px;border-radius:20px;white-space:nowrap;text-transform:uppercase}
+  .pill::before{content:"";width:7px;height:7px;border-radius:50%;background:currentColor;opacity:.9}
+  .p-ok{color:var(--ok);background:var(--ok-soft)}
+  .p-deg{color:var(--warn);background:var(--warn-soft)}
+  .p-brk{color:var(--bad);background:var(--bad-soft)}
+  .p-unt{color:var(--unt);background:var(--unt-soft)}
+  .sev{display:inline-block;font-family:var(--mono);font-size:10.5px;font-weight:700;letter-spacing:.06em;padding:2px 7px;border-radius:5px;text-transform:uppercase}
+  .s-high{color:#fff;background:var(--bad)}
+  .s-med{color:#fff;background:var(--warn)}
+  .s-low{color:var(--ink-2);background:var(--surface-3);border:1px solid var(--line)}
+
+  /* ---- risk list ---- */
+  .risks{display:flex;flex-direction:column;gap:12px;margin-top:8px}
+  .risk{display:grid;grid-template-columns:auto 1fr;gap:16px;align-items:start;background:var(--surface);border:1px solid var(--line);border-radius:12px;padding:16px 18px}
+  .risk .rk{font-family:var(--mono);font-size:12px;color:var(--ink-3);font-weight:600;padding-top:2px;min-width:64px}
+  .risk h4{margin:0 0 4px;font-size:15.5px;font-weight:600;letter-spacing:-.01em;display:flex;align-items:center;gap:10px;flex-wrap:wrap}
+  .risk p{margin:0;font-size:14px;color:var(--ink-2);line-height:1.5}
+
+  /* ---- tables ---- */
+  .tablewrap{overflow-x:auto;border:1px solid var(--line);border-radius:var(--radius);background:var(--surface);margin-bottom:14px}
+  table{border-collapse:collapse;width:100%;min-width:640px;font-size:13.5px}
+  thead th{font-family:var(--mono);font-size:10.5px;letter-spacing:.1em;text-transform:uppercase;color:var(--ink-3);font-weight:600;text-align:left;padding:11px 14px;border-bottom:1px solid var(--line);background:var(--surface-2);position:sticky;top:0}
+  tbody td{padding:10px 14px;border-bottom:1px solid var(--line-2);vertical-align:top}
+  tbody tr:last-child td{border-bottom:none}
+  tbody tr:hover td{background:var(--surface-2)}
+  td.id{font-family:var(--mono);font-size:12px;color:var(--ink-3);white-space:nowrap}
+  td.feat{font-weight:550;color:var(--ink);min-width:210px}
+  td.ev{font-family:var(--mono);font-size:11.5px;color:var(--ink-2);white-space:nowrap}
+  td.conf{font-family:var(--mono);font-size:12px;color:var(--ink-2);text-align:center}
+  .domlabel{display:flex;align-items:center;gap:11px;margin:26px 0 12px}
+  .domlabel .l{font-family:var(--mono);font-size:12px;letter-spacing:.12em;text-transform:uppercase;color:var(--ink);font-weight:600}
+  .domlabel .c{font-family:var(--mono);font-size:11px;color:var(--ink-3)}
+  .domlabel .rule{flex:1;height:1px;background:var(--line)}
+
+  /* ---- finding cards ---- */
+  .fgrid{display:grid;grid-template-columns:1fr 1fr;gap:14px}
+  @media(max-width:820px){.fgrid{grid-template-columns:1fr}}
+  .finding{background:var(--surface);border:1px solid var(--line);border-left:4px solid var(--fc);border-radius:12px;padding:16px 18px;box-shadow:var(--shadow)}
+  .finding.high{--fc:var(--bad)} .finding.med{--fc:var(--warn)} .finding.low{--fc:var(--unt)}
+  .finding .fh{display:flex;align-items:center;gap:10px;flex-wrap:wrap;margin-bottom:9px}
+  .finding .fid{font-family:var(--mono);font-size:12px;font-weight:700;color:var(--ink)}
+  .finding h4{font-size:14.5px;font-weight:600;letter-spacing:-.01em;margin:0 0 6px}
+  .finding p{margin:0;font-size:13px;color:var(--ink-2);line-height:1.5}
+  .finding .fev{margin-top:9px;font-family:var(--mono);font-size:11px;color:var(--ink-3);border-top:1px dashed var(--line);padding-top:8px}
+  .grouphd{font-family:var(--mono);font-size:12px;letter-spacing:.1em;text-transform:uppercase;color:var(--ink-2);margin:28px 0 14px;display:flex;align-items:center;gap:10px}
+  .grouphd:first-child{margin-top:0}
+  .grouphd .ct{color:var(--ink-3)}
+
+  /* ---- remediation ---- */
+  .phase{margin-bottom:22px}
+  .phasehd{display:flex;align-items:center;gap:12px;margin-bottom:12px}
+  .ptag{font-family:var(--mono);font-size:12px;font-weight:700;padding:3px 10px;border-radius:6px;letter-spacing:.05em}
+  .ptag.p0{color:#fff;background:var(--bad)} .ptag.p1{color:#fff;background:var(--warn)} .ptag.p2{color:var(--ink-2);background:var(--surface-3);border:1px solid var(--line)}
+  .phasehd .pt{font-size:15px;font-weight:600;color:var(--ink)}
+  td.eff{text-align:center}
+  .eff-s{color:var(--ok);font-weight:700} .eff-m{color:var(--warn);font-weight:700}
+
+  /* callouts */
+  .calloutgrid{display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-top:6px}
+  @media(max-width:760px){.calloutgrid{grid-template-columns:1fr}}
+  .callout{border:1px solid var(--line);border-radius:12px;padding:18px 20px;background:var(--surface)}
+  .callout.good{border-top:3px solid var(--ok)}
+  .callout.bad{border-top:3px solid var(--bad)}
+  .callout h4{font-size:13px;font-family:var(--mono);letter-spacing:.08em;text-transform:uppercase;margin:0 0 12px;color:var(--ink-2)}
+  .callout ul{margin:0;padding:0;list-style:none;display:flex;flex-direction:column;gap:9px}
+  .callout li{display:grid;grid-template-columns:auto 1fr;gap:10px;font-size:13.5px;color:var(--ink-2);line-height:1.45}
+  .callout li::before{content:"";width:7px;height:7px;border-radius:50%;margin-top:7px;background:var(--mk)}
+  .callout.good li::before{--mk:var(--ok)} .callout.bad li::before{--mk:var(--bad)}
+  .callout li b{color:var(--ink);font-weight:600}
+
+  .kv{display:flex;flex-wrap:wrap;gap:8px 10px;margin-top:14px}
+  .kv .item{font-family:var(--mono);font-size:11.5px;color:var(--ink-2);background:var(--surface-2);border:1px solid var(--line);border-radius:7px;padding:6px 10px}
+  .kv .item b{color:var(--ink);font-weight:600}
+
+  footer{padding:38px 0 60px;color:var(--ink-3);font-family:var(--mono);font-size:11.5px}
+  .fadein{opacity:0;transform:translateY(10px);animation:fi .6s cubic-bezier(.2,.7,.3,1) forwards}
+  @keyframes fi{to{opacity:1;transform:none}}
+  @media (prefers-reduced-motion:reduce){.fadein{animation:none;opacity:1;transform:none}}
+</style>
+
+<div class="topbar">
+  <div class="topbar-in">
+    <div class="brandmark"><span class="dot"></span> Stratum&nbsp;AI · Audit</div>
+    <nav class="topnav" id="topnav">
+      <a href="#summary">Summary</a>
+      <a href="#matrix">Health Matrix</a>
+      <a href="#findings">Findings</a>
+      <a href="#remediation">Remediation</a>
+      <a href="#untestable">Untestable</a>
+      <a href="#residue">Residue</a>
+      <a href="#limits">Limits</a>
+    </nav>
+    <button class="themebtn" id="themebtn" aria-label="Toggle light and dark theme" title="Toggle theme">◐</button>
+  </div>
+</div>
+
+<div class="wrap">
+  <header class="mast">
+    <div class="eyebrow">Post-Conversion System Audit · Protocol v2.0</div>
+    <div class="mastgrid">
+      <div>
+        <h1>Feature Health Report</h1>
+        <p class="sub"><b>Stratum AI</b> — multi-tenant → single-tenant conversion (STRAT-SC-001). An evidence-based, <b>runtime-verified</b> health investigation across 124 features and 14 phases.</p>
+        <div class="metarow">
+          <span>Audit&nbsp;<b>2026-07-18</b></span>
+          <span>Branch&nbsp;<b>main</b> (merged)</span>
+          <span>Method&nbsp;<b>static + runtime</b></span>
+          <span>Confidence&nbsp;<b>HIGH</b></span>
+        </div>
+      </div>
+      <aside class="verdict">
+        <div class="vlabel">Go / No-Go</div>
+        <div class="vbadge">Conditional Go</div>
+        <p class="vwhy">Core product operational and the conversion foundation is clean. A routing bug and a queue misconfiguration have silently taken down four owner/admin surfaces and all scheduled data refresh — concentrated and fast to fix.</p>
+      </aside>
+    </div>
+  </header>
+
+  <!-- ===================== EXECUTIVE SUMMARY ===================== -->
+  <section id="summary">
+    <div class="sechead"><span class="num">01</span><h2>Executive Summary</h2><span class="note">29 findings<br>0 critical · 2 high</span></div>
+    <p class="lead">The multi-tenant→single-tenant conversion is, at its foundation, <b>clean and well-executed</b>. Runtime verification confirmed login, token refresh, authenticated reads/writes, RBAC enforcement, a fully de-tenanted schema (0&nbsp;<span class="mono">tenant_id</span> columns in-DB), fresh-install migration from zero, and a single global encryption key. The hard failure modes an audit hunts for — cross-tenant data leak, undecryptable secrets, tenant residue in cache/queue/metric keys, silent test-coverage deletion — are <b>all absent</b>. The live defects are concentrated in routing wiring, job-queue binding, and frontend dead-links.</p>
+
+    <div class="stats" style="margin-top:30px">
+      <div class="stat ok"><div class="n" data-count="92">92</div><div class="k">Operational</div><div class="p">74% of features</div></div>
+      <div class="stat deg"><div class="n" data-count="16">16</div><div class="k">Degraded</div><div class="p">13% · latent / reduced</div></div>
+      <div class="stat brk"><div class="n" data-count="12">12</div><div class="k">Broken</div><div class="p">10% · path fails</div></div>
+      <div class="stat unt"><div class="n" data-count="4">4</div><div class="k">Untestable</div><div class="p">3% · check documented</div></div>
+    </div>
+
+    <div class="bar" aria-hidden="true">
+      <i style="width:74%;background:var(--ok)"></i><i style="width:13%;background:var(--warn)"></i><i style="width:10%;background:var(--bad)"></i><i style="width:3%;background:var(--unt)"></i>
+    </div>
+    <div class="barleg">
+      <span style="--c:var(--ok)">Operational 92</span>
+      <span style="--c:var(--warn)">Degraded 16</span>
+      <span style="--c:var(--bad)">Broken 12</span>
+      <span style="--c:var(--unt)">Untestable 4</span>
+      <span style="--c:transparent;color:var(--ink-3)">Findings: 0 CRIT · 2 HIGH · 19 MED · 8 LOW</span>
+    </div>
+
+    <h3 style="margin:38px 0 4px;font-size:17px">Top 5 risks</h3>
+    <div class="risks">
+      <div class="risk"><div class="rk">5-1</div><div><h4>Four owner/admin surfaces return 404 <span class="sev s-high">High</span> <span class="pill p-brk">Broken</span></h4><p>Routers double-prefixed (registry prefix stacked on module prefix); the frontend calls the single-prefix path. Platform Analytics, Audit Services, AI Insights, and the Compliance Dashboard are 100% non-functional. <b>Reproduced over live HTTP.</b></p></div></div>
+      <div class="risk"><div class="rk">6-1</div><div><h4>All scheduled data refresh silently never runs <span class="sev s-high">High</span> <span class="pill p-brk">Broken</span></h4><p>Beat jobs route to <span class="mono">sync</span>/<span class="mono">ml</span> queues that no worker consumes. Hourly campaign sync, daily forecasts, 30-min predictions, and audience auto-sync never execute — the product operates on stale data. <b>Confirmed via Celery import.</b></p></div></div>
+      <div class="risk"><div class="rk">11-1</div><div><h4>Account pages render fabricated data as real <span class="sev s-med">Med</span> <span class="pill p-brk">Broken</span></h4><p>The AM Portfolio / Narrative views fall back to hardcoded sample accounts (fake MRR &amp; plan tiers) instead of erroring when their deleted API 404s.</p></div></div>
+      <div class="risk"><div class="rk">13-1&nbsp;/&nbsp;13-2</div><div><h4>Boot &amp; health traps found at runtime <span class="sev s-med">Med</span> <span class="pill p-brk">Broken</span></h4><p>The API hard-crashes at startup if superadmin env vars are unset (a <span class="mono">SystemExit</span> escapes the best-effort guard); the SPA catch-all shadows <span class="mono">/health</span> when the API serves the frontend — a healthcheck-killer for single-container deploys.</p></div></div>
+      <div class="risk"><div class="rk">3-1</div><div><h4>Demoted admins keep power until token expiry <span class="sev s-med">Med</span> <span class="pill p-deg">Degraded</span></h4><p>Privileged user-management and console-flag routes trust the stale JWT role, and no token is revoked on demote/deactivate — access persists for up to the access-token lifetime.</p></div></div>
+    </div>
+
+    <div class="calloutgrid" style="margin-top:34px">
+      <div class="callout good">
+        <h4>Conversion foundation — verified sound</h4>
+        <ul>
+          <li><b>Schema de-tenanted</b> — 0 <span class="mono">tenant_id</span> columns / 0 <span class="mono">tenant_*</span> tables confirmed in-DB</li>
+          <li><b>Single global encryption key</b> — no lost per-tenant derivation; secrets decrypt</li>
+          <li><b>Auth core live</b> — login, refresh rotation, 401 guard; JWT carries no tenant claim</li>
+          <li><b>Fresh install</b> — migrations run from zero cleanly; single head</li>
+          <li><b>Tests converted, not deleted</b> — 5,700 tests; isolation suites justifiably removed</li>
+          <li><b>Rate-limit / cache / storage</b> — per-principal, tenant-free keys, symmetric paths</li>
+        </ul>
+      </div>
+      <div class="callout bad">
+        <h4>Where the damage is concentrated</h4>
+        <ul>
+          <li><b>Routing wiring</b> — 4 double-prefixed routers + 3 orphaned FE→BE contracts</li>
+          <li><b>Job-queue binding</b> — scheduled sync/forecast/prediction jobs stranded</li>
+          <li><b>Realtime</b> — built but unwired end-to-end (dashboard polls as fallback)</li>
+          <li><b>Frontend dead-links</b> — fabricated data, dead nav, broken client switcher</li>
+          <li><b>Singleton tables</b> — enforcement / onboarding / CRM lack the one-row constraint</li>
+          <li><b>Boot / health</b> — two runtime-only traps in startup + SPA routing</li>
+        </ul>
+      </div>
+    </div>
+  </section>
+
+  <!-- ===================== HEALTH MATRIX ===================== -->
+  <section id="matrix">
+    <div class="sechead"><span class="num">02</span><h2>Health Matrix</h2><span class="note">124 features · grouped by domain<br>RT = runtime-verified</span></div>
+    <p class="lead" style="margin-bottom:8px">Every inventoried feature appears exactly once. Status encodes path health; severity and confidence qualify it. Tables scroll horizontally on narrow screens.</p>
+
+    <div class="domlabel"><span class="l">A · Authentication &amp; Session</span><span class="rule"></span><span class="c">10 features</span></div>
+    <div class="tablewrap"><table>
+      <thead><tr><th>ID</th><th>Feature</th><th>Status</th><th>Sev</th><th>Conf</th><th>Evidence</th></tr></thead>
+      <tbody>
+        <tr><td class="id">001</td><td class="feat">Login / logout · JWT refresh rotation · blacklist</td><td><span class="pill p-ok">Operational</span></td><td>—</td><td class="conf">H</td><td class="ev">P3 · RT</td></tr>
+        <tr><td class="id">002</td><td class="feat">Signup (invite-only gate)</td><td><span class="pill p-ok">Operational</span></td><td>—</td><td class="conf">H</td><td class="ev">P3 · P10</td></tr>
+        <tr><td class="id">003</td><td class="feat">Password reset · email verification links</td><td><span class="pill p-ok">Operational</span></td><td>—</td><td class="conf">H</td><td class="ev">P3 · P8</td></tr>
+        <tr><td class="id">004</td><td class="feat">MFA (TOTP) challenge-exchange</td><td><span class="pill p-ok">Operational</span></td><td>—</td><td class="conf">M</td><td class="ev">P3</td></tr>
+        <tr><td class="id">005</td><td class="feat">RBAC role hierarchy + portal / cms roles</td><td><span class="pill p-deg">Degraded</span></td><td><span class="sev s-med">Med</span></td><td class="conf">H</td><td class="ev">F-3-1</td></tr>
+        <tr><td class="id">006</td><td class="feat">API keys · X-API-Key programmatic auth</td><td><span class="pill p-ok">Operational</span></td><td>—</td><td class="conf">M</td><td class="ev">P3 · P9</td></tr>
+        <tr><td class="id">007</td><td class="feat">AuthContextMiddleware (replaced TenantMiddleware)</td><td><span class="pill p-ok">Operational</span></td><td>—</td><td class="conf">H</td><td class="ev">P3</td></tr>
+        <tr><td class="id">008</td><td class="feat">CSRF middleware</td><td><span class="pill p-ok">Operational</span></td><td>—</td><td class="conf">M</td><td class="ev">P3</td></tr>
+        <tr><td class="id">009</td><td class="feat">Team management + invitations</td><td><span class="pill p-ok">Operational</span></td><td>—</td><td class="conf">M</td><td class="ev">P3 · P8</td></tr>
+        <tr><td class="id">010</td><td class="feat">User profile / account management</td><td><span class="pill p-ok">Operational</span></td><td>—</td><td class="conf">H</td><td class="ev">RT (PATCH 200)</td></tr>
+      </tbody>
+    </table></div>
+
+    <div class="domlabel"><span class="l">B · Core Domain APIs</span><span class="rule"></span><span class="c">59 features · 6 broken</span></div>
+    <div class="tablewrap"><table>
+      <thead><tr><th>ID</th><th>Feature</th><th>Status</th><th>Sev</th><th>Conf</th><th>Evidence</th></tr></thead>
+      <tbody>
+        <tr><td class="id">020</td><td class="feat">Campaigns CRUD</td><td><span class="pill p-ok">Operational</span></td><td>—</td><td class="conf">H</td><td class="ev">RT (401 guard)</td></tr>
+        <tr><td class="id">021</td><td class="feat">Digital assets / DAM</td><td><span class="pill p-ok">Operational</span></td><td>—</td><td class="conf">M</td><td class="ev">RT (list 200)</td></tr>
+        <tr><td class="id">022</td><td class="feat">Automation rules engine</td><td><span class="pill p-ok">Operational</span></td><td>—</td><td class="conf">M</td><td class="ev">P6 (gated)</td></tr>
+        <tr><td class="id">023</td><td class="feat">Competitor intelligence</td><td><span class="pill p-deg">Degraded</span></td><td><span class="sev s-low">Low</span></td><td class="conf">H</td><td class="ev">P6 (fabricates)</td></tr>
+        <tr><td class="id">024</td><td class="feat">What-if ML simulator</td><td><span class="pill p-ok">Operational</span></td><td>—</td><td class="conf">M</td><td class="ev">P1 (FeatureGate)</td></tr>
+        <tr><td class="id">025</td><td class="feat">Core analytics / KPIs</td><td><span class="pill p-ok">Operational</span></td><td>—</td><td class="conf">M</td><td class="ev">P5</td></tr>
+        <tr><td class="id">026</td><td class="feat">AI analytics (scaling / fatigue / anomalies)</td><td><span class="pill p-ok">Operational</span></td><td>—</td><td class="conf">M</td><td class="ev">P5</td></tr>
+        <tr><td class="id">027</td><td class="feat">GDPR export / erasure / consent</td><td><span class="pill p-ok">Operational</span></td><td>—</td><td class="conf">M</td><td class="ev">P9</td></tr>
+        <tr><td class="id">028</td><td class="feat">WhatsApp messaging + inbound webhook</td><td><span class="pill p-ok">Operational</span></td><td>—</td><td class="conf">M</td><td class="ev">P8 · P9</td></tr>
+        <tr><td class="id">029</td><td class="feat">ML training / model registry</td><td><span class="pill p-ok">Operational</span></td><td>—</td><td class="conf">M</td><td class="ev">P1 (owner)</td></tr>
+        <tr><td class="id">030</td><td class="feat">Live predictions / ROAS (on-demand)</td><td><span class="pill p-ok">Operational</span></td><td>—</td><td class="conf">M</td><td class="ev">P5 · sched=6-1</td></tr>
+        <tr><td class="id">031</td><td class="feat">Conversions API (CAPI)</td><td><span class="pill p-ok">Operational</span></td><td>—</td><td class="conf">M</td><td class="ev">P5 · P7</td></tr>
+        <tr><td class="id">032</td><td class="feat">Meta CAPI event collection</td><td><span class="pill p-ok">Operational</span></td><td>—</td><td class="conf">M</td><td class="ev">P5</td></tr>
+        <tr><td class="id">032b</td><td class="feat">Meta CAPI quality report</td><td><span class="pill p-brk">Broken</span></td><td><span class="sev s-low">Low</span></td><td class="conf">H</td><td class="ev">F-2-3</td></tr>
+        <tr><td class="id">033</td><td class="feat">Landing CMS (multi-language)</td><td><span class="pill p-ok">Operational</span></td><td>—</td><td class="conf">M</td><td class="ev">P5</td></tr>
+        <tr><td class="id">034</td><td class="feat">EMQ one-click QA fixes</td><td><span class="pill p-ok">Operational</span></td><td>—</td><td class="conf">M</td><td class="ev">P5</td></tr>
+        <tr><td class="id">035</td><td class="feat">Owner console (platform admin)</td><td><span class="pill p-ok">Operational</span></td><td>—</td><td class="conf">M</td><td class="ev">P5</td></tr>
+        <tr><td class="id">036</td><td class="feat">Launch-readiness wizard</td><td><span class="pill p-ok">Operational</span></td><td>—</td><td class="conf">M</td><td class="ev">P5</td></tr>
+        <tr><td class="id">037</td><td class="feat">Dashboard overview / signal health</td><td><span class="pill p-ok">Operational</span></td><td>—</td><td class="conf">H</td><td class="ev">P5 · RT</td></tr>
+        <tr><td class="id">038</td><td class="feat">Owner platform analytics</td><td><span class="pill p-brk">Broken</span></td><td><span class="sev s-high">High</span></td><td class="conf">H</td><td class="ev">F-5-1 (RT 404)</td></tr>
+        <tr><td class="id">039</td><td class="feat">Autopilot (trust-gated actions)</td><td><span class="pill p-ok">Operational</span></td><td>—</td><td class="conf">M</td><td class="ev">P6 (default q)</td></tr>
+        <tr><td class="id">040</td><td class="feat">Autopilot enforcement / emergency stop</td><td><span class="pill p-deg">Degraded</span></td><td><span class="sev s-med">Med</span></td><td class="conf">H</td><td class="ev">F-4-1 (RT)</td></tr>
+        <tr><td class="id">041</td><td class="feat">Campaign builder</td><td><span class="pill p-ok">Operational</span></td><td>—</td><td class="conf">M</td><td class="ev">P5 · P9</td></tr>
+        <tr><td class="id">042</td><td class="feat">Feature flags API</td><td><span class="pill p-ok">Operational</span></td><td>—</td><td class="conf">H</td><td class="ev">P10 (singleton)</td></tr>
+        <tr><td class="id">043</td><td class="feat">AI insights / recommendations</td><td><span class="pill p-ok">Operational</span></td><td>—</td><td class="conf">M</td><td class="ev">P5</td></tr>
+        <tr><td class="id">044</td><td class="feat">Trust layer / signal health API</td><td><span class="pill p-ok">Operational</span></td><td>—</td><td class="conf">M</td><td class="ev">P5</td></tr>
+        <tr><td class="id">045</td><td class="feat">EMQ v2 (owner portfolio)</td><td><span class="pill p-deg">Degraded</span></td><td><span class="sev s-med">Med</span></td><td class="conf">H</td><td class="ev">F-2-1 (fabricated)</td></tr>
+        <tr><td class="id">046</td><td class="feat">Integrations hub</td><td><span class="pill p-ok">Operational</span></td><td>—</td><td class="conf">M</td><td class="ev">P9</td></tr>
+        <tr><td class="id">047</td><td class="feat">Pacing &amp; forecasting</td><td><span class="pill p-ok">Operational</span></td><td>—</td><td class="conf">M</td><td class="ev">P5</td></tr>
+        <tr><td class="id">048</td><td class="feat">Profit ROAS / COGS</td><td><span class="pill p-ok">Operational</span></td><td>—</td><td class="conf">M</td><td class="ev">P5</td></tr>
+        <tr><td class="id">049</td><td class="feat">Multi-touch attribution</td><td><span class="pill p-ok">Operational</span></td><td>—</td><td class="conf">M</td><td class="ev">P5</td></tr>
+        <tr><td class="id">050</td><td class="feat">Data-driven attribution (Markov / Shapley)</td><td><span class="pill p-ok">Operational</span></td><td>—</td><td class="conf">M</td><td class="ev">P5</td></tr>
+        <tr><td class="id">051</td><td class="feat">Automated reporting (PDF / Slack / email)</td><td><span class="pill p-ok">Operational</span></td><td>—</td><td class="conf">M</td><td class="ev">P7 · P8</td></tr>
+        <tr><td class="id">052</td><td class="feat">Audit services (offline conv / AB / LTV / EMQ)</td><td><span class="pill p-brk">Broken</span></td><td><span class="sev s-high">High</span></td><td class="conf">H</td><td class="ev">F-5-1 · 5-3 (RT)</td></tr>
+        <tr><td class="id">053</td><td class="feat">Newsletter &amp; email campaigns</td><td><span class="pill p-ok">Operational</span></td><td>—</td><td class="conf">M</td><td class="ev">P6 · P8</td></tr>
+        <tr><td class="id">054</td><td class="feat">Onboarding wizard</td><td><span class="pill p-deg">Degraded</span></td><td><span class="sev s-med">Med</span></td><td class="conf">H</td><td class="ev">F-4-2</td></tr>
+        <tr><td class="id">055</td><td class="feat">Ad-platform OAuth flows</td><td><span class="pill p-ok">Operational</span></td><td>—</td><td class="conf">M</td><td class="ev">P9</td></tr>
+        <tr><td class="id">056</td><td class="feat">Platform OAuth-app credential mgmt</td><td><span class="pill p-ok">Operational</span></td><td>—</td><td class="conf">H</td><td class="ev">P9 · RT (uq)</td></tr>
+        <tr><td class="id">057</td><td class="feat">In-app notifications</td><td><span class="pill p-ok">Operational</span></td><td>—</td><td class="conf">M</td><td class="ev">P8</td></tr>
+        <tr><td class="id">058</td><td class="feat">Programmatic public API</td><td><span class="pill p-ok">Operational</span></td><td>—</td><td class="conf">M</td><td class="ev">P3</td></tr>
+        <tr><td class="id">059</td><td class="feat">CDP (profiles / segments / events / consent)</td><td><span class="pill p-ok">Operational</span></td><td>—</td><td class="conf">M</td><td class="ev">P5 · P6</td></tr>
+        <tr><td class="id">060</td><td class="feat">Product changelog</td><td><span class="pill p-deg">Degraded</span></td><td><span class="sev s-low">Low</span></td><td class="conf">H</td><td class="ev">F-3-4</td></tr>
+        <tr><td class="id">061</td><td class="feat">Client account management</td><td><span class="pill p-ok">Operational</span></td><td>—</td><td class="conf">M</td><td class="ev">P5</td></tr>
+        <tr><td class="id">062</td><td class="feat">CMS (blog / pages / contacts)</td><td><span class="pill p-ok">Operational</span></td><td>—</td><td class="conf">M</td><td class="ev">P5</td></tr>
+        <tr><td class="id">063</td><td class="feat">Knowledge graph</td><td><span class="pill p-ok">Operational</span></td><td>—</td><td class="conf">M</td><td class="ev">P1 (shelved)</td></tr>
+        <tr><td class="id">064</td><td class="feat">Inbound webhook processing (owner)</td><td><span class="pill p-ok">Operational</span></td><td>—</td><td class="conf">M</td><td class="ev">P3 · P9</td></tr>
+        <tr><td class="id">065</td><td class="feat">Slack integration</td><td><span class="pill p-ok">Operational</span></td><td>—</td><td class="conf">M</td><td class="ev">P8</td></tr>
+        <tr><td class="id">066</td><td class="feat">AI onboarding agent</td><td><span class="pill p-deg">Degraded</span></td><td><span class="sev s-med">Med</span></td><td class="conf">H</td><td class="ev">F-3-2 (unauth LLM)</td></tr>
+        <tr><td class="id">067</td><td class="feat">Embed widgets (public serving)</td><td><span class="pill p-brk">Broken</span></td><td><span class="sev s-med">Med</span></td><td class="conf">H</td><td class="ev">F-5-4 (RT)</td></tr>
+        <tr><td class="id">068</td><td class="feat">CDP audience sync → platforms</td><td><span class="pill p-ok">Operational</span></td><td>—</td><td class="conf">M</td><td class="ev">P6 · sched=6-1</td></tr>
+        <tr><td class="id">069</td><td class="feat">AI copilot chat (RAG)</td><td><span class="pill p-ok">Operational</span></td><td>—</td><td class="conf">M</td><td class="ev">P1</td></tr>
+        <tr><td class="id">070</td><td class="feat">AI intelligence</td><td><span class="pill p-brk">Broken</span></td><td><span class="sev s-high">High</span></td><td class="conf">H</td><td class="ev">F-5-1 (RT 404)</td></tr>
+        <tr><td class="id">071</td><td class="feat">Advanced analytics</td><td><span class="pill p-ok">Operational</span></td><td>—</td><td class="conf">M</td><td class="ev">P5</td></tr>
+        <tr><td class="id">072</td><td class="feat">Enterprise compliance dashboard</td><td><span class="pill p-brk">Broken</span></td><td><span class="sev s-high">High</span></td><td class="conf">H</td><td class="ev">F-5-1 (RT 404)</td></tr>
+        <tr><td class="id">073</td><td class="feat">Outbound integrations (webhooks)</td><td><span class="pill p-ok">Operational</span></td><td>—</td><td class="conf">M</td><td class="ev">P9</td></tr>
+        <tr><td class="id">074</td><td class="feat">Developer portal</td><td><span class="pill p-ok">Operational</span></td><td>—</td><td class="conf">M</td><td class="ev">P5 · host=11-4</td></tr>
+        <tr><td class="id">075</td><td class="feat">SendGrid inbound webhook</td><td><span class="pill p-ok">Operational</span></td><td>—</td><td class="conf">M</td><td class="ev">P9 (token)</td></tr>
+        <tr><td class="id">076</td><td class="feat">Drip campaigns</td><td><span class="pill p-ok">Operational</span></td><td>—</td><td class="conf">M</td><td class="ev">P8 (gated)</td></tr>
+        <tr><td class="id">077</td><td class="feat">Web push (VAPID)</td><td><span class="pill p-ok">Operational</span></td><td>—</td><td class="conf">M</td><td class="ev">P8</td></tr>
+        <tr><td class="id">078</td><td class="feat">Memory debug router (inert / unregistered)</td><td><span class="pill p-ok">Operational</span></td><td>—</td><td class="conf">H</td><td class="ev">RT (not mounted)</td></tr>
+      </tbody>
+    </table></div>
+
+    <div class="domlabel"><span class="l">C · App-Level HTTP Surface</span><span class="rule"></span><span class="c">7 features</span></div>
+    <div class="tablewrap"><table>
+      <thead><tr><th>ID</th><th>Feature</th><th>Status</th><th>Sev</th><th>Conf</th><th>Evidence</th></tr></thead>
+      <tbody>
+        <tr><td class="id">085</td><td class="feat">Health endpoints</td><td><span class="pill p-deg">Degraded</span></td><td><span class="sev s-med">Med</span></td><td class="conf">H</td><td class="ev">F-13-2 (RT)</td></tr>
+        <tr><td class="id">086</td><td class="feat">Prometheus /metrics</td><td><span class="pill p-ok">Operational</span></td><td>—</td><td class="conf">M</td><td class="ev">P12 (no tenant)</td></tr>
+        <tr><td class="id">087</td><td class="feat">Public demo metrics + SSE</td><td><span class="pill p-ok">Operational</span></td><td>—</td><td class="conf">M</td><td class="ev">P8</td></tr>
+        <tr><td class="id">088</td><td class="feat">Authed SSE stream</td><td><span class="pill p-brk">Broken</span></td><td><span class="sev s-med">Med</span></td><td class="conf">H</td><td class="ev">F-8-1</td></tr>
+        <tr><td class="id">089</td><td class="feat">WebSocket /ws + /ws/stats</td><td><span class="pill p-brk">Broken</span></td><td><span class="sev s-med">Med</span></td><td class="conf">H</td><td class="ev">F-8-1</td></tr>
+        <tr><td class="id">090</td><td class="feat">API docs (/docs · /redoc · /openapi)</td><td><span class="pill p-ok">Operational</span></td><td>—</td><td class="conf">M</td><td class="ev">RT</td></tr>
+        <tr><td class="id">091</td><td class="feat">SPA / static serving + catch-all</td><td><span class="pill p-deg">Degraded</span></td><td><span class="sev s-med">Med</span></td><td class="conf">H</td><td class="ev">F-13-2 (RT)</td></tr>
+      </tbody>
+    </table></div>
+
+    <div class="domlabel"><span class="l">D · Background Jobs</span><span class="rule"></span><span class="c">24 features · 6 broken (scheduled refresh)</span></div>
+    <div class="tablewrap"><table>
+      <thead><tr><th>ID</th><th>Feature</th><th>Status</th><th>Sev</th><th>Conf</th><th>Evidence</th></tr></thead>
+      <tbody>
+        <tr><td class="id">100</td><td class="feat">Campaign data sync (scheduled)</td><td><span class="pill p-brk">Broken</span></td><td><span class="sev s-high">High</span></td><td class="conf">H</td><td class="ev">F-6-1 (RT →sync)</td></tr>
+        <tr><td class="id">101</td><td class="feat">Daily forecasts (scheduled)</td><td><span class="pill p-brk">Broken</span></td><td><span class="sev s-high">High</span></td><td class="conf">H</td><td class="ev">F-6-1 (→ml)</td></tr>
+        <tr><td class="id">102</td><td class="feat">Creative fatigue scores</td><td><span class="pill p-ok">Operational</span></td><td>—</td><td class="conf">H</td><td class="ev">P6 (default)</td></tr>
+        <tr><td class="id">103</td><td class="feat">Audit-log queue processor</td><td><span class="pill p-ok">Operational</span></td><td>—</td><td class="conf">H</td><td class="ev">P6 (default)</td></tr>
+        <tr><td class="id">104</td><td class="feat">Pipeline health + worker heartbeat</td><td><span class="pill p-ok">Operational</span></td><td>—</td><td class="conf">H</td><td class="ev">P6 (default)</td></tr>
+        <tr><td class="id">105</td><td class="feat">Daily scores</td><td><span class="pill p-ok">Operational</span></td><td>—</td><td class="conf">H</td><td class="ev">P6 (default)</td></tr>
+        <tr><td class="id">106</td><td class="feat">Predictions (scheduled)</td><td><span class="pill p-brk">Broken</span></td><td><span class="sev s-high">High</span></td><td class="conf">H</td><td class="ev">F-6-1 (→ml)</td></tr>
+        <tr><td class="id">107</td><td class="feat">Scheduled WhatsApp sends</td><td><span class="pill p-ok">Operational</span></td><td>—</td><td class="conf">M</td><td class="ev">P6 · rule=6-4</td></tr>
+        <tr><td class="id">108</td><td class="feat">Autopilot apply-actions queue</td><td><span class="pill p-ok">Operational</span></td><td>—</td><td class="conf">H</td><td class="ev">P6 (default)</td></tr>
+        <tr><td class="id">109</td><td class="feat">Signal-health daily rollup</td><td><span class="pill p-ok">Operational</span></td><td>—</td><td class="conf">H</td><td class="ev">P6 (default)</td></tr>
+        <tr><td class="id">110</td><td class="feat">Attribution-variance rollup</td><td><span class="pill p-ok">Operational</span></td><td>—</td><td class="conf">H</td><td class="ev">P6 (default)</td></tr>
+        <tr><td class="id">111</td><td class="feat">Audience auto-sync sweep (scheduled)</td><td><span class="pill p-brk">Broken</span></td><td><span class="sev s-high">High</span></td><td class="conf">H</td><td class="ev">F-6-1 (→sync)</td></tr>
+        <tr><td class="id">112</td><td class="feat">Campaign-builder connector beat trio</td><td><span class="pill p-deg">Degraded</span></td><td><span class="sev s-med">Med</span></td><td class="conf">M</td><td class="ev">P6 (gated)</td></tr>
+        <tr><td class="id">113</td><td class="feat">Newsletter scheduled sends</td><td><span class="pill p-ok">Operational</span></td><td>—</td><td class="conf">M</td><td class="ev">P6 (default)</td></tr>
+        <tr><td class="id">114</td><td class="feat">Rules evaluation beat</td><td><span class="pill p-deg">Degraded</span></td><td><span class="sev s-med">Med</span></td><td class="conf">M</td><td class="ev">P6 (→rules gated)</td></tr>
+        <tr><td class="id">115</td><td class="feat">Competitor data refresh beat</td><td><span class="pill p-deg">Degraded</span></td><td><span class="sev s-low">Low</span></td><td class="conf">H</td><td class="ev">P6 · P10</td></tr>
+        <tr><td class="id">116</td><td class="feat">CDP compute tasks (RFM / traits orphaned)</td><td><span class="pill p-deg">Degraded</span></td><td><span class="sev s-low">Low</span></td><td class="conf">M</td><td class="ev">P6</td></tr>
+        <tr><td class="id">117</td><td class="feat">CMS publish tasks (scheduled / version orphaned)</td><td><span class="pill p-deg">Degraded</span></td><td><span class="sev s-low">Low</span></td><td class="conf">M</td><td class="ev">P6</td></tr>
+        <tr><td class="id">118</td><td class="feat">Dead-letter queue sink</td><td><span class="pill p-ok">Operational</span></td><td>—</td><td class="conf">M</td><td class="ev">P6</td></tr>
+        <tr><td class="id">119</td><td class="feat">CRM sync / writeback tasks</td><td><span class="pill p-brk">Broken</span></td><td><span class="sev s-med">Med</span></td><td class="conf">H</td><td class="ev">F-6-2</td></tr>
+        <tr><td class="id">120</td><td class="feat">Legacy data_sync Celery app (dead)</td><td><span class="pill p-brk">Broken</span></td><td><span class="sev s-med">Med</span></td><td class="conf">H</td><td class="ev">F-6-3</td></tr>
+        <tr><td class="id">121</td><td class="feat">Legacy automation_runner app (dead)</td><td><span class="pill p-brk">Broken</span></td><td><span class="sev s-med">Med</span></td><td class="conf">H</td><td class="ev">F-6-3</td></tr>
+        <tr><td class="id">122</td><td class="feat">ML retraining pipeline</td><td><span class="pill p-ok">Operational</span></td><td>—</td><td class="conf">L</td><td class="ev">P1 (factory)</td></tr>
+        <tr><td class="id">123</td><td class="feat">Celery queue routing (task_routes)</td><td><span class="pill p-brk">Broken</span></td><td><span class="sev s-high">High</span></td><td class="conf">H</td><td class="ev">F-6-1 (RT dead)</td></tr>
+      </tbody>
+    </table></div>
+
+    <div class="domlabel"><span class="l">E–I · Storage · Cache · Realtime · Email · Billing</span><span class="rule"></span><span class="c">15 features</span></div>
+    <div class="tablewrap"><table>
+      <thead><tr><th>ID</th><th>Feature</th><th>Status</th><th>Sev</th><th>Conf</th><th>Evidence</th></tr></thead>
+      <tbody>
+        <tr><td class="id">130</td><td class="feat">Storage service (S3 / local, flat keys)</td><td><span class="pill p-ok">Operational</span></td><td>—</td><td class="conf">H</td><td class="ev">P7</td></tr>
+        <tr><td class="id">131</td><td class="feat">Asset upload + static serving</td><td><span class="pill p-unt">Untestable</span></td><td>—</td><td class="conf">—</td><td class="ev">RT (HTTP 000)</td></tr>
+        <tr><td class="id">132</td><td class="feat">Report artifact generation / delivery</td><td><span class="pill p-ok">Operational</span></td><td>—</td><td class="conf">M</td><td class="ev">P7</td></tr>
+        <tr><td class="id">135</td><td class="feat">Redis cache (tenant-free keys)</td><td><span class="pill p-ok">Operational</span></td><td>—</td><td class="conf">H</td><td class="ev">P7</td></tr>
+        <tr><td class="id">136</td><td class="feat">Rate limiting (per-principal)</td><td><span class="pill p-ok">Operational</span></td><td>—</td><td class="conf">H</td><td class="ev">P5 (no self-DoS)</td></tr>
+        <tr><td class="id">140</td><td class="feat">WebSocket manager + /ws</td><td><span class="pill p-brk">Broken</span></td><td><span class="sev s-med">Med</span></td><td class="conf">H</td><td class="ev">F-8-1</td></tr>
+        <tr><td class="id">141</td><td class="feat">SSE streams (public OK / authed broken)</td><td><span class="pill p-deg">Degraded</span></td><td><span class="sev s-med">Med</span></td><td class="conf">H</td><td class="ev">F-8-1</td></tr>
+        <tr><td class="id">142</td><td class="feat">Frontend useWebSocket hooks (unused)</td><td><span class="pill p-brk">Broken</span></td><td><span class="sev s-med">Med</span></td><td class="conf">H</td><td class="ev">F-8-1</td></tr>
+        <tr><td class="id">145</td><td class="feat">Email service (transactional)</td><td><span class="pill p-ok">Operational</span></td><td>—</td><td class="conf">H</td><td class="ev">P8 (no null vars)</td></tr>
+        <tr><td class="id">146</td><td class="feat">In-app notification center</td><td><span class="pill p-ok">Operational</span></td><td>—</td><td class="conf">M</td><td class="ev">P8</td></tr>
+        <tr><td class="id">147</td><td class="feat">Web push (VAPID)</td><td><span class="pill p-ok">Operational</span></td><td>—</td><td class="conf">M</td><td class="ev">P8</td></tr>
+        <tr><td class="id">148</td><td class="feat">Slack notifications</td><td><span class="pill p-ok">Operational</span></td><td>—</td><td class="conf">M</td><td class="ev">P8</td></tr>
+        <tr><td class="id">149</td><td class="feat">WhatsApp customer messaging</td><td><span class="pill p-ok">Operational</span></td><td>—</td><td class="conf">M</td><td class="ev">P8</td></tr>
+        <tr><td class="id">155</td><td class="feat">Billing / licensing / Stripe (removed cleanly)</td><td><span class="pill p-ok">Operational</span></td><td>—</td><td class="conf">H</td><td class="ev">P9 (no dead gate)</td></tr>
+      </tbody>
+    </table></div>
+
+    <div class="domlabel"><span class="l">J–M · Integrations · Config · Frontend · Observability</span><span class="rule"></span><span class="c">33 features</span></div>
+    <div class="tablewrap"><table>
+      <thead><tr><th>ID</th><th>Feature</th><th>Status</th><th>Sev</th><th>Conf</th><th>Evidence</th></tr></thead>
+      <tbody>
+        <tr><td class="id">160-163</td><td class="feat">Meta · Google · TikTok · Snapchat OAuth connectors</td><td><span class="pill p-ok">Operational</span></td><td>—</td><td class="conf">H</td><td class="ev">P9 · RT (uq)</td></tr>
+        <tr><td class="id">164</td><td class="feat">CRM integrations (HubSpot / Zoho / Pipedrive)</td><td><span class="pill p-deg">Degraded</span></td><td><span class="sev s-med">Med</span></td><td class="conf">H</td><td class="ev">F-4-3 · 3-3 · 6-2</td></tr>
+        <tr><td class="id">165</td><td class="feat">Outbound webhooks</td><td><span class="pill p-ok">Operational</span></td><td>—</td><td class="conf">M</td><td class="ev">P9 (SSRF-guarded)</td></tr>
+        <tr><td class="id">166</td><td class="feat">Inbound webhooks (HMAC / token)</td><td><span class="pill p-ok">Operational</span></td><td>—</td><td class="conf">H</td><td class="ev">P9 (single-org)</td></tr>
+        <tr><td class="id">170</td><td class="feat">Env kill-switch flags</td><td><span class="pill p-deg">Degraded</span></td><td><span class="sev s-low">Low</span></td><td class="conf">H</td><td class="ev">F-10-1 (doc drift)</td></tr>
+        <tr><td class="id">171</td><td class="feat">Org-configurable flags (JSONB singleton)</td><td><span class="pill p-ok">Operational</span></td><td>—</td><td class="conf">H</td><td class="ev">P10</td></tr>
+        <tr><td class="id">172</td><td class="feat">Console flag management</td><td><span class="pill p-ok">Operational</span></td><td>—</td><td class="conf">H</td><td class="ev">P10</td></tr>
+        <tr><td class="id">173</td><td class="feat">Settings / config system</td><td><span class="pill p-ok">Operational</span></td><td>—</td><td class="conf">H</td><td class="ev">P10 · RT</td></tr>
+        <tr><td class="id">180</td><td class="feat">Marketing site (~35 public routes)</td><td><span class="pill p-ok">Operational</span></td><td>—</td><td class="conf">M</td><td class="ev">P11</td></tr>
+        <tr><td class="id">181</td><td class="feat">Auth views</td><td><span class="pill p-ok">Operational</span></td><td>—</td><td class="conf">H</td><td class="ev">P11 · RT</td></tr>
+        <tr><td class="id">182</td><td class="feat">Operator dashboard shell + nav</td><td><span class="pill p-deg">Degraded</span></td><td><span class="sev s-med">Med</span></td><td class="conf">H</td><td class="ev">F-11-2 · 11-3</td></tr>
+        <tr><td class="id">183</td><td class="feat">Owner console shell</td><td><span class="pill p-brk">Broken</span></td><td><span class="sev s-high">High</span></td><td class="conf">H</td><td class="ev">F-5-1 (pages 404)</td></tr>
+        <tr><td class="id">184</td><td class="feat">CMS portal</td><td><span class="pill p-ok">Operational</span></td><td>—</td><td class="conf">M</td><td class="ev">P11</td></tr>
+        <tr><td class="id">185</td><td class="feat">Client portal</td><td><span class="pill p-ok">Operational</span></td><td>—</td><td class="conf">M</td><td class="ev">P11</td></tr>
+        <tr><td class="id">186</td><td class="feat">Onboarding wizard + OAuth connect</td><td><span class="pill p-ok">Operational</span></td><td>—</td><td class="conf">M</td><td class="ev">P11 (no org residue)</td></tr>
+        <tr><td class="id">187</td><td class="feat">Route guards</td><td><span class="pill p-ok">Operational</span></td><td>—</td><td class="conf">H</td><td class="ev">P3 · P11</td></tr>
+        <tr><td class="id">188</td><td class="feat">Legacy redirects</td><td><span class="pill p-ok">Operational</span></td><td>—</td><td class="conf">H</td><td class="ev">P11 (land valid)</td></tr>
+        <tr><td class="id">189</td><td class="feat">Theme system (Opal Hotel rebrand)</td><td><span class="pill p-ok">Operational</span></td><td>—</td><td class="conf">M</td><td class="ev">P11</td></tr>
+        <tr><td class="id">190</td><td class="feat">Feature-flag store + hooks</td><td><span class="pill p-ok">Operational</span></td><td>—</td><td class="conf">M</td><td class="ev">P1 · P10</td></tr>
+        <tr><td class="id">191</td><td class="feat">Custom dashboard</td><td><span class="pill p-ok">Operational</span></td><td>—</td><td class="conf">L</td><td class="ev">P11</td></tr>
+        <tr><td class="id">192</td><td class="feat">superads-dashboard mockup (dead static)</td><td><span class="pill p-ok">Operational</span></td><td>—</td><td class="conf">H</td><td class="ev">P1</td></tr>
+        <tr><td class="id">193</td><td class="feat">AM Portfolio / Narrative views</td><td><span class="pill p-brk">Broken</span></td><td><span class="sev s-med">Med</span></td><td class="conf">H</td><td class="ev">F-11-1 · 5-2</td></tr>
+        <tr><td class="id">194</td><td class="feat">9 views w/ hardcoded SaaS API host</td><td><span class="pill p-deg">Degraded</span></td><td><span class="sev s-med">Med</span></td><td class="conf">H</td><td class="ev">F-11-4</td></tr>
+        <tr><td class="id">195</td><td class="feat">404-page error UX (silent empty)</td><td><span class="pill p-deg">Degraded</span></td><td><span class="sev s-low">Low</span></td><td class="conf">H</td><td class="ev">F-11-5</td></tr>
+        <tr><td class="id">200</td><td class="feat">Structured logging + audit middleware</td><td><span class="pill p-ok">Operational</span></td><td>—</td><td class="conf">H</td><td class="ev">P12 (no tenant)</td></tr>
+        <tr><td class="id">201</td><td class="feat">Audit middleware + pipeline</td><td><span class="pill p-ok">Operational</span></td><td>—</td><td class="conf">M</td><td class="ev">P6 · P12</td></tr>
+        <tr><td class="id">202</td><td class="feat">Prometheus metrics + monitoring</td><td><span class="pill p-ok">Operational</span></td><td>—</td><td class="conf">H</td><td class="ev">P12 (no labels)</td></tr>
+        <tr><td class="id">203</td><td class="feat">Sentry error tracking</td><td><span class="pill p-ok">Operational</span></td><td>—</td><td class="conf">L</td><td class="ev">P12</td></tr>
+        <tr><td class="id">204</td><td class="feat">Flower (Celery monitoring)</td><td><span class="pill p-ok">Operational</span></td><td>—</td><td class="conf">L</td><td class="ev">P0</td></tr>
+        <tr><td class="id">205</td><td class="feat">CI (Actions + residue gate; CircleCI noop)</td><td><span class="pill p-deg">Degraded</span></td><td><span class="sev s-low">Low</span></td><td class="conf">H</td><td class="ev">F-12-1</td></tr>
+      </tbody>
+    </table></div>
+
+    <div class="domlabel"><span class="l">Cross-cutting · Migrations &amp; Test Infra</span><span class="rule"></span><span class="c">4 features</span></div>
+    <div class="tablewrap"><table>
+      <thead><tr><th>ID</th><th>Feature</th><th>Status</th><th>Sev</th><th>Conf</th><th>Evidence</th></tr></thead>
+      <tbody>
+        <tr><td class="id">M1</td><td class="feat">Fresh-install migration from zero</td><td><span class="pill p-ok">Operational</span></td><td>—</td><td class="conf">H</td><td class="ev">P12 · RT (clean)</td></tr>
+        <tr><td class="id">M2</td><td class="feat">Test suite (converted, not deleted)</td><td><span class="pill p-ok">Operational</span></td><td>—</td><td class="conf">H</td><td class="ev">P12 (5,700 tests)</td></tr>
+        <tr><td class="id">M3</td><td class="feat">App startup (owner auto-seed)</td><td><span class="pill p-brk">Broken</span></td><td><span class="sev s-med">Med</span></td><td class="conf">H</td><td class="ev">F-13-1 (RT crash)</td></tr>
+        <tr><td class="id">M4</td><td class="feat">PII key coverage</td><td><span class="pill p-deg">Degraded</span></td><td><span class="sev s-low">Low</span></td><td class="conf">M</td><td class="ev">F-12-2</td></tr>
+      </tbody>
+    </table></div>
+  </section>
+
+  <!-- ===================== FINDINGS ===================== -->
+  <section id="findings">
+    <div class="sechead"><span class="num">03</span><h2>Findings Register</h2><span class="note">29 findings<br>full blocks in per-phase files</span></div>
+
+    <div class="grouphd">High severity · launch blockers <span class="ct">— 2</span></div>
+    <div class="fgrid">
+      <div class="finding high"><div class="fh"><span class="fid">FINDING-5-1</span><span class="pill p-brk">Broken</span><span class="sev s-high">High</span></div><h4>Four routers double-prefixed → every FE call 404s</h4><p>Registry prefix stacked on module prefix produces double-nested served paths; the frontend calls the single-prefix path. Kills Owner Platform Analytics, Audit Services, AI Insights, Compliance Dashboard.</p><div class="fev">RT: /audit-services/experiments → 404 · /audit/audit-services/health → 200 · Fix: drop redundant registry prefixes</div></div>
+      <div class="finding high"><div class="fh"><span class="fid">FINDING-6-1</span><span class="pill p-brk">Broken</span><span class="sev s-high">High</span></div><h4>Scheduled jobs stranded on unconsumed queues</h4><p>Worker launched without <span class="mono">-Q</span>, consumes only <span class="mono">default</span>; beat routes campaign-sync / forecasts / predictions / audience-sync to <span class="mono">sync</span>/<span class="mono">ml</span> queues with no consumer. <span class="mono">task_routes</span> map is dead (names mismatch).</p><div class="fev">RT: default-only worker + 4 stranded beat entries · Fix: -Q default,sync,ml,intel,rules</div></div>
+    </div>
+
+    <div class="grouphd">Medium severity <span class="ct">— 19</span></div>
+    <div class="fgrid">
+      <div class="finding med"><div class="fh"><span class="fid">2-1</span><span class="pill p-deg">Degraded</span></div><h4>EMQ portfolio emits fabricated tenant counts</h4><p>Owner console shows mock <span class="mono">totalTenants=156</span> / fixed fractions in a single-org product.</p></div>
+      <div class="finding med"><div class="fh"><span class="fid">3-1</span><span class="pill p-deg">Degraded</span></div><h4>Stale JWT role · no revoke on demote</h4><p>User-mgmt + console-flag routes trust the JWT role; demote/deactivate revokes no token → power persists ≤30 min.</p></div>
+      <div class="finding med"><div class="fh"><span class="fid">3-2</span><span class="pill p-deg">Degraded</span></div><h4>Onboarding-agent LLM is unauthenticated</h4><p><span class="mono">/message</span> drives the LLM anonymously (cost/abuse + session enumeration by id).</p></div>
+      <div class="finding med"><div class="fh"><span class="fid">3-3</span><span class="pill p-deg">Degraded</span></div><h4>HubSpot OAuth callback skips state validation</h4><p>Accepts a <span class="mono">state</span> param but never checks it → OAuth CSRF; webhook HMAC only when secret set.</p></div>
+      <div class="finding med"><div class="fh"><span class="fid">4-1</span><span class="pill p-deg">Degraded</span></div><h4>Emergency-stop settings lack a singleton constraint</h4><p><span class="mono">enforcement_settings</span> has no id=1 guard (RT: 0 check constraints); unordered <span class="mono">.first()</span> can read the wrong autopilot-frozen row.</p></div>
+      <div class="finding med"><div class="fh"><span class="fid">4-2</span><span class="pill p-deg">Degraded</span></div><h4>Onboarding state can flap across duplicate rows</h4><p>Same no-constraint singleton; GET endpoints persist rows → progress reads nondeterministically.</p></div>
+      <div class="finding med"><div class="fh"><span class="fid">4-3</span><span class="pill p-deg">Degraded</span></div><h4>CRM connection has no unique constraint</h4><p>Get-or-create keys on <span class="mono">provider</span> with no uniqueness → duplicate row → <span class="mono">MultipleResultsError</span> 500.</p></div>
+      <div class="finding med"><div class="fh"><span class="fid">5-2</span><span class="pill p-brk">Broken</span></div><h4>8 FE hooks call deleted /admin/tenants</h4><p>AM views hit a router removed with multi-tenancy → 404 on load.</p></div>
+      <div class="finding med"><div class="fh"><span class="fid">5-3</span><span class="pill p-brk">Broken</span></div><h4>Audit-log stats &amp; export hit no route</h4><p>FE <span class="mono">/audit/stats</span>, <span class="mono">/audit/export</span> — <span class="mono">/audit</span> only holds mis-prefixed audit_services.</p></div>
+      <div class="finding med"><div class="fh"><span class="fid">5-4</span><span class="pill p-brk">Broken</span></div><h4>Embed public router never mounted</h4><p><span class="mono">/embed/v1</span> unmounted + no <span class="mono">loader.js</span>; UI issues embed codes that 404. RT-confirmed.</p></div>
+      <div class="finding med"><div class="fh"><span class="fid">6-2</span><span class="pill p-brk">Broken</span></div><h4>CRM tasks unregistered &amp; unscheduled</h4><p>Module absent from Celery <span class="mono">include</span>; its beat schedule never merged → CRM sync/writeback never runs.</p></div>
+      <div class="finding med"><div class="fh"><span class="fid">6-3</span><span class="pill p-deg">Degraded</span></div><h4>Data-retention purge runs nowhere</h4><p>Legacy Celery apps dead; <span class="mono">cleanup_old_data</span> + weekly digest have no live home (compounds 2-2).</p></div>
+      <div class="finding med"><div class="fh"><span class="fid">8-1</span><span class="pill p-brk">Broken</span></div><h4>Realtime built but unwired end-to-end</h4><p>No broadcast caller, no <span class="mono">useWebSocket</span> consumer; authed SSE has no FE caller + query-token/header-auth contradiction. Dashboard polls as fallback.</p></div>
+      <div class="finding med"><div class="fh"><span class="fid">11-1</span><span class="pill p-brk">Broken</span></div><h4>AM pages render fabricated data as real</h4><p>Fall back to hardcoded sample accounts (fake MRR/tiers) on 404 rather than erroring.</p></div>
+      <div class="finding med"><div class="fh"><span class="fid">11-2</span><span class="pill p-brk">Broken</span></div><h4>Primary dashboard CTA dead-ends</h4><p>Overview navigates to <span class="mono">/tenant/${tid}/signal-hub</span> → NotFound.</p></div>
+      <div class="finding med"><div class="fh"><span class="fid">11-3</span><span class="pill p-brk">Broken</span></div><h4>Header client-switcher hits missing endpoint</h4><p><span class="mono">/users/me/assigned-clients</span> doesn't exist → perpetual "Select Client".</p></div>
+      <div class="finding med"><div class="fh"><span class="fid">11-4</span><span class="pill p-deg">Degraded</span></div><h4>9 views hardcode the SaaS API host</h4><p><span class="mono">api.stratumai.app</span> fallback → wrong host if <span class="mono">VITE_API_URL</span> unset.</p></div>
+      <div class="finding med"><div class="fh"><span class="fid">13-1</span><span class="pill p-brk">Broken</span></div><h4>App won't boot without superadmin env vars</h4><p><span class="mono">SystemExit</span> from the seed import escapes the best-effort <span class="mono">except Exception</span>. RT-observed.</p></div>
+      <div class="finding med"><div class="fh"><span class="fid">13-2</span><span class="pill p-deg">Degraded</span></div><h4>Health endpoints shadowed by SPA catch-all</h4><p>Catch-all registered before <span class="mono">/health</span> + raises 404 → healthcheck killer when API serves SPA. RT-observed.</p></div>
+    </div>
+
+    <div class="grouphd">Low severity <span class="ct">— 8</span></div>
+    <div class="fgrid">
+      <div class="finding low"><div class="fh"><span class="fid">2-2</span><span class="pill p-deg">Degraded</span></div><h4>Compliance retention reads a dead table</h4><p><span class="mono">tenant_settings</span> no longer exists → silent default fallback forever.</p></div>
+      <div class="finding low"><div class="fh"><span class="fid">2-3</span><span class="pill p-brk">Broken</span></div><h4>Meta CAPI quality report is a permanent no-op</h4><p>Missing method; error mapped to <span class="mono">success:true</span> (pre-existing).</p></div>
+      <div class="finding low"><div class="fh"><span class="fid">3-4</span><span class="pill p-deg">Degraded</span></div><h4>Changelog by-id leaks unpublished entries</h4><p>The list route gates them; the by-id route forgot the filter.</p></div>
+      <div class="finding low"><div class="fh"><span class="fid">6-4</span><span class="pill p-brk">Broken</span></div><h4>WhatsApp rule-action arg mismatch</h4><p>TypeErrors when a <span class="mono">send_alert</span> rule fires (pre-existing, flag-gated).</p></div>
+      <div class="finding low"><div class="fh"><span class="fid">10-1</span><span class="pill p-deg">Degraded</span></div><h4>Docs vs code flag-default drift</h4><p>Docs say two flags default true; code says false (code is correct).</p></div>
+      <div class="finding low"><div class="fh"><span class="fid">11-5</span><span class="pill p-deg">Degraded</span></div><h4>404 pages fail silently</h4><p>Swallowed errors / "0" states hide the Phase-5 breakage from users.</p></div>
+      <div class="finding low"><div class="fh"><span class="fid">12-1</span><span class="pill p-deg">Degraded</span></div><h4>No migration-drift assertion test</h4><p>Model↔migration drift only caught indirectly (surfaced the doubled constraint name at runtime).</p></div>
+      <div class="finding low"><div class="fh"><span class="fid">12-2</span><span class="pill p-deg">Degraded</span></div><h4>PII key-provisioning coverage dropped</h4><p>Deleted with the per-tenant model; no single-key config-guard successor.</p></div>
+    </div>
+  </section>
+
+  <!-- ===================== REMEDIATION ===================== -->
+  <section id="remediation">
+    <div class="sechead"><span class="num">04</span><h2>Remediation Plan</h2><span class="note">ordered P0 → P2<br>effort S / M</span></div>
+
+    <div class="phase">
+      <div class="phasehd"><span class="ptag p0">P0</span><span class="pt">Launch blockers — fix before relying on owner surfaces or data freshness</span></div>
+      <div class="tablewrap"><table>
+        <thead><tr><th>Fix</th><th>Finding</th><th>Effort</th></tr></thead>
+        <tbody>
+          <tr><td>Remove the 4 redundant registry prefixes; add a generated/typed FE client or contract test</td><td class="ev">5-1</td><td class="eff"><span class="eff-s">S</span></td></tr>
+          <tr><td>Launch worker <span class="mono">-Q default,sync,ml,intel,rules</span> (or route all to default); fix / remove <span class="mono">task_routes</span></td><td class="ev">6-1</td><td class="eff"><span class="eff-s">S</span></td></tr>
+          <tr><td>Guard the owner-seed import (check env / SEED flag before import, or catch BaseException)</td><td class="ev">13-1</td><td class="eff"><span class="eff-s">S</span></td></tr>
+          <tr><td>Register the SPA catch-all last / fall through on exclusions so <span class="mono">/health</span> resolves</td><td class="ev">13-2</td><td class="eff"><span class="eff-s">S</span></td></tr>
+        </tbody>
+      </table></div>
+    </div>
+
+    <div class="phase">
+      <div class="phasehd"><span class="ptag p1">P1</span><span class="pt">High-value correctness — fast follow</span></div>
+      <div class="tablewrap"><table>
+        <thead><tr><th>Fix</th><th>Finding</th><th>Effort</th></tr></thead>
+        <tbody>
+          <tr><td>Revoke tokens on demote/deactivate; move role-only routes onto <span class="mono">get_current_user</span>/<span class="mono">require_*</span></td><td class="ev">3-1</td><td class="eff"><span class="eff-m">M</span></td></tr>
+          <tr><td>Add <span class="mono">CheckConstraint("id=1")</span> + upsert-by-id to enforcement / onboarding; unique constraint on CRM provider</td><td class="ev">4-1 · 4-2 · 4-3</td><td class="eff"><span class="eff-m">M</span></td></tr>
+          <tr><td>Repoint/remove dead FE calls; delete AM views + admin-tenant client (kill fabricated fallbacks)</td><td class="ev">5-2 · 5-3 · 11-1</td><td class="eff"><span class="eff-m">M</span></td></tr>
+          <tr><td>Mount embed <span class="mono">public_router</span> + add loader.js; parameterize embed host</td><td class="ev">5-4</td><td class="eff"><span class="eff-s">S</span></td></tr>
+          <tr><td>Register <span class="mono">crm_sync_tasks</span> + merge beat (or remove CRM); re-home retention cleanup + digest</td><td class="ev">6-2 · 6-3</td><td class="eff"><span class="eff-m">M</span></td></tr>
+          <tr><td>Fix Overview <span class="mono">/tenant/${tid}</span> nav; implement or remove client-switcher</td><td class="ev">11-2 · 11-3</td><td class="eff"><span class="eff-s">S</span></td></tr>
+          <tr><td>Route the 9 raw-fetch views through <span class="mono">apiClient</span> / one env-driven base</td><td class="ev">11-4</td><td class="eff"><span class="eff-s">S</span></td></tr>
+          <tr><td>Gate onboarding-agent behind auth/rate-limit; validate HubSpot OAuth state</td><td class="ev">3-2 · 3-3</td><td class="eff"><span class="eff-m">M</span></td></tr>
+        </tbody>
+      </table></div>
+    </div>
+
+    <div class="phase">
+      <div class="phasehd"><span class="ptag p2">P2</span><span class="pt">Hygiene &amp; lower severity</span></div>
+      <div class="tablewrap"><table>
+        <thead><tr><th>Fix</th><th>Finding</th></tr></thead>
+        <tbody>
+          <tr><td>Decide one realtime transport &amp; wire both ends (+ SSE auth) or remove</td><td class="ev">8-1</td></tr>
+          <tr><td>Correct/label fabricated EMQ counts; add published filter to changelog by-id</td><td class="ev">2-1 · 3-4</td></tr>
+          <tr><td>Add error states to previously-404 pages; add migration-drift + single-key tests</td><td class="ev">11-5 · 12-1 · 12-2</td></tr>
+          <tr><td>Fix docs flag defaults; fix compliance retention lookup; whatsapp rule-action args</td><td class="ev">10-1 · 2-2 · 6-4</td></tr>
+          <tr><td>Dead-code sweep: Billing nav, 4 dead panels, admin-tenant layer, standalone Celery apps, memory_debug</td><td class="ev">P6·P9·P11</td></tr>
+        </tbody>
+      </table></div>
+    </div>
+  </section>
+
+  <!-- ===================== UNTESTABLE ===================== -->
+  <section id="untestable">
+    <div class="sechead"><span class="num">05</span><h2>Untestable Register</h2><span class="note">4 items · exact re-check specified</span></div>
+    <div class="tablewrap"><table>
+      <thead><tr><th>Item</th><th>Why inconclusive</th><th>Exact runtime check required</th></tr></thead>
+      <tbody>
+        <tr><td class="feat">File upload (POST /assets)</td><td>Live attempt returned HTTP 000 (multipart connection reset); server survived → ambiguous, not a confirmed defect</td><td>Robust multipart client + real PNG vs booted API; assert 200 + <span class="mono">digital_assets</span> row + file at <span class="mono">/uploads/assets/&lt;key&gt;</span>, then GET the URL → 200</td></tr>
+        <tr><td class="feat">Background-job execution (6-1 live demo)</td><td>Worker+beat+broker not started (finding confirmed via Celery import instead)</td><td>Start worker (no -Q) + beat; let beat fire <span class="mono">sync-all-campaigns</span>; observe Redis <span class="mono">LLEN sync</span> grows while the default-bound worker never drains it</td></tr>
+        <tr><td class="feat">Full integration suite green</td><td>Container cred/env drift vs repo <span class="mono">.env</span> blocked a direct run</td><td>With matching creds: <span class="mono">pytest tests/integration -m integration</span> (conftest DROP SCHEMA + upgrade head); expect green ≥74%</td></tr>
+        <tr><td class="feat">Gated stranded jobs (112 / 114)</td><td>Gated off by default; not enabled in smoke</td><td>Enable the gate flag + run beat; confirm gated entries also strand on non-default queues</td></tr>
+      </tbody>
+    </table></div>
+  </section>
+
+  <!-- ===================== RESIDUE ===================== -->
+  <section id="residue">
+    <div class="sechead"><span class="num">06</span><h2>Residue Index Summary</h2><span class="note">359 files mention "tenant"</span></div>
+    <p class="lead">The conversion is substantially clean where it matters. <b>Two BREAKING</b> entries — both converted to findings (2-1, 2-2). <b>Fifteen NEEDS-REMOVAL</b> items with no runtime effect. Everything else is comments, docs, history, and intentional legacy redirect shims.</p>
+    <div class="kv">
+      <span class="item">BREAKING <b>2</b> → findings</span>
+      <span class="item">NEEDS-REMOVAL <b>15</b></span>
+      <span class="item">HARMLESS <b>~340 files</b></span>
+    </div>
+    <h3 style="margin:30px 0 10px;font-size:15px">Negative results — patterns searched, zero live hits (several runtime-verified in-DB)</h3>
+    <div class="kv">
+      <span class="item">X-Tenant headers <b>0</b></span>
+      <span class="item">TENANT_ env keys <b>0</b></span>
+      <span class="item">tenant cache / queue / metric keys <b>0</b></span>
+      <span class="item">tenant storage paths <b>0</b></span>
+      <span class="item">RLS policies <b>0</b></span>
+      <span class="item">multi-tenant fixtures <b>0</b></span>
+      <span class="item">tenant_id columns (in-DB) <b>0</b></span>
+      <span class="item">tenant_* tables (in-DB) <b>0</b></span>
+    </div>
+  </section>
+
+  <!-- ===================== LIMITS ===================== -->
+  <section id="limits" style="border-bottom:none">
+    <div class="sechead"><span class="num">07</span><h2>Assumptions &amp; Limitations</h2></div>
+    <div class="prose">
+      <p><b>Runtime scope.</b> The app was booted locally against a freshly-migrated scratch DB plus the existing Postgres/Redis containers; core paths were verified live. Not exercised: file upload (see §5), live job execution, full E2E/Playwright, the production Railway environment, and load testing.</p>
+      <p><b>Causation.</b> Several BROKEN findings (5-1, 6-1, 13-2) are infrastructure/wiring bugs not strictly <em>caused</em> by the tenant conversion; they are reported because they are live feature-health defects. Findings 2-3 and 6-4 are explicitly pre-existing (noted in-code).</p>
+      <p><b>Environment drift observed.</b> Running-container credentials differ from the repo <span class="mono">.env</span>; installed <span class="mono">fastapi 0.129.0</span> differs from pinned <span class="mono">0.139.2</span>; host Python 3.12 differs from target 3.11. None blocked the audit, but they indicate config/dependency hygiene worth reconciling.</p>
+      <p><b>Confidence labeling.</b> No OPERATIONAL rating rests on "the code looks correct" alone — each cites a phase check, and seven feature groups plus the headline finding are runtime-verified. Low-confidence positives were not marked OPERATIONAL.</p>
+      <p><b>Bottom line.</b> The conversion's <em>foundation</em> — schema de-tenanting, encryption, uniqueness, auth, test conversion, migration-from-zero — is genuinely sound. The defects are concentrated in routing wiring, job-queue binding, and frontend dead-links: precisely the surfaces a core-flow smoke test never touches.</p>
+    </div>
+  </section>
+
+  <footer>
+    Stratum AI · Feature Health Report · Post-Conversion System Audit v2.0 · 2026-07-18 · 14 phases · 124 features · 29 findings · runtime-verified · Full evidence in <span class="mono">audit/PHASE0–13</span> + <span class="mono">FEATURE_HEALTH_REPORT.md</span>
+  </footer>
+</div>
+
+<script>
+  (function(){
+    var root=document.documentElement, btn=document.getElementById('themebtn');
+    function set(t){root.setAttribute('data-theme',t);try{localStorage.setItem('audit-theme',t)}catch(e){}}
+    try{var s=localStorage.getItem('audit-theme');if(s)root.setAttribute('data-theme',s)}catch(e){}
+    btn.addEventListener('click',function(){
+      var cur=root.getAttribute('data-theme');
+      if(!cur){cur=matchMedia('(prefers-color-scheme: dark)').matches?'dark':'light';}
+      set(cur==='dark'?'light':'dark');
+    });
+
+    // stat count-up (reduced-motion aware)
+    var rm=matchMedia('(prefers-reduced-motion: reduce)').matches;
+    document.querySelectorAll('.stat .n').forEach(function(el){
+      var target=+el.getAttribute('data-count'); if(rm||!target){el.textContent=target;return;}
+      var t0=null,dur=900;
+      function step(ts){if(!t0)t0=ts;var p=Math.min((ts-t0)/dur,1);var e=1-Math.pow(1-p,3);el.textContent=Math.round(target*e);if(p<1)requestAnimationFrame(step);}
+      requestAnimationFrame(step);
+    });
+
+    // fade-in sections
+    if(!rm){
+      var secs=document.querySelectorAll('section');
+      var io=new IntersectionObserver(function(es){es.forEach(function(en){if(en.isIntersecting){en.target.classList.add('fadein');io.unobserve(en.target);}})},{threshold:.06});
+      secs.forEach(function(s){io.observe(s)});
+    }
+
+    // scrollspy
+    var links=[].slice.call(document.querySelectorAll('#topnav a'));
+    var map={};links.forEach(function(l){map[l.getAttribute('href').slice(1)]=l;});
+    var spy=new IntersectionObserver(function(es){
+      es.forEach(function(en){ if(en.isIntersecting){ links.forEach(function(l){l.classList.remove('active')}); var m=map[en.target.id]; if(m)m.classList.add('active'); }});
+    },{rootMargin:'-45% 0px -50% 0px'});
+    document.querySelectorAll('section[id]').forEach(function(s){spy.observe(s)});
+  })();
+</script>

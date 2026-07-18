@@ -96,7 +96,11 @@ async def update_org_features_route(
 owner_router = APIRouter(prefix="/console", tags=["owner-features"])
 
 
-@owner_router.get("/features", response_model=APIResponse[Dict[str, Any]])
+@owner_router.get(
+    "/features",
+    response_model=APIResponse[Dict[str, Any]],
+    dependencies=[Depends(require_owner())],  # DB-backed gate (fix 3-1)
+)
 async def owner_get_org_features(
     request: Request,
     db: AsyncSession = Depends(get_async_session),
@@ -121,7 +125,11 @@ async def owner_get_org_features(
     )
 
 
-@owner_router.put("/features", response_model=APIResponse[Dict[str, Any]])
+@owner_router.put(
+    "/features",
+    response_model=APIResponse[Dict[str, Any]],
+    dependencies=[Depends(require_owner())],  # DB-backed gate (fix 3-1)
+)
 async def owner_update_org_features(
     request: Request,
     updates: FeatureFlagsUpdate,
@@ -154,7 +162,11 @@ async def owner_update_org_features(
     )
 
 
-@owner_router.post("/features/reset", response_model=APIResponse[Dict[str, Any]])
+@owner_router.post(
+    "/features/reset",
+    response_model=APIResponse[Dict[str, Any]],
+    dependencies=[Depends(require_owner())],  # DB-backed gate (fix 3-1)
+)
 async def owner_reset_org_features(
     request: Request,
     db: AsyncSession = Depends(get_async_session),
@@ -176,7 +188,11 @@ async def owner_reset_org_features(
     )
 
 
-@owner_router.get("/feature-metadata", response_model=APIResponse[Dict[str, Any]])
+@owner_router.get(
+    "/feature-metadata",
+    response_model=APIResponse[Dict[str, Any]],
+    dependencies=[Depends(require_owner())],  # DB-backed gate (fix 3-1)
+)
 async def get_feature_metadata(request: Request):
     """
     Get feature categories and descriptions for UI.

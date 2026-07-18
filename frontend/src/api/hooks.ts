@@ -35,14 +35,6 @@ export {
   useUpdateUser,
   useDeleteUser,
   useResetUserPassword,
-  useTenants,
-  useTenant,
-  useCreateTenant,
-  useUpdateTenant,
-  useDeleteTenant,
-  useSuspendTenant,
-  useReactivateTenant,
-  useTenantUsers,
 } from './admin'
 
 // Console (Owner) Analytics hooks

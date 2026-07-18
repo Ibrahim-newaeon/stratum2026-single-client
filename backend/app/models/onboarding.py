@@ -19,7 +19,7 @@ import enum
 from datetime import datetime, timezone
 from typing import Optional
 
-from sqlalchemy import Boolean, DateTime, ForeignKey, Index, Integer, String
+from sqlalchemy import Boolean, DateTime, ForeignKey, Index, Integer, String, text
 from sqlalchemy.dialects.postgresql import JSONB
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
@@ -224,7 +224,14 @@ class OrganizationOnboarding(Base):
     # Relationships
     completed_by = relationship("User", foreign_keys=[completed_by_user_id])
 
-    __table_args__ = (Index("ix_organization_onboarding_status", "status"),)
+    __table_args__ = (
+        Index("ix_organization_onboarding_status", "status"),
+        # Single-row guard (STRAT-SC-001 fix 4-2): single-client onboarding is a
+        # per-org singleton. A unique index on the constant (true) prevents a
+        # second row, so concurrent first-loads can't create duplicates that make
+        # the .limit(1) read return an arbitrary (flapping) row.
+        Index("uq_organization_onboarding_singleton", text("(true)"), unique=True),
+    )
 
     def is_step_completed(self, step: OnboardingStep) -> bool:
         """Check if a step is completed."""

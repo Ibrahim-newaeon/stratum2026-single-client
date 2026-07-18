@@ -41,6 +41,10 @@ celery_app = Celery(
         # registers send_newsletter_campaign, so the send endpoint's .delay()
         # dispatched to an unregistered task and silently did nothing.
         "app.workers.newsletter_tasks",
+        # CRM sync + attribution writeback (HubSpot/Zoho/Pipedrive). Without this
+        # the module's @shared_task defs were never registered, so its .delay()
+        # sites were silent no-ops and CRM sync never ran (STRAT-SC-001 fix 6-2).
+        "app.workers.crm_sync_tasks",
     ],
 )
 
@@ -77,11 +81,15 @@ celery_app.conf.update(
         "dead_letter": {},
     },
     # Task routing
+    # NOTE (STRAT-SC-001 fix 6-1): these keys must be the FULL registered task
+    # names, which include the defining submodule (…tasks.<submodule>.<func>).
+    # The previous keys omitted the submodule so routing-by-name never bound and
+    # on-demand .delay() calls fell back to the default queue.
     task_routes={
-        "app.workers.tasks.sync_campaign_data": {"queue": "sync"},
-        "app.workers.tasks.evaluate_rules": {"queue": "rules"},
-        "app.workers.tasks.fetch_competitor_data": {"queue": "intel"},
-        "app.workers.tasks.generate_forecast": {"queue": "ml"},
+        "app.workers.tasks.sync.sync_campaign_data": {"queue": "sync"},
+        "app.workers.tasks.rules.evaluate_rules": {"queue": "rules"},
+        "app.workers.tasks.competitors.fetch_competitor_data": {"queue": "intel"},
+        "app.workers.tasks.forecast.generate_forecast": {"queue": "ml"},
     },
     # Task time limits
     task_time_limit=600,  # 10 minutes hard limit
@@ -228,6 +236,26 @@ if settings.enable_newsletter_beat:
         "schedule": crontab(minute="*"),
         "options": {"queue": "default"},
     }
+
+# CRM sync + attribution writeback (HubSpot/Zoho/Pipedrive) — hits live CRM
+# APIs, so gated off by default; on-demand syncs work regardless (the task
+# module is always in the include above). Routed to "sync" (a consumed queue,
+# not the old unconsumed "crm_sync"). Set ENABLE_CRM_BEAT=true to enable.
+if settings.enable_crm_beat:
+    celery_app.conf.beat_schedule.update(
+        {
+            "sync-all-crm-hourly": {
+                "task": "app.workers.crm_sync_tasks.sync_all_crm_connections",
+                "schedule": crontab(minute=0),
+                "options": {"queue": "sync"},
+            },
+            "run-crm-writebacks-6h": {
+                "task": "app.workers.crm_sync_tasks.run_scheduled_writebacks",
+                "schedule": crontab(minute=0, hour="*/6"),
+                "options": {"queue": "sync"},
+            },
+        }
+    )
 
 # The rules evaluator's old schema mismatch (reading ``rule.conditions``
 # instead of the flat condition_field/operator/value columns) is fixed —

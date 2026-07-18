@@ -435,11 +435,15 @@ CRM_BEAT_SCHEDULE = {
     "sync-all-crm-hourly": {
         "task": "app.workers.crm_sync_tasks.sync_all_crm_connections",
         "schedule": timedelta(hours=1),
-        "options": {"queue": "crm_sync"},
+        "options": {
+            "queue": "sync"
+        },  # a queue the worker actually consumes (fix 6-1/6-2)
     },
     "run-writebacks-every-6-hours": {
         "task": "app.workers.crm_sync_tasks.run_scheduled_writebacks",
         "schedule": timedelta(hours=6),
-        "options": {"queue": "crm_sync"},
+        "options": {
+            "queue": "sync"
+        },  # a queue the worker actually consumes (fix 6-1/6-2)
     },
 }

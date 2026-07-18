@@ -15,7 +15,7 @@ import {
   CheckCircleIcon,
 } from '@heroicons/react/24/outline';
 
-const API_URL = import.meta.env.VITE_API_URL || 'https://api.stratumai.app/api/v1';
+const API_URL = import.meta.env.VITE_API_URL || '/api/v1';
 const getToken = () => sessionStorage.getItem('access_token') || '';
 
 const SDK_EXAMPLES = [

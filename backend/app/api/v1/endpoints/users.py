@@ -14,6 +14,7 @@ from pydantic import BaseModel, EmailStr, Field
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from app.auth.deps import require_admin, require_role
 from app.core.logging import get_logger
 from app.core.security import (
     decrypt_pii,
@@ -180,7 +181,17 @@ async def update_current_user(
     )
 
 
-@router.get("", response_model=APIResponse[List[UserResponse]])
+@router.get(
+    "",
+    response_model=APIResponse[List[UserResponse]],
+    # DB-backed role gate (STRAT-SC-001 fix 3-1): re-fetches the user so a
+    # demoted/deactivated caller is blocked immediately and request.state.role
+    # is refreshed from the DB — the inline check below can no longer trust a
+    # stale JWT role claim.
+    dependencies=[
+        Depends(require_role(UserRole.ADMIN, UserRole.MANAGER, UserRole.OWNER))
+    ],
+)
 async def list_users(
     request: Request,
     db: AsyncSession = Depends(get_async_session),
@@ -228,7 +239,11 @@ async def list_users(
     )
 
 
-@router.post("/invite", response_model=APIResponse[UserResponse])
+@router.post(
+    "/invite",
+    response_model=APIResponse[UserResponse],
+    dependencies=[Depends(require_admin())],  # DB-backed gate (fix 3-1)
+)
 async def invite_user(
     request: Request,
     invite_data: InviteUserRequest,
@@ -400,7 +415,11 @@ async def invite_user(
     )
 
 
-@router.patch("/{user_id}", response_model=APIResponse[UserResponse])
+@router.patch(
+    "/{user_id}",
+    response_model=APIResponse[UserResponse],
+    dependencies=[Depends(require_admin())],  # DB-backed gate (fix 3-1)
+)
 async def update_user(
     request: Request,
     user_id: int,
@@ -482,7 +501,11 @@ async def update_user(
     )
 
 
-@router.delete("/{user_id}", response_model=APIResponse)
+@router.delete(
+    "/{user_id}",
+    response_model=APIResponse,
+    dependencies=[Depends(require_admin())],  # DB-backed gate (fix 3-1)
+)
 async def delete_user(
     request: Request,
     user_id: int,

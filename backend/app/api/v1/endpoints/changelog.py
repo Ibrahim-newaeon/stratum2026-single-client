@@ -250,6 +250,7 @@ async def get_changelog_entry(
     Get a specific changelog entry.
     """
     user_id = getattr(request.state, "user_id", None)
+    user_role = getattr(request.state, "role", None)
 
     result = await db.execute(
         select(ChangelogEntry).where(ChangelogEntry.id == entry_id)
@@ -257,6 +258,18 @@ async def get_changelog_entry(
     entry = result.scalar_one_or_none()
 
     if not entry:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Changelog entry not found",
+        )
+
+    # Unpublished/draft entries are only visible to admins/owners. For any
+    # other caller, treat an unpublished entry as if it does not exist (404),
+    # mirroring the list route's `is_published == True` gate.
+    if not entry.is_published and user_role not in (
+        UserRole.ADMIN.value,
+        UserRole.OWNER.value,
+    ):
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
             detail="Changelog entry not found",

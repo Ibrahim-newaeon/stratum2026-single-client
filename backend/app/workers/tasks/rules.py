@@ -273,23 +273,71 @@ def _execute_action(rule: Rule, campaign: Campaign, db: Session) -> dict[str, An
 
         elif action_type == "send_alert":
             # Queue alert notification
-            from app.workers.tasks.whatsapp import send_whatsapp_message
+            result["alert_sent"] = True
 
             if action_config.get("whatsapp"):
-                # NOTE: pre-existing kwarg mismatch (unrelated to tenant
-                # scoping) — send_whatsapp_message expects a persisted
-                # `message_id` plus `contact_phone`/`template_variables`,
-                # not `to_number`/`variables`, and no message row is created
-                # here. Left as documented technical debt.
-                send_whatsapp_message.delay(
-                    template_name="rule_alert",
-                    to_number=action_config.get("phone"),
-                    variables={
+                from app.models import (
+                    WhatsAppContact,
+                    WhatsAppMessage,
+                    WhatsAppMessageStatus,
+                )
+                from app.workers.tasks.whatsapp import send_whatsapp_message
+
+                # send_whatsapp_message operates on a PERSISTED WhatsAppMessage
+                # row (it loads the row by id, sends it, records the result) and
+                # takes `message_id` / `contact_phone` / `template_variables` —
+                # not `to_number` / `variables`. A raw phone number is not
+                # enough on its own, so resolve it to a WhatsApp contact, create
+                # the PENDING message row, then dispatch its id. This mirrors the
+                # send path in endpoints/whatsapp.py send_message().
+                phone = action_config.get("phone")
+                contact = None
+                if phone:
+                    contact = (
+                        db.execute(
+                            select(WhatsAppContact).where(
+                                WhatsAppContact.phone_number == phone
+                            )
+                        )
+                        .scalars()
+                        .first()
+                    )
+
+                if contact is None:
+                    logger.warning(
+                        "send_alert: no WhatsApp contact for phone %r; "
+                        "skipping WhatsApp alert for rule %s",
+                        phone,
+                        rule.id,
+                    )
+                    result["alert_sent"] = False
+                else:
+                    template_variables = {
                         "rule_name": rule.name,
                         "campaign_name": campaign.name,
-                    },
-                )
-            result["alert_sent"] = True
+                    }
+                    message = WhatsAppMessage(
+                        contact_id=contact.id,
+                        message_type="template",
+                        template_name="rule_alert",
+                        template_variables=template_variables,
+                        status=WhatsAppMessageStatus.PENDING,
+                    )
+                    db.add(message)
+                    # Commit so the row exists before the worker picks up the
+                    # task (otherwise send_whatsapp_message races the outer
+                    # commit and finds no row).
+                    db.commit()
+                    db.refresh(message)
+
+                    send_whatsapp_message.delay(
+                        message_id=message.id,
+                        contact_phone=contact.phone_number,
+                        message_type="template",
+                        template_name="rule_alert",
+                        template_variables=template_variables,
+                    )
+                    result["whatsapp_message_id"] = message.id
 
         elif action_type == "adjust_budget":
             adjustment = action_config.get("adjustment_percent", 0)

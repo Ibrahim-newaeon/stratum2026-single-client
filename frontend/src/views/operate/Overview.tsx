@@ -212,7 +212,7 @@ export default function TenantOverview() {
 
   // Handler: View EMQ details in signal hub
   const handleViewDetails = () => {
-    navigate(`/tenant/${tid}/signal-hub`)
+    navigate(`/dashboard/signal-hub`)
   }
 
   // Handler: Playbook item click - navigate to fix page or show details
@@ -221,7 +221,7 @@ export default function TenantOverview() {
       navigate(item.actionUrl)
     } else {
       // Navigate to signal-hub with item context
-      navigate(`/tenant/${tid}/signal-hub?issue=${item.id}`)
+      navigate(`/dashboard/signal-hub?issue=${item.id}`)
     }
   }
 

@@ -589,31 +589,16 @@ async def preview_data_purge(
 
     **Important:** This is a PREVIEW only — no data is deleted.
     """
-    # Get policy. The tenant_settings table is optional (retention overrides
-    # live there when configured); fall back to defaults if it's absent. The
-    # lookup runs in a SAVEPOINT so a missing table doesn't poison the outer
-    # transaction and break the count queries below.
-    policy_row = None
-    try:
-        async with db.begin_nested():
-            policy_result = await db.execute(
-                text("SELECT * FROM tenant_settings LIMIT 1"),
-            )
-            policy_row = policy_result.mappings().first()
-    except SQLAlchemyError:
-        policy_row = None
-
-    # Default retention periods
+    # Retention periods. The old per-tenant ``tenant_settings`` overrides table
+    # was removed in the single-client conversion (STRAT-SC-001 fix 2-2), so the
+    # code no longer queries a table that never exists and silently falls back.
+    # These defaults are authoritative today; wire them to
+    # Organization.feature_flags (data_retention_days) if per-org overrides are
+    # reintroduced.
     profile_retention = 365
     event_retention = 180
     audit_retention = 2555
     metric_retention = 730
-
-    if policy_row:
-        profile_retention = policy_row.get("profile_retention_days", 365)
-        event_retention = policy_row.get("event_retention_days", 180)
-        audit_retention = policy_row.get("audit_log_retention_days", 2555)
-        metric_retention = policy_row.get("campaign_metric_retention_days", 730)
 
     # Count what would be purged
     cutoff_profile = datetime.now(UTC) - timedelta(days=profile_retention)

@@ -17,6 +17,18 @@ from app.core.security import decrypt_pii, encrypt_pii
 pytestmark = pytest.mark.unit
 
 
+def test_fernet_key_derivation_is_stable():
+    """The single global Fernet key derives deterministically (fix 12-2).
+
+    The per-tenant key-provisioning tests were dropped with the multi-tenant
+    model; this covers the surviving single-key derivation path — it must be
+    stable across calls so data encrypted earlier stays decryptable.
+    """
+    from app.core.security import _get_fernet_key
+
+    assert _get_fernet_key() == _get_fernet_key()
+
+
 def test_encrypt_decrypt_roundtrips():
     ct = encrypt_pii("alice@example.com")
     assert ct != "alice@example.com"

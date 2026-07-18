@@ -545,18 +545,11 @@ def create_application() -> FastAPI:
             name="frontend-icons",
         )
 
-        @app.get("/{full_path:path}", response_class=HTMLResponse)
-        async def serve_spa(full_path: str, request: Request):
-            """Serve index.html for all non-API routes (React Router support)."""
-            # Don't intercept API or docs routes
-            if full_path.startswith(
-                ("api", "docs", "openapi.json", "uploads", "health")
-            ):
-                raise HTTPException(status_code=404, detail="Not Found")
-            index_html = frontend_dist / "index.html"
-            if index_html.exists():
-                return HTMLResponse(content=index_html.read_text(encoding="utf-8"))
-            raise HTTPException(status_code=404, detail="Frontend not built")
+        # NOTE (STRAT-SC-001 fix 13-2): the SPA catch-all "/{full_path:path}" is
+        # registered at the END of this factory (just before `return app`), NOT
+        # here. Starlette matches routes in registration order, so a catch-all
+        # registered before the health / metrics / SSE routes defined below would
+        # shadow them (that is exactly what broke the /health container check).
 
     else:
         logger.info(
@@ -920,6 +913,38 @@ def create_application() -> FastAPI:
     async def websocket_stats():
         """Get WebSocket connection statistics."""
         return ws_manager.get_stats()
+
+    # SPA catch-all — registered LAST (STRAT-SC-001 fix 13-2) so it only handles
+    # paths no real route above matched. Registering it earlier shadowed the
+    # health / metrics / SSE endpoints (Starlette matches in registration order,
+    # not by specificity), breaking the `curl -f /health` container healthcheck
+    # whenever the API also served the built SPA. Guarded by the same
+    # frontend_dist check used for the static mounts.
+    if frontend_dist.exists():
+
+        @app.get("/{full_path:path}", response_class=HTMLResponse)
+        async def serve_spa(full_path: str, request: Request):
+            """Serve index.html for non-API routes (React Router deep links)."""
+            # Belt-and-suspenders: 404 (not SPA index) for unmatched paths that
+            # look like backend/system routes, rather than masking them as HTML.
+            if full_path.startswith(
+                (
+                    "api",
+                    "docs",
+                    "redoc",
+                    "openapi.json",
+                    "uploads",
+                    "metrics",
+                    "health",
+                    "ws",
+                    "public",
+                )
+            ):
+                raise HTTPException(status_code=404, detail="Not Found")
+            index_html = frontend_dist / "index.html"
+            if index_html.exists():
+                return HTMLResponse(content=index_html.read_text(encoding="utf-8"))
+            raise HTTPException(status_code=404, detail="Frontend not built")
 
     return app
 

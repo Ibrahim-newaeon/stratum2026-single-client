@@ -343,9 +343,9 @@ SENTRY_DSN=https://key@sentry.io/project
 
 | Variable | Type | Default | Description |
 |----------|------|---------|-------------|
-| `FEATURE_COMPETITOR_INTEL` | bool | true | Enable competitor intelligence |
+| `FEATURE_COMPETITOR_INTEL` | bool | false | Enable competitor intelligence (shelved until a real data source exists) |
 | `FEATURE_WHAT_IF_SIMULATOR` | bool | true | Enable what-if simulator |
-| `FEATURE_AUTOMATION_RULES` | bool | true | Enable automation rules |
+| `FEATURE_AUTOMATION_RULES` | bool | false | Enable automation rules |
 | `FEATURE_GDPR_COMPLIANCE` | bool | true | Enable GDPR features |
 
 ---

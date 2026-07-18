@@ -29,6 +29,7 @@ from sqlalchemy import (
     Integer,
     String,
     Text,
+    UniqueConstraint,
 )
 from sqlalchemy.dialects.postgresql import JSONB, UUID
 from sqlalchemy.orm import relationship
@@ -160,7 +161,11 @@ class CRMConnection(Base):
     )
 
     __table_args__ = (
-        Index("ix_crm_connections_provider", "provider"),
+        # One connection per provider (STRAT-SC-001 fix 4-3). Single-client: the
+        # old per-tenant uniqueness was dropped, leaving get-or-create keyed on
+        # `provider` with no unique constraint — a duplicate row made
+        # scalar_one_or_none() raise MultipleResultsFound and 500 every CRM load.
+        UniqueConstraint("provider", name="uq_crm_connections_provider"),
         Index("ix_crm_connections_status", "status"),
     )
 
