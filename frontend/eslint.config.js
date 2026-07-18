@@ -207,6 +207,9 @@ export default tseslint.config(
       '@typescript-eslint/no-explicit-any': 'off',
       '@typescript-eslint/no-non-null-assertion': 'off',
       'no-console': 'off',
+      // vi.mocked(obj.method) is the canonical vitest mock pattern; the
+      // unbound-method rule false-positives on the method reference in tests.
+      '@typescript-eslint/unbound-method': 'off',
     },
   },
 
