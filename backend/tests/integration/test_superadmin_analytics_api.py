@@ -2,7 +2,7 @@
 # Stratum AI - Owner Analytics Endpoint Integration Tests
 # =============================================================================
 """Integration tests for the platform-wide owner analytics under
-``/api/v1/console/analytics/console/...``: platform overview, signal-health
+``/api/v1/console/...``: platform overview, signal-health
 trends, and actions analytics. Every route is gated by
 ``Depends(require_owner())`` (``app.auth.deps``).
 

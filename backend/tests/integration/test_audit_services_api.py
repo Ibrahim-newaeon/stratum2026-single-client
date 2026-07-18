@@ -2,7 +2,7 @@
 # Stratum AI - Audit Services Endpoint Integration Tests
 # =============================================================================
 """Integration tests for the audit-services surface under
-``/api/v1/audit/audit-services/...``. This is a large ML-service router; these
+``/api/v1/audit-services/...``. This is a large ML-service router; these
 tests cover the stable read/info/admin endpoints (health, info, metrics, and
 the admin config/status/rate-limit views) plus the auth + admin gates.
 """

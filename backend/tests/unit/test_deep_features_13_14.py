@@ -865,16 +865,16 @@ class TestOwnerConsoleSystemHealth:
 #
 # console_analytics.py router has prefix="/console" and is mounted
 # at /api/v1/console/analytics, giving:
-#   /api/v1/console/analytics/console/<endpoint>
+#   /api/v1/console/<endpoint>
 #
 # Auth: every route depends on require_owner() — unauthenticated requests
 # get 401, authenticated non-owner users get 403, owners get through.
 
 
 class TestOwnerConsoleAnalyticsPlatformOverview:
-    """GET /api/v1/console/analytics/console/platform-overview."""
+    """GET /api/v1/console/platform-overview."""
 
-    _URL = "/api/v1/console/analytics/console/platform-overview"
+    _URL = "/api/v1/console/platform-overview"
 
     async def test_no_auth(self, api_client):
         r = await api_client.get(self._URL)
@@ -909,9 +909,9 @@ class TestOwnerConsoleAnalyticsPlatformOverview:
 
 
 class TestOwnerConsoleAnalyticsSignalHealthTrends:
-    """GET /api/v1/console/analytics/console/signal-health-trends."""
+    """GET /api/v1/console/signal-health-trends."""
 
-    _URL = "/api/v1/console/analytics/console/signal-health-trends"
+    _URL = "/api/v1/console/signal-health-trends"
 
     async def test_no_auth(self, api_client):
         r = await api_client.get(self._URL)
@@ -941,9 +941,9 @@ class TestOwnerConsoleAnalyticsSignalHealthTrends:
 
 
 class TestOwnerConsoleAnalyticsActionsAnalytics:
-    """GET /api/v1/console/analytics/console/actions-analytics."""
+    """GET /api/v1/console/actions-analytics."""
 
-    _URL = "/api/v1/console/analytics/console/actions-analytics"
+    _URL = "/api/v1/console/actions-analytics"
 
     async def test_no_auth(self, api_client):
         r = await api_client.get(self._URL)

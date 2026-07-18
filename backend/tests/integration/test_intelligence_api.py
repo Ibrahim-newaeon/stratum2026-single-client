@@ -2,7 +2,7 @@
 # Stratum AI - AI Intelligence Endpoint Integration Tests
 # =============================================================================
 """Integration tests for the AI-intelligence surface under
-``/api/v1/intelligence/analytics/insights/...``: natural-language query (NLQ),
+``/api/v1/analytics/insights/...``: natural-language query (NLQ),
 anomaly explanation, and campaign performance prediction.
 
 These use rule-based engines (no external LLM), so they run deterministically

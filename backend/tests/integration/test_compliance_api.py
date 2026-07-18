@@ -2,7 +2,7 @@
 # Stratum AI - Enterprise Compliance Endpoint Integration Tests
 # =============================================================================
 """Integration tests for the compliance surface under
-``/api/v1/compliance/admin/compliance/...``: audit-log search/summary, RBAC
+``/api/v1/admin/compliance/...``: audit-log search/summary, RBAC
 role listing, and GDPR retention-policy + purge preview.
 
 The audit-log endpoints query the real ``audit_logs`` table. They previously
