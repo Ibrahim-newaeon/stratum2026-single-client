@@ -3,20 +3,29 @@ name: Claude Code Review
 on:
   pull_request:
     types: [opened, synchronize, ready_for_review, reopened]
-    # Optional: Only run on specific file changes
-    # paths:
-    #   - "src/**/*.ts"
-    #   - "src/**/*.tsx"
-    #   - "src/**/*.js"
-    #   - "src/**/*.jsx"
+    # Documentation-only PRs get nothing useful from a code review and still
+    # cost a full runner, so they are filtered out the same way ci.yml does it.
+    paths-ignore:
+      - "**.md"
+      - "docs/**"
 
 jobs:
   claude-review:
-    # Optional: Filter by PR author
-    # if: |
-    #   github.event.pull_request.user.login == 'external-contributor' ||
-    #   github.event.pull_request.user.login == 'new-developer' ||
-    #   github.event.pull_request.author_association == 'FIRST_TIME_CONTRIBUTOR'
+    # Skip Dependabot and drafts.
+    #
+    # `synchronize` fires on every push to an open PR, so an unfiltered review
+    # bills a runner per push across every open PR at once — and this account
+    # exhausted its 3,000 included Actions minutes on 2026-07-17, so that is
+    # now real money rather than a free allowance.
+    #
+    # Dependabot PRs are the worst case: a version-bump diff yields no useful
+    # review, and they arrive in batches (8 were open simultaneously). They
+    # are triaged via the upgrade-dependency skill instead. Drafts are skipped
+    # because they are re-pushed repeatedly while still in progress; marking
+    # one ready fires `ready_for_review`, which does trigger a review.
+    if: |
+      github.event.pull_request.user.login != 'dependabot[bot]' &&
+      github.event.pull_request.draft == false
 
     runs-on: ubuntu-latest
     permissions:
