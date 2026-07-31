@@ -20,15 +20,12 @@
     "noUnusedParameters": true,
     "noFallthroughCasesInSwitch": true,
 
-    /* Paths */
-    "baseUrl": ".",
+    /* Paths — resolved relative to this file's directory. Deliberately no
+       baseUrl: it is removed in TypeScript 7, and `paths` has not needed it
+       since TypeScript 4.1. */
     "paths": {
       "@/*": ["./src/*"]
-    },
-
-    /* TypeScript 6.0 deprecated baseUrl with a warning treated as error by
-       the build. Silence until we migrate away from baseUrl. */
-    "ignoreDeprecations": "6.0"
+    }
   },
   "include": ["src"],
   "references": [{ "path": "./tsconfig.node.json" }]
