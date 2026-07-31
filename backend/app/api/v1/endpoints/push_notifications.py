@@ -14,6 +14,7 @@ from datetime import UTC, datetime, timedelta
 from typing import Optional
 
 from fastapi import APIRouter, Depends, HTTPException, status
+from fastapi.responses import PlainTextResponse
 from pydantic import BaseModel, Field
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -370,7 +371,15 @@ async def get_push_analytics(
 # =============================================================================
 
 
-@router.get("/service-worker.js", response_class=None)
+@router.get(
+    "/service-worker.js",
+    # response_class must not be None: FastAPI's OpenAPI generator asserts on
+    # it (openapi/utils.py "A response class is needed to generate OpenAPI"),
+    # and one such route takes down the whole /openapi.json document — and
+    # with it /docs and /redoc. PlainTextResponse is what the body already
+    # returns below.
+    response_class=PlainTextResponse,
+)
 async def get_service_worker():
     """
     Serve the push notification service worker.
@@ -402,6 +411,4 @@ self.addEventListener('notificationclick', function(event) {
     event.waitUntil(clients.openWindow(url));
 });
 """
-    from fastapi.responses import PlainTextResponse
-
     return PlainTextResponse(content=sw_code, media_type="application/javascript")
