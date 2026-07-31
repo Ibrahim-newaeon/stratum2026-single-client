@@ -15,6 +15,18 @@ updates:
       - "backend"
     commit-message:
       prefix: "chore(deps)"
+    ignore:
+      # scipy 1.18.0 dropped Python 3.11 (Requires-Python >=3.12). This project
+      # pins 3.11 in both places that matter — ci.yml PYTHON_VERSION and
+      # backend/Dockerfile `FROM python:3.11-slim-bookworm` — so the bump is
+      # not merely risky, it is uninstallable:
+      #   ERROR: No matching distribution found for scipy>=1.18.0
+      # Verified by `pip install` in a python:3.11 container; see PR #24, which
+      # is left open rather than merged. Without this ignore, Dependabot
+      # reopens the same unmergeable PR on every weekly scan.
+      # REMOVE THIS ENTRY when the project moves to Python 3.12.
+      - dependency-name: "scipy"
+        versions: [">=1.18.0"]
     groups:
       python-minor:
         patterns:
