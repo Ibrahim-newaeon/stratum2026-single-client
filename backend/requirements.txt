@@ -89,7 +89,7 @@ ruff==0.16.0
 # Ad Platform SDKs
 requests>=2.34.2
 facebook-business>=25.0.3
-google-ads>=31.0.0
+google-ads>=31.2.0
 
 # Analytics & ML (scipy needed by ml/ab_testing.py)
 scipy>=1.17.1
