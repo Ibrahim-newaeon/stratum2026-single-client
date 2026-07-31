@@ -20,7 +20,11 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 pytestmark = [pytest.mark.integration, pytest.mark.asyncio]
 
-_BASE = "/api/v1/compliance/admin/compliance"
+# The router declares prefix="/admin/compliance" itself and is registered with
+# an empty registry prefix, so the live path is /api/v1/admin/compliance/* —
+# matching this module's own docstring above. The old double-nested value was
+# the pre-STRAT-SC-001 shape and 404s on every request.
+_BASE = "/api/v1/admin/compliance"
 
 
 async def _seed_audit(

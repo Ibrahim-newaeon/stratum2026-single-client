@@ -17,7 +17,9 @@ from httpx import AsyncClient
 
 pytestmark = [pytest.mark.integration, pytest.mark.asyncio]
 
-_BASE = "/api/v1/console/analytics/console"
+# Live path is /api/v1/console/* — the router carries its own prefix and is
+# registered with an empty registry prefix (STRAT-SC-001 fix 5-1).
+_BASE = "/api/v1/console"
 
 _ENDPOINTS = [
     "/platform-overview",
