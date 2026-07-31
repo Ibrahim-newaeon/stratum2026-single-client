@@ -1,0 +1,21 @@
+{
+  "$comment": [
+    "Advisories `npm audit` may report without failing CI.",
+    "Every entry needs a reason and a removeWhen condition — an unexplained",
+    "allowlist entry is indistinguishable from an unnoticed vulnerability.",
+    "Consumed by scripts/check-audit.mjs. Anything NOT listed here still",
+    "fails the build, so this narrows the gate rather than disabling it."
+  ],
+  "allow": {
+    "GHSA-qwww-vcr4-c8h2": {
+      "package": "react-router",
+      "severity": "high",
+      "title": "RSC Mode CSRF Bypass Allows Action Execution Before 400 Response",
+      "installed": "7.18.1",
+      "fixedIn": "8.3.0",
+      "reason": "Not exploitable here: the advisory is specific to React Server Components mode, and this frontend is a client-only Vite SPA. src/main.tsx mounts <BrowserRouter> (not a data/RSC router), there is no SSR entrypoint, no @react-router/* server packages, and no createStaticHandler/renderToPipeableStream in src/. There is no server-side action pipeline for the bypass to act on.",
+      "deferredBecause": "The fix is react-router-dom 7.x -> 8.3.0, a major upgrade across 25+ dashboard routes. Its regression surface is materially larger than this exposure, so it is tracked as planned work.",
+      "removeWhen": "react-router-dom is upgraded to >= 8.3.0"
+    }
+  }
+}

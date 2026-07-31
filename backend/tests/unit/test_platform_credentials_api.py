@@ -129,7 +129,9 @@ async def test_put_adds_audit_log_row(api_client, admin_headers, mock_db) -> Non
 
 
 @pytest.mark.asyncio
-async def test_delete_removes_row_and_audits(api_client, admin_headers, mock_db) -> None:
+async def test_delete_removes_row_and_audits(
+    api_client, admin_headers, mock_db
+) -> None:
     """DELETE should remove the row and add an audit log with DELETE action."""
     # Mock existing row
     existing_row = MagicMock(platform="meta")

@@ -1,0 +1,26 @@
+# =============================================================================
+# Trivy ignore list
+# =============================================================================
+# Every entry here MUST carry a justification and a removal condition. An
+# unexplained ignore is indistinguishable from an unnoticed vulnerability.
+# Re-check this file whenever `Security Scan` newly passes — an entry that no
+# longer matches anything should be deleted, not left to rot.
+
+# GHSA-qwww-vcr4-c8h2 — react-router "RSC Mode CSRF Bypass Allows Action
+# Execution Before 400 Response" (HIGH). Installed 7.18.1; fixed in 8.3.0.
+#
+# Not exploitable in this application. The advisory is specific to React
+# Server Components mode. This frontend is a client-only Vite SPA:
+#   - src/main.tsx mounts <BrowserRouter>, not a data/RSC router
+#   - no SSR entrypoint (no entry.server.*, no server.*)
+#   - no @react-router/* server packages in frontend/package.json
+#   - no createStaticHandler / renderToPipeableStream anywhere in src/
+# There is no server-side action pipeline for the bypass to act on.
+#
+# The fix requires react-router-dom 7.x -> 8.3.0, a major upgrade across 25+
+# dashboard routes. That is tracked as planned work rather than rushed in
+# under an advisory that does not apply here — the migration's regression
+# surface is materially larger than this exposure.
+#
+# REMOVE THIS ENTRY when react-router-dom reaches >= 8.3.0.
+GHSA-qwww-vcr4-c8h2
