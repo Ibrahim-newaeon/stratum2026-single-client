@@ -125,9 +125,7 @@ async def upsert_credentials(
 ):
     platform = _validate_platform(platform)
     result = await db.execute(
-        select(PlatformAppCredential).where(
-            PlatformAppCredential.platform == platform
-        )
+        select(PlatformAppCredential).where(PlatformAppCredential.platform == platform)
     )
     row = result.scalar_one_or_none()
 
@@ -214,8 +212,7 @@ async def upsert_credentials(
     )
 
     has_developer_token = bool(
-        (data.developer_token or "").strip()
-        or (row.developer_token if row else None)
+        (data.developer_token or "").strip() or (row.developer_token if row else None)
     )
     message = f"{PLATFORM_LABELS[platform]} credentials saved"
     if platform == "google" and not has_developer_token:
@@ -247,9 +244,7 @@ async def delete_credentials(
 ):
     platform = _validate_platform(platform)
     result = await db.execute(
-        select(PlatformAppCredential).where(
-            PlatformAppCredential.platform == platform
-        )
+        select(PlatformAppCredential).where(PlatformAppCredential.platform == platform)
     )
     row = result.scalar_one_or_none()
     if row is None:

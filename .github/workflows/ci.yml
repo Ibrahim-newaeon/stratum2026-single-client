@@ -404,7 +404,13 @@ jobs:
         run: npm ci --legacy-peer-deps
 
       - name: Dependency audit (npm)
-        run: npm audit --audit-level=high --omit=dev
+        # Was a bare `npm audit --audit-level=high --omit=dev`. npm audit has
+        # no native ignore, so one unfixable advisory left only two options:
+        # delete the gate or append `|| true` — both stop checking everything
+        # else. check-audit.mjs keeps it failing on every high/critical
+        # advisory EXCEPT those documented in frontend/.audit-allowlist.json
+        # with a reason and a removal condition, and reports stale entries.
+        run: node scripts/check-audit.mjs
 
       - name: Lint
         run: npm run lint

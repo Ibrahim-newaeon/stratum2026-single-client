@@ -69,9 +69,7 @@ async def resolve_app_credentials(platform: str, db: AsyncSession) -> AppCredent
         raise CredentialsNotConfigured(platform)
 
     result = await db.execute(
-        select(PlatformAppCredential).where(
-            PlatformAppCredential.platform == platform
-        )
+        select(PlatformAppCredential).where(PlatformAppCredential.platform == platform)
     )
     row = result.scalar_one_or_none()
     if row is not None and row.client_id and row.client_secret:

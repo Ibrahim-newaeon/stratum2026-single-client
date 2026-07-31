@@ -25,8 +25,12 @@ def upgrade() -> None:
         sa.Column("id", sa.Integer(), primary_key=True, autoincrement=True),
         sa.Column("platform", sa.String(length=20), nullable=False),
         sa.Column("client_id", sa.String(length=255), nullable=False),
-        sa.Column("client_secret", app.db.types.EncryptedString(length=1024), nullable=False),
-        sa.Column("developer_token", app.db.types.EncryptedString(length=1024), nullable=True),
+        sa.Column(
+            "client_secret", app.db.types.EncryptedString(length=1024), nullable=False
+        ),
+        sa.Column(
+            "developer_token", app.db.types.EncryptedString(length=1024), nullable=True
+        ),
         sa.Column("updated_by_user_id", sa.Integer(), nullable=True),
         sa.Column(
             "created_at",

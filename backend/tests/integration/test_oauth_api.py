@@ -358,7 +358,9 @@ class TestAuthorize:
         test only (same override pattern as
         ``test_authorize_unconfigured_platform_400``).
         """
-        monkeypatch.setattr(oauth_ep, "resolve_app_credentials", resolve_app_credentials)
+        monkeypatch.setattr(
+            oauth_ep, "resolve_app_credentials", resolve_app_credentials
+        )
 
         db_session.add(
             PlatformAppCredential(
@@ -536,7 +538,9 @@ class TestCallback:
             redirect_uri="http://localhost:5173",
         )
         monkeypatch.setattr(
-            MetaOAuthService, "exchange_code_for_tokens", AsyncMock(return_value=_tokens())
+            MetaOAuthService,
+            "exchange_code_for_tokens",
+            AsyncMock(return_value=_tokens()),
         )
 
         first = await client.get(
@@ -605,7 +609,9 @@ class TestCallback:
             redirect_uri="http://localhost:5173",
         )
         monkeypatch.setattr(
-            MetaOAuthService, "exchange_code_for_tokens", AsyncMock(return_value=_tokens())
+            MetaOAuthService,
+            "exchange_code_for_tokens",
+            AsyncMock(return_value=_tokens()),
         )
         monkeypatch.setattr(
             MetaOAuthService,
