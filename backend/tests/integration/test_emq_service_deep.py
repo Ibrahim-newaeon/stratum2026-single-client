@@ -831,17 +831,35 @@ class TestAdminPortfolio:
         assert data["atRiskBudget"] == 150000
         assert data["avgScore"] == 68.3  # (85+70+50)/3 rounded
         assert len(data["topIssues"]) == 5
+        # Driver-level attribution is not tracked (it would need per-driver
+        # storage), so the service reports 0 rather than a fabricated fraction
+        # of the row total — see EmqAdminService.get_portfolio. The previous
+        # expectation of int(3 * 0.5) asserted that fabricated value.
         assert data["topIssues"][0] == {
             "driver": "iOS Signal Loss",
-            "affectedTenants": 1,  # int(3 * 0.5)
+            "affectedTenants": 0,
         }
+        assert all(issue["affectedTenants"] == 0 for issue in data["topIssues"])
 
     async def test_no_rows_returns_default_portfolio(self, admin_service):
+        """With no signal-health rows the portfolio is honest zeros.
+
+        `_get_default_portfolio` used to emit placeholder figures (156 orgs,
+        89/52/15 bands, avgScore 76.8) inherited from the multi-tenant demo
+        data. Those were removed deliberately — its docstring: "All counts are
+        0 ... no fabricated placeholders are emitted." These assertions
+        tracked the placeholders, not the contract.
+        """
         data = await admin_service.get_portfolio(target_date=date(2020, 1, 1))
 
-        assert data["totalTenants"] == 156
-        assert data["byBand"] == {"reliable": 89, "directional": 52, "unsafe": 15}
-        assert data["avgScore"] == 76.8
+        assert data["totalTenants"] == 0
+        assert data["byBand"] == {"reliable": 0, "directional": 0, "unsafe": 0}
+        assert data["avgScore"] == 0.0
+        assert data["atRiskBudget"] == 0
+        # The legacy field names survive for the frontend/schema shape, so the
+        # driver list is still present — just with no fabricated counts.
+        assert len(data["topIssues"]) == 5
+        assert all(issue["affectedTenants"] == 0 for issue in data["topIssues"])
 
     async def test_default_target_date_is_today(self, admin_service):
         """Omitting target_date defaults to today."""
