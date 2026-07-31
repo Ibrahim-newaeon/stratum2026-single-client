@@ -50,6 +50,73 @@ class TestStart:
         assert 0 <= data["progress_percent"] <= 100
 
 
+class TestAnonymousSessionAccess:
+    """STRAT-AUTH-005: /message and /status take OptionalUserDep so the
+    anonymous pre-signup flow can run end to end. Possession of the uuid4
+    session_id is therefore the only credential an anonymous caller has, which
+    is fine for a session they started themselves — but must NOT reach a
+    session created by a signed-in user, or those sessions would silently drop
+    from "auth + session_id" to "session_id alone" for the full 24h TTL.
+    """
+
+    async def test_anonymous_can_continue_own_session(self, client: AsyncClient):
+        """The whole point: start anonymously, then keep talking."""
+        session_id = await _start(client)
+
+        msg = await client.post(
+            f"{_BASE}/message", json={"session_id": session_id, "message": "Ada"}
+        )
+        assert msg.status_code == 200, msg.text
+
+        st = await client.get(f"{_BASE}/status/{session_id}")
+        assert st.status_code == 200, st.text
+        assert st.json()["session_id"] == session_id
+
+    async def test_anonymous_cannot_read_owned_session(
+        self, authenticated_client: AsyncClient
+    ):
+        """404, not 403 — a probe must not learn that the session exists.
+
+        Only ``authenticated_client`` is requested, then its header is
+        dropped. The ``authenticated_client`` fixture mutates and returns the
+        very same object as ``client`` (conftest sets
+        ``client.headers["Authorization"]`` and returns ``client``), so a test
+        asking for both fixtures gets one authenticated client twice and its
+        "anonymous" leg silently isn't. Both are function-scoped, so mutating
+        headers here cannot leak into another test.
+        """
+        session_id = await _start(authenticated_client)
+        authenticated_client.headers.pop("Authorization")
+
+        resp = await authenticated_client.get(f"{_BASE}/status/{session_id}")
+        assert resp.status_code == 404, resp.text
+
+    async def test_anonymous_cannot_message_owned_session(
+        self, authenticated_client: AsyncClient
+    ):
+        session_id = await _start(authenticated_client)
+        authenticated_client.headers.pop("Authorization")
+
+        resp = await authenticated_client.post(
+            f"{_BASE}/message", json={"session_id": session_id, "message": "hijack"}
+        )
+        assert resp.status_code == 404, resp.text
+
+    async def test_owner_still_reaches_own_session(
+        self, authenticated_client: AsyncClient
+    ):
+        """The guard must not lock owners out of their own sessions."""
+        session_id = await _start(authenticated_client)
+
+        st = await authenticated_client.get(f"{_BASE}/status/{session_id}")
+        assert st.status_code == 200, st.text
+
+        msg = await authenticated_client.post(
+            f"{_BASE}/message", json={"session_id": session_id, "message": "Ada"}
+        )
+        assert msg.status_code == 200, msg.text
+
+
 class TestStatus:
     async def test_status_roundtrip(self, authenticated_client: AsyncClient):
         session_id = await _start(authenticated_client)
