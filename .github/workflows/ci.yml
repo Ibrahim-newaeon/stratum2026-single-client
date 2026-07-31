@@ -6,8 +6,19 @@ name: CI
 on:
   push:
     branches: [main, develop]
+    # Documentation-only changes cannot affect lint, types, tests, or the
+    # residue gate (whose own EXCL list already skips *.md, docs/ and
+    # backend/docs/). Skipping them keeps ~13 runner-jobs off the clock per
+    # docs commit. Safe to filter: main has no branch protection, so no
+    # required check can hang waiting on a skipped run.
+    paths-ignore:
+      - "**.md"
+      - "docs/**"
   pull_request:
     branches: [main, develop]
+    paths-ignore:
+      - "**.md"
+      - "docs/**"
 
 concurrency:
   group: ${{ github.workflow }}-${{ github.ref }}
