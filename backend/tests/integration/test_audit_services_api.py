@@ -12,7 +12,9 @@ from httpx import AsyncClient
 
 pytestmark = [pytest.mark.integration, pytest.mark.asyncio]
 
-_BASE = "/api/v1/audit/audit-services"
+# Live path is /api/v1/audit-services/* — the router carries its own prefix and
+# is registered with an empty registry prefix (STRAT-SC-001 fix 5-1).
+_BASE = "/api/v1/audit-services"
 
 # GET endpoints that don't require request bodies, ML execution, or seeded data.
 _SMOKE_GETS = [

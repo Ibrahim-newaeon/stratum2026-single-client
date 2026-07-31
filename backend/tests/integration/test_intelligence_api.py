@@ -18,7 +18,9 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 pytestmark = [pytest.mark.integration, pytest.mark.asyncio]
 
-_BASE = "/api/v1/intelligence/analytics/insights"
+# Live path is /api/v1/analytics/insights/* — the router carries its own prefix
+# and is registered with an empty registry prefix (STRAT-SC-001 fix 5-1).
+_BASE = "/api/v1/analytics/insights"
 
 
 async def _seed_campaign_with_metrics(db: AsyncSession):
