@@ -18,7 +18,7 @@ from redis import asyncio as aioredis
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from app.auth.deps import CurrentUserDep
+from app.auth.deps import CurrentUserDep, OptionalUserDep
 from app.core.config import settings
 from app.core.logging import get_logger
 from app.db.session import get_async_session
@@ -149,7 +149,14 @@ async def delete_session(
 @router.post("/start", response_model=StartConversationResponse)
 async def start_conversation(
     request: StartConversationRequest,
-    current_user: CurrentUserDep,
+    # OptionalUserDep, not CurrentUserDep: pre-signup onboarding is an
+    # anonymous flow, so requiring a credential here locks out the exact
+    # user the flow exists for. The body below has always been written for
+    # a nullable user (`if current_user else None`, `not bool(current_user)`)
+    # — only the annotation disagreed, and it 401'd every anonymous caller.
+    # Scoped deliberately to /start: /complete dereferences current_user.id
+    # unguarded and genuinely requires auth.
+    current_user: OptionalUserDep,
 ):
     """
     Start a new onboarding conversation.
