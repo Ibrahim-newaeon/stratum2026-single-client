@@ -18,7 +18,7 @@ from redis import asyncio as aioredis
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from app.auth.deps import CurrentUserDep, OptionalUserDep
+from app.auth.deps import CurrentUser, CurrentUserDep, OptionalUserDep
 from app.core.config import settings
 from app.core.logging import get_logger
 from app.db.session import get_async_session
@@ -141,6 +141,38 @@ async def delete_session(
     await redis.delete(f"onboarding_session:{session_id}")
 
 
+def assert_session_access(
+    context: ConversationContext,
+    current_user: Optional[CurrentUser],
+) -> None:
+    """Gate an onboarding session against the caller.
+
+    The anonymous pre-signup flow means possession of the session_id is the
+    only credential an unauthenticated caller can present. That is acceptable
+    for a session the anonymous caller created themselves — the id is a uuid4
+    handed only to its creator, the same shape as an unguessable reset link.
+
+    It is NOT acceptable for a session created by a signed-in user: without
+    this check, opening these endpoints to anonymous callers would silently
+    downgrade those sessions from "auth + session_id" to "session_id alone"
+    for the full 24h Redis TTL, weakening them for users who never opted into
+    an anonymous flow. Sessions record their creator
+    (``user_context.user_id``, None when anonymous), so owned sessions stay
+    restricted to their owner.
+
+    Raises 404 rather than 403 deliberately: a probe must not be able to
+    confirm that a given session_id exists.
+    """
+    owner_id = context.user_context.user_id
+    if not owner_id:
+        return  # anonymous session — bearer access by session_id is the design
+    if current_user is None or str(current_user.id) != owner_id:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Session not found or expired",
+        )
+
+
 # =============================================================================
 # Endpoints
 # =============================================================================
@@ -225,13 +257,18 @@ async def start_conversation(
 @router.post("/message", response_model=SendMessageResponse)
 async def send_message(
     request: SendMessageRequest,
-    current_user: CurrentUserDep,
+    # Optional so an anonymous caller can continue the conversation /start
+    # gave them; assert_session_access below keeps owned sessions private.
+    current_user: OptionalUserDep,
 ):
     """
     Send a message to the onboarding agent.
 
     The agent processes the message and returns a response
     based on the current conversation state.
+
+    Can be used with or without authentication: anonymous callers may only
+    act on sessions that were themselves started anonymously.
     """
     redis = await get_redis_client()
 
@@ -244,6 +281,8 @@ async def send_message(
                 status_code=status.HTTP_404_NOT_FOUND,
                 detail="Session not found or expired. Please start a new conversation.",
             )
+
+        assert_session_access(context, current_user)
 
         # Process message with agent
         response = await root_agent.process_message(
@@ -292,12 +331,18 @@ async def send_message(
 @router.get("/status/{session_id}", response_model=ConversationStatusResponse)
 async def get_conversation_status(
     session_id: str,
-    current_user: CurrentUserDep,
+    # Optional so an anonymous caller can resume after a refresh. This is the
+    # highest-disclosure endpoint in the router — it returns the whole
+    # onboarding_data blob — so assert_session_access matters most here.
+    current_user: OptionalUserDep,
 ):
     """
     Get the current status of an onboarding conversation.
 
     Returns the conversation state, progress, and collected data.
+
+    Can be used with or without authentication: anonymous callers may only
+    read sessions that were themselves started anonymously.
     """
     redis = await get_redis_client()
 
@@ -309,6 +354,8 @@ async def get_conversation_status(
                 status_code=status.HTTP_404_NOT_FOUND,
                 detail="Session not found or expired",
             )
+
+        assert_session_access(context, current_user)
 
         return ConversationStatusResponse(
             session_id=session_id,
