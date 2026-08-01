@@ -1,5 +1,5 @@
 # =============================================================================
-# Stratum AI - Error Handler Middleware Tests
+# ADs Growth System - Error Handler Middleware Tests
 # =============================================================================
 """
 Tests for the last-resort error handler middleware that catches unhandled

@@ -1,5 +1,5 @@
 /**
- * Stratum AI - Digital Assets API
+ * ADs Growth System - Digital Assets API
  *
  * Digital Asset Management endpoints with fatigue scoring
  */

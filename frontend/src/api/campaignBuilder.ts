@@ -1,5 +1,5 @@
 /**
- * Stratum AI - Campaign Builder API Hooks
+ * ADs Growth System - Campaign Builder API Hooks
  *
  * React Query hooks for the Campaign Builder feature:
  * - Platform connectors

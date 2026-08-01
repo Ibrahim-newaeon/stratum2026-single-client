@@ -139,7 +139,7 @@ export default function OnboardingChat({
           id: '1',
           role: 'assistant',
           content:
-            '👋 Welcome to **Stratum AI**!\n\nI\'m your onboarding assistant. The backend service is currently starting up — but you can already explore the dashboard!\n\nUse the sidebar to navigate between **Overview**, **Campaigns**, **CDP**, and more. When the service is ready, come back here to complete your guided setup.',
+            '👋 Welcome to **ADs Growth System**!\n\nI\'m your onboarding assistant. The backend service is currently starting up — but you can already explore the dashboard!\n\nUse the sidebar to navigate between **Overview**, **Campaigns**, **CDP**, and more. When the service is ready, come back here to complete your guided setup.',
           timestamp: new Date(),
           quickReplies: ['Explore Dashboard', 'View CDP', 'Check Integrations'],
         },
@@ -273,7 +273,7 @@ export default function OnboardingChat({
               <SparklesIcon className="w-5 h-5 text-primary-foreground" />
             </div>
             <div>
-              <h3 className="font-semibold text-white">Stratum AI Assistant</h3>
+              <h3 className="font-semibold text-white">ADs Growth System Assistant</h3>
               <p className="text-xs text-primary">Trust-Gated Onboarding</p>
             </div>
           </div>

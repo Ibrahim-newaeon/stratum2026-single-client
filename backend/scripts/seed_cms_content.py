@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """
-Stratum AI - CMS Content Seed Script
+ADs Growth System - CMS Content Seed Script
 
 Seeds essential CMS categories so the Landing Content editors
 (Features, FAQ, Pricing) can function, and creates initial CMS pages
@@ -99,8 +99,8 @@ PAGES = [
         "title": "Features",
         "slug": "features",
         "template": "features",
-        "meta_title": "Stratum AI Features - Trust-Gated Revenue Automation",
-        "meta_description": "Explore Stratum AI's powerful features including Trust Engine, CDP, Autopilot, and more.",
+        "meta_title": "ADs Growth System Features - Trust-Gated Revenue Automation",
+        "meta_description": "Explore ADs Growth System's powerful features including Trust Engine, CDP, Autopilot, and more.",
         "status": "published",
         "show_in_navigation": True,
         "navigation_label": "Features",
@@ -110,8 +110,8 @@ PAGES = [
         "title": "Pricing",
         "slug": "pricing",
         "template": "pricing",
-        "meta_title": "Stratum AI Pricing - Plans for Every Business",
-        "meta_description": "Choose the right Stratum AI plan for your business. Starter, Professional, and Enterprise tiers available.",
+        "meta_title": "ADs Growth System Pricing - Plans for Every Business",
+        "meta_description": "Choose the right ADs Growth System plan for your business. Starter, Professional, and Enterprise tiers available.",
         "status": "published",
         "show_in_navigation": True,
         "navigation_label": "Pricing",
@@ -121,8 +121,8 @@ PAGES = [
         "title": "Integrations",
         "slug": "integrations",
         "template": "integrations",
-        "meta_title": "Stratum AI Integrations - Connect Your Marketing Stack",
-        "meta_description": "Connect Stratum AI with Google Ads, Meta, TikTok, Snapchat, HubSpot, and more.",
+        "meta_title": "ADs Growth System Integrations - Connect Your Marketing Stack",
+        "meta_description": "Connect ADs Growth System with Google Ads, Meta, TikTok, Snapchat, HubSpot, and more.",
         "status": "published",
         "show_in_navigation": True,
         "navigation_label": "Integrations",
@@ -132,8 +132,8 @@ PAGES = [
         "title": "About",
         "slug": "about",
         "template": "about",
-        "meta_title": "About Stratum AI - Our Mission and Team",
-        "meta_description": "Learn about Stratum AI's mission to bring trust-gated automation to revenue operations.",
+        "meta_title": "About ADs Growth System - Our Mission and Team",
+        "meta_description": "Learn about ADs Growth System's mission to bring trust-gated automation to revenue operations.",
         "status": "published",
         "show_in_navigation": True,
         "navigation_label": "About",
@@ -143,8 +143,8 @@ PAGES = [
         "title": "Changelog",
         "slug": "changelog",
         "template": "changelog",
-        "meta_title": "Stratum AI Changelog - Product Updates",
-        "meta_description": "See what's new in Stratum AI. Latest features, improvements, and fixes.",
+        "meta_title": "ADs Growth System Changelog - Product Updates",
+        "meta_description": "See what's new in ADs Growth System. Latest features, improvements, and fixes.",
         "status": "published",
         "show_in_navigation": False,
         "navigation_label": "Changelog",
@@ -288,7 +288,7 @@ async def seed_cms_content():
 
 if __name__ == "__main__":
     print("\n" + "=" * 60)
-    print("  Stratum AI - CMS Content Seed Script")
+    print("  ADs Growth System - CMS Content Seed Script")
     print("=" * 60)
 
     asyncio.run(seed_cms_content())

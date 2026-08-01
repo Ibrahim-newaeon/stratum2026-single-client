@@ -1,5 +1,5 @@
 # =============================================================================
-# Stratum AI - ML router authorization test (ML-003)
+# ADs Growth System - ML router authorization test (ML-003)
 # =============================================================================
 """
 The /ml router (model upload / train / delete) operates on the GLOBAL model

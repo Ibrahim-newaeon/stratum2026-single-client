@@ -1,5 +1,5 @@
 # =============================================================================
-# Stratum AI - Org-level EMQ weight overrides (ML-06)
+# ADs Growth System - Org-level EMQ weight overrides (ML-06)
 # =============================================================================
 """
 EMQ driver weights were hardcoded per driver. calculate_emq_score now accepts an

@@ -1,5 +1,5 @@
 # =============================================================================
-# Stratum AI — AI Intelligence Layer (Gap #3)
+# ADs Growth System — AI Intelligence Layer (Gap #3)
 # =============================================================================
 """
 Advanced AI-powered analytics endpoints:

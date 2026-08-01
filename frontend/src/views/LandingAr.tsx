@@ -14,7 +14,7 @@ export default function LandingAr() {
     <>
       <iframe
         src="/landing-ar.html"
-        title="Stratum AI - ذكاء الإيرادات + طبقة الثقة"
+        title="ADs Growth System - ذكاء الإيرادات + طبقة الثقة"
         style={{
           position: 'fixed',
           top: 0,

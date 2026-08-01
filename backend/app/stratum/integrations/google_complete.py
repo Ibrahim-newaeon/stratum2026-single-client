@@ -1,5 +1,5 @@
 """
-Stratum AI: Google Ads Complete Integration
+ADs Growth System: Google Ads Complete Integration
 ===========================================
 
 Google Ads is fundamentally different from Meta/TikTok/Snapchat:

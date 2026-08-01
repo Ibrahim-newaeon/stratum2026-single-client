@@ -1,5 +1,5 @@
 /**
- * Stratum AI - Dashboard API
+ * ADs Growth System - Dashboard API
  *
  * Unified dashboard endpoints for the main application dashboard.
  * Provides consolidated data for metrics, campaigns, recommendations,

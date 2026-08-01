@@ -1,5 +1,5 @@
 # =============================================================================
-# Stratum AI - Drip + Campaign-Publish Flag-Off Tests
+# ADs Growth System - Drip + Campaign-Publish Flag-Off Tests
 # =============================================================================
 """
 Tests for shelving Drip Campaigns and Campaign Publish off for launch (Tier 2).

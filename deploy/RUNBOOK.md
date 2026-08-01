@@ -1,6 +1,6 @@
-# Stratum AI — Operator Runbook
+# ADs Growth System — Operator Runbook
 
-A one-page reference for installing and running your Stratum AI instance.
+A one-page reference for installing and running your ADs Growth System instance.
 For the full detail behind any step, see `INSTALL.md`.
 
 ---

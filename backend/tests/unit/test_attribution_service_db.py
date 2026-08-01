@@ -1,5 +1,5 @@
 # =============================================================================
-# Stratum AI - Attribution Service unit tests (DB paths + reconciliation)
+# ADs Growth System - Attribution Service unit tests (DB paths + reconciliation)
 # =============================================================================
 """Unit tests for ``app.services.attribution.attribution_service`` (issue
 #342, batch 3).

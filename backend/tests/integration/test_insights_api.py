@@ -1,5 +1,5 @@
 # =============================================================================
-# Stratum AI - Insights API Integration Tests
+# ADs Growth System - Insights API Integration Tests
 # =============================================================================
 """Integration tests for the AI-insights API.
 

@@ -1,5 +1,5 @@
 # =============================================================================
-# Stratum AI - Offline Conversion Upload Service
+# ADs Growth System - Offline Conversion Upload Service
 # =============================================================================
 """
 Service for uploading offline conversions to ad platforms.

@@ -1,5 +1,5 @@
 # =============================================================================
-# Stratum AI - Frontend Dockerfile
+# ADs Growth System - Frontend Dockerfile
 # =============================================================================
 
 # Development stage

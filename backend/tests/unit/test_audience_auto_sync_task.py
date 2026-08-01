@@ -1,5 +1,5 @@
 # =============================================================================
-# Stratum AI - Audience Auto-Sync Task Tests
+# ADs Growth System - Audience Auto-Sync Task Tests
 # =============================================================================
 """
 Tests for the scheduled audience-sync sweep (tasks.audience_auto_sync).

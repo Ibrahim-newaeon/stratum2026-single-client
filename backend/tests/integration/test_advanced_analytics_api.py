@@ -1,5 +1,5 @@
 # =============================================================================
-# Stratum AI - Advanced Analytics Endpoint Integration Tests
+# ADs Growth System - Advanced Analytics Endpoint Integration Tests
 # =============================================================================
 """Integration tests for the advanced-analytics surface under
 ``/api/v1/analytics/advanced/...``: funnel analysis, cohort analysis, and the

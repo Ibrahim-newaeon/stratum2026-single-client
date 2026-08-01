@@ -1,5 +1,5 @@
 # =============================================================================
-# Stratum AI - Creative Performance Service unit tests
+# ADs Growth System - Creative Performance Service unit tests
 # =============================================================================
 """Unit tests for app.services.creative_performance_service.
 

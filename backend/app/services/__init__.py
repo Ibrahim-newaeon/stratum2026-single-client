@@ -1,5 +1,5 @@
 # =============================================================================
-# Stratum AI - Services Package
+# ADs Growth System - Services Package
 # =============================================================================
 from app.services.market_proxy import MarketIntelligenceService
 from app.services.mock_client import MockAdNetwork

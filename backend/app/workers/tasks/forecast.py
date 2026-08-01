@@ -1,5 +1,5 @@
 # =============================================================================
-# Stratum AI - Forecasting Tasks
+# ADs Growth System - Forecasting Tasks
 # =============================================================================
 """
 Background tasks for ML-based forecasting and predictions.

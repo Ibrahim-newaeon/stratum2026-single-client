@@ -18,8 +18,8 @@ interface SEOProps {
 }
 
 const defaultMeta = {
-  siteName: 'Stratum AI',
-  title: 'Stratum AI - Revenue Operating System',
+  siteName: 'ADs Growth System',
+  title: 'ADs Growth System - Revenue Operating System',
   description:
     'AI-powered marketing intelligence with Trust-Gated Autopilot. Real-time attribution, signal health monitoring, and automated optimization across Meta, Google, TikTok, and Snapchat.',
   image: '/og-image.png',
@@ -92,68 +92,68 @@ export const pageSEO = {
   pricing: {
     title: 'Pricing',
     description:
-      'Simple, transparent pricing for Stratum AI. Start with a 14-day free trial. Plans from $499/month for growing teams.',
+      'Simple, transparent pricing for ADs Growth System. Start with a 14-day free trial. Plans from $499/month for growing teams.',
   },
   features: {
     title: 'Features',
     description:
-      'Explore Stratum AI features: Trust Engine, Signal Health monitoring, CDP with audience sync, predictive analytics, and more.',
+      'Explore ADs Growth System features: Trust Engine, Signal Health monitoring, CDP with audience sync, predictive analytics, and more.',
   },
   faq: {
     title: 'FAQ',
     description:
-      'Frequently asked questions about Stratum AI. Learn about pricing, features, integrations, data security, and support.',
+      'Frequently asked questions about ADs Growth System. Learn about pricing, features, integrations, data security, and support.',
   },
   login: {
     title: 'Sign In',
     description:
-      'Sign in to your Stratum AI account to access your marketing intelligence dashboard.',
+      'Sign in to your ADs Growth System account to access your marketing intelligence dashboard.',
     noIndex: true,
   },
   signup: {
     title: 'Sign Up',
     description:
-      'Create your Stratum AI account and start your 14-day free trial. No credit card required.',
+      'Create your ADs Growth System account and start your 14-day free trial. No credit card required.',
   },
   contact: {
     title: 'Contact Us',
     description:
-      "Get in touch with the Stratum AI team. We're here to help with sales inquiries, support, and partnerships.",
+      "Get in touch with the ADs Growth System team. We're here to help with sales inquiries, support, and partnerships.",
   },
   about: {
     title: 'About Us',
     description:
-      "Learn about Stratum AI's mission to bring trust and transparency to marketing automation.",
+      "Learn about ADs Growth System's mission to bring trust and transparency to marketing automation.",
   },
   cdp: {
     title: 'Customer Data Platform',
     description:
-      'Unify customer profiles, sync audiences to ad platforms, and build smart segments with Stratum AI CDP.',
+      'Unify customer profiles, sync audiences to ad platforms, and build smart segments with ADs Growth System CDP.',
   },
   docs: {
     title: 'Documentation',
     description:
-      'Stratum AI documentation. Learn how to integrate, configure, and get the most out of the platform.',
+      'ADs Growth System documentation. Learn how to integrate, configure, and get the most out of the platform.',
   },
   privacy: {
     title: 'Privacy Policy',
     description:
-      'Stratum AI Privacy Policy. Learn how we collect, use, and protect your personal data.',
+      'ADs Growth System Privacy Policy. Learn how we collect, use, and protect your personal data.',
   },
   terms: {
     title: 'Terms of Service',
     description:
-      'Stratum AI Terms of Service. Review the terms governing your use of our revenue operating system.',
+      'ADs Growth System Terms of Service. Review the terms governing your use of our revenue operating system.',
   },
   security: {
     title: 'Security',
     description:
-      'Enterprise-grade security at Stratum AI. SOC 2 Type II certified, GDPR compliant, with encryption at rest and in transit.',
+      'Enterprise-grade security at ADs Growth System. SOC 2 Type II certified, GDPR compliant, with encryption at rest and in transit.',
   },
   dpa: {
     title: 'Data Processing Agreement',
     description:
-      'Stratum AI Data Processing Agreement. Details on how we process personal data on behalf of our customers.',
+      'ADs Growth System Data Processing Agreement. Details on how we process personal data on behalf of our customers.',
   },
 };
 

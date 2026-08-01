@@ -1,5 +1,5 @@
 /**
- * Stratum AI - Team Management Page
+ * ADs Growth System - Team Management Page
  *
  * Manage team members and their access to the tenant.
  */

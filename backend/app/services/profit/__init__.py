@@ -1,5 +1,5 @@
 # =============================================================================
-# Stratum AI - Profit ROAS Services Package
+# ADs Growth System - Profit ROAS Services Package
 # =============================================================================
 """
 Services for Profit ROAS calculations and COGS management.

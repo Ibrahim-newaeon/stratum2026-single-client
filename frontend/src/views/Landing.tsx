@@ -53,8 +53,8 @@ export default function Landing() {
             {/* Logo */}
             <Link to="/" className="flex items-center gap-3">
               <img
-                src="/images/stratum-logo.png"
-                alt="Stratum AI"
+                src="/images/logo.png"
+                alt="ADs Growth System"
                 className="h-7"
               />
             </Link>
@@ -184,7 +184,7 @@ export default function Landing() {
               {[
                 {
                   quote:
-                    "Stratum AI doesn't just report data — it partners with us to make decisions. Our ROAS improved 34% in the first quarter.",
+                    "ADs Growth System doesn't just report data — it partners with us to make decisions. Our ROAS improved 34% in the first quarter.",
                   name: 'Sarah Chen',
                   title: 'VP of Growth, Nexus Digital',
                 },

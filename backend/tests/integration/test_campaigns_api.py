@@ -1,5 +1,5 @@
 # =============================================================================
-# Stratum AI - Campaigns API Integration Tests
+# ADs Growth System - Campaigns API Integration Tests
 # =============================================================================
 """Integration tests for the campaigns list/detail API.
 

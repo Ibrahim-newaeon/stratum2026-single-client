@@ -1,5 +1,5 @@
 # =============================================================================
-# Stratum AI - Core Logging Unit Tests
+# ADs Growth System - Core Logging Unit Tests
 # =============================================================================
 """Unit tests for ``app.core.logging``.
 

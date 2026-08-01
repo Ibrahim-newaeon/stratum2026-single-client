@@ -31,7 +31,7 @@ export default function AuthLeftPanel({ className }: AuthLeftPanelProps) {
 
       {/* Top: logo + back-home (plain <a> for full page load → figma landing) */}
       <div className="relative z-10 flex items-center justify-between">
-        <a href="/landing.html" className="flex items-center gap-2" aria-label="Stratum AI home">
+        <a href="/landing.html" className="flex items-center gap-2" aria-label="ADs Growth System home">
           <span className="text-[19px] font-medium tracking-tight text-white">stratum.ai</span>
         </a>
         <a

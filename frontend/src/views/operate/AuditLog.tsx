@@ -106,7 +106,7 @@ export default function TenantAuditLog() {
   return (
     <>
       <Helmet>
-        <title>Audit Log | Stratum AI</title>
+        <title>Audit Log | ADs Growth System</title>
       </Helmet>
 
       <div className="space-y-6 max-w-7xl mx-auto">

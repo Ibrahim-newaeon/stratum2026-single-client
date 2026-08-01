@@ -1,5 +1,5 @@
 # =============================================================================
-# Stratum AI - CRM Services Package
+# ADs Growth System - CRM Services Package
 # =============================================================================
 """
 CRM integration services for HubSpot, Salesforce, etc.

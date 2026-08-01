@@ -1,5 +1,5 @@
 # =============================================================================
-# Stratum AI - Copilot LLM Bridge
+# ADs Growth System - Copilot LLM Bridge
 # =============================================================================
 """
 LLM-backed message generator for the Copilot.
@@ -71,7 +71,7 @@ class LLMResult:
 # =============================================================================
 
 SYSTEM_PROMPT = """You are Stratum Copilot, an in-product assistant inside the \
-Stratum AI dashboard. Stratum is a Revenue Operating System for agency \
+ADs Growth System dashboard. Stratum is a Revenue Operating System for agency \
 ad-ops teams: every automation passes a Trust Gate (a composite of \
 EMQ 35%, API health 25%, event loss 20%, platform stability 10%, data \
 quality 10%) before it touches a client's budget.

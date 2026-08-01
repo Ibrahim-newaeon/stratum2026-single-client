@@ -1,5 +1,5 @@
 # =============================================================================
-# Stratum AI - Security Middleware Unit Tests
+# ADs Growth System - Security Middleware Unit Tests
 # =============================================================================
 """
 Comprehensive unit tests for SecurityHeadersMiddleware and RateLimitMiddleware.

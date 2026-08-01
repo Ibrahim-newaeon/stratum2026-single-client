@@ -1,5 +1,5 @@
 # =============================================================================
-# Stratum AI - Embed Widgets Endpoint Integration Tests
+# ADs Growth System - Embed Widgets Endpoint Integration Tests
 # =============================================================================
 """Integration tests for the DB-backed ``/embed-widgets/widgets`` CRUD
 surface (now backed by an async EmbedWidgetService). Token issuance, which

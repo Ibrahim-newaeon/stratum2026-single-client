@@ -45,7 +45,7 @@ export function Hero() {
           className="max-w-2xl mx-auto text-body text-muted-foreground mb-12 animate-enter"
           style={{ animationDelay: '0.3s' }}
         >
-          Stratum AI partners with your growth team to unify ad operations across
+          ADs Growth System partners with your growth team to unify ad operations across
           Meta, Google, TikTok, and Snapchat. Trust your data. Automate with
           confidence. Scale what works.
         </p>

@@ -1,5 +1,5 @@
 # =============================================================================
-# Stratum AI - Audit Queue Key Contract Tests
+# ADs Growth System - Audit Queue Key Contract Tests
 # =============================================================================
 """
 Regression tests for the audit-log pipeline (P0-3).

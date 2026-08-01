@@ -1,5 +1,5 @@
 # =============================================================================
-# Stratum AI - Upload size guards (API-001)
+# ADs Growth System - Upload size guards (API-001)
 # =============================================================================
 """
 Helpers to bound request-body size on file-upload endpoints.

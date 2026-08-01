@@ -1,5 +1,5 @@
 # =============================================================================
-# Stratum AI - Recommendations Engine unit tests
+# ADs Growth System - Recommendations Engine unit tests
 # =============================================================================
 """Unit tests for app.analytics.logic.recommend.
 

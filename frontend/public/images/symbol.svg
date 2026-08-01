@@ -1,14 +1,14 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 200 200" width="200" height="200" role="img" aria-labelledby="sym-title sym-desc">
-  <title id="sym-title">Stratum AI Symbol</title>
+  <title id="sym-title">ADs Growth System Symbol</title>
   <desc id="sym-desc">Three ascending isometric data planes representing layered intelligence</desc>
   <defs>
     <linearGradient id="sym-gold" x1="0%" y1="0%" x2="100%" y2="100%">
       <stop offset="0%" stop-color="#FF75B0"/>
-      <stop offset="50%" stop-color="#FF4D8F"/>
-      <stop offset="100%" stop-color="#FF1F6D"/>
+      <stop offset="50%" stop-color="#3B82F6"/>
+      <stop offset="100%" stop-color="#3B82F6"/>
     </linearGradient>
     <linearGradient id="sym-gold-r" x1="0%" y1="0%" x2="100%" y2="100%">
-      <stop offset="0%" stop-color="#FF1F6D"/>
+      <stop offset="0%" stop-color="#3B82F6"/>
       <stop offset="100%" stop-color="#CC1857"/>
     </linearGradient>
     <filter id="sym-glow" x="-50%" y="-50%" width="200%" height="200%">
@@ -28,7 +28,7 @@
   <path d="M38,110 L100,128 L100,135 L38,117Z" fill="#1E2638"/>
 
   <!-- Top slab ambient glow -->
-  <path d="M46,58 L100,74 L154,58 L100,42Z" fill="#FF4D8F" opacity="0.08" filter="url(#sym-glow)"/>
+  <path d="M46,58 L100,74 L154,58 L100,42Z" fill="#3B82F6" opacity="0.08" filter="url(#sym-glow)"/>
 
   <!-- Top slab left -->
   <path d="M46,58 L100,74 L100,42Z" fill="url(#sym-gold)"/>
@@ -39,8 +39,8 @@
   <path d="M46,58 L100,42 L154,58" fill="none" stroke="#FF75B0" stroke-width="0.8" opacity="0.7"/>
 
   <!-- Energy nodes -->
-  <circle cx="100" cy="86" r="2" fill="#FF4D8F" opacity="0.5"/>
-  <circle cx="76" cy="87" r="1" fill="#FF4D8F" opacity="0.25"/>
-  <circle cx="124" cy="87" r="1" fill="#FF4D8F" opacity="0.25"/>
-  <circle cx="100" cy="140" r="1.5" fill="#FF1F6D" opacity="0.35"/>
+  <circle cx="100" cy="86" r="2" fill="#3B82F6" opacity="0.5"/>
+  <circle cx="76" cy="87" r="1" fill="#3B82F6" opacity="0.25"/>
+  <circle cx="124" cy="87" r="1" fill="#3B82F6" opacity="0.25"/>
+  <circle cx="100" cy="140" r="1.5" fill="#3B82F6" opacity="0.35"/>
 </svg>

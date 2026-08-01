@@ -1,5 +1,5 @@
 # =============================================================================
-# Stratum AI - What-If Simulator
+# ADs Growth System - What-If Simulator
 # =============================================================================
 """
 What-If Simulator for budget impact prediction.

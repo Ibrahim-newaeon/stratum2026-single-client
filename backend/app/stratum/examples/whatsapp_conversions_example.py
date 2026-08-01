@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """
-Stratum AI: WhatsApp + Conversions API Integration Example
+ADs Growth System: WhatsApp + Conversions API Integration Example
 ==========================================================
 
 This example demonstrates:
@@ -431,7 +431,7 @@ async def example_whatsapp_webhook_handler():
 
 async def main():
     """Run all examples."""
-    logger.info("[START] STRATUM AI: WhatsApp + Conversions API Examples")
+    logger.info("[START] ADS GROWTH SYSTEM: WhatsApp + Conversions API Examples")
     logger.info("=" * 60)
 
     await example_whatsapp_messaging()

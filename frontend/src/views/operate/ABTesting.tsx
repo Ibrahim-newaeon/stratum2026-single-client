@@ -1,5 +1,5 @@
 /**
- * Stratum AI - A/B Testing Page
+ * ADs Growth System - A/B Testing Page
  *
  * Comprehensive A/B testing framework with power analysis, LTV impact, and statistical results.
  */

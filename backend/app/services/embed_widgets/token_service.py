@@ -1,5 +1,5 @@
 # =============================================================================
-# Stratum AI - Embed Token Service
+# ADs Growth System - Embed Token Service
 # =============================================================================
 """
 Secure token management for embed widgets.

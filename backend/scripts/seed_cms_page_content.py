@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """
-Stratum AI - CMS Page Content Population Script
+ADs Growth System - CMS Page Content Population Script
 
 Populates CMS pages (Features, Pricing) with their existing hardcoded content
 and creates FAQ posts from the hardcoded FAQ data, so everything is editable
@@ -195,7 +195,7 @@ PRICING_CONTENT = {
 FAQ_ITEMS = [
     # Pricing & Plans
     {
-        "title": "What pricing plans does Stratum AI offer?",
+        "title": "What pricing plans does ADs Growth System offer?",
         "content": "We offer three tiers: Starter ($499/mo) for growing teams, Professional ($1,499/mo) for scaling businesses with advanced automation, and custom Enterprise plans for large organizations. Each tier includes a 14-day free trial with full feature access.",
         "faq_category": "pricing",
         "display_order": 1,
@@ -253,7 +253,7 @@ FAQ_ITEMS = [
     # Integrations
     {
         "title": "How do I connect my ad accounts?",
-        "content": "Go to Settings > Connect Platforms. Click 'Connect' on any platform to start the OAuth flow. You'll be redirected to the platform to grant permissions, then automatically returned to Stratum AI.",
+        "content": "Go to Settings > Connect Platforms. Click 'Connect' on any platform to start the OAuth flow. You'll be redirected to the platform to grant permissions, then automatically returned to ADs Growth System.",
         "faq_category": "integrations",
         "display_order": 10,
     },
@@ -469,6 +469,6 @@ async def populate_cms():
 
 if __name__ == "__main__":
     print("\n" + "=" * 60)
-    print("  Stratum AI - CMS Content Population Script")
+    print("  ADs Growth System - CMS Content Population Script")
     print("=" * 60)
     asyncio.run(populate_cms())

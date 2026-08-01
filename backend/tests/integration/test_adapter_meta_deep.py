@@ -1,5 +1,5 @@
 # =============================================================================
-# Stratum AI - Meta Adapter Deep Integration Tests
+# ADs Growth System - Meta Adapter Deep Integration Tests
 # =============================================================================
 """Deep coverage tests for ``app.stratum.adapters.meta_adapter`` (#342 Batch 5+6).
 

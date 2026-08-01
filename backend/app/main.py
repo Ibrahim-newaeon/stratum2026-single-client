@@ -1,5 +1,5 @@
 # =============================================================================
-# Stratum AI - FastAPI Main Application
+# ADs Growth System - FastAPI Main Application
 # =============================================================================
 """
 Main FastAPI application entry point.

@@ -1,5 +1,5 @@
 # =============================================================================
-# Stratum AI - Custom SQLAlchemy Column Types
+# ADs Growth System - Custom SQLAlchemy Column Types
 # =============================================================================
 """
 Reusable column types.

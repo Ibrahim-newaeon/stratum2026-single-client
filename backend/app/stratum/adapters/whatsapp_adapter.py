@@ -1,5 +1,5 @@
 """
-Stratum AI: WhatsApp Business API Adapter
+ADs Growth System: WhatsApp Business API Adapter
 =========================================
 
 This adapter provides integration with Meta's WhatsApp Business API (Cloud API),

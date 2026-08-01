@@ -1,9 +1,9 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32" width="32" height="32" role="img" aria-labelledby="fav-title">
-  <title id="fav-title">Stratum AI</title>
+  <title id="fav-title">ADs Growth System</title>
   <defs>
     <linearGradient id="fav-gold" x1="0%" y1="0%" x2="100%" y2="100%">
       <stop offset="0%" stop-color="#FF75B0"/>
-      <stop offset="100%" stop-color="#FF1F6D"/>
+      <stop offset="100%" stop-color="#3B82F6"/>
     </linearGradient>
   </defs>
   <rect width="32" height="32" rx="6" fill="#080C14"/>

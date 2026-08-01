@@ -1,5 +1,5 @@
 # =============================================================================
-# Stratum AI - Campaign Builder Celery Tasks
+# ADs Growth System - Campaign Builder Celery Tasks
 # =============================================================================
 """
 Background tasks for the Campaign Builder feature:

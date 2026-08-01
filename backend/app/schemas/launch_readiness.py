@@ -1,5 +1,5 @@
 # =============================================================================
-# Stratum AI - Launch Readiness Schemas
+# ADs Growth System - Launch Readiness Schemas
 # =============================================================================
 """
 Pydantic schemas for the Launch Readiness wizard API.

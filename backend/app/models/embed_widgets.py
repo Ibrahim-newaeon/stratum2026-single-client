@@ -1,5 +1,5 @@
 # =============================================================================
-# Stratum AI - Embed Widget Models
+# ADs Growth System - Embed Widget Models
 # =============================================================================
 """
 Database models for embeddable widgets with tier-based branding.

@@ -1,5 +1,5 @@
 # =============================================================================
-# Stratum AI - Forecasting Service
+# ADs Growth System - Forecasting Service
 # =============================================================================
 """
 Forecasting service using EWMA with day-of-week seasonality.

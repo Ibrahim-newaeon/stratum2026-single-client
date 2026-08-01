@@ -1,5 +1,5 @@
 # =============================================================================
-# Stratum AI - Database Session Management
+# ADs Growth System - Database Session Management
 # =============================================================================
 """
 Async and sync database session management with connection pooling.

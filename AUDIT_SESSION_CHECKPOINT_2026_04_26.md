@@ -1,4 +1,4 @@
-# Stratum AI — Session Checkpoint
+# ADs Growth System — Session Checkpoint
 **Date:** 2026-04-26  
 **Branch:** `main` (all changes merged)  
 **Status:** Backend live, frontend deployed, integrations data corrected

@@ -1,5 +1,5 @@
 # =============================================================================
-# Stratum AI - CDP API Endpoints
+# ADs Growth System - CDP API Endpoints
 # =============================================================================
 """
 CDP (Customer Data Platform) API endpoints.

@@ -1,5 +1,5 @@
 # =============================================================================
-# Stratum AI - Multiplatform Integration Module
+# ADs Growth System - Multiplatform Integration Module
 # =============================================================================
 """
 Stratum Multiplatform Integration.

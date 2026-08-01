@@ -1,5 +1,5 @@
 # =============================================================================
-# Stratum AI - CDP Audience Sync Module
+# ADs Growth System - CDP Audience Sync Module
 # =============================================================================
 """
 Audience sync services for pushing CDP segments to ad platforms.

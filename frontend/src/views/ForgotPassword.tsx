@@ -38,7 +38,7 @@ export default function ForgotPassword() {
   if (isSuccess) {
     return (
       <>
-        <SEO title="Forgot Password" description="Reset your Stratum AI account password." noIndex url="https://stratum-ai.com/forgot-password" />
+        <SEO title="Forgot Password" description="Reset your ADs Growth System account password." noIndex url="https://stratum-ai.com/forgot-password" />
         <div className="min-h-screen flex bg-background text-foreground font-sans">
           <AuthLeftPanel />
           <section className="w-full lg:w-3/5 flex flex-col items-center justify-center p-6 lg:p-12 relative">
@@ -81,7 +81,7 @@ export default function ForgotPassword() {
 
   return (
     <>
-      <SEO title="Forgot Password" description="Reset your Stratum AI account password." noIndex url="https://stratum-ai.com/forgot-password" />
+      <SEO title="Forgot Password" description="Reset your ADs Growth System account password." noIndex url="https://stratum-ai.com/forgot-password" />
 
       <div className="min-h-screen flex bg-background text-foreground font-sans">
         <AuthLeftPanel />

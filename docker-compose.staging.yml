@@ -1,5 +1,5 @@
 # =============================================================================
-# Stratum AI - Staging Environment
+# ADs Growth System - Staging Environment
 # =============================================================================
 # Usage: docker compose -f docker-compose.staging.yml up -d
 #

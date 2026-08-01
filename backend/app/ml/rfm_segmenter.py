@@ -1,5 +1,5 @@
 # =============================================================================
-# Stratum AI - RFM Customer Segmentation
+# ADs Growth System - RFM Customer Segmentation
 # =============================================================================
 """
 RFM (Recency, Frequency, Monetary) based customer segmentation.

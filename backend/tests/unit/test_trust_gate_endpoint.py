@@ -1,5 +1,5 @@
 # =============================================================================
-# Stratum AI - Trust Gate Endpoint Adapter Tests
+# ADs Growth System - Trust Gate Endpoint Adapter Tests
 # =============================================================================
 """Unit tests for the FactSignalHealthDaily → stratum SignalHealth adapter
 behind GET /trust/trust-gate and POST .../trust-gate/evaluate.

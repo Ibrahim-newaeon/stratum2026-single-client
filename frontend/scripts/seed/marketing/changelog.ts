@@ -82,7 +82,7 @@ const entry: MarketingSeedEntry = {
   slug: 'changelog',
   title: 'Changelog',
   template: 'changelog',
-  meta_title: "Changelog — What's New in Stratum AI",
+  meta_title: "Changelog — What's New in ADs Growth System",
   meta_description:
     'Stay up to date with the latest features, improvements, and fixes.',
   content_json,

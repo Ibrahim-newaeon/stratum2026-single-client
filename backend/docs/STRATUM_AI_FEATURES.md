@@ -1,4 +1,4 @@
-# Stratum AI - Complete Feature Documentation
+# ADs Growth System - Complete Feature Documentation
 
 **Version:** 2.0.0
 **Last Updated:** January 2, 2026
@@ -35,7 +35,7 @@ SaaS")
 
 ## Executive Summary
 
-Stratum AI is an enterprise-grade marketing intelligence platform designed for agencies and brands managing multi-platform advertising campaigns. The platform provides:
+ADs Growth System is an enterprise-grade marketing intelligence platform designed for agencies and brands managing multi-platform advertising campaigns. The platform provides:
 
 - **Unified Campaign Management** across Meta, Google, TikTok, and Snapchat
 - **AI-Powered Recommendations** with confidence scoring and guardrails
@@ -65,7 +65,7 @@ Stratum AI is an enterprise-grade marketing intelligence platform designed for a
 
 ```
 ┌─────────────────────────────────────────────────────────────────┐
-│                        STRATUM AI PLATFORM                       │
+│                        ADS GROWTH SYSTEM PLATFORM                       │
 ├─────────────────────────────────────────────────────────────────┤
 │  ┌─────────────┐  ┌─────────────┐  ┌─────────────┐              │
 │  │   React     │  │   FastAPI   │  │   Celery    │              │
@@ -633,4 +633,4 @@ alembic revision --autogenerate -m "description"
 
 ---
 
-**Copyright 2026 Stratum AI. All Rights Reserved.**
+**Copyright 2026 ADs Growth System. All Rights Reserved.**

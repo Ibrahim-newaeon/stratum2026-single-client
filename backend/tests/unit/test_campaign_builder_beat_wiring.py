@@ -1,5 +1,5 @@
 # =============================================================================
-# Stratum AI - Campaign-Builder Beat Wiring Tests
+# ADs Growth System - Campaign-Builder Beat Wiring Tests
 # =============================================================================
 """
 Tests for wiring the orphaned campaign-builder connector tasks (P1-2).

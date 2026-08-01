@@ -17,7 +17,7 @@ import {
 type FeatureStatus = 'yes' | 'no' | 'partial' | 'unique';
 
 const competitors = [
-  { id: 'stratum', name: 'Stratum AI', highlight: true },
+  { id: 'stratum', name: 'ADs Growth System', highlight: true },
   { id: 'segment', name: 'Segment' },
   { id: 'mparticle', name: 'mParticle' },
   { id: 'hightouch', name: 'Hightouch' },
@@ -366,7 +366,7 @@ export default function BattleCard() {
         >
           <div className="flex items-center gap-2">
             <StatusIcon status="unique" />
-            <span className="text-foreground/50">Unique to Stratum AI</span>
+            <span className="text-foreground/50">Unique to ADs Growth System</span>
           </div>
           <div className="flex items-center gap-2">
             <StatusIcon status="yes" />

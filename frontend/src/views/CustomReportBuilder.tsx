@@ -1,5 +1,5 @@
 // =============================================================================
-// Stratum AI - Custom Report Builder (Enterprise Feature)
+// ADs Growth System - Custom Report Builder (Enterprise Feature)
 // =============================================================================
 
 import { useState, useCallback, useMemo, memo } from 'react';

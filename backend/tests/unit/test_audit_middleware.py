@@ -1,5 +1,5 @@
 # =============================================================================
-# Stratum AI - Audit Middleware Tests
+# ADs Growth System - Audit Middleware Tests
 # =============================================================================
 """
 Tests for the audit logging middleware that records state-changing API requests.

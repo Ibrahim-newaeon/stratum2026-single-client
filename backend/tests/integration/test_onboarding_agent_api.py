@@ -1,5 +1,5 @@
 # =============================================================================
-# Stratum AI - Onboarding Agent Endpoint Integration Tests
+# ADs Growth System - Onboarding Agent Endpoint Integration Tests
 # =============================================================================
 """Integration tests for the conversational onboarding agent under
 ``/api/v1/onboarding-agent/...``: start, message, status, quick-replies, and

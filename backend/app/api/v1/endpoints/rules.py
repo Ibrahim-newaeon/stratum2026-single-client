@@ -1,5 +1,5 @@
 # =============================================================================
-# Stratum AI - Automation Rules Engine Endpoints
+# ADs Growth System - Automation Rules Engine Endpoints
 # =============================================================================
 """
 IFTTT-style automation rules management.

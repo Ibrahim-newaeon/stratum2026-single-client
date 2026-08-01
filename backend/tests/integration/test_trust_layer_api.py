@@ -1,5 +1,5 @@
 # =============================================================================
-# Stratum AI - Trust Layer Endpoint Integration Tests
+# ADs Growth System - Trust Layer Endpoint Integration Tests
 # =============================================================================
 """Integration tests for the Trust Layer surface under
 ``/api/v1/trust/...``: signal-health (+history), trust-status,

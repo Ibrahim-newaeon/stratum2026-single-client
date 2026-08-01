@@ -1,5 +1,5 @@
 # =============================================================================
-# Stratum AI - Profit / Products API Integration Tests
+# ADs Growth System - Profit / Products API Integration Tests
 # =============================================================================
 """Integration tests for the profit/products catalog API.
 

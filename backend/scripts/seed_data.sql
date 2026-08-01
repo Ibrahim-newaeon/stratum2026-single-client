@@ -1,5 +1,5 @@
 -- =============================================================================
--- Stratum AI - Seed Demo Data
+-- ADs Growth System - Seed Demo Data
 -- =============================================================================
 -- 14 campaigns across 5 platforms with 90 days of daily metrics
 -- Run via: railway connect Postgres < backend/scripts/seed_data.sql

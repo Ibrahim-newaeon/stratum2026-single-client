@@ -1,5 +1,5 @@
 # =============================================================================
-# Stratum AI - Distributed Event Deduplication (P0 Gap Fix)
+# ADs Growth System - Distributed Event Deduplication (P0 Gap Fix)
 # =============================================================================
 """
 Redis-backed distributed deduplication for CAPI events.

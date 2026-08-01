@@ -1,5 +1,5 @@
 /**
- * Stratum AI - Meta CAPI QA API
+ * ADs Growth System - Meta CAPI QA API
  *
  * Meta Conversion API quality assurance.
  */

@@ -1,4 +1,4 @@
-# Stratum AI - API Reference
+# ADs Growth System - API Reference
 
 **Version:** 2.0.0
 **Base URL:** `https://api.stratum.ai/api/v1`

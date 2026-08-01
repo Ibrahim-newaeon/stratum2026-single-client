@@ -1,5 +1,5 @@
 # =============================================================================
-# Stratum AI - Meta Custom Audience Connector
+# ADs Growth System - Meta Custom Audience Connector
 # =============================================================================
 """
 Meta (Facebook/Instagram) Custom Audience API Connector.

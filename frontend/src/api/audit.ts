@@ -1,5 +1,5 @@
 /**
- * Stratum AI - Audit Log API Hooks
+ * ADs Growth System - Audit Log API Hooks
  *
  * React Query hooks for account audit log features:
  * - Paginated audit log entries

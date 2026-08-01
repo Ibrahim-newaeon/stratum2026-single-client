@@ -31,7 +31,7 @@ DATABASE_URL = os.getenv(
 def load_warehouse_data():
     """Load data from warehouse schema."""
     print("=" * 70)
-    print("Stratum AI - ML Model Training Pipeline")
+    print("ADs Growth System - ML Model Training Pipeline")
     print("=" * 70)
     print()
 

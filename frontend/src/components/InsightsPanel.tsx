@@ -1,5 +1,5 @@
 /**
- * Stratum AI - Insights Panel Component
+ * ADs Growth System - Insights Panel Component
  *
  * Displays AI-generated insights and recommendations with Quantum Ember styling.
  * Features motion animations and priority-based presentation.

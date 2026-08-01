@@ -1,5 +1,5 @@
 # =============================================================================
-# Stratum AI - Auth Logout Endpoint Integration Tests
+# ADs Growth System - Auth Logout Endpoint Integration Tests
 # =============================================================================
 """Integration tests for ``POST /auth/logout`` — access-token blacklisting,
 optional refresh-token revocation, audit logging, and Redis-degradation

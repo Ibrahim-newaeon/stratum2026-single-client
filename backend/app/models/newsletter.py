@@ -1,5 +1,5 @@
 # =============================================================================
-# Stratum AI - Newsletter / Email Campaign Models
+# ADs Growth System - Newsletter / Email Campaign Models
 # =============================================================================
 """
 Database models for the newsletter email campaign system.

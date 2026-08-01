@@ -1,5 +1,5 @@
 # =============================================================================
-# Stratum AI - A/B Test Analysis unit tests
+# ADs Growth System - A/B Test Analysis unit tests
 # =============================================================================
 """Unit tests for app.analytics.logic.ab_test_analysis.
 

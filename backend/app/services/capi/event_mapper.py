@@ -1,5 +1,5 @@
 # =============================================================================
-# Stratum AI - AI Event Mapper
+# ADs Growth System - AI Event Mapper
 # =============================================================================
 """
 AI-powered event mapping for Conversion APIs.

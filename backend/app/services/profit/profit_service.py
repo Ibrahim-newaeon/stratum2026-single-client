@@ -1,5 +1,5 @@
 # =============================================================================
-# Stratum AI - Profit Calculation Service
+# ADs Growth System - Profit Calculation Service
 # =============================================================================
 """
 Service for calculating Profit ROAS metrics.

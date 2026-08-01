@@ -39,13 +39,13 @@ interface VoiceGreetingProps {
 
 const GREETINGS = {
   en: {
-    message: "Hi there! 👋 Welcome to Stratum AI",
+    message: "Hi there! 👋 Welcome to ADs Growth System",
     subMessage: "I'm here to help you get started with our Revenue Operating System. Want to chat?",
     ctaText: "Let's Talk",
     dismissText: "Maybe Later",
   },
   ar: {
-    message: "مرحباً! 👋 أهلاً بك في Stratum AI",
+    message: "مرحباً! 👋 أهلاً بك في ADs Growth System",
     subMessage: "أنا هنا لمساعدتك في البدء مع نظام تشغيل الإيرادات. هل تريد الدردشة؟",
     ctaText: "لنتحدث",
     dismissText: "ربما لاحقاً",

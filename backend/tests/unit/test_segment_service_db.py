@@ -1,5 +1,5 @@
 # =============================================================================
-# Stratum AI - CDP Segment Service unit tests (evaluation + DB paths)
+# ADs Growth System - CDP Segment Service unit tests (evaluation + DB paths)
 # =============================================================================
 """Unit tests for ``app.services.cdp.segment_service`` (issue #342, batch 3).
 

@@ -1,5 +1,5 @@
 # =============================================================================
-# Stratum AI - GDPR Compliance Endpoints
+# ADs Growth System - GDPR Compliance Endpoints
 # =============================================================================
 """
 GDPR compliance endpoints including data export and right to be forgotten.

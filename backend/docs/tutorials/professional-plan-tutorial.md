@@ -1,4 +1,4 @@
-# Stratum AI - Professional Plan Tutorial
+# ADs Growth System - Professional Plan Tutorial
 
 > **REMOVED (historical) — 2026-07**: subscription tiers/plans were
 > removed in the single-client conversion (STRAT-SC-001) — there is no
@@ -11,7 +11,7 @@
 
 ---
 
-## Welcome to Stratum AI Professional Plan
+## Welcome to ADs Growth System Professional Plan
 
 This tutorial covers all features available in the **Professional Plan**, building on the Starter Plan capabilities. You'll learn to:
 
@@ -412,7 +412,7 @@ Access dry-run history at **Autopilot > Dry-Run History**:
 
 ### 6.1 Overview
 
-Sync your Stratum AI data with Pipedrive CRM for a unified view of leads and customers.
+Sync your ADs Growth System data with Pipedrive CRM for a unified view of leads and customers.
 
 ### 6.2 Connecting Pipedrive
 
@@ -606,7 +606,7 @@ POST /api/v1/integrations/pipedrive/sync
 
 ---
 
-**Congratulations!** You've mastered the Professional Plan features. You're now equipped to run sophisticated marketing operations with Stratum AI.
+**Congratulations!** You've mastered the Professional Plan features. You're now equipped to run sophisticated marketing operations with ADs Growth System.
 
 ---
 

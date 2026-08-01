@@ -1,5 +1,5 @@
 # =============================================================================
-# Stratum AI - ML Training API Endpoints
+# ADs Growth System - ML Training API Endpoints
 # =============================================================================
 """
 API endpoints for uploading training data and managing ML models.

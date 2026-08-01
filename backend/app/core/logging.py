@@ -1,5 +1,5 @@
 # =============================================================================
-# Stratum AI - Structured Logging Module
+# ADs Growth System - Structured Logging Module
 # =============================================================================
 """
 Structured logging configuration using structlog.

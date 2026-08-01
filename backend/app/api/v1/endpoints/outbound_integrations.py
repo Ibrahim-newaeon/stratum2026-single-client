@@ -1,5 +1,5 @@
 # =============================================================================
-# Stratum AI — Integration Ecosystem (Gap #6)
+# ADs Growth System — Integration Ecosystem (Gap #6)
 # =============================================================================
 """
 Enterprise integration endpoints:
@@ -385,7 +385,7 @@ async def send_teams_message(
         "sections": [
             {
                 "activityTitle": request.title,
-                "activitySubtitle": f"Stratum AI — {datetime.now(UTC).strftime('%Y-%m-%d %H:%M')} UTC",
+                "activitySubtitle": f"ADs Growth System — {datetime.now(UTC).strftime('%Y-%m-%d %H:%M')} UTC",
                 "facts": request.facts or [],
                 "text": request.text,
             }

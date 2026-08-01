@@ -1,5 +1,5 @@
 # =============================================================================
-# Stratum AI - Knowledge Graph Integration Tests
+# ADs Growth System - Knowledge Graph Integration Tests
 # =============================================================================
 """
 Integration tests for the Knowledge Graph service.

@@ -1,5 +1,5 @@
 # =============================================================================
-# Stratum AI - OAuth Endpoint Integration Tests
+# ADs Growth System - OAuth Endpoint Integration Tests
 # =============================================================================
 """Integration tests for the ad-platform OAuth flow under ``/api/v1/oauth``.
 

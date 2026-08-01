@@ -1,5 +1,5 @@
 # =============================================================================
-# Stratum AI - Programmatic (API-key) Endpoint Integration Tests
+# ADs Growth System - Programmatic (API-key) Endpoint Integration Tests
 # =============================================================================
 """Integration tests for the API-key-authenticated surface under
 ``/api/v1/programmatic/...``.

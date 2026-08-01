@@ -1,5 +1,5 @@
 """
-Stratum AI: Data Sync Workers
+ADs Growth System: Data Sync Workers
 =============================
 
 Celery tasks for synchronizing data from all advertising platforms.

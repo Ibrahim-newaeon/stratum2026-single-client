@@ -1,5 +1,5 @@
 /**
- * Stratum AI - CMS (Content Management System) API Client
+ * ADs Growth System - CMS (Content Management System) API Client
  *
  * API client with TypeScript types and React Query hooks for CMS endpoints.
  * Handles blog posts, pages, categories, tags, authors, and contact submissions.

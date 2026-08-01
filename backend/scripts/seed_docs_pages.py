@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """
-Stratum AI - Documentation Pages Seed Script
+ADs Growth System - Documentation Pages Seed Script
 
 Loads the 23 built-in documentation articles into the CMS as editable,
 published pages (slug ``docs-<slug>``, e.g. ``docs-quickstart``,
@@ -54,7 +54,7 @@ async def seed_docs_pages(overwrite: bool) -> None:
     async_session = sessionmaker(engine, class_=AsyncSession, expire_on_commit=False)
 
     print("=" * 60)
-    print("  Stratum AI - Documentation Pages Seed")
+    print("  ADs Growth System - Documentation Pages Seed")
     print("=" * 60)
     print(f"  Source: {DATA_FILE.name} ({len(pages)} articles)")
     print("=" * 60)

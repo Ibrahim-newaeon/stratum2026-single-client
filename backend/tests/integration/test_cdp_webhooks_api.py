@@ -1,5 +1,5 @@
 # =============================================================================
-# Stratum AI - CDP Webhooks API Integration Tests
+# ADs Growth System - CDP Webhooks API Integration Tests
 # =============================================================================
 """Integration tests for the CDP webhook-destinations API.
 

@@ -341,7 +341,7 @@ Save trust gate config and complete onboarding.
     "onboarding_status": "completed",
     "completed_at": "2024-01-15T10:20:00Z"
   },
-  "message": "Onboarding completed! Welcome to Stratum AI."
+  "message": "Onboarding completed! Welcome to ADs Growth System."
 }
 ```
 

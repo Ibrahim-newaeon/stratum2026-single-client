@@ -1,5 +1,5 @@
 /**
- * Stratum AI - WhatsApp API
+ * ADs Growth System - WhatsApp API
  *
  * WhatsApp Business API integration for contacts, templates, messages, and conversations.
  */

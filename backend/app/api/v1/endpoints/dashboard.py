@@ -1,5 +1,5 @@
 # =============================================================================
-# Stratum AI - Dashboard API Endpoints
+# ADs Growth System - Dashboard API Endpoints
 # =============================================================================
 """
 Unified dashboard API for the main application dashboard.

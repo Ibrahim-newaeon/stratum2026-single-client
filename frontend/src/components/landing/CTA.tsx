@@ -28,7 +28,7 @@ export function CTA() {
           className="text-body text-muted-foreground max-w-2xl mx-auto mb-10 animate-enter"
           style={{ animationDelay: '0.2s' }}
         >
-          Join enterprise growth teams who partner with Stratum AI to optimize
+          Join enterprise growth teams who partner with ADs Growth System to optimize
           their campaigns with confidence. No credit card required to start.
         </p>
 

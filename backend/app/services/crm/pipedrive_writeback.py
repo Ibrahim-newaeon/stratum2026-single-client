@@ -1,5 +1,5 @@
 # =============================================================================
-# Stratum AI - Pipedrive Writeback Service
+# ADs Growth System - Pipedrive Writeback Service
 # =============================================================================
 """
 Service for writing attribution data back to Pipedrive.
@@ -38,7 +38,7 @@ logger = get_logger(__name__)
 # Custom Field Definitions
 # =============================================================================
 
-# Stratum AI custom fields for persons
+# ADs Growth System custom fields for persons
 PERSON_CUSTOM_FIELDS = [
     {
         "name": "stratum_ad_platform",
@@ -97,7 +97,7 @@ PERSON_CUSTOM_FIELDS = [
     },
 ]
 
-# Stratum AI custom fields for deals
+# ADs Growth System custom fields for deals
 DEAL_CUSTOM_FIELDS = [
     {
         "name": "stratum_attributed_platform",

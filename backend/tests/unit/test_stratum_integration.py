@@ -1,5 +1,5 @@
 # =============================================================================
-# Stratum AI - Integration Bridge unit tests
+# ADs Growth System - Integration Bridge unit tests
 # =============================================================================
 """Unit tests for app.stratum.integration.
 

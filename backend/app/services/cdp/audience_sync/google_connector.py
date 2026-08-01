@@ -1,5 +1,5 @@
 # =============================================================================
-# Stratum AI - Google Customer Match Connector
+# ADs Growth System - Google Customer Match Connector
 # =============================================================================
 """
 Google Ads Customer Match API Connector.

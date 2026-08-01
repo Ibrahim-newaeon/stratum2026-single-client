@@ -113,7 +113,7 @@ def _generate_sample_annotations(
     )
     ai_author = AnnotationAuthor(
         user_id=0,
-        name="Stratum AI",
+        name="ADs Growth System",
         initials="AI",
         role="AI Assistant",
     )

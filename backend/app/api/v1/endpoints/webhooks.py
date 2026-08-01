@@ -1,5 +1,5 @@
 # =============================================================================
-# Stratum AI - Webhooks Management Endpoints
+# ADs Growth System - Webhooks Management Endpoints
 # =============================================================================
 """
 CRUD operations for webhooks:
@@ -463,7 +463,7 @@ async def test_webhook(
         "event": "test",
         "timestamp": datetime.now(UTC).isoformat(),
         "data": {
-            "message": "This is a test webhook from Stratum AI",
+            "message": "This is a test webhook from ADs Growth System",
             "webhook_id": webhook_id,
         },
     }

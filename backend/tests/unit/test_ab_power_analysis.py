@@ -1,5 +1,5 @@
 # =============================================================================
-# Stratum AI - A/B Power Analysis unit tests
+# ADs Growth System - A/B Power Analysis unit tests
 # =============================================================================
 """Unit tests for app.ml.ab_power_analysis.
 

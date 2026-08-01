@@ -1,5 +1,5 @@
 # =============================================================================
-# Stratum AI - Root Agent for Onboarding
+# ADs Growth System - Root Agent for Onboarding
 # =============================================================================
 """
 Root Agent that orchestrates user onboarding conversations.
@@ -28,13 +28,13 @@ logger = get_logger(__name__)
 # =============================================================================
 
 ROOT_AGENT_INSTRUCTIONS = """
-You are the Stratum AI Onboarding Assistant, a helpful and knowledgeable guide
+You are the ADs Growth System Onboarding Assistant, a helpful and knowledgeable guide
 for new users setting up the Revenue Operating System.
 
 ## Your Role
 - Welcome new users warmly and professionally
 - Guide users through the onboarding process step by step
-- Answer questions about Stratum AI features and capabilities
+- Answer questions about ADs Growth System features and capabilities
 - Collect necessary information for account setup
 - Help configure ad platform integrations
 - Explain the Trust-Gated Autopilot concept
@@ -43,7 +43,7 @@ for new users setting up the Revenue Operating System.
 
 ### Step 1: Welcome & Greeting
 - Greet the user based on context (new user, returning user, new organization)
-- Introduce yourself and explain what Stratum AI does
+- Introduce yourself and explain what ADs Growth System does
 - Ask if they're ready to get started
 
 ### Step 2: Collect Company Information
@@ -206,7 +206,7 @@ class AgentResponse(BaseModel):
 
 class RootAgent:
     """
-    Root Agent for Stratum AI Onboarding.
+    Root Agent for ADs Growth System Onboarding.
 
     Orchestrates the conversational onboarding flow, managing state
     and routing to appropriate tools.
@@ -386,7 +386,7 @@ class RootAgent:
         elif any(word in message_lower for word in ["learn", "demo", "more", "about"]):
             return AgentResponse(
                 message=(
-                    "Stratum AI is a Revenue Operating System with Trust-Gated Autopilot. 🎯\n\n"
+                    "ADs Growth System is a Revenue Operating System with Trust-Gated Autopilot. 🎯\n\n"
                     "**Key Features:**\n"
                     "• Signal Health Monitoring - Track data quality in real-time\n"
                     "• Trust Gates - Automation only runs when signals are healthy\n"
@@ -402,7 +402,7 @@ class RootAgent:
 
         else:
             return AgentResponse(
-                message="Would you like to get started with the setup, or learn more about Stratum AI first?",
+                message="Would you like to get started with the setup, or learn more about ADs Growth System first?",
                 state=ConversationState.GREETING,
                 quick_replies=["Get Started", "Learn More"],
                 progress_percent=0,
@@ -844,7 +844,7 @@ class RootAgent:
 
             return AgentResponse(
                 message=(
-                    "🎉 **Congratulations!** Your Stratum AI setup is complete!\n\n"
+                    "🎉 **Congratulations!** Your ADs Growth System setup is complete!\n\n"
                     "You're all set to start optimizing your advertising with "
                     "Trust-Gated Autopilot.\n\n"
                     "**What's next:**\n"
@@ -852,7 +852,7 @@ class RootAgent:
                     "• Review Signal Health\n"
                     "• Create more Automation Rules\n"
                     "• Connect with our Success Team\n\n"
-                    "Welcome to Stratum AI! 🚀"
+                    "Welcome to ADs Growth System! 🚀"
                 ),
                 state=ConversationState.COMPLETED,
                 quick_replies=["Go to Dashboard", "Create Automation", "Get Help"],

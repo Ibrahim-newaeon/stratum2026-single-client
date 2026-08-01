@@ -1,4 +1,4 @@
-# Stratum AI - Production Deployment Guide
+# ADs Growth System - Production Deployment Guide
 
 ## Table of Contents
 
@@ -335,7 +335,7 @@ Create `.env.production`:
 # =============================================================================
 ENVIRONMENT=production
 DEBUG=false
-APP_NAME=Stratum AI
+APP_NAME=ADs Growth System
 APP_URL=https://your-domain.com
 API_URL=https://api.your-domain.com
 
@@ -374,7 +374,7 @@ SMTP_PORT=587
 SMTP_USER=apikey
 SMTP_PASSWORD=your-sendgrid-api-key
 SMTP_FROM_EMAIL=noreply@your-domain.com
-SMTP_FROM_NAME=Stratum AI
+SMTP_FROM_NAME=ADs Growth System
 
 # =============================================================================
 # Stripe Payment Processing

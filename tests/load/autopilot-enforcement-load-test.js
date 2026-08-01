@@ -1,6 +1,6 @@
 /**
  * =============================================================================
- * Stratum AI Platform - Autopilot Enforcement Load Test
+ * ADs Growth System Platform - Autopilot Enforcement Load Test
  * =============================================================================
  *
  * Load testing for Autopilot Enforcement API endpoints.

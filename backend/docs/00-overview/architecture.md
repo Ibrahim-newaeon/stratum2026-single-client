@@ -1,4 +1,4 @@
-# Stratum AI - System Architecture
+# ADs Growth System - System Architecture
 
 ## High-Level Architecture
 

@@ -465,7 +465,7 @@ export function CommandPalette() {
                   Select
                 </span>
               </div>
-              <span className="text-muted-foreground/70">Stratum AI Command Palette</span>
+              <span className="text-muted-foreground/70">ADs Growth System Command Palette</span>
             </div>
           </div>
         </DialogContent>

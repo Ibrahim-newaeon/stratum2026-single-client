@@ -1,5 +1,5 @@
 # =============================================================================
-# Stratum AI - Reporting Schedules API Integration Tests
+# ADs Growth System - Reporting Schedules API Integration Tests
 # =============================================================================
 """Integration tests for the reporting/schedules API.
 

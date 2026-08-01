@@ -1,5 +1,5 @@
 # =============================================================================
-# Stratum AI - SSRF outbound-URL validation tests (SEC-001)
+# ADs Growth System - SSRF outbound-URL validation tests (SEC-001)
 # =============================================================================
 """
 validate_outbound_url must reject non-http(s) schemes and any host that

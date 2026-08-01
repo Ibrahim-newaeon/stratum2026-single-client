@@ -1,5 +1,5 @@
 # =============================================================================
-# Stratum AI - Signal Health Calculator
+# ADs Growth System - Signal Health Calculator
 # =============================================================================
 """
 Signal Health Calculator for Trust-Gated Autopilot.

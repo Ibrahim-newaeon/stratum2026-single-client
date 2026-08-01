@@ -1,5 +1,5 @@
 # =============================================================================
-# Stratum AI - Platform Adapters
+# ADs Growth System - Platform Adapters
 # =============================================================================
 """
 Platform adapters for bi-directional sync with advertising platforms.

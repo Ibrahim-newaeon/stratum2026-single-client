@@ -1,5 +1,5 @@
 # =============================================================================
-# Stratum AI - Attribution Confidence unit tests
+# ADs Growth System - Attribution Confidence unit tests
 # =============================================================================
 """Unit tests for app.analytics.logic.attribution_confidence.
 

@@ -1,5 +1,5 @@
 # =============================================================================
-# Stratum AI - COGS Service
+# ADs Growth System - COGS Service
 # =============================================================================
 """
 Service for managing COGS (Cost of Goods Sold) data.

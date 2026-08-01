@@ -1,6 +1,6 @@
 /**
  * TypeScript Type Definitions
- * Dashboard Data Structures for Stratum AI
+ * Dashboard Data Structures for ADs Growth System
  */
 
 // ==================== CAMPAIGN DATA ====================

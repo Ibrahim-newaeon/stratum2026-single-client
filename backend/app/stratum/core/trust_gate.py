@@ -1,5 +1,5 @@
 # =============================================================================
-# Stratum AI - Trust Gate Evaluation System
+# ADs Growth System - Trust Gate Evaluation System
 # =============================================================================
 """
 Trust Gate for Automation Decision Making.

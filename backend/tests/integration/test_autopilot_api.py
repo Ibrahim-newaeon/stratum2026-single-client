@@ -1,5 +1,5 @@
 # =============================================================================
-# Stratum AI - Autopilot Endpoint Integration Tests
+# ADs Growth System - Autopilot Endpoint Integration Tests
 # =============================================================================
 """Integration tests for the autopilot API under ``/api/v1/autopilot/...``:
 status, action queue listing, and the action/outcome summaries.

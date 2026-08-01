@@ -1,5 +1,5 @@
 # =============================================================================
-# Stratum AI - CDP Celery Tasks Unit Tests
+# ADs Growth System - CDP Celery Tasks Unit Tests
 # =============================================================================
 """
 Unit tests for CDP (Customer Data Platform) Celery tasks.

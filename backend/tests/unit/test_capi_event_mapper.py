@@ -1,5 +1,5 @@
 # =============================================================================
-# Stratum AI - CAPI Event Mapper unit tests
+# ADs Growth System - CAPI Event Mapper unit tests
 # =============================================================================
 """Unit tests for app.services.capi.event_mapper.
 

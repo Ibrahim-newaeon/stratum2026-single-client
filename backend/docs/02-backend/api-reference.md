@@ -1,6 +1,6 @@
 # API Reference
 
-Complete reference for Stratum AI REST API endpoints.
+Complete reference for ADs Growth System REST API endpoints.
 
 **Base URL:** `/api/v1`
 

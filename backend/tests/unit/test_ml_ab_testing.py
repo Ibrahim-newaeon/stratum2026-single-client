@@ -1,5 +1,5 @@
 # =============================================================================
-# Stratum AI - Model A/B Testing service unit tests
+# ADs Growth System - Model A/B Testing service unit tests
 # =============================================================================
 """Unit tests for app.ml.ab_testing.
 

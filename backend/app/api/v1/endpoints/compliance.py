@@ -1,5 +1,5 @@
 # =============================================================================
-# Stratum AI — Enterprise & Compliance (Gap #5)
+# ADs Growth System — Enterprise & Compliance (Gap #5)
 # =============================================================================
 """
 Enterprise-grade compliance and governance endpoints:

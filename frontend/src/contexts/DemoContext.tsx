@@ -1,5 +1,5 @@
 /**
- * Demo Mode Context - Experience Stratum AI without signing up
+ * Demo Mode Context - Experience ADs Growth System without signing up
  *
  * Provides sample data and demo state management for
  * prospects to explore the platform's capabilities.

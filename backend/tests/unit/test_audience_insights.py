@@ -1,5 +1,5 @@
 # =============================================================================
-# Stratum AI - Audience Insights Service unit tests
+# ADs Growth System - Audience Insights Service unit tests
 # =============================================================================
 """Unit tests for app.services.audience_insights_service.
 

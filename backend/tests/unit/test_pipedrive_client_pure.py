@@ -1,5 +1,5 @@
 # =============================================================================
-# Stratum AI - Pipedrive Client Pure-Logic Unit Tests
+# ADs Growth System - Pipedrive Client Pure-Logic Unit Tests
 # =============================================================================
 """Unit tests for the pure helpers in ``app.services.crm.pipedrive_client``:
 

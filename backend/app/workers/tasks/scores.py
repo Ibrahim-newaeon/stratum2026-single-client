@@ -1,5 +1,5 @@
 # =============================================================================
-# Stratum AI - Daily Scoring Tasks
+# ADs Growth System - Daily Scoring Tasks
 # =============================================================================
 """
 Background tasks for daily score calculations (scaling, health, etc.).

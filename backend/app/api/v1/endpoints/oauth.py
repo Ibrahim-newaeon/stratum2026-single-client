@@ -1,5 +1,5 @@
 # =============================================================================
-# Stratum AI - OAuth API Endpoints
+# ADs Growth System - OAuth API Endpoints
 # =============================================================================
 """
 OAuth endpoints for ad platform integrations.

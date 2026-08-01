@@ -1,5 +1,5 @@
 /**
- * Stratum AI - Reporting Page
+ * ADs Growth System - Reporting Page
  *
  * Automated report generation, scheduling, and delivery management.
  */

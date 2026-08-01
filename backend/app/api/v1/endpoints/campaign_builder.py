@@ -1,5 +1,5 @@
 # =============================================================================
-# Stratum AI - Campaign Builder API Router
+# ADs Growth System - Campaign Builder API Router
 # =============================================================================
 """
 API endpoints for the Campaign Builder feature:

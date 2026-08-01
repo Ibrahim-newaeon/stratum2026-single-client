@@ -1,5 +1,5 @@
 /**
- * Stratum AI - Feature Flags API Hooks
+ * ADs Growth System - Feature Flags API Hooks
  *
  * React Query hooks for fetching and managing feature flags.
  */

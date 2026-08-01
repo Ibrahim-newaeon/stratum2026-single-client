@@ -1,5 +1,5 @@
 # =============================================================================
-# Stratum AI - Creative Performance Tracking Service
+# ADs Growth System - Creative Performance Tracking Service
 # =============================================================================
 """
 Service for tracking and analyzing creative performance across platforms.

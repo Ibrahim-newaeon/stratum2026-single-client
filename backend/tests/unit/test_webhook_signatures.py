@@ -1,5 +1,5 @@
 # =============================================================================
-# Stratum AI - Webhook Signature Verification Unit Tests
+# ADs Growth System - Webhook Signature Verification Unit Tests
 # =============================================================================
 """Unit tests for the pure HMAC signature verifiers in
 ``app.stratum.webhooks``:

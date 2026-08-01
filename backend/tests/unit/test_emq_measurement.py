@@ -1,5 +1,5 @@
 # =============================================================================
-# Stratum AI - Real EMQ Measurement Service unit tests
+# ADs Growth System - Real EMQ Measurement Service unit tests
 # =============================================================================
 """Unit tests for app.services.emq_measurement_service.
 

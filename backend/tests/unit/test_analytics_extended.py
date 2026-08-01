@@ -1,5 +1,5 @@
 # =============================================================================
-# Stratum AI - Analytics Extended Test Suite
+# ADs Growth System - Analytics Extended Test Suite
 # =============================================================================
 """
 Tests for untested analytics modules:

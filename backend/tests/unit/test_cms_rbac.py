@@ -1,5 +1,5 @@
 # =============================================================================
-# Stratum AI - CMS RBAC Unit Tests
+# ADs Growth System - CMS RBAC Unit Tests
 # =============================================================================
 """
 Comprehensive unit tests for CMS Role-Based Access Control.

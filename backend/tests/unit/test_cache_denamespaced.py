@@ -1,5 +1,5 @@
 # =============================================================================
-# Stratum AI - De-namespaced cache key round-trip test [STRAT-SC-001, spec §10]
+# ADs Growth System - De-namespaced cache key round-trip test [STRAT-SC-001, spec §10]
 # =============================================================================
 """
 Proves the CDP profile cache keys carry no tenant segment (single-org

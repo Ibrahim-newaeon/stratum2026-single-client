@@ -1,6 +1,6 @@
-# Stratum AI - Tutorials
+# ADs Growth System - Tutorials
 
-Welcome to Stratum AI tutorials. Choose the tutorial that matches your subscription plan.
+Welcome to ADs Growth System tutorials. Choose the tutorial that matches your subscription plan.
 
 ---
 
@@ -17,7 +17,7 @@ Learn to use all Starter Plan features:
 - Dashboard exports
 - Slack notifications
 
-**Best for:** New users getting started with Stratum AI
+**Best for:** New users getting started with ADs Growth System
 
 ---
 

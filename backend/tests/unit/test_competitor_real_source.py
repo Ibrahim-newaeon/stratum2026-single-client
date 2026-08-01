@@ -1,5 +1,5 @@
 # =============================================================================
-# Stratum AI - Competitor Real-Source Mapping Tests
+# ADs Growth System - Competitor Real-Source Mapping Tests
 # =============================================================================
 """
 Tests for wiring the competitor refresh worker to the real scraper (Tier 3).

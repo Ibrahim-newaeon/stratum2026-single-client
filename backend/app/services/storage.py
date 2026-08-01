@@ -1,5 +1,5 @@
 # =============================================================================
-# Stratum AI - Object Storage Abstraction (INF-001)
+# ADs Growth System - Object Storage Abstraction (INF-001)
 # =============================================================================
 """
 Pluggable object storage for uploaded assets.

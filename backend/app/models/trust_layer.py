@@ -1,5 +1,5 @@
 # =============================================================================
-# Stratum AI - Trust Layer Database Models
+# ADs Growth System - Trust Layer Database Models
 # =============================================================================
 """
 Database models for the Trust Layer:

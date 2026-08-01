@@ -2,7 +2,7 @@
 
 ## Overview
 
-Stratum AI uses React Router v6 for client-side routing with lazy-loaded components.
+ADs Growth System uses React Router v6 for client-side routing with lazy-loaded components.
 
 ---
 

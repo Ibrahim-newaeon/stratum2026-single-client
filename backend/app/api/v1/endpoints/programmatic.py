@@ -1,5 +1,5 @@
 # =============================================================================
-# Stratum AI - Programmatic API (API-key authenticated)
+# ADs Growth System - Programmatic API (API-key authenticated)
 # =============================================================================
 """
 Endpoints authenticated by an inbound API key (``X-API-Key`` header) rather

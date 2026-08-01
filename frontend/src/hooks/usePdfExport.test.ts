@@ -277,7 +277,7 @@ describe('usePdfExport', () => {
       );
     });
 
-    it('should add header with Stratum AI branding', async () => {
+    it('should add header with ADs Growth System branding', async () => {
       element = createMockElement();
       const { result } = renderHook(() => usePdfExport());
 
@@ -285,9 +285,9 @@ describe('usePdfExport', () => {
         await result.current.exportToPdf(element);
       });
 
-      // Should set purple color for branding and write 'Stratum AI'
+      // Should set purple color for branding and write 'ADs Growth System'
       expect(mockSetTextColor).toHaveBeenCalledWith(168, 85, 247);
-      expect(mockText).toHaveBeenCalledWith('Stratum AI', expect.any(Number), expect.any(Number));
+      expect(mockText).toHaveBeenCalledWith('ADs Growth System', expect.any(Number), expect.any(Number));
     });
 
     it('should include timestamp when includeTimestamp is true', async () => {

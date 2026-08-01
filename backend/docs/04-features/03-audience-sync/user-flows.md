@@ -357,10 +357,10 @@ User connects an ad platform account for audience sync.
 │     │                                                        │ │
 │     │           [Meta Login Page]                            │ │
 │     │                                                        │ │
-│     │  Stratum AI wants to access your                       │ │
+│     │  ADs Growth System wants to access your                       │ │
 │     │  Facebook advertising account.                         │ │
 │     │                                                        │ │
-│     │  This will allow Stratum AI to:                        │ │
+│     │  This will allow ADs Growth System to:                        │ │
 │     │  • Manage your custom audiences                        │ │
 │     │  • Upload customer lists                               │ │
 │     │                                                        │ │

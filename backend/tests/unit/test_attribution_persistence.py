@@ -1,5 +1,5 @@
 # =============================================================================
-# Stratum AI - Attribution Model Persistence Tests
+# ADs Growth System - Attribution Model Persistence Tests
 # =============================================================================
 """
 Tests for persisting trained attribution models (Tier 3).

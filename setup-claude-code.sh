@@ -1,15 +1,15 @@
 #!/bin/bash
 
 # =============================================================================
-# Claude Code Setup Script for Stratum AI
+# Claude Code Setup Script for ADs Growth System
 # =============================================================================
-# Run this script in your Stratum AI project root:
+# Run this script in your ADs Growth System project root:
 #   chmod +x setup-claude-code.sh && ./setup-claude-code.sh
 # =============================================================================
 
 set -e
 
-echo "🚀 Setting up Claude Code for Stratum AI..."
+echo "🚀 Setting up Claude Code for ADs Growth System..."
 
 # Colors
 GREEN='\033[0;32m'
@@ -32,7 +32,7 @@ mkdir -p docs/integrations
 echo -e "${BLUE}📝 Creating CLAUDE.md...${NC}"
 
 cat > CLAUDE.md << 'EOF'
-# Stratum AI Platform
+# ADs Growth System Platform
 
 ## Overview
 Revenue Operating System with Trust-Gated Autopilot architecture.

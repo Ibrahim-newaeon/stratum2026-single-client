@@ -1,5 +1,5 @@
 # =============================================================================
-# Stratum AI — Advanced Analytics (Gap #4)
+# ADs Growth System — Advanced Analytics (Gap #4)
 # =============================================================================
 """
 Advanced analytics endpoints:

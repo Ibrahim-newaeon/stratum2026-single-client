@@ -1,5 +1,5 @@
 # =============================================================================
-# Stratum AI - Pacing & Forecasting API Endpoints
+# ADs Growth System - Pacing & Forecasting API Endpoints
 # =============================================================================
 """
 API endpoints for targets, pacing, and forecasting.

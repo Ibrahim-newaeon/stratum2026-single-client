@@ -1,5 +1,5 @@
 # =============================================================================
-# Stratum AI - TikTok Adapter Deep Integration Tests
+# ADs Growth System - TikTok Adapter Deep Integration Tests
 # =============================================================================
 """Deep coverage tests for ``app.stratum.adapters.tiktok_adapter``.
 

@@ -1,5 +1,5 @@
 """
-Stratum AI: Snapchat Marketing API Adapter
+ADs Growth System: Snapchat Marketing API Adapter
 ==========================================
 
 This adapter provides bi-directional integration with Snapchat's Marketing API,

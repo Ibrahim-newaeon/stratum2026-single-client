@@ -1,5 +1,5 @@
 # =============================================================================
-# Stratum AI - Audience Sync Models
+# ADs Growth System - Audience Sync Models
 # =============================================================================
 """
 Database models for CDP audience sync to ad platforms.

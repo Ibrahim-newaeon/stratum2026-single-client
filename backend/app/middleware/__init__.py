@@ -1,5 +1,5 @@
 # =============================================================================
-# Stratum AI - Middleware Package
+# ADs Growth System - Middleware Package
 # =============================================================================
 from app.middleware.audit import AuditMiddleware
 from app.middleware.auth_context import AuthContextMiddleware

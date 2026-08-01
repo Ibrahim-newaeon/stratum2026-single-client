@@ -1,5 +1,5 @@
 # =============================================================================
-# Stratum AI - SQLAlchemy Base Configuration
+# ADs Growth System - SQLAlchemy Base Configuration
 # =============================================================================
 """
 Base model configuration with common mixins and utilities.

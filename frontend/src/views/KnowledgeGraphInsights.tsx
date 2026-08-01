@@ -12,7 +12,7 @@ export default function KnowledgeGraphInsights() {
   return (
     <>
       <Helmet>
-        <title>Knowledge Graph Insights | Stratum AI</title>
+        <title>Knowledge Graph Insights | ADs Growth System</title>
         <meta
           name="description"
           content="AI-powered problem detection with root cause analysis and suggested solutions"

@@ -1,5 +1,5 @@
 # =============================================================================
-# Stratum AI - Console Credentials Health Source Tests
+# ADs Growth System - Console Credentials Health Source Tests
 # =============================================================================
 """GET /console/credentials/health reports where each ad_platform credential
 came from: a DB-stored PlatformAppCredential row ("database"), an env var

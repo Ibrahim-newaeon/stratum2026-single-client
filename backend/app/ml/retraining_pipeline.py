@@ -1,5 +1,5 @@
 # =============================================================================
-# Stratum AI - Model Retraining Pipeline
+# ADs Growth System - Model Retraining Pipeline
 # =============================================================================
 """
 Automated model retraining pipeline for ML models.

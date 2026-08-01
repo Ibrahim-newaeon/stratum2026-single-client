@@ -1,5 +1,5 @@
 # =============================================================================
-# Stratum AI - Real EMQ Measurement Service
+# ADs Growth System - Real EMQ Measurement Service
 # =============================================================================
 """
 Service for measuring actual EMQ (Event Measurement Quality) using real CAPI

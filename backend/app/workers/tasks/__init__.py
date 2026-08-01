@@ -1,5 +1,5 @@
 # =============================================================================
-# Stratum AI - Celery Tasks Module
+# ADs Growth System - Celery Tasks Module
 # =============================================================================
 """
 Background tasks organized by domain.

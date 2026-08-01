@@ -11,7 +11,7 @@ export const gettingStartedArticles: DocArticle[] = [
     blocks: [
       {
         type: 'paragraph',
-        text: 'Stratum AI is a revenue operating system with trust-gated autopilot: automations only execute when signal health passes your safety thresholds. This guide walks you through the fastest path to a working setup — connect a platform, watch signal health populate, and arm your first automation.',
+        text: 'ADs Growth System is a revenue operating system with trust-gated autopilot: automations only execute when signal health passes your safety thresholds. This guide walks you through the fastest path to a working setup — connect a platform, watch signal health populate, and arm your first automation.',
       },
       {
         type: 'callout',

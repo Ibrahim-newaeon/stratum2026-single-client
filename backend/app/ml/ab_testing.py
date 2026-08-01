@@ -1,5 +1,5 @@
 # =============================================================================
-# Stratum AI - Model A/B Testing Framework
+# ADs Growth System - Model A/B Testing Framework
 # =============================================================================
 """
 Framework for A/B testing ML models to enable continuous improvement.

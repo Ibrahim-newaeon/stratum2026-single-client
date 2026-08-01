@@ -1,5 +1,5 @@
 # =============================================================================
-# Stratum AI - Email Service
+# ADs Growth System - Email Service
 # =============================================================================
 """
 Email service for sending transactional emails.
@@ -173,7 +173,7 @@ class EmailService:
         """Send email verification link to new user."""
         verification_url = f"{self.frontend_url}/verify-email?token={token}"
 
-        subject = "Verify your Stratum AI account"
+        subject = "Verify your ADs Growth System account"
 
         html_content = f"""
 <!DOCTYPE html>
@@ -184,13 +184,13 @@ class EmailService:
 </head>
 <body style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; line-height: 1.6; color: #333; max-width: 600px; margin: 0 auto; padding: 20px;">
     <div style="text-align: center; margin-bottom: 30px;">
-        <h1 style="color: #2563eb; margin: 0;">Stratum AI</h1>
+        <h1 style="color: #2563eb; margin: 0;">ADs Growth System</h1>
     </div>
 
     <div style="background: #f8fafc; border-radius: 8px; padding: 30px; margin-bottom: 20px;">
         <h2 style="margin-top: 0;">Hi {user_name or 'there'},</h2>
 
-        <p>Welcome to Stratum AI! Please verify your email address to activate your account and start automating your ad campaigns.</p>
+        <p>Welcome to ADs Growth System! Please verify your email address to activate your account and start automating your ad campaigns.</p>
 
         <div style="text-align: center; margin: 30px 0;">
             <a href="{verification_url}"
@@ -204,7 +204,7 @@ class EmailService:
         </p>
 
         <p style="color: #64748b; font-size: 14px;">
-            If you didn't create an account with Stratum AI, you can safely ignore this email.
+            If you didn't create an account with ADs Growth System, you can safely ignore this email.
         </p>
     </div>
 
@@ -214,7 +214,7 @@ class EmailService:
             <a href="{verification_url}" style="color: #2563eb; word-break: break-all;">{verification_url}</a>
         </p>
         <p style="margin-top: 20px;">
-            &copy; 2024 Stratum AI. All rights reserved.
+            &copy; 2024 ADs Growth System. All rights reserved.
         </p>
     </div>
 </body>
@@ -224,15 +224,15 @@ class EmailService:
         text_content = f"""
 Hi {user_name or 'there'},
 
-Welcome to Stratum AI! Please verify your email address to activate your account.
+Welcome to ADs Growth System! Please verify your email address to activate your account.
 
 Click here to verify: {verification_url}
 
 This link expires in {settings.email_verification_expire_hours} hours.
 
-If you didn't create an account with Stratum AI, you can safely ignore this email.
+If you didn't create an account with ADs Growth System, you can safely ignore this email.
 
-- The Stratum AI Team
+- The ADs Growth System Team
 """
 
         message = self._create_message(to_email, subject, html_content, text_content)
@@ -244,7 +244,7 @@ If you didn't create an account with Stratum AI, you can safely ignore this emai
         """Send password reset link to user."""
         reset_url = f"{self.frontend_url}/reset-password?token={token}"
 
-        subject = "Reset your Stratum AI password"
+        subject = "Reset your ADs Growth System password"
 
         html_content = f"""
 <!DOCTYPE html>
@@ -255,7 +255,7 @@ If you didn't create an account with Stratum AI, you can safely ignore this emai
 </head>
 <body style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; line-height: 1.6; color: #333; max-width: 600px; margin: 0 auto; padding: 20px;">
     <div style="text-align: center; margin-bottom: 30px;">
-        <h1 style="color: #2563eb; margin: 0;">Stratum AI</h1>
+        <h1 style="color: #2563eb; margin: 0;">ADs Growth System</h1>
     </div>
 
     <div style="background: #f8fafc; border-radius: 8px; padding: 30px; margin-bottom: 20px;">
@@ -287,7 +287,7 @@ If you didn't create an account with Stratum AI, you can safely ignore this emai
             <a href="{reset_url}" style="color: #2563eb; word-break: break-all;">{reset_url}</a>
         </p>
         <p style="margin-top: 20px;">
-            &copy; 2024 Stratum AI. All rights reserved.
+            &copy; 2024 ADs Growth System. All rights reserved.
         </p>
     </div>
 </body>
@@ -307,7 +307,7 @@ This link expires in {settings.password_reset_expire_hours} hour(s).
 
 If you didn't request a password reset, please ignore this email.
 
-- The Stratum AI Team
+- The ADs Growth System Team
 """
 
         message = self._create_message(to_email, subject, html_content, text_content)
@@ -317,7 +317,7 @@ If you didn't request a password reset, please ignore this email.
         """Send welcome email after verification."""
         dashboard_url = f"{self.frontend_url}/dashboard"
 
-        subject = "Welcome to Stratum AI - Let's get started!"
+        subject = "Welcome to ADs Growth System - Let's get started!"
 
         html_content = f"""
 <!DOCTYPE html>
@@ -328,7 +328,7 @@ If you didn't request a password reset, please ignore this email.
 </head>
 <body style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; line-height: 1.6; color: #333; max-width: 600px; margin: 0 auto; padding: 20px;">
     <div style="text-align: center; margin-bottom: 30px;">
-        <h1 style="color: #2563eb; margin: 0;">Stratum AI</h1>
+        <h1 style="color: #2563eb; margin: 0;">ADs Growth System</h1>
     </div>
 
     <div style="background: #f8fafc; border-radius: 8px; padding: 30px; margin-bottom: 20px;">
@@ -336,7 +336,7 @@ If you didn't request a password reset, please ignore this email.
 
         <p>Hi {user_name or 'there'},</p>
 
-        <p>Your email has been verified and your Stratum AI account is now active. Here's what you can do next:</p>
+        <p>Your email has been verified and your ADs Growth System account is now active. Here's what you can do next:</p>
 
         <ul style="padding-left: 20px;">
             <li><strong>Connect your ad accounts</strong> - Link Meta, Google, TikTok, or Snapchat</li>
@@ -358,7 +358,7 @@ If you didn't request a password reset, please ignore this email.
 
     <div style="text-align: center; color: #94a3b8; font-size: 12px;">
         <p style="margin-top: 20px;">
-            &copy; 2024 Stratum AI. All rights reserved.
+            &copy; 2024 ADs Growth System. All rights reserved.
         </p>
     </div>
 </body>
@@ -370,7 +370,7 @@ Your account is verified!
 
 Hi {user_name or 'there'},
 
-Your email has been verified and your Stratum AI account is now active.
+Your email has been verified and your ADs Growth System account is now active.
 
 Here's what you can do next:
 - Connect your ad accounts (Meta, Google, TikTok, Snapchat)
@@ -381,7 +381,7 @@ Go to Dashboard: {dashboard_url}
 
 Need help? Check out our documentation at {self.frontend_url}/docs
 
-- The Stratum AI Team
+- The ADs Growth System Team
 """
 
         message = self._create_message(to_email, subject, html_content, text_content)
@@ -389,7 +389,7 @@ Need help? Check out our documentation at {self.frontend_url}/docs
 
     def send_otp_email(self, to_email: str, otp_code: str) -> bool:
         """Send a 6-digit OTP verification code via email for signup."""
-        subject = "Your Stratum AI verification code"
+        subject = "Your ADs Growth System verification code"
 
         html_content = f"""
 <!DOCTYPE html>
@@ -400,7 +400,7 @@ Need help? Check out our documentation at {self.frontend_url}/docs
 </head>
 <body style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; line-height: 1.6; color: #333; max-width: 600px; margin: 0 auto; padding: 20px;">
     <div style="text-align: center; margin-bottom: 30px;">
-        <h1 style="color: #2563eb; margin: 0;">Stratum AI</h1>
+        <h1 style="color: #2563eb; margin: 0;">ADs Growth System</h1>
     </div>
 
     <div style="background: #f8fafc; border-radius: 8px; padding: 30px; margin-bottom: 20px;">
@@ -425,7 +425,7 @@ Need help? Check out our documentation at {self.frontend_url}/docs
 
     <div style="text-align: center; color: #94a3b8; font-size: 12px;">
         <p style="margin-top: 20px;">
-            &copy; 2026 Stratum AI. All rights reserved.
+            &copy; 2026 ADs Growth System. All rights reserved.
         </p>
     </div>
 </body>
@@ -433,7 +433,7 @@ Need help? Check out our documentation at {self.frontend_url}/docs
 """
 
         text_content = f"""
-Your Stratum AI Verification Code
+Your ADs Growth System Verification Code
 
 Use the following code to complete your registration:
 
@@ -443,7 +443,7 @@ This code expires in 5 minutes. Do not share it with anyone.
 
 If you didn't request this code, you can safely ignore this email.
 
-- The Stratum AI Team
+- The ADs Growth System Team
 """
 
         message = self._create_message(to_email, subject, html_content, text_content)
@@ -472,7 +472,7 @@ If you didn't request this code, you can safely ignore this email.
             urgency = "Final payment notice"
             action_text = "Your subscription will be suspended if payment is not received. Please update your payment method now."
 
-        subject = "Action Required: Payment failed for your Stratum AI subscription"
+        subject = "Action Required: Payment failed for your ADs Growth System subscription"
 
         amount_section = ""
         if amount_due:
@@ -487,7 +487,7 @@ If you didn't request this code, you can safely ignore this email.
 </head>
 <body style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; line-height: 1.6; color: #333; max-width: 600px; margin: 0 auto; padding: 20px;">
     <div style="text-align: center; margin-bottom: 30px;">
-        <h1 style="color: #2563eb; margin: 0;">Stratum AI</h1>
+        <h1 style="color: #2563eb; margin: 0;">ADs Growth System</h1>
     </div>
 
     <div style="background: #fef2f2; border: 1px solid #fecaca; border-radius: 8px; padding: 30px; margin-bottom: 20px;">
@@ -523,7 +523,7 @@ If you didn't request this code, you can safely ignore this email.
 
     <div style="text-align: center; color: #94a3b8; font-size: 12px;">
         <p style="margin-top: 20px;">
-            &copy; 2024 Stratum AI. All rights reserved.
+            &copy; 2024 ADs Growth System. All rights reserved.
         </p>
     </div>
 </body>
@@ -549,7 +549,7 @@ Common reasons for payment failure:
 
 If you believe this is an error, please contact support.
 
-- The Stratum AI Team
+- The ADs Growth System Team
 """
 
         message = self._create_message(to_email, subject, html_content, text_content)
@@ -566,7 +566,7 @@ If you believe this is an error, please contact support.
         """Send invitation email to new team member."""
         invite_url = f"{self.frontend_url}/accept-invite?token={invite_token}"
 
-        subject = f"You've been invited to join {org_name} on Stratum AI"
+        subject = f"You've been invited to join {org_name} on ADs Growth System"
 
         html_content = f"""
 <!DOCTYPE html>
@@ -577,15 +577,15 @@ If you believe this is an error, please contact support.
 </head>
 <body style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; line-height: 1.6; color: #333; max-width: 600px; margin: 0 auto; padding: 20px;">
     <div style="text-align: center; margin-bottom: 30px;">
-        <h1 style="color: #2563eb; margin: 0;">Stratum AI</h1>
+        <h1 style="color: #2563eb; margin: 0;">ADs Growth System</h1>
     </div>
 
     <div style="background: #f8fafc; border-radius: 8px; padding: 30px; margin-bottom: 20px;">
         <h2 style="margin-top: 0;">You're invited!</h2>
 
-        <p><strong>{inviter_name}</strong> has invited you to join <strong>{org_name}</strong> on Stratum AI as a <strong>{role}</strong>.</p>
+        <p><strong>{inviter_name}</strong> has invited you to join <strong>{org_name}</strong> on ADs Growth System as a <strong>{role}</strong>.</p>
 
-        <p>Stratum AI is a Revenue Operating System that helps teams automate and optimize their ad campaigns with trust-gated automation.</p>
+        <p>ADs Growth System is a Revenue Operating System that helps teams automate and optimize their ad campaigns with trust-gated automation.</p>
 
         <div style="text-align: center; margin: 30px 0;">
             <a href="{invite_url}"
@@ -605,7 +605,7 @@ If you believe this is an error, please contact support.
             <a href="{invite_url}" style="color: #2563eb; word-break: break-all;">{invite_url}</a>
         </p>
         <p style="margin-top: 20px;">
-            &copy; 2024 Stratum AI. All rights reserved.
+            &copy; 2024 ADs Growth System. All rights reserved.
         </p>
     </div>
 </body>
@@ -615,9 +615,9 @@ If you believe this is an error, please contact support.
         text_content = f"""
 You're invited!
 
-{inviter_name} has invited you to join {org_name} on Stratum AI as a {role}.
+{inviter_name} has invited you to join {org_name} on ADs Growth System as a {role}.
 
-Stratum AI is a Revenue Operating System that helps teams automate and optimize their ad campaigns.
+ADs Growth System is a Revenue Operating System that helps teams automate and optimize their ad campaigns.
 
 Accept your invitation: {invite_url}
 
@@ -625,7 +625,7 @@ This invitation expires in 7 days.
 
 If you didn't expect this invitation, you can safely ignore this email.
 
-- The Stratum AI Team
+- The ADs Growth System Team
 """
 
         message = self._create_message(to_email, subject, html_content, text_content)

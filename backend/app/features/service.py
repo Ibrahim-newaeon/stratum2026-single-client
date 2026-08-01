@@ -1,5 +1,5 @@
 # =============================================================================
-# Stratum AI - Feature Flags Service
+# ADs Growth System - Feature Flags Service
 # =============================================================================
 """
 Service layer for managing the organization's feature flags.

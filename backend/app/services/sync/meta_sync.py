@@ -1,5 +1,5 @@
 # =============================================================================
-# Stratum AI - Meta Campaign Sync Service
+# ADs Growth System - Meta Campaign Sync Service
 # =============================================================================
 """
 Syncs campaigns and daily insights from Meta Marketing API v19.0.

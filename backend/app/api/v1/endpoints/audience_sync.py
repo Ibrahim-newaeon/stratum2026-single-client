@@ -1,5 +1,5 @@
 # =============================================================================
-# Stratum AI - Audience Sync API Endpoints
+# ADs Growth System - Audience Sync API Endpoints
 # =============================================================================
 """
 REST API endpoints for CDP audience sync to ad platforms.

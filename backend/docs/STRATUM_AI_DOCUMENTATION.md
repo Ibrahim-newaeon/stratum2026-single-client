@@ -1,4 +1,4 @@
-# Stratum AI - Platform Documentation
+# ADs Growth System - Platform Documentation
 
 > **2026-07 note (STRAT-SC-001)**: this document predates the
 > single-client conversion. Payments/Multi-tenancy content below is
@@ -10,7 +10,7 @@
 
 ## 1. Executive Summary
 
-Stratum AI is a **Revenue Operating System** built on a **Trust-Gated Autopilot** architecture. It is designed for marketing and advertising teams who need to automate campaign management, budget optimization, and performance analysis across multiple ad platforms -- while maintaining confidence that automation decisions are backed by reliable data.
+ADs Growth System is a **Revenue Operating System** built on a **Trust-Gated Autopilot** architecture. It is designed for marketing and advertising teams who need to automate campaign management, budget optimization, and performance analysis across multiple ad platforms -- while maintaining confidence that automation decisions are backed by reliable data.
 
 The platform's core differentiator is its Trust Engine: before any automated action executes (budget changes, campaign pauses, bid adjustments), the system evaluates the health of incoming data signals. If signal quality falls below configurable thresholds, automation is held or blocked, and human operators are alerted. This prevents the costly errors that arise when automation acts on degraded or unreliable data.
 
@@ -22,7 +22,7 @@ Signal Health Check --> Trust Gate --> Automation Decision
    [UNHEALTHY]        [BLOCK]         [MANUAL REQUIRED]
 ```
 
-Stratum AI consolidates advertising data from Meta, Google, TikTok, Snapchat, and LinkedIn into a unified analytics layer, pairs it with a built-in Customer Data Platform (CDP), and delivers actionable recommendations through its analytics engine. The platform serves multiple tenants with complete data isolation, role-based access control, and enterprise-grade security.
+ADs Growth System consolidates advertising data from Meta, Google, TikTok, Snapchat, and LinkedIn into a unified analytics layer, pairs it with a built-in Customer Data Platform (CDP), and delivers actionable recommendations through its analytics engine. The platform serves multiple tenants with complete data isolation, role-based access control, and enterprise-grade security.
 
 ---
 
@@ -139,7 +139,7 @@ The analytics engine comprises eight interconnected modules:
 
 ### 3.8 Ad Platform Integrations (Meta, Google, TikTok, Snapchat, LinkedIn)
 
-Stratum AI integrates with five major advertising platforms through a unified OAuth factory pattern. Each platform integration supports OAuth authorization flows with token refresh, ad account discovery and selection, campaign/adset/creative data sync, spend and performance metrics ingestion, and Conversions API (CAPI) for server-side event tracking. The platform supports both live API connections and mock data mode for development. LinkedIn integration adds B2B-specific campaign management including objective types like Lead Generation and Job Applicants.
+ADs Growth System integrates with five major advertising platforms through a unified OAuth factory pattern. Each platform integration supports OAuth authorization flows with token refresh, ad account discovery and selection, campaign/adset/creative data sync, spend and performance metrics ingestion, and Conversions API (CAPI) for server-side event tracking. The platform supports both live API connections and mock data mode for development. LinkedIn integration adds B2B-specific campaign management including objective types like Lead Generation and Job Applicants.
 
 **Key files:** `services/oauth/` (factory.py, meta.py, google.py, tiktok.py, snapchat.py), `services/linkedin_client.py`
 
@@ -175,7 +175,7 @@ The reporting engine provides automated report generation with template-based co
 
 ### 3.14 SuperAdmin Dashboard
 
-The SuperAdmin dashboard provides platform-level oversight for Stratum AI operators. It surfaces revenue metrics (MRR, ARR, NRR, ARPA, churn rate), a tenant portfolio view with health indicators (signal health status, open alerts, churn risk, data freshness), system health monitoring (pipeline success rates, API error rates, latency percentiles, queue depth), and per-platform health breakdowns. This view is restricted to users with superadmin privileges and operates across all tenants.
+The SuperAdmin dashboard provides platform-level oversight for ADs Growth System operators. It surfaces revenue metrics (MRR, ARR, NRR, ARPA, churn rate), a tenant portfolio view with health indicators (signal health status, open alerts, churn risk, data freshness), system health monitoring (pipeline success rates, API error rates, latency percentiles, queue depth), and per-platform health breakdowns. This view is restricted to users with superadmin privileges and operates across all tenants.
 
 **Key files:** `api/v1/endpoints/superadmin.py`, `api/v1/endpoints/superadmin_analytics.py`
 
@@ -187,7 +187,7 @@ The competitor intelligence module allows tenants to track competitors and bench
 
 ### 3.16 CRM Integrations (HubSpot, Zoho, Salesforce, Pipedrive)
 
-Stratum AI integrates with four CRM platforms through a consistent pattern of client, sync, and writeback modules. Each integration supports OAuth-based authentication, contact and company data synchronization, identity matching between CDP profiles and CRM records, and bidirectional writeback of computed traits and segment memberships. HubSpot and Pipedrive are available at the Professional tier; Salesforce and Zoho require Enterprise. All CRM integrations support both API key and OAuth authentication methods.
+ADs Growth System integrates with four CRM platforms through a consistent pattern of client, sync, and writeback modules. Each integration supports OAuth-based authentication, contact and company data synchronization, identity matching between CDP profiles and CRM records, and bidirectional writeback of computed traits and segment memberships. HubSpot and Pipedrive are available at the Professional tier; Salesforce and Zoho require Enterprise. All CRM integrations support both API key and OAuth authentication methods.
 
 **Key files:** `services/crm/` (hubspot_client.py, zoho_client.py, salesforce_client.py, pipedrive_client.py, *_sync.py, *_writeback.py)
 
@@ -734,4 +734,4 @@ Specifically:
 
 ---
 
-*Document generated for Stratum AI Platform. For questions, refer to the codebase documentation in the `/docs` directory or contact the engineering team.*
+*Document generated for ADs Growth System Platform. For questions, refer to the codebase documentation in the `/docs` directory or contact the engineering team.*

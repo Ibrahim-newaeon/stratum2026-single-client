@@ -1,4 +1,4 @@
--- Stratum AI Database Initialization Script
+-- ADs Growth System Database Initialization Script
 -- This script runs only on first database initialization
 
 -- Enable required extensions

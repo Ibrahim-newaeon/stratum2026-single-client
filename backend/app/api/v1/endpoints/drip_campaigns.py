@@ -1,5 +1,5 @@
 # =============================================================================
-# Stratum AI — Drip Campaigns / Email Sequences
+# ADs Growth System — Drip Campaigns / Email Sequences
 # =============================================================================
 """
 Automated email sequences triggered by user behavior, time delays, or events.

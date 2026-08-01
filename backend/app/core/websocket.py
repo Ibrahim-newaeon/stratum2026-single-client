@@ -1,5 +1,5 @@
 # =============================================================================
-# Stratum AI - WebSocket Connection Manager
+# ADs Growth System - WebSocket Connection Manager
 # =============================================================================
 """
 WebSocket connection manager for real-time updates.

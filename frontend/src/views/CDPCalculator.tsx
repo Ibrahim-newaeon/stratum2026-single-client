@@ -124,7 +124,7 @@ export default function CDPCalculator() {
       <footer className="border-t border-border mt-12">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
           <div className="flex items-center justify-between text-sm text-muted-foreground">
-            <p>&copy; 2026 Stratum AI. All rights reserved.</p>
+            <p>&copy; 2026 ADs Growth System. All rights reserved.</p>
             <div className="flex items-center gap-6">
               <a href="/privacy" className="hover:text-foreground transition-colors">
                 Privacy

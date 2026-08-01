@@ -1,5 +1,5 @@
 # =============================================================================
-# Stratum AI - Copilot Doc Index (Phase D foundation)
+# ADs Growth System - Copilot Doc Index (Phase D foundation)
 # =============================================================================
 """
 Indexing + retrieval helpers for the Copilot RAG bridge.

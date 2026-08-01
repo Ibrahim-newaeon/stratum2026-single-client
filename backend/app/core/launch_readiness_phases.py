@@ -1,5 +1,5 @@
 # =============================================================================
-# Stratum AI - Launch Readiness Phase Catalog
+# ADs Growth System - Launch Readiness Phase Catalog
 # =============================================================================
 """
 Fixed catalog of go-live phases and their checklist items for the Launch

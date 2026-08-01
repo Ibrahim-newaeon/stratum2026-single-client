@@ -7,7 +7,7 @@ Logs/dashboards/alerts keyed on a tenant dimension (silent blind spots); analyti
 ## OBSERVABILITY — OPERATIONAL (clean)
 - **No tenant metric labels/dimensions**: grep of `monitoring/` (Prometheus rules, Grafana) and `backend/app/monitoring` + `core` instrumentation for tenant/org labels = 0. Alerts key on real dimensions (decision/platform/severity), so no alert "matches nothing" → no silent monitoring blind spot. The Phase-2 alert-rule phrase "across multiple tenants" is annotation TEXT only (RESIDUE N-13), not a metric selector.
 - **No tenant log fields**: `core/logging.py`, `middleware/request_logging.py`, `middleware/audit.py` bind no tenant (grep = 0). structlog context binds `user_id, role` only (auth_context.py:123).
-- **CircleCI is an intentional no-op**, not a stale duplicate: `.circleci/config.yml` = `workflows: noop: jobs: []` with a header "Stratum AI uses GitHub Actions… kept to prevent CircleCI errors… performs no actions." Dispositions Phase-0 watch-list #4.
+- **CircleCI is an intentional no-op**, not a stale duplicate: `.circleci/config.yml` = `workflows: noop: jobs: []` with a header "ADs Growth System uses GitHub Actions… kept to prevent CircleCI errors… performs no actions." Dispositions Phase-0 watch-list #4.
 
 ## TESTS — OPERATIONAL (genuine conversion, not silent deletion) — the phase's key question
 The audit's central concern ("CI green ≠ healthy if multi-tenant tests were DELETED rather than CONVERTED") is **answered positively**: the removals are deliberate, individually commented with `STRAT-SC-001` rationale, and security-relevant coverage was re-expressed, not lost.

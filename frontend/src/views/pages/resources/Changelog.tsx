@@ -134,7 +134,7 @@ export default function ChangelogPage() {
         badge="Changelog"
         badgeIcon={SparklesIcon}
         title="What's New in"
-        highlight="Stratum AI"
+        highlight="ADs Growth System"
         subtitle="Stay up to date with the latest features, improvements, and fixes."
       />
 

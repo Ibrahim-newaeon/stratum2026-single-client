@@ -1,5 +1,5 @@
 # =============================================================================
-# Stratum AI - Atomic model promotion tests (ML-004)
+# ADs Growth System - Atomic model promotion tests (ML-004)
 # =============================================================================
 """
 Model promotion/rollback copies a new .pkl over the path inference workers

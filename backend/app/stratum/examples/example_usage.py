@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """
-Stratum AI: Example Usage Script
+ADs Growth System: Example Usage Script
 ================================
 
 This script demonstrates the complete workflow for bi-directional
@@ -333,7 +333,7 @@ async def example_budget_optimization():
 
 async def main():
     """Run all examples."""
-    logger.info("[START] STRATUM AI: Multi-Platform Integration Examples")
+    logger.info("[START] ADS GROWTH SYSTEM: Multi-Platform Integration Examples")
     logger.info("=" * 60)
 
     await example_meta_integration()

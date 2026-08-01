@@ -1,5 +1,5 @@
 # =============================================================================
-# Stratum AI - LTV Predictor unit tests
+# ADs Growth System - LTV Predictor unit tests
 # =============================================================================
 """Unit tests for app.ml.ltv_predictor.
 

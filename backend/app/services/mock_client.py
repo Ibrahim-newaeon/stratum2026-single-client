@@ -1,5 +1,5 @@
 # =============================================================================
-# Stratum AI - Mock Ad Network Client
+# ADs Growth System - Mock Ad Network Client
 # =============================================================================
 """
 Mock ad network client that generates realistic, varied time-series data.

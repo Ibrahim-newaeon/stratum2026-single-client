@@ -1,6 +1,6 @@
-# Stratum AI Load Testing
+# ADs Growth System Load Testing
 
-This directory contains k6 load testing scripts for the Stratum AI platform API.
+This directory contains k6 load testing scripts for the ADs Growth System platform API.
 
 ## Prerequisites
 

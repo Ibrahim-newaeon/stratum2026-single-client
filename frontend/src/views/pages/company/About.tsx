@@ -93,7 +93,7 @@ export default function About() {
             <h2 className="text-h1 text-foreground font-semibold mb-6">Our Story</h2>
             <div className="space-y-4 text-body text-muted-foreground leading-relaxed">
               <p>
-                Stratum AI was founded in 2024 by a team of marketing technologists who experienced
+                ADs Growth System was founded in 2024 by a team of marketing technologists who experienced
                 firsthand the chaos of managing campaigns across multiple platforms with unreliable
                 data.
               </p>
@@ -103,7 +103,7 @@ export default function About() {
                 automated the system, the bigger the potential for disaster.
               </p>
               <p>
-                That&apos;s why we built Stratum AI - a revenue operating system with trust at its
+                That&apos;s why we built ADs Growth System - a revenue operating system with trust at its
                 core. Our Trust-Gated Autopilot ensures that automations only execute when your data
                 is healthy, preventing costly mistakes while still enabling the speed and scale that
                 modern growth teams need.

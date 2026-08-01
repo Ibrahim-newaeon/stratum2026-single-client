@@ -1,5 +1,5 @@
 # =============================================================================
-# Stratum AI - Server Events EMQ / Content Unit Tests
+# ADs Growth System - Server Events EMQ / Content Unit Tests
 # =============================================================================
 """Unit tests for the pure logic in ``app.stratum.events``.
 

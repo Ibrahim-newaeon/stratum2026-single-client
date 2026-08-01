@@ -1,5 +1,5 @@
 # =============================================================================
-# Stratum AI - Competitor Intelligence Endpoints
+# ADs Growth System - Competitor Intelligence Endpoints
 # =============================================================================
 """
 Competitor benchmarking and market intelligence.

@@ -1,5 +1,5 @@
 # =============================================================================
-# Stratum AI - Response Schemas
+# ADs Growth System - Response Schemas
 # =============================================================================
 # Re-exports response schemas from base_schemas.py
 

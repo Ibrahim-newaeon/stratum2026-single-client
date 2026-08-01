@@ -1,5 +1,5 @@
 /**
- * Stratum AI - Pacing & Forecasting API
+ * ADs Growth System - Pacing & Forecasting API
  *
  * Handles targets, pacing calculations, forecasts, and alerts.
  */

@@ -1,5 +1,5 @@
 # =============================================================================
-# Stratum AI - Goal Tracking unit tests
+# ADs Growth System - Goal Tracking unit tests
 # =============================================================================
 """Unit tests for app.analytics.logic.goal_tracking.
 

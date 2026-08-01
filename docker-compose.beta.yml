@@ -1,5 +1,5 @@
 # =============================================================================
-# Stratum AI - Beta Deployment (DigitalOcean)
+# ADs Growth System - Beta Deployment (DigitalOcean)
 # =============================================================================
 # Target: 4GB RAM / 2 vCPU Droplet with Managed PostgreSQL
 # Usage: docker compose -f docker-compose.beta.yml up -d

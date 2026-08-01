@@ -1,5 +1,5 @@
 # =============================================================================
-# Stratum AI - CAPI DeliveryLogger Persistence Unit Tests [CAPI-04]
+# ADs Growth System - CAPI DeliveryLogger Persistence Unit Tests [CAPI-04]
 # =============================================================================
 """
 Covers the database-backed paths of ``app.services.capi.delivery_logger`` that

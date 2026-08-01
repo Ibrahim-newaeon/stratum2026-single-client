@@ -4,7 +4,7 @@ This guide turns every Launch Readiness checklist item into actionable commands,
 
 > **Prerequisites:** GCP billing account, domain name, GitHub repo access, `gcloud` CLI installed and authenticated.
 
-> **2026-07 note (STRAT-SC-001)**: Stratum AI was converted to a
+> **2026-07 note (STRAT-SC-001)**: ADs Growth System was converted to a
 > single-client deployment — Payments/Stripe and the multi-tenant
 > isolation model referenced below were removed. **Phase 5** below is
 > historical; the equivalent live checklist phase is now titled "Access
@@ -44,15 +44,15 @@ gcloud config set organization YOUR_ORG_ID
 ORG_ID="YOUR_ORG_ID"
 
 # Create folders
-gcloud resource-manager folders create --display-name="Stratum AI" --organization=$ORG_ID
+gcloud resource-manager folders create --display-name="ADs Growth System" --organization=$ORG_ID
 # Note FOLDER_ID from output
 
 FOLDER_ID="YOUR_FOLDER_ID"
 
 # Create projects
-gcloud projects create stratum-ai-prod --folder=$FOLDER_ID --name="Stratum AI Production"
-gcloud projects create stratum-ai-staging --folder=$FOLDER_ID --name="Stratum AI Staging"
-gcloud projects create stratum-ai-shared --folder=$FOLDER_ID --name="Stratum AI Shared"
+gcloud projects create stratum-ai-prod --folder=$FOLDER_ID --name="ADs Growth System Production"
+gcloud projects create stratum-ai-staging --folder=$FOLDER_ID --name="ADs Growth System Staging"
+gcloud projects create stratum-ai-shared --folder=$FOLDER_ID --name="ADs Growth System Shared"
 
 # Link billing account to each project
 BILLING_ID="YOUR_BILLING_ACCOUNT_ID"
@@ -83,7 +83,7 @@ gcloud services enable cloudresourcemanager.googleapis.com \
 
 gcloud dns managed-zones create stratum-ai-zone \
   --dns-name="stratumai.app." \
-  --description="Stratum AI production domain" \
+  --description="ADs Growth System production domain" \
   --visibility=public
 
 # Get NS records to set at your registrar
@@ -525,7 +525,7 @@ EOF
 gcloud artifacts repositories create stratum-images \
   --repository-format=docker \
   --location=us-central1 \
-  --description="Stratum AI container images" \
+  --description="ADs Growth System container images" \
   --project=stratum-ai-prod
 
 # Configure Docker auth
@@ -1226,7 +1226,7 @@ sentry_sdk.init(
 ```bash
 # Use UptimeRobot, Pingdom, or GCP uptime checks
 gcloud monitoring uptime create stratum-uptime \
-  --display-name="Stratum AI Homepage" \
+  --display-name="ADs Growth System Homepage" \
   --protocol=https \
   --resource-type=url \
   --resource-labels=host=stratumai.app,path=/health \

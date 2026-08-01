@@ -1,5 +1,5 @@
 # =============================================================================
-# Stratum AI - Client Entity Models
+# ADs Growth System - Client Entity Models
 # =============================================================================
 """
 Client (brand) entity for the agency model.

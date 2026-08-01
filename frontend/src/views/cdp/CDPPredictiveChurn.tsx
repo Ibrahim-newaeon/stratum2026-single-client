@@ -1,5 +1,5 @@
 // =============================================================================
-// Stratum AI - Predictive Churn Model (Enterprise Feature)
+// ADs Growth System - Predictive Churn Model (Enterprise Feature)
 // =============================================================================
 
 import {

@@ -1,5 +1,5 @@
 /**
- * Stratum AI - Knowledge Graph API Hooks
+ * ADs Growth System - Knowledge Graph API Hooks
  *
  * React Query hooks for Knowledge Graph features:
  * - Problem Detection (severity filter, resolve action)

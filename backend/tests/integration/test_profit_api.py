@@ -1,5 +1,5 @@
 # =============================================================================
-# Stratum AI - Profit / COGS Endpoint Integration Tests
+# ADs Growth System - Profit / COGS Endpoint Integration Tests
 # =============================================================================
 """Integration tests for the profit surface under ``/api/v1/profit/...``:
 product-catalog CRUD, COGS coverage, and profit-ROAS reads.

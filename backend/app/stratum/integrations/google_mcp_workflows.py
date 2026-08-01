@@ -1,5 +1,5 @@
 """
-Stratum AI + Google MCP Integration Strategy
+ADs Growth System + Google MCP Integration Strategy
 ============================================
 
 Google's MCP servers (Search, Drive, Gmail, Calendar) don't provide Google Ads
@@ -504,7 +504,7 @@ class PerformanceAlertIntegration:
                 "- Check for recent changes that may have caused this",
                 "- Consider pausing underperforming ad sets",
                 "",
-                "This is an automated alert from Stratum AI.",
+                "This is an automated alert from ADs Growth System.",
             ]
         )
 
@@ -587,7 +587,7 @@ Claude:
 
 MCP_CAPABILITIES = {
     "stratum": {
-        "provider": "Stratum AI (Custom)",
+        "provider": "ADs Growth System (Custom)",
         "capabilities": [
             "Ad account management (Meta, Google Ads, TikTok, Snapchat)",
             "Campaign metrics and performance",

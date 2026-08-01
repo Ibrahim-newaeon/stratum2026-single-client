@@ -1,5 +1,5 @@
 # =============================================================================
-# Stratum AI - Google Customer Match Connector Deep Tests
+# ADs Growth System - Google Customer Match Connector Deep Tests
 # =============================================================================
 """Deep integration tests for the Google Ads Customer Match connector.
 

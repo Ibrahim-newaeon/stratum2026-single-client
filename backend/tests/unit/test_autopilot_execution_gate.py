@@ -1,5 +1,5 @@
 # =============================================================================
-# Stratum AI - Autopilot Execution Enforcement-Gate Unit Tests
+# ADs Growth System - Autopilot Execution Enforcement-Gate Unit Tests
 # =============================================================================
 """Unit tests for the enforcement gate in the autopilot execution path
 (``enforce_before_execute`` and ``_enforcement_block_status`` in

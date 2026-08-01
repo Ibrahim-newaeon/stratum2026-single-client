@@ -1,5 +1,5 @@
 """
-Stratum AI: Platform-Specific Integrations
+ADs Growth System: Platform-Specific Integrations
 ==========================================
 
 This module contains deep integrations for platforms that require

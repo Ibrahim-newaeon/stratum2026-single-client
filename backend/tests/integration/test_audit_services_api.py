@@ -1,5 +1,5 @@
 # =============================================================================
-# Stratum AI - Audit Services Endpoint Integration Tests
+# ADs Growth System - Audit Services Endpoint Integration Tests
 # =============================================================================
 """Integration tests for the audit-services surface under
 ``/api/v1/audit-services/...``. This is a large ML-service router; these

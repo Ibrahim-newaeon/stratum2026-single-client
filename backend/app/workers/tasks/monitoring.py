@@ -1,5 +1,5 @@
 # =============================================================================
-# Stratum AI - Pipeline Monitoring Tasks
+# ADs Growth System - Pipeline Monitoring Tasks
 # =============================================================================
 """
 Background tasks for pipeline health checks and monitoring.

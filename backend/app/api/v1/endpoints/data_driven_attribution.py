@@ -1,5 +1,5 @@
 # =============================================================================
-# Stratum AI - Data-Driven Attribution API Endpoints
+# ADs Growth System - Data-Driven Attribution API Endpoints
 # =============================================================================
 """
 API endpoints for data-driven attribution using ML models.

@@ -1,5 +1,5 @@
 # =============================================================================
-# Stratum AI - Trust Layer Service
+# ADs Growth System - Trust Layer Service
 # =============================================================================
 """
 Service for Trust Layer operations:

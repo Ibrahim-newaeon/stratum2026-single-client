@@ -1,5 +1,5 @@
 # =============================================================================
-# Stratum AI - Platform App Credentials
+# ADs Growth System - Platform App Credentials
 # =============================================================================
 """
 Per-deployment OAuth *application* credentials for ad platforms (Meta app ID/

@@ -1,5 +1,5 @@
 # =============================================================================
-# Stratum AI - Embed Widget Schemas
+# ADs Growth System - Embed Widget Schemas
 # =============================================================================
 """
 Pydantic schemas for embed widget API requests and responses.

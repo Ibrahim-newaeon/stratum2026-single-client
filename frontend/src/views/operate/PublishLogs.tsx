@@ -1,5 +1,5 @@
 /**
- * Stratum AI - Publish Logs Page
+ * ADs Growth System - Publish Logs Page
  *
  * Audit log of all campaign publish attempts with status and details.
  */

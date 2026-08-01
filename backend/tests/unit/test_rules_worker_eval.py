@@ -1,5 +1,5 @@
 # =============================================================================
-# Stratum AI - Rules Beat-Worker Evaluation Tests
+# ADs Growth System - Rules Beat-Worker Evaluation Tests
 # =============================================================================
 """
 Tests for the Celery rules evaluator after the schema reconciliation (Tier 3).

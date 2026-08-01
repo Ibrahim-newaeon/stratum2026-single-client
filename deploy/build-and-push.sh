@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 # =============================================================================
-# Stratum AI - Vendor Build & Push
+# ADs Growth System - Vendor Build & Push
 # -----------------------------------------------------------------------------
 # VENDOR-SIDE ONLY. Builds the two domain-generic images that every client
 # deployment pulls (see docker-compose.client.yml) and pushes them to a

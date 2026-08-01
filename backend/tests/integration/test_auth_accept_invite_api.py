@@ -1,5 +1,5 @@
 # =============================================================================
-# Stratum AI - Invite Accept Endpoint Integration Tests
+# ADs Growth System - Invite Accept Endpoint Integration Tests
 # =============================================================================
 """Integration tests for the invite flow: ``POST /users/invite`` persists a
 hashed invitation token in Redis, and ``POST /auth/accept-invite`` redeems

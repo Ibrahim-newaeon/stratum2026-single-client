@@ -1,5 +1,5 @@
 # =============================================================================
-# Stratum AI - Competitor Intelligence Scraper
+# ADs Growth System - Competitor Intelligence Scraper
 # =============================================================================
 """
 Scrapes competitor websites to extract social media links (Facebook, Instagram),

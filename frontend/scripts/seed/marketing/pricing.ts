@@ -89,7 +89,7 @@ const entry: MarketingSeedEntry = {
   template: 'pricing',
   meta_title: 'Pricing',
   meta_description:
-    'Simple, transparent pricing for Stratum AI. Start with a 14-day free trial. Plans from $499/month for growing teams.',
+    'Simple, transparent pricing for ADs Growth System. Start with a 14-day free trial. Plans from $499/month for growing teams.',
   content_json,
 };
 

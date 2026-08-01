@@ -1,5 +1,5 @@
 # =============================================================================
-# Stratum AI - Backend Dependencies
+# ADs Growth System - Backend Dependencies
 # =============================================================================
 
 # FastAPI Framework

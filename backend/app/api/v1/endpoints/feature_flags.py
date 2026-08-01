@@ -1,5 +1,5 @@
 # =============================================================================
-# Stratum AI - Feature Flags API Router
+# ADs Growth System - Feature Flags API Router
 # =============================================================================
 """
 API endpoints for managing the organization's feature flags.

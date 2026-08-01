@@ -1,6 +1,6 @@
-# Stratum AI — Installation Guide
+# ADs Growth System — Installation Guide
 
-This guide walks through installing your Stratum AI instance on your own
+This guide walks through installing your ADs Growth System instance on your own
 server. The whole install is one command; everything else here is reference
 material for when you need it.
 
@@ -18,7 +18,7 @@ material for when you need it.
   in place *before* you run the installer — certificate issuance fails
   otherwise (see Troubleshooting below).
 - **Ports 80 and 443 open** to the internet on this server (firewall / cloud
-  security group). Stratum AI uses these for HTTPS and for automatic
+  security group). ADs Growth System uses these for HTTPS and for automatic
   certificate issuance via Let's Encrypt — no other inbound ports are
   required.
 - **Registry credentials**, if your vendor's image registry is private. The

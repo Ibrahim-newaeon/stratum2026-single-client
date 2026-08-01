@@ -1,5 +1,5 @@
 # =============================================================================
-# Stratum AI - Embed Security Service unit tests
+# ADs Growth System - Embed Security Service unit tests
 # =============================================================================
 """Unit tests for app.services.embed_widgets.security.
 

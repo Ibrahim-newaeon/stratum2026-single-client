@@ -1,5 +1,5 @@
 /**
- * Stratum AI - Command Center Table Component
+ * ADs Growth System - Command Center Table Component
  *
  * Displays campaigns with scaling scores and recommended actions (scale/watch/fix).
  * Supports filtering by action type and platform.

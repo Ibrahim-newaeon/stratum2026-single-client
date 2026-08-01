@@ -1,7 +1,7 @@
 /**
  * Neural Network Background Component
  * Dense animated background with 15 pulsing nodes and 10 connection lines
- * Part of Stratum AI Dashboard Theme (NN/g Glassmorphism Compliant)
+ * Part of ADs Growth System Dashboard Theme (NN/g Glassmorphism Compliant)
  */
 
 import { memo } from 'react';

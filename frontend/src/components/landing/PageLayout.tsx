@@ -1,7 +1,7 @@
 /**
  * PageLayout Component
  * Shared layout for all public-facing pages with header and footer
- * Theme: Stratum AI Command Center (#0B0B0B + solid surfaces)
+ * Theme: ADs Growth System Command Center (#0B0B0B + solid surfaces)
  */
 
 import { useEffect, useState } from 'react';
@@ -98,10 +98,16 @@ export function PageLayout({ children }: PageLayoutProps) {
           <nav className="flex items-center justify-between">
             {/* Logo */}
             <Link to="/" className="flex items-center gap-3 group">
+              {/* Light/dark wordmark pair — see Footer.tsx for the rationale. */}
               <img
-                src="/images/stratum-logo.png"
-                alt="Stratum AI"
-                className="h-8"
+                src="/images/wordmark-light.svg"
+                alt="ADs Growth System"
+                className="h-8 hidden dark:block"
+              />
+              <img
+                src="/images/wordmark-dark.svg"
+                alt="ADs Growth System"
+                className="h-8 dark:hidden"
               />
             </Link>
 
@@ -302,8 +308,8 @@ export function PageLayout({ children }: PageLayoutProps) {
             <div className="col-span-2">
               <Link to="/" className="inline-flex items-center gap-3 mb-4">
                 <img
-                  src="/images/stratum-logo.png"
-                  alt="Stratum AI"
+                  src="/images/logo.png"
+                  alt="ADs Growth System"
                   className="h-7"
                 />
               </Link>
@@ -407,7 +413,7 @@ export function PageLayout({ children }: PageLayoutProps) {
           {/* Bottom bar */}
           <div className="pt-8 border-t border-border flex flex-col md:flex-row items-center justify-between gap-4">
             <p className="text-xs text-muted-foreground">
-              &copy; {new Date().getFullYear()} Stratum AI. All rights
+              &copy; {new Date().getFullYear()} ADs Growth System. All rights
               reserved.
             </p>
 

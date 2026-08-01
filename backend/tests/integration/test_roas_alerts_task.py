@@ -1,5 +1,5 @@
 # =============================================================================
-# Stratum AI - ROAS Alert Task Integration Tests
+# ADs Growth System - ROAS Alert Task Integration Tests
 # =============================================================================
 """
 Integration tests for ``generate_roas_alerts`` and its dispatch from

@@ -79,7 +79,7 @@ NOTE: if `EncryptedString.process_bind_param`/`process_result_value` signatures 
 ```python
 # backend/app/models/platform_app_credential.py
 # =============================================================================
-# Stratum AI - Platform App Credentials
+# ADs Growth System - Platform App Credentials
 # =============================================================================
 """
 Per-deployment OAuth *application* credentials for ad platforms (Meta app ID/
@@ -336,7 +336,7 @@ Expected: FAIL — module not found.
 ```python
 # backend/app/services/oauth/credentials.py
 # =============================================================================
-# Stratum AI - OAuth App Credential Resolution
+# ADs Growth System - OAuth App Credential Resolution
 # =============================================================================
 """
 Resolve per-platform OAuth *application* credentials.
@@ -717,7 +717,7 @@ Expected: FAIL — 404s (router not registered / module missing).
 ```python
 # backend/app/api/v1/endpoints/platform_credentials.py
 # =============================================================================
-# Stratum AI - Platform App Credentials CRUD (owner/admin)
+# ADs Growth System - Platform App Credentials CRUD (owner/admin)
 # =============================================================================
 """
 Owner/admin management of per-deployment OAuth app credentials.
@@ -1232,7 +1232,7 @@ export function getApiErrorCode(error: unknown): string | null {
 
 ```ts
 /**
- * Stratum AI - Platform app credentials (owner/admin).
+ * ADs Growth System - Platform app credentials (owner/admin).
  *
  * Per-deployment OAuth application credentials, managed in the UI for the
  * black-box model. Secrets are write-only: sent on save, never read back.

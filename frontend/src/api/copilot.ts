@@ -1,5 +1,5 @@
 /**
- * Stratum AI - Copilot Chat API (Feature #4)
+ * ADs Growth System - Copilot Chat API (Feature #4)
  *
  * API client and hooks for the AI Copilot conversational interface.
  */

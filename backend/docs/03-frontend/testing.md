@@ -2,7 +2,7 @@
 
 ## Overview
 
-Stratum AI frontend uses Vitest for unit/integration tests and Playwright for E2E tests.
+ADs Growth System frontend uses Vitest for unit/integration tests and Playwright for E2E tests.
 
 ---
 

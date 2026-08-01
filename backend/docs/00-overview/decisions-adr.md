@@ -1,6 +1,6 @@
-# Stratum AI - Architectural Decision Records (ADR)
+# ADs Growth System - Architectural Decision Records (ADR)
 
-This document captures key architectural decisions made during the development of Stratum AI.
+This document captures key architectural decisions made during the development of ADs Growth System.
 
 ---
 

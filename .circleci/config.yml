@@ -1,5 +1,5 @@
 # =============================================================================
-# Stratum AI uses GitHub Actions for CI/CD
+# ADs Growth System uses GitHub Actions for CI/CD
 # See: .github/workflows/ci.yml
 # This file is kept to prevent CircleCI from showing errors if the project
 # is connected. It performs no actions.

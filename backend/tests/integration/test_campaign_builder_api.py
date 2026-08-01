@@ -1,5 +1,5 @@
 # =============================================================================
-# Stratum AI - Campaign Builder (Drafts) Endpoint Integration Tests
+# ADs Growth System - Campaign Builder (Drafts) Endpoint Integration Tests
 # =============================================================================
 """Integration tests for the DB-backed campaign-draft CRUD under
 ``/campaign-builder/campaign-drafts``. The OAuth connect/refresh routes

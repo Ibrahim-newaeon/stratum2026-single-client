@@ -1,7 +1,7 @@
 /**
  * Trust Gate Indicator Component
  * Fixed position status indicator showing signal health score
- * Part of Stratum AI Dashboard Theme (NN/g Glassmorphism Compliant)
+ * Part of ADs Growth System Dashboard Theme (NN/g Glassmorphism Compliant)
  *
  * Now powered by the live simulation engine for realistic
  * platform-aware signal health with weighted components.

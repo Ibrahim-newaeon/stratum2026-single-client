@@ -1,5 +1,5 @@
 /**
- * Stratum AI - A/B Testing API
+ * ADs Growth System - A/B Testing API
  *
  * Handles A/B test creation, management, and statistical analysis.
  */

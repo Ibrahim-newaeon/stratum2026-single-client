@@ -1,5 +1,5 @@
 # =============================================================================
-# Stratum AI - Salesforce Sync Service
+# ADs Growth System - Salesforce Sync Service
 # =============================================================================
 """
 Salesforce data synchronization service.

@@ -1,5 +1,5 @@
 # =============================================================================
-# Stratum AI - Embed Widgets API Endpoints
+# ADs Growth System - Embed Widgets API Endpoints
 # =============================================================================
 """
 API endpoints for managing embeddable widgets.

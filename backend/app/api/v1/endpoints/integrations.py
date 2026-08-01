@@ -1,5 +1,5 @@
 # =============================================================================
-# Stratum AI - Integrations API Router
+# ADs Growth System - Integrations API Router
 # =============================================================================
 """
 API endpoints for third-party integrations:

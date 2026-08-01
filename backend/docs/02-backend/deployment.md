@@ -2,7 +2,7 @@
 
 ## Overview
 
-Stratum AI backend is containerized and can be deployed to various environments.
+ADs Growth System backend is containerized and can be deployed to various environments.
 
 ---
 

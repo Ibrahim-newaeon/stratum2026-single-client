@@ -1,5 +1,5 @@
 /**
- * Stratum AI - API Keys API
+ * ADs Growth System - API Keys API
  *
  * API key management.
  */

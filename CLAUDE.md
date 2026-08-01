@@ -1,4 +1,4 @@
-# Stratum AI Platform
+# ADs Growth System Platform
 
 ## Overview
 

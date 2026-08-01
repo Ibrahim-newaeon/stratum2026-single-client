@@ -1,5 +1,5 @@
 # =============================================================================
-# Stratum AI - CMS Admin Misc API Integration Tests
+# ADs Growth System - CMS Admin Misc API Integration Tests
 # =============================================================================
 """Integration tests for CMS admin tags, authors, pages, contact submissions,
 and CMS user management (roles, invites, permissions) against the real ASGI

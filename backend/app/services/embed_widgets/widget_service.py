@@ -1,5 +1,5 @@
 # =============================================================================
-# Stratum AI - Embed Widget Service
+# ADs Growth System - Embed Widget Service
 # =============================================================================
 """
 Service for managing embed widgets.

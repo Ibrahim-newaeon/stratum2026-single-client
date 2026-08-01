@@ -1,5 +1,5 @@
 # =============================================================================
-# Stratum AI - Backend Dockerfile (backend-only, backend/ build context)
+# ADs Growth System - Backend Dockerfile (backend-only, backend/ build context)
 # -----------------------------------------------------------------------------
 # Build context is `backend/`. The Copilot RAG curated corpus lives at
 # `backend/docs/` (moved there from the repo root so it ships inside this

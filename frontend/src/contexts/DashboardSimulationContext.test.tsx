@@ -1,5 +1,5 @@
 /**
- * Stratum AI - DashboardSimulationContext Tests
+ * ADs Growth System - DashboardSimulationContext Tests
  *
  * Tests for DashboardSimulationProvider, useDashboardSimulation hook,
  * provider rendering, and simulation data propagation.

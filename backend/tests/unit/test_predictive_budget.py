@@ -1,5 +1,5 @@
 # =============================================================================
-# Stratum AI - Predictive Budget unit tests
+# ADs Growth System - Predictive Budget unit tests
 # =============================================================================
 """Unit tests for app.analytics.logic.predictive_budget.
 

@@ -1,5 +1,5 @@
 /**
- * Stratum AI - AuthContext Tests
+ * ADs Growth System - AuthContext Tests
  *
  * Tests for login flow, logout cleanup, session restore,
  * demo login fallback, and the useAuth hook.

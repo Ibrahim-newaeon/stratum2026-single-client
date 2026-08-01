@@ -1,5 +1,5 @@
 # =============================================================================
-# Stratum AI - Attribution Services Package
+# ADs Growth System - Attribution Services Package
 # =============================================================================
 """
 Multi-Touch Attribution (MTA) services for marketing analytics.

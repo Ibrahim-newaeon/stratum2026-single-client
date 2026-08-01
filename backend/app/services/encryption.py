@@ -1,5 +1,5 @@
 # =============================================================================
-# Stratum AI - Token Encryption Service
+# ADs Growth System - Token Encryption Service
 # =============================================================================
 """
 Encryption utilities for OAuth tokens and sensitive credentials.

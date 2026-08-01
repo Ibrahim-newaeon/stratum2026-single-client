@@ -1,5 +1,5 @@
 # =============================================================================
-# Stratum AI - TikTok Ads OAuth Service
+# ADs Growth System - TikTok Ads OAuth Service
 # =============================================================================
 """
 OAuth implementation for TikTok Marketing API.

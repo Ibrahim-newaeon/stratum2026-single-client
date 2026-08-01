@@ -1,5 +1,5 @@
 # =============================================================================
-# Stratum AI - Pacing Targets API Integration Tests
+# ADs Growth System - Pacing Targets API Integration Tests
 # =============================================================================
 """Integration tests for the pacing/targets API.
 

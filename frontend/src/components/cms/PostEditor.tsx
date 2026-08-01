@@ -1,5 +1,5 @@
 /**
- * Stratum AI - Post Editor Component
+ * ADs Growth System - Post Editor Component
  *
  * Full form for creating/editing blog posts with all fields including
  * title, content (TipTap), SEO settings, featured image, and metadata.

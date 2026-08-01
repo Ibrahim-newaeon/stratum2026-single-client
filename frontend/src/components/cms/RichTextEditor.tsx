@@ -1,5 +1,5 @@
 /**
- * Stratum AI - Rich Text Editor Component
+ * ADs Growth System - Rich Text Editor Component
  *
  * TipTap-based WYSIWYG editor with toolbar for headings, formatting, lists, links, and images.
  * Outputs both HTML and JSON formats for storage.

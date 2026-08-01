@@ -2,7 +2,7 @@ import type { MarketingSeedEntry } from './types';
 
 const content = `<p>Last updated: January 15, 2026</p>
 <h2>1. Introduction</h2>
-<p>Stratum AI, Inc. ("Stratum AI," "we," "us," or "our") respects your privacy and is committed to protecting your personal data. This privacy policy explains how we collect, use, disclose, and safeguard your information when you use our services.</p>
+<p>ADs Growth System, Inc. ("ADs Growth System," "we," "us," or "our") respects your privacy and is committed to protecting your personal data. This privacy policy explains how we collect, use, disclose, and safeguard your information when you use our services.</p>
 <h2>2. Information We Collect</h2>
 <h3>2.1 Information You Provide</h3>
 <ul>
@@ -61,7 +61,7 @@ const entry: MarketingSeedEntry = {
   template: 'default',
   meta_title: 'Privacy Policy',
   meta_description:
-    'Stratum AI Privacy Policy. Learn how we collect, use, and protect your personal data.',
+    'ADs Growth System Privacy Policy. Learn how we collect, use, and protect your personal data.',
   content,
 };
 

@@ -1,5 +1,5 @@
 # =============================================================================
-# Stratum AI - ML model integrity tests (ML-002)
+# ADs Growth System - ML model integrity tests (ML-002)
 # =============================================================================
 """
 Models are verified against a sidecar SHA-256 before joblib.load (which

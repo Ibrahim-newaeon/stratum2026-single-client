@@ -1,5 +1,5 @@
 # =============================================================================
-# Stratum AI - Apply Actions Queue Task
+# ADs Growth System - Apply Actions Queue Task
 # =============================================================================
 """
 Celery task for processing and applying approved autopilot actions.

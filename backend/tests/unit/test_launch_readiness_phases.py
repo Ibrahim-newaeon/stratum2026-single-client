@@ -1,5 +1,5 @@
 # =============================================================================
-# Stratum AI - Launch Readiness Phase Catalog (Unit Tests)
+# ADs Growth System - Launch Readiness Phase Catalog (Unit Tests)
 # =============================================================================
 """
 Invariants for the static Launch Readiness phase catalog. These run without

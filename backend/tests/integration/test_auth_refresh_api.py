@@ -1,5 +1,5 @@
 # =============================================================================
-# Stratum AI - Auth Token-Refresh Endpoint Integration Tests
+# ADs Growth System - Auth Token-Refresh Endpoint Integration Tests
 # =============================================================================
 """Integration tests for ``POST /auth/refresh`` — refresh-token validation,
 user re-resolution, and rotated access/refresh token issuance. The old

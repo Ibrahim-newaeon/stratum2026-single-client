@@ -1,5 +1,5 @@
 /**
- * Stratum AI - Attribution API
+ * ADs Growth System - Attribution API
  *
  * Handles multi-touch attribution and data-driven attribution models.
  */

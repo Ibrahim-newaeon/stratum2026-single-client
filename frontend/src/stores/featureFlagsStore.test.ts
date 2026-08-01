@@ -1,5 +1,5 @@
 /**
- * Stratum AI - Feature Flags Store Tests
+ * ADs Growth System - Feature Flags Store Tests
  *
  * Comprehensive test suite for the Zustand feature flags store,
  * covering state management, actions, gating helpers, selectors,

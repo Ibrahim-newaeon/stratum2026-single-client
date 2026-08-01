@@ -1,4 +1,4 @@
-# STRATUM AI - COMPLETE THEME SYSTEM
+# ADS GROWTH SYSTEM - COMPLETE THEME SYSTEM
 ## Design Tokens & Implementation Guide for Light/Dark Modes
 
 **Version:** 2.0  

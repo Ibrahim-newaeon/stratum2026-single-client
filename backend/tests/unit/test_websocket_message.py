@@ -1,5 +1,5 @@
 # =============================================================================
-# Stratum AI - WebSocket Message Unit Tests
+# ADs Growth System - WebSocket Message Unit Tests
 # =============================================================================
 """Unit tests for the pure ``WebSocketMessage`` (de)serialization in
 ``app.core.websocket``. The async WebSocketManager (Redis-backed) is out

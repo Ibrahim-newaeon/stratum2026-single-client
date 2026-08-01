@@ -1,5 +1,5 @@
 /**
- * Stratum AI - LegacySuperadminRedirect Tests
+ * ADs Growth System - LegacySuperadminRedirect Tests
  *
  * The old superadmin shell lived at /dashboard/superadmin/*. Bookmarks
  * and external links to those URLs should land on the platform console

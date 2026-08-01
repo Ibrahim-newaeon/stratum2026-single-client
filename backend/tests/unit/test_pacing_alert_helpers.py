@@ -1,5 +1,5 @@
 # =============================================================================
-# Stratum AI - Pacing Alert Helper Unit Tests
+# ADs Growth System - Pacing Alert Helper Unit Tests
 # =============================================================================
 """Unit tests for the pure mapping helpers of
 ``app.services.pacing.alert_service.PacingAlertService``:

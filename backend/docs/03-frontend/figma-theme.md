@@ -1,4 +1,4 @@
-# SuperAds Theme — Stratum AI
+# SuperAds Theme — ADs Growth System
 
 The dashboard, auth flow, and marketing surfaces all read from the SuperAds
 theme, dual-mode with semantic CSS variables in `frontend/src/index.css` and

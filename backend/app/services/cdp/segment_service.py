@@ -1,5 +1,5 @@
 # =============================================================================
-# Stratum AI - CDP Segment Service
+# ADs Growth System - CDP Segment Service
 # =============================================================================
 """
 Segment builder and evaluation service for CDP.

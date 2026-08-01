@@ -1,5 +1,5 @@
 # =============================================================================
-# Stratum AI - Product Catalog Service
+# ADs Growth System - Product Catalog Service
 # =============================================================================
 """
 Service for managing product catalog.

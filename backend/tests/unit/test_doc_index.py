@@ -1,5 +1,5 @@
 # =============================================================================
-# Stratum AI — doc_index tests (Copilot RAG foundation)
+# ADs Growth System — doc_index tests (Copilot RAG foundation)
 # =============================================================================
 """
 Pure-Python tests for the chunker + helpers. The OpenAI and pgvector

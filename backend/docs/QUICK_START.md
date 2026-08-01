@@ -1,6 +1,6 @@
-# Stratum AI - Quick Start Guide
+# ADs Growth System - Quick Start Guide
 
-Get up and running with Stratum AI in under 10 minutes.
+Get up and running with ADs Growth System in under 10 minutes.
 
 ---
 

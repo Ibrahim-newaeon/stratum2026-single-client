@@ -1,5 +1,5 @@
 # =============================================================================
-# Stratum AI - Attribution API Integration Tests
+# ADs Growth System - Attribution API Integration Tests
 # =============================================================================
 """Integration tests for the attribution summary / model-comparison API.
 

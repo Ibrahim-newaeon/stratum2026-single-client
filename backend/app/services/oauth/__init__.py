@@ -1,5 +1,5 @@
 # =============================================================================
-# Stratum AI - OAuth Services
+# ADs Growth System - OAuth Services
 # =============================================================================
 """
 OAuth service implementations for ad platform integrations.

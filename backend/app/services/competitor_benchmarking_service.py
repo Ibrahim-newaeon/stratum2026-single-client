@@ -1,5 +1,5 @@
 # =============================================================================
-# Stratum AI - Competitor Benchmarking Service
+# ADs Growth System - Competitor Benchmarking Service
 # =============================================================================
 """
 Service for benchmarking performance against industry competitors and standards.

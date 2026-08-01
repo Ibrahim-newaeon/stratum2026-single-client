@@ -228,14 +228,14 @@ export default function StatusPage() {
             className="text-display-sm md:text-display text-foreground animate-enter"
             style={{ animationDelay: '0.05s' }}
           >
-            Stratum AI <span className="text-gradient-primary">System Status</span>
+            ADs Growth System <span className="text-gradient-primary">System Status</span>
           </h1>
 
           <p
             className="mt-6 text-body text-muted-foreground animate-enter"
             style={{ animationDelay: '0.15s' }}
           >
-            Real-time status and uptime monitoring for all Stratum AI services.
+            Real-time status and uptime monitoring for all ADs Growth System services.
           </p>
         </div>
       </section>

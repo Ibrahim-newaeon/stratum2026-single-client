@@ -1,5 +1,5 @@
 # =============================================================================
-# Stratum AI - Shapley Value Attribution Model
+# ADs Growth System - Shapley Value Attribution Model
 # =============================================================================
 """
 Data-driven attribution using Shapley Values from cooperative game theory.

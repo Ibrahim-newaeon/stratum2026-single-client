@@ -1,5 +1,5 @@
 /**
- * Stratum AI - Platform Setup Modal
+ * ADs Growth System - Platform Setup Modal
  *
  * Shows all required tokens, IDs, and credentials needed to connect
  * each integration platform. Opens when user clicks a platform card.
@@ -378,7 +378,7 @@ export const platformCredentials: PlatformCredentialConfig[] = [
     color: 'from-orange-500 to-orange-700',
     icon: 'H',
     subtitle: 'CRM & Marketing Hub',
-    description: 'Sync contacts, companies, and deals between Stratum AI and HubSpot CRM.',
+    description: 'Sync contacts, companies, and deals between ADs Growth System and HubSpot CRM.',
     docsUrl: 'https://developers.hubspot.com/docs/api/overview',
     authMethod: 'oauth',
     credentials: [

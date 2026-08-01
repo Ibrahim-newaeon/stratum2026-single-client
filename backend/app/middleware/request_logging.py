@@ -1,5 +1,5 @@
 # =============================================================================
-# Stratum AI - Request Logging Middleware
+# ADs Growth System - Request Logging Middleware
 # =============================================================================
 """
 Middleware that assigns a unique request ID, measures request duration,

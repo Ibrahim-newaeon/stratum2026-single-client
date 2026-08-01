@@ -1,4 +1,4 @@
-# Stratum AI Beta Deployment Guide
+# ADs Growth System Beta Deployment Guide
 
 ## Quick Start
 

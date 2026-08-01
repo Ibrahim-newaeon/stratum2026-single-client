@@ -1,5 +1,5 @@
 /**
- * Stratum AI - MFA API
+ * ADs Growth System - MFA API
  *
  * Two-factor authentication management.
  */

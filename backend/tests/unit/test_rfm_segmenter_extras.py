@@ -1,5 +1,5 @@
 # =============================================================================
-# Stratum AI - RFM Segmenter extended unit tests
+# ADs Growth System - RFM Segmenter extended unit tests
 # =============================================================================
 """Extended unit tests for ``app.ml.rfm_segmenter`` (issue #342, batch 3).
 

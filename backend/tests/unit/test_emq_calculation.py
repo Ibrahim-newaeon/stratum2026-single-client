@@ -1,5 +1,5 @@
 # =============================================================================
-# Stratum AI - EMQ Calculation unit tests
+# ADs Growth System - EMQ Calculation unit tests
 # =============================================================================
 """Unit tests for app.analytics.logic.emq_calculation.
 

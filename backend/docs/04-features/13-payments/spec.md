@@ -6,7 +6,7 @@
 
 ## Overview
 
-The Payments & Billing module handles subscription management, usage-based billing, payment processing, and invoicing for the Stratum AI platform.
+The Payments & Billing module handles subscription management, usage-based billing, payment processing, and invoicing for the ADs Growth System platform.
 
 ---
 

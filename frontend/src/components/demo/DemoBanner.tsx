@@ -50,7 +50,7 @@ export function DemoBanner({ variant = 'top' }: DemoBannerProps) {
         {/* Content */}
         <div className="p-4 space-y-3">
           <p className="text-sm text-muted-foreground">
-            You're exploring Stratum AI with sample data. Ready to use your own data?
+            You're exploring ADs Growth System with sample data. Ready to use your own data?
           </p>
 
           <div className="flex gap-2">
@@ -135,7 +135,7 @@ export function DemoCtaCard() {
         </div>
 
         <p className="text-muted-foreground mb-6">
-          Experience Stratum AI with real sample data. Explore trust gates, CDP profiles, audience
+          Experience ADs Growth System with real sample data. Explore trust gates, CDP profiles, audience
           sync, and AI predictions - all in your browser.
         </p>
 

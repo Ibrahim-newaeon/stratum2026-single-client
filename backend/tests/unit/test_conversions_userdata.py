@@ -1,5 +1,5 @@
 # =============================================================================
-# Stratum AI - Conversions UserData / CAPI Formatting Unit Tests
+# ADs Growth System - Conversions UserData / CAPI Formatting Unit Tests
 # =============================================================================
 """Unit tests for the pure PII-normalization and CAPI-formatting logic in
 ``app.stratum.conversions``.

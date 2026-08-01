@@ -1,5 +1,5 @@
 # =============================================================================
-# Stratum AI - Drip Campaigns Persistence Integration Tests
+# ADs Growth System - Drip Campaigns Persistence Integration Tests
 # =============================================================================
 """Integration tests for the DB-backed drip-campaign behavior.
 

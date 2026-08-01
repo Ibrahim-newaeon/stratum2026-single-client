@@ -1,5 +1,5 @@
 /**
- * Stratum AI - App Store Tests
+ * ADs Growth System - App Store Tests
  *
  * Comprehensive Vitest test suite for the Zustand app store
  * covering state management, role checks, owner controls,

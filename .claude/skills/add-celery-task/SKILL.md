@@ -1,6 +1,6 @@
 ---
 name: add-celery-task
-description: Use when adding a new Celery background task to Stratum AI. Encodes idempotency, retry policy, async-session safety, audit logging, and tenant scoping so tasks land production-safe. Trigger when the user says "add task", "add worker", "background job", or creates a file under `backend/app/workers/`.
+description: Use when adding a new Celery background task to ADs Growth System. Encodes idempotency, retry policy, async-session safety, audit logging, and tenant scoping so tasks land production-safe. Trigger when the user says "add task", "add worker", "background job", or creates a file under `backend/app/workers/`.
 ---
 
 # Add Celery Task

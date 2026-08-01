@@ -1,5 +1,5 @@
 /**
- * Stratum AI - Insights API Hooks
+ * ADs Growth System - Insights API Hooks
  *
  * React Query hooks for Intelligence Layer features:
  * - Insights (aggregated daily view)

@@ -1,5 +1,5 @@
 # =============================================================================
-# Stratum AI - CAPI Connector Health Monitor Unit Tests
+# ADs Growth System - CAPI Connector Health Monitor Unit Tests
 # =============================================================================
 """Unit tests for ``ConnectorHealthMonitor`` in
 ``app.services.capi.platform_connectors`` — the pure health-scoring logic

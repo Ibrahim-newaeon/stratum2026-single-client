@@ -1,5 +1,5 @@
 /**
- * Stratum AI - ErrorBoundary Tests
+ * ADs Growth System - ErrorBoundary Tests
  *
  * Tests for error catching, chunk load error detection,
  * retry/reload behavior, and fallback components.

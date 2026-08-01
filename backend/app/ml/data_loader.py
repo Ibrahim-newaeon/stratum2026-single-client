@@ -1,5 +1,5 @@
 # =============================================================================
-# Stratum AI - Training Data Loader
+# ADs Growth System - Training Data Loader
 # =============================================================================
 """
 Data loader for importing training datasets from various sources.

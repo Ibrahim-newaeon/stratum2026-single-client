@@ -1,5 +1,5 @@
 # =============================================================================
-# Stratum AI — Push Notifications (Web Push API)
+# ADs Growth System — Push Notifications (Web Push API)
 # =============================================================================
 """
 Web Push notification system using VAPID keys.
@@ -388,10 +388,10 @@ async def get_service_worker():
     to handle background push events.
     """
     sw_code = """
-// Stratum AI Push Notification Service Worker
+// ADs Growth System Push Notification Service Worker
 self.addEventListener('push', function(event) {
     const data = event.data ? event.data.json() : {};
-    const title = data.title || 'Stratum AI';
+    const title = data.title || 'ADs Growth System';
     const options = {
         body: data.body || '',
         icon: data.icon || '/icon-192.png',

@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """
-Stratum AI - Load Test User Seed Script
+ADs Growth System - Load Test User Seed Script
 
 Creates a test user for k6 load testing.
 
@@ -57,7 +57,7 @@ async def seed_load_test_user():
     async_session = sessionmaker(engine, class_=AsyncSession, expire_on_commit=False)
 
     print("=" * 60)
-    print("  Stratum AI - Load Test User Setup")
+    print("  ADs Growth System - Load Test User Setup")
     print("=" * 60)
 
     async with async_session() as db:

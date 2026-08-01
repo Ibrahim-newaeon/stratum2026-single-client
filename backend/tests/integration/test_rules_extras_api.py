@@ -1,5 +1,5 @@
 # =============================================================================
-# Stratum AI - Automation Rules API Integration Tests (dry-run + executions)
+# ADs Growth System - Automation Rules API Integration Tests (dry-run + executions)
 # =============================================================================
 """Integration tests for the two rules endpoints not covered by
 ``test_rules_api.py``: ``POST /rules/{id}/test`` (dry-run evaluation) and

@@ -1,5 +1,5 @@
 # =============================================================================
-# Stratum AI - Report Delivery Service
+# ADs Growth System - Report Delivery Service
 # =============================================================================
 """
 Multi-channel delivery service for generated reports.
@@ -168,7 +168,7 @@ class EmailDelivery(DeliveryChannelHandler):
                     </tr>
                 </table>
                 <p style="color: #666; font-size: 12px;">
-                    This is an automated report from Stratum AI. Do not reply to this email.
+                    This is an automated report from ADs Growth System. Do not reply to this email.
                 </p>
             </body>
             </html>
@@ -338,7 +338,7 @@ class SlackDelivery(DeliveryChannelHandler):
                 "elements": [
                     {
                         "type": "mrkdwn",
-                        "text": "Sent by Stratum AI Automated Reporting",
+                        "text": "Sent by ADs Growth System Automated Reporting",
                     }
                 ],
             }
@@ -437,7 +437,7 @@ class TeamsDelivery(DeliveryChannelHandler):
             "sections": [
                 {
                     "activityTitle": f"📊 {report_type} Report",
-                    "activitySubtitle": "Stratum AI Automated Reporting",
+                    "activitySubtitle": "ADs Growth System Automated Reporting",
                     "facts": facts,
                     "markdown": True,
                 }
@@ -736,7 +736,7 @@ class WhatsAppDelivery(DeliveryChannelHandler):
         )
 
         lines = [
-            f"📊 *Stratum AI Report Ready*",
+            f"📊 *ADs Growth System Report Ready*",
             f"",
             f"*Type:* {report_type.replace('_', ' ').title()}",
             f"*Period:* {period}",

@@ -2,7 +2,7 @@
 
 ## Overview
 
-This document outlines security practices, policies, and guidelines for the Stratum AI platform.
+This document outlines security practices, policies, and guidelines for the ADs Growth System platform.
 
 > **STALE — 2026-07 (STRAT-SC-001)**: the "Tenant Isolation" section,
 > JWT `tenant_id` claim examples, `TenantMixin`, and per-tenant Redis/S3
@@ -100,7 +100,7 @@ JWT_CONFIG = {
 
 ```python
 MFA_CONFIG = {
-    "issuer": "Stratum AI",
+    "issuer": "ADs Growth System",
     "digits": 6,
     "period": 30,
     "algorithm": "SHA1",

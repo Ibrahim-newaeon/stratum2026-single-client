@@ -1,5 +1,5 @@
 # =============================================================================
-# Stratum AI - Shapley Attribution Unit Tests
+# ADs Growth System - Shapley Attribution Unit Tests
 # =============================================================================
 """Unit tests for ``ShapleyValueModel`` in
 app.services.attribution.shapley_attribution — pure Shapley-value math.

@@ -151,7 +151,7 @@ services:
       - SMTP_PASSWORD=${SMTP_PASSWORD:-}
       - SMTP_TLS=${SMTP_TLS:-true}
       - SMTP_SSL=${SMTP_SSL:-false}
-      - EMAIL_FROM_NAME=${EMAIL_FROM_NAME:-Stratum AI}
+      - EMAIL_FROM_NAME=${EMAIL_FROM_NAME:-ADs Growth System}
       - EMAIL_FROM_ADDRESS=${EMAIL_FROM_ADDRESS:-noreply@stratumhq.com}
       - FRONTEND_URL=${FRONTEND_URL:-http://localhost:5173}
     volumes:

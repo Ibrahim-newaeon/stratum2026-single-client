@@ -1,5 +1,5 @@
 # =============================================================================
-# Stratum AI - Greeting Tool
+# ADs Growth System - Greeting Tool
 # =============================================================================
 """
 Greeting Tool for Conversational Onboarding Agent.
@@ -58,7 +58,7 @@ class GreetingResponse(BaseModel):
 
 class GreetingTool:
     """
-    Greeting Tool for Stratum AI Onboarding Agent.
+    Greeting Tool for ADs Growth System Onboarding Agent.
 
     Handles:
     - Initial user greetings
@@ -69,18 +69,18 @@ class GreetingTool:
 
     GREETINGS = {
         "en": {
-            "new_user": "Welcome to Stratum AI! 👋 I'm your onboarding assistant. I'll help you get set up with our Revenue Operating System.",
+            "new_user": "Welcome to ADs Growth System! 👋 I'm your onboarding assistant. I'll help you get set up with our Revenue Operating System.",
             "returning_user": "Welcome back, {name}! 👋 Great to see you again.",
-            "new_tenant": "Welcome to Stratum AI! 🚀 Let's set up your organization and get you started with Trust-Gated Autopilot.",
+            "new_tenant": "Welcome to ADs Growth System! 🚀 Let's set up your organization and get you started with Trust-Gated Autopilot.",
             "support": "Hi {name}! 👋 I'm here to help. What can I assist you with today?",
-            "general": "Hello! 👋 Welcome to Stratum AI. How can I help you today?",
+            "general": "Hello! 👋 Welcome to ADs Growth System. How can I help you today?",
         },
         "ar": {
-            "new_user": "مرحباً بك في Stratum AI! 👋 أنا مساعد الإعداد الخاص بك. سأساعدك في إعداد نظام تشغيل الإيرادات.",
+            "new_user": "مرحباً بك في ADs Growth System! 👋 أنا مساعد الإعداد الخاص بك. سأساعدك في إعداد نظام تشغيل الإيرادات.",
             "returning_user": "مرحباً بعودتك، {name}! 👋 سعيد برؤيتك مرة أخرى.",
-            "new_tenant": "مرحباً بك في Stratum AI! 🚀 دعنا نقوم بإعداد مؤسستك.",
+            "new_tenant": "مرحباً بك في ADs Growth System! 🚀 دعنا نقوم بإعداد مؤسستك.",
             "support": "مرحباً {name}! 👋 أنا هنا للمساعدة. كيف يمكنني مساعدتك اليوم؟",
-            "general": "مرحباً! 👋 أهلاً بك في Stratum AI. كيف يمكنني مساعدتك؟",
+            "general": "مرحباً! 👋 أهلاً بك في ADs Growth System. كيف يمكنني مساعدتك؟",
         },
     }
 
