@@ -270,13 +270,24 @@ def create_application() -> FastAPI:
     """
     Create and configure the FastAPI application.
     """
+    # In production these are None so FastAPI does NOT register its built-in
+    # docs routes, leaving /docs, /redoc and /openapi.json free for the
+    # api-key-gated versions mounted further down.
+    #
+    # Previously they were always set. FastAPI registered the built-ins first,
+    # the gated routes were appended afterwards at the same paths, and Starlette
+    # matches in route order — so the built-ins always won and the gate never
+    # executed, even with DOCS_API_KEY configured. `app.routes` carried two
+    # entries for /docs (Route swagger_ui_html, then APIRoute custom_docs) and
+    # only the first was reachable.
+    _docs_enabled = not settings.is_production
     app = FastAPI(
         title=settings.app_name,
         description="Enterprise Marketing Intelligence Platform - Unified analytics across Meta, Google, TikTok & Snapchat",
         version="1.0.0",
-        docs_url="/docs",
-        redoc_url="/redoc",
-        openapi_url="/openapi.json",
+        docs_url="/docs" if _docs_enabled else None,
+        redoc_url="/redoc" if _docs_enabled else None,
+        openapi_url="/openapi.json" if _docs_enabled else None,
         default_response_class=JSONResponse,
         lifespan=lifespan,
     )
@@ -319,9 +330,23 @@ def create_application() -> FastAPI:
                 "/metrics",
             ):
                 return
-            # Skip if DOCS_API_KEY not configured (fallback to open)
+            # Fail CLOSED when the key is missing. This previously returned
+            # early — so an unset DOCS_API_KEY silently disabled the gate and
+            # published the whole API surface. That is the state production has
+            # actually been in: DOCS_API_KEY is not set on the Railway `api`
+            # service, and /openapi.json served all 606 paths unauthenticated.
+            # A security control that switches itself off when unconfigured is
+            # worse than no control, because it reads as protected.
+            #
+            # 404 rather than 403: an unconfigured deployment should look like
+            # it has no docs at all, instead of advertising a gated endpoint to
+            # probe. A misconfiguration must never be more discoverable than
+            # the correct configuration.
             if not DOCS_API_KEY:
-                return
+                raise HTTPException(
+                    status_code=status.HTTP_404_NOT_FOUND,
+                    detail="Not Found",
+                )
             provided = request.query_params.get("api_key", "")
             if not provided or not secrets.compare_digest(provided, DOCS_API_KEY):
                 raise HTTPException(
