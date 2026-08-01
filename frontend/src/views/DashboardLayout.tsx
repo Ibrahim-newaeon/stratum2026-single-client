@@ -77,13 +77,7 @@ export default function DashboardLayout() {
 
   const brand = (
     <div className="flex items-center gap-3">
-      <img
-        src="/images/logo.png"
-        alt="ADs Growth System"
-        className="h-7"
-        loading="lazy"
-        decoding="async"
-      />
+      <span className="font-display font-semibold text-base tracking-tight text-foreground">ADs Growth <span className="text-primary">System</span></span>
     </div>
   );
 
