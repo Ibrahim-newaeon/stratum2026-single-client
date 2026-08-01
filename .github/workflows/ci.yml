@@ -511,6 +511,10 @@ jobs:
           output: "trivy-fs-results.sarif"
           severity: "CRITICAL,HIGH"
           ignore-unfixed: true
+          # Passed explicitly rather than relying on Trivy discovering
+          # .trivyignore in the working directory — the action runs Trivy in
+          # its own context, so cwd auto-discovery is not guaranteed.
+          trivyignores: ".trivyignore"
           exit-code: "1"
 
       - name: Build Docker image for scanning
@@ -524,6 +528,12 @@ jobs:
           output: "trivy-image-results.sarif"
           severity: "CRITICAL,HIGH"
           ignore-unfixed: true
+          # This scan is the one that actually needs the ignore file. The two
+          # suppressed advisories (pip-vendored msgpack, ensurepip's bundled
+          # setuptools) are present in the linux/amd64 image runners build and
+          # absent from a linux/arm64 build — so a local arm64 scan passes
+          # whether or not the ignore file is applied, and cannot confirm it is.
+          trivyignores: ".trivyignore"
           exit-code: "1"
 
       - name: Upload Trivy scan results
