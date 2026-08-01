@@ -1,4 +1,5 @@
 import { test, expect, Page } from '@playwright/test'
+import { authenticate, DEFAULT_USER } from './utils/session'
 
 // Mock contact data — one in each opt-in state.
 const mockContacts = [
@@ -43,19 +44,18 @@ const mockContacts = [
   },
 ]
 
+// Was a local copy that set only localStorage['stratum_auth'] — it missed the
+// sessionStorage access_token the shared helper installs, and predated
+// OnboardingGuard entirely, so /dashboard/whatsapp hung on the guard's spinner.
+// Delegating keeps this spec on the one definition of "logged in".
 async function mockAuth(page: Page) {
-  await page.addInitScript(() => {
-    localStorage.setItem(
-      'stratum_auth',
-      JSON.stringify({
-        id: '1',
-        email: 'admin@company.com',
-        name: 'Company Admin',
-        role: 'admin',
-        organization: 'Acme Corp',
-        permissions: ['campaigns', 'analytics', 'users', 'whatsapp'],
-      })
-    )
+  await authenticate(page, {
+    ...DEFAULT_USER,
+    id: '1',
+    email: 'admin@company.com',
+    name: 'Company Admin',
+    organization: 'Acme Corp',
+    permissions: ['campaigns', 'analytics', 'users', 'whatsapp'],
   })
 }
 
