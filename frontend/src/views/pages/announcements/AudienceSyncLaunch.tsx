@@ -99,7 +99,7 @@ const steps = [
     step: '1',
     title: 'Connect Your Ad Accounts',
     description:
-      'Authorize Stratum to access your Meta, Google, TikTok, and Snapchat ad accounts with secure OAuth.',
+      'Authorize ADs Growth System to access your Meta, Google, TikTok, and Snapchat ad accounts with secure OAuth.',
   },
   {
     step: '2',
@@ -161,7 +161,7 @@ export default function AudienceSyncLaunch() {
             eyebrow="Why Audience Sync"
             title="Targeting that stays"
             highlight="fresh"
-            subtitle="Stop wasting time with manual exports and CSV uploads. Stratum's Audience Sync keeps your targeting fresh and your campaigns optimized."
+            subtitle="Stop wasting time with manual exports and CSV uploads. ADs Growth System's Audience Sync keeps your targeting fresh and your campaigns optimized."
           />
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
             {features.map((feature, i) => (

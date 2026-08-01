@@ -1,5 +1,5 @@
 /**
- * Login Page — Stratum figma theme
+ * Login Page — ADs Growth System figma theme
  * Split-screen: testimonial panel + ember-accented sign-in form
  */
 
@@ -177,7 +177,7 @@ export default function Login() {
           {/* Mobile wordmark */}
           <div className="lg:hidden mb-8 self-start">
             <a href="/landing.html" className="text-[18px] font-medium tracking-tight text-white">
-              stratum.ai
+              adsgrowthsystem.com
             </a>
           </div>
 

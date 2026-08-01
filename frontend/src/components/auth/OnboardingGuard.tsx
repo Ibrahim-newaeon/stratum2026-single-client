@@ -24,7 +24,18 @@ export default function OnboardingGuard({ children }: OnboardingGuardProps) {
   const { data, isLoading, error } = useOnboardingCheck();
   const canRunSetup = user?.role === 'owner' || user?.role === 'admin';
 
-  // Show loading while checking onboarding status
+  // Checked BEFORE isLoading. This used to sit below the loading branch,
+  // which made it unreachable exactly when it was needed: a user who had
+  // already skipped onboarding still waited on the probe, and if the probe
+  // hung they never got in at all. A recorded skip is a decision already
+  // made — no readiness check can change it.
+  if (localStorage.getItem(SKIP_KEY) === 'true') {
+    return <>{children}</>;
+  }
+
+  // Show loading while checking onboarding status. Bounded: the probe uses a
+  // 5s timeout and does not retry (see useOnboardingCheck), so this resolves
+  // one way or the other rather than blocking the dashboard indefinitely.
   if (isLoading) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-background">
@@ -36,11 +47,6 @@ export default function OnboardingGuard({ children }: OnboardingGuardProps) {
   // If there's an error checking onboarding, allow through (fail open)
   // The dashboard will handle showing appropriate error states
   if (error) {
-    return <>{children}</>;
-  }
-
-  // If user previously skipped onboarding (client-side), let them through
-  if (localStorage.getItem(SKIP_KEY) === 'true') {
     return <>{children}</>;
   }
 

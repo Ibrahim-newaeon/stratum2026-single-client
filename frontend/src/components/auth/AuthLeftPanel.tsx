@@ -1,6 +1,6 @@
 /**
  * Shared Left Panel for Authentication pages
- * Stratum figma theme — ink surface, ember accent, Geist typography
+ * ADs Growth System figma theme — ink surface, ember accent, Geist typography
  */
 
 import { cn } from '@/lib/utils';
@@ -32,7 +32,9 @@ export default function AuthLeftPanel({ className }: AuthLeftPanelProps) {
       {/* Top: logo + back-home (plain <a> for full page load → figma landing) */}
       <div className="relative z-10 flex items-center justify-between">
         <a href="/landing.html" className="flex items-center gap-2" aria-label="ADs Growth System home">
-          <span className="text-[19px] font-medium tracking-tight text-white">stratum.ai</span>
+          <span className="text-[19px] font-medium tracking-tight text-white">
+            ADs Growth <span className="text-primary">System</span>
+          </span>
         </a>
         <a
           href="/landing.html"
@@ -58,7 +60,7 @@ export default function AuthLeftPanel({ className }: AuthLeftPanelProps) {
           Trusted by 500+ growth teams
         </span>
         <blockquote className="text-[28px] leading-tight tracking-tight text-white mt-6 mb-8">
-          &ldquo;Stratum doesn't just manage our ads. It partners with us to grow revenue — with
+          &ldquo;ADs Growth System doesn't just manage our ads. It partners with us to grow revenue — with
           every decision auditable and reversible.&rdquo;
         </blockquote>
         <div className="flex items-center gap-3">

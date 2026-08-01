@@ -6,12 +6,12 @@ export const cdpArticles: DocArticle[] = [
     category: 'CDP',
     title: 'Profiles',
     description:
-      'How Stratum unifies events and identifiers into a single customer record with computed traits and lifecycle stages.',
+      'How ADs Growth System unifies events and identifiers into a single customer record with computed traits and lifecycle stages.',
     readTime: '6 min',
     blocks: [
       {
         type: 'paragraph',
-        text: 'The Customer Data Platform (CDP) is Stratum’s profile and event store. A profile is a unified customer record that combines data from every connected source and touchpoint into one view — the foundation the rest of the platform reasons about.',
+        text: 'The Customer Data Platform (CDP) is ADs Growth System’s profile and event store. A profile is a unified customer record that combines data from every connected source and touchpoint into one view — the foundation the rest of the platform reasons about.',
       },
       { type: 'heading', text: 'What a unified profile contains' },
       {
@@ -30,7 +30,7 @@ export const cdpArticles: DocArticle[] = [
       { type: 'heading', text: 'Computed traits' },
       {
         type: 'paragraph',
-        text: 'Computed traits are derived from a profile’s event history rather than written directly. Stratum maintains them automatically as new events arrive:',
+        text: 'Computed traits are derived from a profile’s event history rather than written directly. ADs Growth System maintains them automatically as new events arrive:',
       },
       {
         type: 'list',
@@ -100,7 +100,7 @@ export const cdpArticles: DocArticle[] = [
       { type: 'heading', text: 'How rules evaluate dynamically' },
       {
         type: 'paragraph',
-        text: 'Each segment carries a rule set evaluated against live profile data. When a new event arrives or a computed trait updates, Stratum re-checks affected profiles and adjusts membership in place — no manual rebuild, no nightly batch you have to wait on.',
+        text: 'Each segment carries a rule set evaluated against live profile data. When a new event arrives or a computed trait updates, ADs Growth System re-checks affected profiles and adjusts membership in place — no manual rebuild, no nightly batch you have to wait on.',
       },
       {
         type: 'callout',
@@ -111,7 +111,7 @@ export const cdpArticles: DocArticle[] = [
       { type: 'heading', text: 'RFM analysis' },
       {
         type: 'paragraph',
-        text: 'For commerce workflows, Stratum supports RFM segmentation, scoring each profile on three axes:',
+        text: 'For commerce workflows, ADs Growth System supports RFM segmentation, scoring each profile on three axes:',
       },
       {
         type: 'list',
@@ -128,7 +128,7 @@ export const cdpArticles: DocArticle[] = [
       { type: 'heading', text: 'Creating a segment' },
       {
         type: 'paragraph',
-        text: 'Create segments in the dashboard or via the API. Post a rule definition and Stratum begins evaluating it against every profile immediately.',
+        text: 'Create segments in the dashboard or via the API. Post a rule definition and ADs Growth System begins evaluating it against every profile immediately.',
       },
       {
         type: 'code',
@@ -152,7 +152,7 @@ export const cdpArticles: DocArticle[] = [
     blocks: [
       {
         type: 'paragraph',
-        text: 'Identity resolution is the process of connecting disparate identifiers to a single customer profile. A person rarely arrives fully identified — they browse anonymously, log in later, and purchase later still. Stratum stitches those moments together so they describe one human, not three.',
+        text: 'Identity resolution is the process of connecting disparate identifiers to a single customer profile. A person rarely arrives fully identified — they browse anonymously, log in later, and purchase later still. ADs Growth System stitches those moments together so they describe one human, not three.',
       },
       { type: 'heading', text: 'The identity graph' },
       {
@@ -181,7 +181,7 @@ export const cdpArticles: DocArticle[] = [
       { type: 'heading', text: 'How deterministic identifiers merge' },
       {
         type: 'paragraph',
-        text: 'Stratum merges on deterministic matches: a shared, exact identifier such as the same email or the same device ID seen on two profiles. When a match is found, the records are merged into one identity graph and their events, traits, and segment memberships are recomputed against the combined history.',
+        text: 'ADs Growth System merges on deterministic matches: a shared, exact identifier such as the same email or the same device ID seen on two profiles. When a match is found, the records are merged into one identity graph and their events, traits, and segment memberships are recomputed against the combined history.',
       },
       { type: 'heading', text: 'What happens on login and on purchase' },
       {
@@ -208,7 +208,7 @@ export const cdpArticles: DocArticle[] = [
     blocks: [
       {
         type: 'paragraph',
-        text: 'Audience Sync pushes a CDP segment to advertising platforms so you can target — or suppress — those exact profiles in your campaigns. Build the audience once in Stratum and let it stay current everywhere it is used.',
+        text: 'Audience Sync pushes a CDP segment to advertising platforms so you can target — or suppress — those exact profiles in your campaigns. Build the audience once in ADs Growth System and let it stay current everywhere it is used.',
       },
       { type: 'heading', text: 'The sync flow' },
       {
@@ -217,7 +217,7 @@ export const cdpArticles: DocArticle[] = [
         items: [
           'Select a segment — choose any behavioral, demographic, or predictive segment from the CDP.',
           'Connect a platform — pick a destination you have already authorized via OAuth.',
-          'Push — Stratum hashes the matchable identifiers and uploads the audience.',
+          'Push — ADs Growth System hashes the matchable identifiers and uploads the audience.',
           'Auto-refresh — configure a refresh cadence so membership changes propagate without a manual re-push.',
         ],
       },
@@ -235,17 +235,17 @@ export const cdpArticles: DocArticle[] = [
         type: 'callout',
         tone: 'warning',
         title: 'Your PII never leaves your control',
-        text: 'Before any audience is uploaded, email and phone identifiers are lower-cased, trimmed, and SHA-256 hashed. Only the hashes are sent to the platform — raw PII never leaves Stratum, and it remains encrypted at rest.',
+        text: 'Before any audience is uploaded, email and phone identifiers are lower-cased, trimmed, and SHA-256 hashed. Only the hashes are sent to the platform — raw PII never leaves ADs Growth System, and it remains encrypted at rest.',
       },
       { type: 'heading', text: 'Match-rate tracking' },
       {
         type: 'paragraph',
-        text: 'After each push, Stratum records the match rate — the share of hashed identifiers the destination could resolve to its own users. Tracking match rate over time tells you whether an audience is large and clean enough to be worth targeting, and surfaces drops caused by stale or low-quality identifiers.',
+        text: 'After each push, ADs Growth System records the match rate — the share of hashed identifiers the destination could resolve to its own users. Tracking match rate over time tells you whether an audience is large and clean enough to be worth targeting, and surfaces drops caused by stale or low-quality identifiers.',
       },
       { type: 'heading', text: 'Syncing via the API' },
       {
         type: 'paragraph',
-        text: 'Trigger a sync programmatically by referencing a segment and a connected destination. Stratum handles hashing and upload, then returns a job you can poll for match-rate results.',
+        text: 'Trigger a sync programmatically by referencing a segment and a connected destination. ADs Growth System handles hashing and upload, then returns a job you can poll for match-rate results.',
       },
       {
         type: 'code',

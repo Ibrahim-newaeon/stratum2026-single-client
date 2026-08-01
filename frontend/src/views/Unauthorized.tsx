@@ -1,7 +1,7 @@
 /**
  * 403 Access Denied
  * Shown when an authenticated user lacks the role/permission for a route.
- * Leans into Stratum's own vocabulary — the trust gate returned BLOCKED.
+ * Leans into ADs Growth System's own vocabulary — the trust gate returned BLOCKED.
  *
  * ProtectedRoute redirects here on role/portal violations, so this page must
  * NOT be auth-gated (that would loop). It is intentionally a sibling route.

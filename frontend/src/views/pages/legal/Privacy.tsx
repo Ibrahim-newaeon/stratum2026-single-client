@@ -149,7 +149,7 @@ export default function Privacy() {
                     Data Protection Officer at:
                   </p>
                   <p className="mt-4 text-body text-muted-foreground leading-relaxed">
-                    <strong className="text-foreground">Email:</strong> privacy@stratum.ai
+                    <strong className="text-foreground">Email:</strong> privacy@adsgrowthsystem.com
                     <br />
                     <strong className="text-foreground">Address:</strong> 548 Market Street, Suite 35000,
                     San Francisco, CA 94104

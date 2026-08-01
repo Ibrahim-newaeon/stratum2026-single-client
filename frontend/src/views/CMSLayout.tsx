@@ -88,7 +88,7 @@ export default function CMSLayout() {
           <PencilSquareIcon className="w-6 h-6 text-foreground" />
         </div>
         <div>
-          <span className="text-lg font-bold text-foreground">Stratum</span>
+          <span className="text-lg font-bold text-foreground">ADs Growth System</span>
           <span className="text-lg font-light text-purple-400 ml-1">CMS</span>
         </div>
       </div>
@@ -282,7 +282,7 @@ export default function CMSLayout() {
             <div className="w-8 h-8 rounded-lg bg-primary flex items-center justify-center">
               <PencilSquareIcon className="w-5 h-5 text-foreground" />
             </div>
-            <span className="font-semibold text-foreground">Stratum CMS</span>
+            <span className="font-semibold text-foreground">ADs Growth System CMS</span>
           </div>
         </header>
 

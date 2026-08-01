@@ -64,7 +64,7 @@ export default function Security() {
         badge="Security"
         badgeIcon={ShieldCheckIcon}
         title="Security at"
-        highlight="Stratum"
+        highlight="ADs Growth System"
         subtitle="Your data security is our top priority. We implement industry-leading security measures to protect your information."
       />
 
@@ -170,8 +170,8 @@ export default function Security() {
                 </p>
                 <p className="text-body text-muted-foreground leading-relaxed">
                   <strong className="text-foreground">Email:</strong>{' '}
-                  <a href="mailto:security@stratum.ai" className="text-secondary hover:underline">
-                    security@stratum.ai
+                  <a href="mailto:security@adsgrowthsystem.com" className="text-secondary hover:underline">
+                    security@adsgrowthsystem.com
                   </a>
                 </p>
               </MktCard>

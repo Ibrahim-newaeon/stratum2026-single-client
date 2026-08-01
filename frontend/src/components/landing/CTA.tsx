@@ -62,7 +62,7 @@ export function CTA() {
               ))}
             </div>
             <span className="text-meta text-muted-foreground">
-              500+ teams partner with Stratum
+              500+ teams partner with ADs Growth System
             </span>
           </div>
 

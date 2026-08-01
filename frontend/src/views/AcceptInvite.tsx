@@ -179,14 +179,7 @@ export default function AcceptInvite() {
       <section className="w-full lg:w-3/5 flex flex-col items-center justify-center p-6 lg:p-12 relative">
         {/* Mobile logo */}
         <div className="lg:hidden mb-8">
-          <img
-            src="/images/logo.png"
-            alt="ADs Growth System"
-            className="h-8"
-            
-            loading="lazy"
-            decoding="async"
-          />
+          <span className="font-display font-semibold text-lg tracking-tight text-foreground">ADs Growth <span className="text-primary">System</span></span>
         </div>
 
         <div className="w-full max-w-md bg-card border border-border rounded-xl p-8 shadow-xl">

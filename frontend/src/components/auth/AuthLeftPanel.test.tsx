@@ -2,7 +2,7 @@
  * AuthLeftPanel Component Tests
  *
  * Tests for the shared left panel on Login/Signup pages —
- * Stratum figma theme (testimonial, ember accent, status marker).
+ * ADs Growth System figma theme (testimonial, ember accent, status marker).
  */
 
 import { describe, it, expect } from 'vitest';
@@ -29,13 +29,13 @@ describe('AuthLeftPanel', () => {
     expect(container.firstChild).toBeInTheDocument();
   });
 
-  it('renders the stratum.ai wordmark linking to the figma landing', () => {
+  it('renders the ADs Growth System wordmark linking to the figma landing', () => {
     render(<AuthLeftPanel />);
-    const wordmark = screen.getAllByText('stratum.ai')[0];
+    const wordmark = screen.getAllByLabelText('ADs Growth System home')[0];
     expect(wordmark).toBeInTheDocument();
     // Plain <a> (not React Router Link) so the browser does a full page
     // load and lands on the figma marketing page, not the SPA route.
-    expect(wordmark.closest('a')).toHaveAttribute('href', '/landing.html');
+    expect(wordmark.closest('a') ?? wordmark).toHaveAttribute('href', '/landing.html');
   });
 
   it('renders the testimonial', () => {

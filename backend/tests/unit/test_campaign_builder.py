@@ -1089,10 +1089,19 @@ class TestRejectCampaignDraft:
 
 
 class TestPublishCampaignDraft:
-    """Tests for POST /campaign-drafts/{draft_id}/publish"""
+    """Tests for POST /campaign-drafts/{draft_id}/publish
+
+    The endpoint validates fully and then refuses with 501: there is no
+    platform publish adapter (STRAT-CB-001 P0). It previously marked drafts
+    PUBLISHED and wrote a SUCCESS log with no network call — the assertions
+    below deliberately invert that. Behaviour once an adapter lands is
+    specified in docs/architecture/campaign-publish-plan.md.
+    """
 
     @pytest.mark.asyncio
-    async def test_publish_approved_draft(self):
+    async def test_publish_approved_draft_refuses_and_does_not_publish(self):
+        from fastapi import HTTPException
+
         from app.api.v1.endpoints.campaign_builder import publish_campaign_draft
 
         acc = _make_ad_account(daily_budget_cap=10000)
@@ -1103,13 +1112,15 @@ class TestPublishCampaignDraft:
         )
         db = _make_db()
         db.execute.return_value = _make_scalar_result(draft)
-        bg = MagicMock()
 
-        resp = await publish_campaign_draft(_make_request(), draft.id, bg, db)
-        assert resp.success is True
-        assert draft.status == DraftStatus.PUBLISHED
-        # platform_campaign_id is set by background task after platform API returns real ID
-        assert draft.published_at is not None
+        with pytest.raises(HTTPException) as exc_info:
+            await publish_campaign_draft(draft.id, db)
+
+        assert exc_info.value.status_code == 501
+        # The draft stays exactly as it was — still approved, still publishable.
+        assert draft.status == DraftStatus.APPROVED
+        assert draft.published_at is None
+        assert draft.platform_campaign_id is None
 
     @pytest.mark.asyncio
     async def test_publish_non_approved_fails(self):
@@ -1120,10 +1131,9 @@ class TestPublishCampaignDraft:
         draft = _make_draft(status=DraftStatus.SUBMITTED)
         db = _make_db()
         db.execute.return_value = _make_scalar_result(draft)
-        bg = MagicMock()
 
         with pytest.raises(HTTPException) as exc_info:
-            await publish_campaign_draft(_make_request(), draft.id, bg, db)
+            await publish_campaign_draft(draft.id, db)
         assert exc_info.value.status_code == 400
         assert "Must be approved" in exc_info.value.detail
 
@@ -1141,15 +1151,19 @@ class TestPublishCampaignDraft:
         )
         db = _make_db()
         db.execute.return_value = _make_scalar_result(draft)
-        bg = MagicMock()
 
         with pytest.raises(HTTPException) as exc_info:
-            await publish_campaign_draft(_make_request(), draft.id, bg, db)
+            await publish_campaign_draft(draft.id, db)
+        # Budget guardrail must still win over the 501 — validation runs first,
+        # so a caller learns their budget is wrong rather than only that
+        # publishing is unavailable.
         assert exc_info.value.status_code == 400
         assert "exceeds" in exc_info.value.detail
 
     @pytest.mark.asyncio
-    async def test_publish_no_budget_cap_passes(self):
+    async def test_publish_no_budget_cap_reaches_the_501(self):
+        from fastapi import HTTPException
+
         from app.api.v1.endpoints.campaign_builder import publish_campaign_draft
 
         acc = _make_ad_account(daily_budget_cap=None)
@@ -1160,11 +1174,11 @@ class TestPublishCampaignDraft:
         )
         db = _make_db()
         db.execute.return_value = _make_scalar_result(draft)
-        bg = MagicMock()
 
-        resp = await publish_campaign_draft(_make_request(), draft.id, bg, db)
-        assert resp.success is True
-        assert draft.status == DraftStatus.PUBLISHED
+        with pytest.raises(HTTPException) as exc_info:
+            await publish_campaign_draft(draft.id, db)
+        assert exc_info.value.status_code == 501
+        assert draft.status == DraftStatus.APPROVED
 
     @pytest.mark.asyncio
     async def test_publish_not_found(self):
@@ -1174,25 +1188,30 @@ class TestPublishCampaignDraft:
 
         db = _make_db()
         db.execute.return_value = _make_scalar_result(None)
-        bg = MagicMock()
 
         with pytest.raises(HTTPException) as exc_info:
-            await publish_campaign_draft(_make_request(), uuid4(), bg, db)
+            await publish_campaign_draft(uuid4(), db)
         assert exc_info.value.status_code == 404
 
     @pytest.mark.asyncio
-    async def test_publish_creates_log_entry(self):
+    async def test_publish_writes_no_log_entry(self):
+        """Inverted from the original: nothing is attempted, so nothing is logged.
+
+        CampaignPublishLog is the record of what was sent to a platform. A row
+        written when no request was made is worse than no row at all.
+        """
+        from fastapi import HTTPException
+
         from app.api.v1.endpoints.campaign_builder import publish_campaign_draft
 
         acc = _make_ad_account(daily_budget_cap=None)
         draft = _make_draft(status=DraftStatus.APPROVED, ad_account=acc)
         db = _make_db()
         db.execute.return_value = _make_scalar_result(draft)
-        bg = MagicMock()
 
-        await publish_campaign_draft(_make_request(), draft.id, bg, db)
-        # db.add should be called for the publish log
-        assert db.add.call_count >= 1
+        with pytest.raises(HTTPException):
+            await publish_campaign_draft(draft.id, db)
+        db.add.assert_not_called()
 
 
 # =============================================================================
@@ -1382,7 +1401,24 @@ class TestSyncAdAccountsTask:
 
         assert result["status"] == "skipped"
 
-    def test_sync_with_active_connection(self):
+    @staticmethod
+    def _patched_service(accounts, side_effect=None):
+        """Patch the provider seam sync_ad_accounts now goes through.
+
+        The task used to invent two accounts inline, so these tests only had to
+        patch SessionLocal. It now calls the real OAuthService.fetch_ad_accounts
+        (implemented for all four platforms), so the provider is the thing that
+        must be stubbed — and what comes back is what gets written.
+        """
+        service = MagicMock()
+        service.decrypt_token.return_value = "decrypted-token"
+        service.fetch_ad_accounts = AsyncMock(
+            return_value=accounts, side_effect=side_effect
+        )
+        return service
+
+    def test_sync_writes_exactly_what_the_provider_returns(self):
+        from app.services.oauth.base import AdAccountInfo
         from app.workers.campaign_builder_tasks import sync_ad_accounts
 
         conn = MagicMock()
@@ -1391,18 +1427,76 @@ class TestSyncAdAccountsTask:
 
         mock_db = MagicMock()
         # First call returns connection, subsequent calls return None (no existing accounts)
-        mock_db.execute.return_value.scalar_one_or_none.side_effect = [conn, None, None]
+        mock_db.execute.return_value.scalar_one_or_none.side_effect = [
+            conn,
+            None,
+            None,
+            None,
+        ]
 
-        with patch("app.workers.campaign_builder_tasks.SessionLocal") as mock_session:
+        accounts = [
+            AdAccountInfo(account_id="act_111", name="Real Account One"),
+            AdAccountInfo(account_id="act_222", name="Real Account Two"),
+            AdAccountInfo(account_id="act_333", name="Real Account Three"),
+        ]
+
+        with patch(
+            "app.workers.campaign_builder_tasks.SessionLocal"
+        ) as mock_session, patch(
+            "app.workers.campaign_builder_tasks._resolve_platform_credentials",
+            new=AsyncMock(return_value=None),
+        ), patch(
+            "app.workers.campaign_builder_tasks.get_oauth_service",
+            return_value=self._patched_service(accounts),
+        ):
             mock_session.return_value.__enter__ = MagicMock(return_value=mock_db)
             mock_session.return_value.__exit__ = MagicMock(return_value=False)
             result = sync_ad_accounts(platform="meta")
 
         assert result["status"] == "success"
-        assert result["synced_count"] == 2  # Mock returns 2 accounts
+        # Three, because the provider returned three. The old assertion was
+        # `== 2` with the comment "Mock returns 2 accounts" — it was pinning the
+        # hardcoded fixture, so it would have passed no matter what the platform
+        # actually held.
+        assert result["synced_count"] == 3
+        written = [c.args[0] for c in mock_db.add.call_args_list]
+        assert [a.platform_account_id for a in written] == [
+            "act_111",
+            "act_222",
+            "act_333",
+        ]
         mock_db.commit.assert_called()
 
+    def test_sync_invents_nothing_when_provider_returns_nothing(self):
+        """An account with no ad accounts must end up with no AdAccount rows."""
+        from app.workers.campaign_builder_tasks import sync_ad_accounts
+
+        conn = MagicMock()
+        conn.id = uuid4()
+        conn.status = ConnectionStatus.CONNECTED
+
+        mock_db = MagicMock()
+        mock_db.execute.return_value.scalar_one_or_none.side_effect = [conn]
+
+        with patch(
+            "app.workers.campaign_builder_tasks.SessionLocal"
+        ) as mock_session, patch(
+            "app.workers.campaign_builder_tasks._resolve_platform_credentials",
+            new=AsyncMock(return_value=None),
+        ), patch(
+            "app.workers.campaign_builder_tasks.get_oauth_service",
+            return_value=self._patched_service([]),
+        ):
+            mock_session.return_value.__enter__ = MagicMock(return_value=mock_db)
+            mock_session.return_value.__exit__ = MagicMock(return_value=False)
+            result = sync_ad_accounts(platform="meta")
+
+        assert result["status"] == "success"
+        assert result["synced_count"] == 0
+        mock_db.add.assert_not_called()
+
     def test_sync_updates_existing_accounts(self):
+        from app.services.oauth.base import AdAccountInfo
         from app.workers.campaign_builder_tasks import sync_ad_accounts
 
         conn = MagicMock()
@@ -1418,14 +1512,55 @@ class TestSyncAdAccountsTask:
             existing_account,
         ]
 
-        with patch("app.workers.campaign_builder_tasks.SessionLocal") as mock_session:
+        accounts = [
+            AdAccountInfo(account_id="act_111", name="Renamed On Platform"),
+            AdAccountInfo(account_id="act_222", name="Also Renamed"),
+        ]
+
+        with patch(
+            "app.workers.campaign_builder_tasks.SessionLocal"
+        ) as mock_session, patch(
+            "app.workers.campaign_builder_tasks._resolve_platform_credentials",
+            new=AsyncMock(return_value=None),
+        ), patch(
+            "app.workers.campaign_builder_tasks.get_oauth_service",
+            return_value=self._patched_service(accounts),
+        ):
             mock_session.return_value.__enter__ = MagicMock(return_value=mock_db)
             mock_session.return_value.__exit__ = MagicMock(return_value=False)
             result = sync_ad_accounts(platform="meta")
 
         assert result["status"] == "success"
-        # Existing accounts should be updated
-        assert existing_account.name is not None
+        # The platform's name wins on update — the old assertion was only
+        # `is not None`, which a MagicMock satisfies without any assignment.
+        assert existing_account.name == "Also Renamed"
+        assert existing_account.sync_error is None
+        mock_db.add.assert_not_called()
+
+    def test_sync_without_access_token_does_not_call_provider(self):
+        from app.workers.campaign_builder_tasks import sync_ad_accounts
+
+        conn = MagicMock()
+        conn.id = uuid4()
+        conn.status = ConnectionStatus.CONNECTED
+        conn.access_token_encrypted = None
+
+        mock_db = MagicMock()
+        mock_db.execute.return_value.scalar_one_or_none.side_effect = [conn]
+
+        with patch(
+            "app.workers.campaign_builder_tasks.SessionLocal"
+        ) as mock_session, patch(
+            "app.workers.campaign_builder_tasks.get_oauth_service"
+        ) as mock_get_service:
+            mock_session.return_value.__enter__ = MagicMock(return_value=mock_db)
+            mock_session.return_value.__exit__ = MagicMock(return_value=False)
+            result = sync_ad_accounts(platform="meta")
+
+        assert result["status"] == "error"
+        assert result["reason"] == "no access token"
+        mock_get_service.assert_not_called()
+        mock_db.add.assert_not_called()
 
 
 class TestRefreshTokensTask:
@@ -1548,7 +1683,14 @@ class TestPublishCampaignTask:
 
         assert result["status"] == "skipped"
 
-    def test_publish_success(self):
+    def test_publish_with_healthy_connection_still_fails_no_adapter(self):
+        """Everything the task needs is present, and it still must not succeed.
+
+        Renamed from test_publish_success. The old assertions — status success,
+        draft PUBLISHED, log SUCCESS — were satisfied by a mock that invented a
+        campaign id without a network call, so the test passed precisely
+        because the production code was lying. See STRAT-CB-001 P0.
+        """
         from app.workers.campaign_builder_tasks import publish_campaign
 
         draft_id = uuid4()
@@ -1558,8 +1700,10 @@ class TestPublishCampaignTask:
         draft.platform = AdPlatform.META
         draft.ad_account_id = uuid4()
         draft.draft_json = {"campaign": {}}
+        draft.platform_campaign_id = None
 
         publish_log = MagicMock()
+        publish_log.platform_campaign_id = None
 
         ad_account = MagicMock()
         connection = MagicMock()
@@ -1580,9 +1724,11 @@ class TestPublishCampaignTask:
                 draft_id=str(draft_id), publish_log_id=str(uuid4())
             )
 
-        assert result["status"] == "success"
-        assert draft.status == DraftStatus.PUBLISHED
-        assert publish_log.result_status == PublishResult.SUCCESS
+        assert result["status"] == "error"
+        assert draft.status == DraftStatus.FAILED
+        assert publish_log.result_status == PublishResult.FAILURE
+        assert draft.platform_campaign_id is None
+        assert publish_log.platform_campaign_id is None
 
 
 class TestPublishRetryTask:
@@ -1621,26 +1767,122 @@ class TestPublishRetryTask:
 class TestConnectorHealthCheckTask:
     """Tests for the connector_health_check Celery task."""
 
-    def test_health_check_healthy_connections(self):
+    @staticmethod
+    def _run(conn, probe_side_effect=None):
+        """Run the task against one connection with the provider seam stubbed.
+
+        The probe is a real authenticated call (fetch_ad_accounts), so the
+        provider is what must be stubbed. The old test patched only
+        SessionLocal and asserted healthy is True — which the hardcoded
+        `healthy = True` satisfied regardless of any platform's actual state.
+        """
         from app.workers.campaign_builder_tasks import connector_health_check
 
-        conn = MagicMock()
-        conn.id = uuid4()
-        conn.platform = AdPlatform.META
-        conn.error_count = 0
+        service = MagicMock()
+        service.decrypt_token.return_value = "decrypted-token"
+        service.fetch_ad_accounts = AsyncMock(
+            return_value=[], side_effect=probe_side_effect
+        )
 
         mock_db = MagicMock()
         mock_db.execute.return_value.scalars.return_value.all.return_value = [conn]
 
-        with patch("app.workers.campaign_builder_tasks.SessionLocal") as mock_session:
+        with patch(
+            "app.workers.campaign_builder_tasks.SessionLocal"
+        ) as mock_session, patch(
+            "app.workers.campaign_builder_tasks._resolve_platform_credentials",
+            new=AsyncMock(return_value=None),
+        ), patch(
+            "app.workers.campaign_builder_tasks.get_oauth_service",
+            return_value=service,
+        ):
             mock_session.return_value.__enter__ = MagicMock(return_value=mock_db)
             mock_session.return_value.__exit__ = MagicMock(return_value=False)
-            result = connector_health_check()
+            return connector_health_check()
 
-        assert result["status"] == "completed"
-        assert len(result["results"]) == 1
+    @staticmethod
+    def _conn(error_count=0, last_error=None, token="enc-token"):
+        conn = MagicMock()
+        conn.id = uuid4()
+        conn.platform = AdPlatform.META
+        conn.status = ConnectionStatus.CONNECTED
+        conn.error_count = error_count
+        conn.last_error = last_error
+        conn.access_token_encrypted = token
+        return conn
+
+    def test_successful_probe_marks_healthy_and_clears_errors(self):
+        conn = self._conn(error_count=2, last_error="previous failure")
+
+        result = self._run(conn)
+
         assert result["results"][0]["healthy"] is True
+        # Clearing is now evidence-backed: it happens only after the provider
+        # actually answered.
         assert conn.error_count == 0
+        assert conn.last_error is None
+
+    def test_failed_probe_marks_unhealthy_and_records_the_error(self):
+        conn = self._conn()
+
+        result = self._run(conn, probe_side_effect=RuntimeError("token expired"))
+
+        assert result["results"][0]["healthy"] is False
+        assert conn.error_count == 1
+        assert "token expired" in conn.last_error
+
+    def test_failed_probe_does_not_erase_prior_error_state(self):
+        """The regression that mattered most.
+
+        The old task cleared last_error and error_count unconditionally, every
+        30 minutes, so a connection that was continuously broken had the
+        evidence of its own breakage wiped on each beat and never accumulated
+        toward ERROR.
+        """
+        conn = self._conn(error_count=1, last_error="earlier failure")
+
+        self._run(conn, probe_side_effect=RuntimeError("still broken"))
+
+        assert conn.error_count == 2, "error state was reset instead of accumulating"
+        assert conn.last_error != "earlier failure"
+        assert conn.last_error is not None
+
+    def test_threshold_failures_mark_connection_error(self):
+        """The old else branch was unreachable, so ERROR could never be set."""
+        from app.workers.campaign_builder_tasks import UNHEALTHY_PROBE_THRESHOLD
+
+        conn = self._conn(error_count=UNHEALTHY_PROBE_THRESHOLD - 1)
+
+        self._run(conn, probe_side_effect=RuntimeError("down"))
+
+        assert conn.error_count == UNHEALTHY_PROBE_THRESHOLD
+        assert conn.status == ConnectionStatus.ERROR
+
+    def test_non_socket_errors_count_as_unhealthy(self):
+        """Expired tokens surface as provider errors, not OSError subclasses.
+
+        The previous except clause caught only (ConnectionError, TimeoutError,
+        OSError), so the failure mode that matters most here would have
+        propagated rather than being recorded.
+        """
+        conn = self._conn()
+
+        class OAuthProviderError(Exception):
+            pass
+
+        result = self._run(conn, probe_side_effect=OAuthProviderError("invalid_grant"))
+
+        assert result["results"][0]["healthy"] is False
+        assert "invalid_grant" in conn.last_error
+
+    def test_missing_token_is_unhealthy_and_never_probes(self):
+        conn = self._conn(error_count=1, last_error="earlier failure", token=None)
+
+        result = self._run(conn)
+
+        assert result["results"][0]["healthy"] is False
+        assert conn.error_count == 2
+        assert "re-authorization" in conn.last_error
 
     def test_health_check_no_connections(self):
         from app.workers.campaign_builder_tasks import connector_health_check
@@ -1684,9 +1926,16 @@ class TestEdgeCases:
                 AdPlatform.SNAPCHAT,
             ]
 
+    # The three budget-boundary cases below assert the guardrail *lets the
+    # request through*. Before STRAT-CB-001 P0 "through" meant a 200; it now
+    # means reaching the 501 refusal at the end of the handler. Either way the
+    # thing under test is the same: these budgets are not rejected as over cap.
+
     @pytest.mark.asyncio
     async def test_publish_budget_zero_amount_passes(self):
         """Zero budget should pass since 0 <= any cap."""
+        from fastapi import HTTPException
+
         from app.api.v1.endpoints.campaign_builder import publish_campaign_draft
 
         acc = _make_ad_account(daily_budget_cap=5000)
@@ -1697,14 +1946,16 @@ class TestEdgeCases:
         )
         db = _make_db()
         db.execute.return_value = _make_scalar_result(draft)
-        bg = MagicMock()
 
-        resp = await publish_campaign_draft(_make_request(), draft.id, bg, db)
-        assert resp.success is True
+        with pytest.raises(HTTPException) as exc_info:
+            await publish_campaign_draft(draft.id, db)
+        assert exc_info.value.status_code == 501
 
     @pytest.mark.asyncio
     async def test_publish_no_budget_in_draft_json(self):
         """If draft_json has no budget field, budget check should pass (amount=0)."""
+        from fastapi import HTTPException
+
         from app.api.v1.endpoints.campaign_builder import publish_campaign_draft
 
         acc = _make_ad_account(daily_budget_cap=5000)
@@ -1715,14 +1966,16 @@ class TestEdgeCases:
         )
         db = _make_db()
         db.execute.return_value = _make_scalar_result(draft)
-        bg = MagicMock()
 
-        resp = await publish_campaign_draft(_make_request(), draft.id, bg, db)
-        assert resp.success is True
+        with pytest.raises(HTTPException) as exc_info:
+            await publish_campaign_draft(draft.id, db)
+        assert exc_info.value.status_code == 501
 
     @pytest.mark.asyncio
     async def test_publish_budget_exactly_at_cap(self):
         """Budget exactly equal to cap should pass (> not >=)."""
+        from fastapi import HTTPException
+
         from app.api.v1.endpoints.campaign_builder import publish_campaign_draft
 
         acc = _make_ad_account(daily_budget_cap=5000)
@@ -1733,10 +1986,10 @@ class TestEdgeCases:
         )
         db = _make_db()
         db.execute.return_value = _make_scalar_result(draft)
-        bg = MagicMock()
 
-        resp = await publish_campaign_draft(_make_request(), draft.id, bg, db)
-        assert resp.success is True
+        with pytest.raises(HTTPException) as exc_info:
+            await publish_campaign_draft(draft.id, db)
+        assert exc_info.value.status_code == 501
 
     @pytest.mark.asyncio
     async def test_disconnect_clears_tokens(self):

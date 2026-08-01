@@ -40,7 +40,7 @@ const testimonials = [
   },
   {
     quote:
-      'We replaced Segment + Looker + a custom ML pipeline with Stratum. One platform, 6 AI models built-in. Implementation took 2 days.',
+      'We replaced Segment + Looker + a custom ML pipeline with ADs Growth System. One platform, 6 AI models built-in. Implementation took 2 days.',
     author: 'David Kim',
     role: 'CTO',
     company: 'Growth Startup',
