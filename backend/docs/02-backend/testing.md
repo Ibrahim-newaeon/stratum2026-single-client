@@ -69,6 +69,53 @@ pytest -m "not slow"
 pytest -m integration
 ```
 
+### Integration tests outside CI
+
+CI runs Postgres and Redis as service containers on `localhost`, so its env
+block only sets `REDIS_URL` and everything works. Running the same suite
+anywhere else — Docker network, remote host, non-default ports — needs two
+extra variables, because Celery does **not** read `REDIS_URL`:
+
+```python
+# app/core/config.py
+celery_broker_url: str = Field(default="redis://localhost:6379/1")
+celery_result_backend: str = Field(default="redis://localhost:6379/2")
+```
+
+Miss them and tests that enqueue work fail with
+`redis.exceptions.ConnectionError: Error 111 connecting to localhost:6379`,
+followed by `Retry limit exceeded while trying to reconnect to the Celery
+result store backend`. That reads like a broken test, but it is only the
+harness pointing Celery at the wrong host — it cost nine phantom failures in
+`test_competitors_api` once.
+
+Integration tests also need CI's two asyncio flags. The FastAPI test app uses
+Starlette `BaseHTTPMiddleware` (`AuthContextMiddleware`), which under
+pytest-asyncio's default per-test loop raises "Future attached to a different
+loop" / "Event loop is closed" on every request that traverses auth. They are
+passed on the command line rather than set in `pytest.ini` so the unit suite
+keeps its per-test loops.
+
+```bash
+export TEST_DATABASE_URL=postgresql+asyncpg://test:test@<host>:5432/stratum_test
+export TEST_DATABASE_URL_SYNC=postgresql://test:test@<host>:5432/stratum_test
+export REDIS_URL=redis://<host>:6379/0
+export CELERY_BROKER_URL=redis://<host>:6379/1      # NOT covered by REDIS_URL
+export CELERY_RESULT_BACKEND=redis://<host>:6379/2  # NOT covered by REDIS_URL
+export SECRET_KEY=test-secret-key-that-is-at-least-32-chars-long
+export JWT_SECRET_KEY=test-jwt-secret-that-is-at-least-32-chars
+export PII_ENCRYPTION_KEY=dGVzdC1lbmNyeXB0aW9uLWtleS0zMmJ5dGVz
+export APP_ENV=test PYTHONPATH=.
+
+pytest tests/integration -m integration \
+  -o asyncio_default_test_loop_scope=session \
+  -o asyncio_default_fixture_loop_scope=session
+```
+
+Postgres must be the `pgvector/pgvector:pg16` image, not plain `postgres:16` —
+the harness runs the real Alembic chain, which includes `CREATE EXTENSION
+vector`.
+
 ### Coverage
 
 ```bash
