@@ -45,11 +45,11 @@
         "hooks": [
           {
             "type": "command",
-            "command": ".claude/hooks/format-on-write.sh"
+            "command": "$CLAUDE_PROJECT_DIR/.claude/hooks/format-on-write.sh"
           },
           {
             "type": "command",
-            "command": ".claude/hooks/rule-check.sh"
+            "command": "$CLAUDE_PROJECT_DIR/.claude/hooks/rule-check.sh"
           }
         ]
       }
@@ -60,7 +60,7 @@
         "hooks": [
           {
             "type": "command",
-            "command": ".claude/hooks/block-dangerous-bash.sh"
+            "command": "$CLAUDE_PROJECT_DIR/.claude/hooks/block-dangerous-bash.sh"
           }
         ]
       }
