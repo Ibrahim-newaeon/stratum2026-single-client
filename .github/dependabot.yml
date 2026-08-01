@@ -27,6 +27,22 @@ updates:
       # REMOVE THIS ENTRY when the project moves to Python 3.12.
       - dependency-name: "scipy"
         versions: [">=1.18.0"]
+      # boto3 >=1.43.58 makes the requirement set unresolvable. pip walks the
+      # botocore/s3transfer/yarl version space and gives up:
+      #   error: resolution-too-deep
+      #   × Dependency resolution exceeded maximum depth
+      # `pip install -r requirements.txt` then fails outright, which breaks
+      # every backend CI job — not a subtle regression. Bisected in a
+      # python:3.11 container: the baseline resolves, and the other four
+      # floor bumps in the same batch (#41 #43 #44) and the python-minor
+      # group (#38) each resolve; only boto3 fails. See PR #42, left open
+      # rather than merged.
+      # Counter-intuitive but reproduced twice: RAISING the floor widens the
+      # space pip must explore rather than narrowing it.
+      # REMOVE THIS ENTRY when the pin can be re-tested against a resolver
+      # that handles it (or once boto3/botocore constraints loosen).
+      - dependency-name: "boto3"
+        versions: [">=1.43.58"]
     groups:
       python-minor:
         patterns:
