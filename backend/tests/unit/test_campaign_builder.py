@@ -1767,26 +1767,122 @@ class TestPublishRetryTask:
 class TestConnectorHealthCheckTask:
     """Tests for the connector_health_check Celery task."""
 
-    def test_health_check_healthy_connections(self):
+    @staticmethod
+    def _run(conn, probe_side_effect=None):
+        """Run the task against one connection with the provider seam stubbed.
+
+        The probe is a real authenticated call (fetch_ad_accounts), so the
+        provider is what must be stubbed. The old test patched only
+        SessionLocal and asserted healthy is True — which the hardcoded
+        `healthy = True` satisfied regardless of any platform's actual state.
+        """
         from app.workers.campaign_builder_tasks import connector_health_check
 
-        conn = MagicMock()
-        conn.id = uuid4()
-        conn.platform = AdPlatform.META
-        conn.error_count = 0
+        service = MagicMock()
+        service.decrypt_token.return_value = "decrypted-token"
+        service.fetch_ad_accounts = AsyncMock(
+            return_value=[], side_effect=probe_side_effect
+        )
 
         mock_db = MagicMock()
         mock_db.execute.return_value.scalars.return_value.all.return_value = [conn]
 
-        with patch("app.workers.campaign_builder_tasks.SessionLocal") as mock_session:
+        with patch(
+            "app.workers.campaign_builder_tasks.SessionLocal"
+        ) as mock_session, patch(
+            "app.workers.campaign_builder_tasks._resolve_platform_credentials",
+            new=AsyncMock(return_value=None),
+        ), patch(
+            "app.workers.campaign_builder_tasks.get_oauth_service",
+            return_value=service,
+        ):
             mock_session.return_value.__enter__ = MagicMock(return_value=mock_db)
             mock_session.return_value.__exit__ = MagicMock(return_value=False)
-            result = connector_health_check()
+            return connector_health_check()
 
-        assert result["status"] == "completed"
-        assert len(result["results"]) == 1
+    @staticmethod
+    def _conn(error_count=0, last_error=None, token="enc-token"):
+        conn = MagicMock()
+        conn.id = uuid4()
+        conn.platform = AdPlatform.META
+        conn.status = ConnectionStatus.CONNECTED
+        conn.error_count = error_count
+        conn.last_error = last_error
+        conn.access_token_encrypted = token
+        return conn
+
+    def test_successful_probe_marks_healthy_and_clears_errors(self):
+        conn = self._conn(error_count=2, last_error="previous failure")
+
+        result = self._run(conn)
+
         assert result["results"][0]["healthy"] is True
+        # Clearing is now evidence-backed: it happens only after the provider
+        # actually answered.
         assert conn.error_count == 0
+        assert conn.last_error is None
+
+    def test_failed_probe_marks_unhealthy_and_records_the_error(self):
+        conn = self._conn()
+
+        result = self._run(conn, probe_side_effect=RuntimeError("token expired"))
+
+        assert result["results"][0]["healthy"] is False
+        assert conn.error_count == 1
+        assert "token expired" in conn.last_error
+
+    def test_failed_probe_does_not_erase_prior_error_state(self):
+        """The regression that mattered most.
+
+        The old task cleared last_error and error_count unconditionally, every
+        30 minutes, so a connection that was continuously broken had the
+        evidence of its own breakage wiped on each beat and never accumulated
+        toward ERROR.
+        """
+        conn = self._conn(error_count=1, last_error="earlier failure")
+
+        self._run(conn, probe_side_effect=RuntimeError("still broken"))
+
+        assert conn.error_count == 2, "error state was reset instead of accumulating"
+        assert conn.last_error != "earlier failure"
+        assert conn.last_error is not None
+
+    def test_threshold_failures_mark_connection_error(self):
+        """The old else branch was unreachable, so ERROR could never be set."""
+        from app.workers.campaign_builder_tasks import UNHEALTHY_PROBE_THRESHOLD
+
+        conn = self._conn(error_count=UNHEALTHY_PROBE_THRESHOLD - 1)
+
+        self._run(conn, probe_side_effect=RuntimeError("down"))
+
+        assert conn.error_count == UNHEALTHY_PROBE_THRESHOLD
+        assert conn.status == ConnectionStatus.ERROR
+
+    def test_non_socket_errors_count_as_unhealthy(self):
+        """Expired tokens surface as provider errors, not OSError subclasses.
+
+        The previous except clause caught only (ConnectionError, TimeoutError,
+        OSError), so the failure mode that matters most here would have
+        propagated rather than being recorded.
+        """
+        conn = self._conn()
+
+        class OAuthProviderError(Exception):
+            pass
+
+        result = self._run(conn, probe_side_effect=OAuthProviderError("invalid_grant"))
+
+        assert result["results"][0]["healthy"] is False
+        assert "invalid_grant" in conn.last_error
+
+    def test_missing_token_is_unhealthy_and_never_probes(self):
+        conn = self._conn(error_count=1, last_error="earlier failure", token=None)
+
+        result = self._run(conn)
+
+        assert result["results"][0]["healthy"] is False
+        assert conn.error_count == 2
+        assert "re-authorization" in conn.last_error
 
     def test_health_check_no_connections(self):
         from app.workers.campaign_builder_tasks import connector_health_check
