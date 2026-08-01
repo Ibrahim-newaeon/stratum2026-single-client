@@ -54,13 +54,6 @@ export default function ConsoleLayout() {
 
   const brand = (
     <div className="flex items-center gap-3">
-      <img
-        src="/images/logo.png"
-        alt="ADs Growth System"
-        className="h-7"
-        loading="lazy"
-        decoding="async"
-      />
       <span
         className={cn(
           'text-[10px] font-mono uppercase tracking-[0.12em]',
