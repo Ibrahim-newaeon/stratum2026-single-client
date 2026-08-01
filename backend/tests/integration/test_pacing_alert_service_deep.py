@@ -903,7 +903,10 @@ class TestEmailNotification:
         assert ok is True
         assert email_service._send_email.call_count == 2
         kwargs = email_service._create_message.call_args.kwargs
-        assert kwargs["subject"] == f"[ADs Growth System] CRITICAL Pacing Alert: {alert.title}"
+        assert (
+            kwargs["subject"]
+            == f"[ADs Growth System] CRITICAL Pacing Alert: {alert.title}"
+        )
         html = kwargs["html_content"]
         assert "MTD Actual" in html
         assert "MTD Expected" in html
