@@ -472,7 +472,9 @@ If you didn't request this code, you can safely ignore this email.
             urgency = "Final payment notice"
             action_text = "Your subscription will be suspended if payment is not received. Please update your payment method now."
 
-        subject = "Action Required: Payment failed for your ADs Growth System subscription"
+        subject = (
+            "Action Required: Payment failed for your ADs Growth System subscription"
+        )
 
         amount_section = ""
         if amount_due:
