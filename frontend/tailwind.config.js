@@ -139,19 +139,12 @@ export default {
         '2xl': '25px', // XML <card border-radius="25px"> (was 18px); sm–xl retained, no XML source
       },
       fontFamily: {
-        // XML recommended web stacks (headings serif / body sans)
-        sans: ['Helvetica Neue', 'Helvetica', 'Arial', 'Segoe UI', 'sans-serif'],
-        display: ['Didot', 'Bodoni MT', 'Baskerville', 'Libre Baskerville', 'Georgia', 'serif'],
-        // Retained — the XML defines no monospace; dashboard tabular/status UI requires one
-        mono: [
-          'Geist Mono',
-          'ui-monospace',
-          'SFMono-Regular',
-          'Menlo',
-          'Monaco',
-          'Consolas',
-          'monospace',
-        ],
+        // superads.xml typography — all three GROUNDED (extracted, not inferred)
+        sans: ['Inter', 'system-ui', '-apple-system', 'Segoe UI', 'sans-serif'],
+        display: ['Space Grotesk', 'Inter', 'sans-serif'],
+        mono: ['JetBrains Mono', 'SF Mono', 'ui-monospace', 'SFMono-Regular', 'Menlo', 'monospace'],
+        // font-sans-secondary — Arabic/RTL surfaces
+        'sans-arabic': ['Noto Sans Arabic', 'Segoe UI Arabic', 'Tahoma', 'sans-serif'],
       },
       fontSize: {
         micro: ['10px', { lineHeight: '1.4', fontWeight: '400' }],

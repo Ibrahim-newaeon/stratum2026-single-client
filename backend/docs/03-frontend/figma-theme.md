@@ -1,41 +1,73 @@
-# Figma Theme — Stratum AI
+# SuperAds Theme — Stratum AI
 
-The dashboard, auth flow, and marketing surfaces all read from the figma
-theme system, designed dual-mode with semantic CSS variables in
-`frontend/src/index.css` and Tailwind aliases in
-`frontend/tailwind.config.js`.
+The dashboard, auth flow, and marketing surfaces all read from the SuperAds
+theme, dual-mode with semantic CSS variables in `frontend/src/index.css` and
+Tailwind aliases in `frontend/tailwind.config.js`.
+
+Source of truth: `design-system-template/themes/superads.xml`
+(`lib/theme/themes/superads.ts`).
+
+> **Grounding.** Fonts, accents, gradients and the light/dark structure are
+> **extracted** from the real source. Surfaces, radii, spacing, shadows and
+> motion timings are **inferred** — the upstream `shared/styles.css` was never
+> provided. Treat the surface hexes below as a best estimate and correct them
+> if the original stylesheet surfaces.
+
+> **This file has been wrong before.** It described the ink + ember theme long
+> after the code had moved to Opal Hotel gold. `frontend/src/index.css` is the
+> only authority; this table is a convenience copy.
 
 ## Tokens
 
 ### Surfaces
 
-| Token                  | Dark              | Light                    | Use              |
-| ---------------------- | ----------------- | ------------------------ | ---------------- |
-| `--background`         | `#0B0B0B` ink     | `#FAFAF7` warm off-white | Page bg          |
-| `--card` / `--popover` | `#141414` surface | `#FFFFFF`                | Card / panel bg  |
-| `--surface-tertiary`   | `#1A1A1A`         | `#F0EFE8`                | Elevated card    |
-| `--muted`              | `#262626` line2   | `#F0EFE8`                | Subtle fills     |
-| `--border` / `--input` | `#1F1F1F` line    | `#E8E8E0`                | Hairline borders |
+| Token                  | Dark                 | Light                | Use              |
+| ---------------------- | -------------------- | -------------------- | ---------------- |
+| `--background`         | `#0A0E1A` page       | `#F8FAFC`            | Page bg          |
+| `--card`               | `#141B2D` surface    | `#FFFFFF`            | Card / panel bg  |
+| `--popover`            | `#1C2438` elevated   | `#FFFFFF`            | Overlays         |
+| `--surface-tertiary`   | `#1C2438`            | `#F1F5F9` sunken     | Elevated card    |
+| `--muted`              | `#1F2937` line       | `#F1F5F9`            | Subtle fills     |
+| `--border` / `--input` | `#1F2937` line       | `#E2E8F0`            | Borders          |
 
 ### Typography
 
-| Token                   | Dark       | Light              | Use                     |
-| ----------------------- | ---------- | ------------------ | ----------------------- |
-| `--foreground`          | `#FFFFFF`  | `#1A1A1A` charcoal | Primary text            |
-| `--muted-foreground`    | `#9A9A9A`  | `#5A5A55`          | Secondary text          |
-| Font family `font-sans` | Geist      | Geist              | Body + display          |
-| Font family `font-mono` | Geist Mono | Geist Mono         | Labels, status, tabular |
+| Token                     | Dark             | Light            | Use                     |
+| ------------------------- | ---------------- | ---------------- | ----------------------- |
+| `--foreground`            | `#F8FAFC`        | `#0F172A`        | Primary text            |
+| `--muted-foreground`      | `#94A3B8`        | `#64748B`        | Secondary text          |
+| Font family `font-sans`   | Inter            | Inter            | Body                    |
+| Font family `font-display`| Space Grotesk    | Space Grotesk    | Headings                |
+| Font family `font-mono`   | JetBrains Mono   | JetBrains Mono   | Labels, status, tabular |
+| `font-sans-arabic`        | Noto Sans Arabic | Noto Sans Arabic | RTL surfaces            |
 
 ### Brand & status
 
-| Token                        | Dark              | Light                       | Use                                |
-| ---------------------------- | ----------------- | --------------------------- | ---------------------------------- |
-| `--primary`                  | `#FF5A1F` ember   | `#E84F1F` desaturated ember | CTA, accent, focus ring            |
-| `--secondary` / `--insight`  | `#FF8A4A` ember-2 | `#FF8A4A`                   | Gradient stop, hover               |
-| `--accent` / `--info`        | `#06B6D4` cyan    | `#0891B2`                   | Multi-series chart, neutral signal |
-| `--success`                  | `#10B981`         | `#059669`                   | Healthy / pass                     |
-| `--warning`                  | `#F59E0B`         | `#D97706`                   | Hold / degraded                    |
-| `--danger` / `--destructive` | `#EF4444`         | `#DC2626`                   | Block / unhealthy                  |
+| Token                        | Dark               | Light              | Use                                |
+| ---------------------------- | ------------------ | ------------------ | ---------------------------------- |
+| `--primary`                  | `#3B82F6` blue     | `#3B82F6`          | CTA, accent, focus ring            |
+| `--secondary`                | `#60A5FA` hover    | `#2563EB` hover    | Gradient stop, hover               |
+| `--accent`                   | `#06B6D4` cyan     | `#06B6D4`          | Multi-series chart, neutral signal |
+| `--insight`                  | `#8B5CF6` purple   | `#8B5CF6`          | Insight / secondary series         |
+| `--success`                  | `#10B981`          | `#10B981`          | Healthy / pass                     |
+| `--warning`                  | `#F97316`          | `#F97316`          | Hold / degraded                    |
+| `--danger` / `--destructive` | `#EF4444`          | `#EF4444`          | Block / unhealthy                  |
+
+### Data series
+
+Used by `lib/chartTheme.ts` for multi-series charts, in order:
+
+| Slot     | Hex       |
+| -------- | --------- |
+| `data-1` | `#3B82F6` |
+| `data-2` | `#8B5CF6` |
+| `data-3` | `#EC4899` |
+| `data-4` | `#10B981` |
+| `data-5` | `#06B6D4` |
+
+Platform badge colours (Meta, Google, TikTok, Snapchat, LinkedIn, WhatsApp)
+are **not** theme tokens — they are external brand identities and stay fixed
+across themes.
 
 ### Geometry
 

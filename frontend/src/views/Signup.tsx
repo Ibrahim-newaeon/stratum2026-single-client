@@ -53,19 +53,19 @@ type SignupForm = z.infer<typeof signupSchema>;
 type SignupStep = 'details' | 'choose-method' | 'verify-email' | 'verify-phone' | 'success';
 
 const inputClass =
-  'w-full h-12 bg-[rgba(255,255,255,0.015)] border border-[#1F1F1F] rounded-[12px] pl-11 pr-4 text-sm text-white placeholder-[#6B6B6B] outline-none focus:ring-4 focus:ring-[#FF5A1F]/[0.12] focus:border-[#FF5A1F]/50 transition-colors';
+  'w-full h-12 bg-[rgba(255,255,255,0.015)] border border-[#1F2937] rounded-[12px] pl-11 pr-4 text-sm text-white placeholder-[#64748B] outline-none focus:ring-4 focus:ring-[#3B82F6]/[0.12] focus:border-[#3B82F6]/50 transition-colors';
 
-const labelClass = 'text-[11px] uppercase tracking-[0.12em] text-[#6B6B6B] ml-1';
+const labelClass = 'text-[11px] uppercase tracking-[0.12em] text-[#64748B] ml-1';
 
 function Pill({ children }: { children: React.ReactNode }) {
   return (
     <span
       className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full text-[11.5px] uppercase tracking-[0.06em] font-medium text-[#ECECEC]"
-      style={{ background: 'rgba(255,255,255,0.02)', border: '1px solid #1F1F1F' }}
+      style={{ background: 'rgba(255,255,255,0.02)', border: '1px solid #1F2937' }}
     >
       <span
-        className="w-1.5 h-1.5 rounded-full bg-[#FF5A1F]"
-        style={{ boxShadow: '0 0 8px #FF5A1F' }}
+        className="w-1.5 h-1.5 rounded-full bg-[#3B82F6]"
+        style={{ boxShadow: '0 0 8px #3B82F6' }}
       />
       {children}
     </span>
@@ -76,7 +76,7 @@ function PrimaryButton({ children, ...props }: React.ButtonHTMLAttributes<HTMLBu
   return (
     <button
       {...props}
-      className="w-full h-12 rounded-full bg-[#FF5A1F] text-white font-medium text-[14px] flex items-center justify-center gap-2 transition-all hover:bg-[#FF6E3A] hover:-translate-y-px disabled:opacity-50 disabled:hover:translate-y-0 disabled:cursor-not-allowed"
+      className="w-full h-12 rounded-full bg-[#3B82F6] text-white font-medium text-[14px] flex items-center justify-center gap-2 transition-all hover:bg-[#2563EB] hover:-translate-y-px disabled:opacity-50 disabled:hover:translate-y-0 disabled:cursor-not-allowed"
       style={{ boxShadow: '0 4px 14px rgba(255,90,31,0.3)' }}
     >
       {children}
@@ -86,7 +86,7 @@ function PrimaryButton({ children, ...props }: React.ButtonHTMLAttributes<HTMLBu
 
 function AuthLayout({ children }: { children: React.ReactNode }) {
   return (
-    <div className="min-h-screen flex bg-[#0B0B0B] text-white" style={{ fontFamily: FONT_STACK }}>
+    <div className="min-h-screen flex bg-[#0A0E1A] text-white" style={{ fontFamily: FONT_STACK }}>
       <AuthLeftPanel />
       <section className="w-full lg:w-3/5 flex flex-col items-center justify-center p-6 lg:p-12 relative overflow-hidden">
         <div
@@ -322,13 +322,13 @@ export default function Signup() {
       <AuthLayout>
         <div className="w-full max-w-[440px] relative z-10">
           <div className="mb-8">
-            <div className="w-12 h-12 rounded-[12px] bg-[rgba(255,90,31,0.08)] border border-[#FF5A1F]/30 flex items-center justify-center mb-6">
-              <Lock className="w-5 h-5 text-[#FF5A1F]" />
+            <div className="w-12 h-12 rounded-[12px] bg-[rgba(255,90,31,0.08)] border border-[#3B82F6]/30 flex items-center justify-center mb-6">
+              <Lock className="w-5 h-5 text-[#3B82F6]" />
             </div>
             <h2 className="text-[28px] leading-[1.1] tracking-tight font-medium">
               Verify your identity
             </h2>
-            <p className="text-[14.5px] text-[#9A9A9A] mt-2">Choose how you'd like to verify.</p>
+            <p className="text-[14.5px] text-[#94A3B8] mt-2">Choose how you'd like to verify.</p>
           </div>
 
           {(sendEmailOTP.error || sendWhatsAppOTP.error) && (
@@ -342,16 +342,16 @@ export default function Signup() {
             <button
               onClick={handleChooseEmail}
               disabled={isSendingOTP}
-              className="w-full flex items-center gap-4 p-4 rounded-[14px] bg-[#141414] border border-[#1F1F1F] hover:border-[#FF5A1F]/40 transition-colors group disabled:opacity-50"
+              className="w-full flex items-center gap-4 p-4 rounded-[14px] bg-[#141B2D] border border-[#1F2937] hover:border-[#3B82F6]/40 transition-colors group disabled:opacity-50"
             >
-              <div className="w-11 h-11 rounded-[10px] bg-[rgba(255,90,31,0.08)] border border-[#FF5A1F]/30 flex items-center justify-center flex-shrink-0">
-                <Mail className="w-5 h-5 text-[#FF5A1F]" />
+              <div className="w-11 h-11 rounded-[10px] bg-[rgba(255,90,31,0.08)] border border-[#3B82F6]/30 flex items-center justify-center flex-shrink-0">
+                <Mail className="w-5 h-5 text-[#3B82F6]" />
               </div>
               <div className="text-left flex-1">
-                <div className="text-sm font-medium text-white group-hover:text-[#FF5A1F] transition-colors">
+                <div className="text-sm font-medium text-white group-hover:text-[#3B82F6] transition-colors">
                   Verify via Email
                 </div>
-                <div className="text-xs text-[#6B6B6B] mt-0.5">Send code to {formData?.email}</div>
+                <div className="text-xs text-[#64748B] mt-0.5">Send code to {formData?.email}</div>
               </div>
               {sendEmailOTP.isPending && spinner}
             </button>
@@ -359,7 +359,7 @@ export default function Signup() {
             <button
               onClick={handleChooseWhatsApp}
               disabled={isSendingOTP || !formData?.phone}
-              className="w-full flex items-center gap-4 p-4 rounded-[14px] bg-[#141414] border border-[#1F1F1F] hover:border-emerald-500/40 transition-colors group disabled:opacity-30 disabled:cursor-not-allowed"
+              className="w-full flex items-center gap-4 p-4 rounded-[14px] bg-[#141B2D] border border-[#1F2937] hover:border-emerald-500/40 transition-colors group disabled:opacity-30 disabled:cursor-not-allowed"
             >
               <div className="w-11 h-11 rounded-[10px] bg-emerald-500/10 border border-emerald-500/30 flex items-center justify-center flex-shrink-0">
                 <Phone className="w-5 h-5 text-emerald-500" />
@@ -368,7 +368,7 @@ export default function Signup() {
                 <div className="text-sm font-medium text-white group-hover:text-emerald-500 transition-colors">
                   Verify via WhatsApp
                 </div>
-                <div className="text-xs text-[#6B6B6B] mt-0.5">
+                <div className="text-xs text-[#64748B] mt-0.5">
                   {formData?.phone ? `Send code to ${formData.phone}` : 'No phone number provided'}
                 </div>
               </div>
@@ -379,7 +379,7 @@ export default function Signup() {
           <div className="flex justify-center mt-8">
             <button
               onClick={() => setStep('details')}
-              className="text-xs text-[#9A9A9A] hover:text-white transition-colors font-medium"
+              className="text-xs text-[#94A3B8] hover:text-white transition-colors font-medium"
             >
               ← Back to registration
             </button>
@@ -395,14 +395,14 @@ export default function Signup() {
       <AuthLayout>
         <div className="w-full max-w-[440px] relative z-10">
           <div className="mb-8">
-            <div className="w-12 h-12 rounded-[12px] bg-[rgba(255,90,31,0.08)] border border-[#FF5A1F]/30 flex items-center justify-center mb-6">
-              <Mail className="w-5 h-5 text-[#FF5A1F]" />
+            <div className="w-12 h-12 rounded-[12px] bg-[rgba(255,90,31,0.08)] border border-[#3B82F6]/30 flex items-center justify-center mb-6">
+              <Mail className="w-5 h-5 text-[#3B82F6]" />
             </div>
             <h2 className="text-[28px] leading-[1.1] tracking-tight font-medium">
               Check your email
             </h2>
-            <p className="text-[14.5px] text-[#9A9A9A] mt-2 mb-1">We've sent a 6-digit code to</p>
-            <p className="text-[#FF5A1F] text-sm font-medium">{formData?.email}</p>
+            <p className="text-[14.5px] text-[#94A3B8] mt-2 mb-1">We've sent a 6-digit code to</p>
+            <p className="text-[#3B82F6] text-sm font-medium">{formData?.email}</p>
           </div>
 
           <div className="mb-6">
@@ -416,7 +416,7 @@ export default function Signup() {
               }}
               placeholder="000000"
               aria-label="One-time password"
-              className="w-full text-center text-2xl tracking-[0.5em] h-14 rounded-[12px] bg-[rgba(255,255,255,0.015)] border border-[#1F1F1F] text-white placeholder-[#6B6B6B] focus:ring-4 focus:ring-[#FF5A1F]/[0.12] focus:border-[#FF5A1F]/50 transition-colors outline-none"
+              className="w-full text-center text-2xl tracking-[0.5em] h-14 rounded-[12px] bg-[rgba(255,255,255,0.015)] border border-[#1F2937] text-white placeholder-[#64748B] focus:ring-4 focus:ring-[#3B82F6]/[0.12] focus:border-[#3B82F6]/50 transition-colors outline-none"
               style={{ fontFamily: MONO_STACK }}
               maxLength={6}
             />
@@ -442,7 +442,7 @@ export default function Signup() {
               <button
                 onClick={handleResendOTP}
                 disabled={otpCountdown > 0 || sendEmailOTP.isPending}
-                className="text-xs text-[#FF5A1F] hover:text-[#FF8A4A] transition-colors disabled:opacity-40 disabled:hover:text-[#FF5A1F] font-medium"
+                className="text-xs text-[#3B82F6] hover:text-[#60A5FA] transition-colors disabled:opacity-40 disabled:hover:text-[#3B82F6] font-medium"
               >
                 {sendEmailOTP.isPending
                   ? 'Sending...'
@@ -455,7 +455,7 @@ export default function Signup() {
             <div className="flex justify-center">
               <button
                 onClick={() => setStep('choose-method')}
-                className="text-xs text-[#9A9A9A] hover:text-white transition-colors font-medium"
+                className="text-xs text-[#94A3B8] hover:text-white transition-colors font-medium"
               >
                 ← Try different method
               </button>
@@ -478,7 +478,7 @@ export default function Signup() {
             <h2 className="text-[28px] leading-[1.1] tracking-tight font-medium">
               Check your WhatsApp
             </h2>
-            <p className="text-[14.5px] text-[#9A9A9A] mt-2 mb-1">
+            <p className="text-[14.5px] text-[#94A3B8] mt-2 mb-1">
               We've sent a 6-digit code to your WhatsApp
             </p>
             <p className="text-emerald-500 text-sm font-medium">{formData?.phone}</p>
@@ -495,7 +495,7 @@ export default function Signup() {
               }}
               placeholder="000000"
               aria-label="One-time password"
-              className="w-full text-center text-2xl tracking-[0.5em] h-14 rounded-[12px] bg-[rgba(255,255,255,0.015)] border border-[#1F1F1F] text-white placeholder-[#6B6B6B] focus:ring-4 focus:ring-[#FF5A1F]/[0.12] focus:border-[#FF5A1F]/50 transition-colors outline-none"
+              className="w-full text-center text-2xl tracking-[0.5em] h-14 rounded-[12px] bg-[rgba(255,255,255,0.015)] border border-[#1F2937] text-white placeholder-[#64748B] focus:ring-4 focus:ring-[#3B82F6]/[0.12] focus:border-[#3B82F6]/50 transition-colors outline-none"
               style={{ fontFamily: MONO_STACK }}
               maxLength={6}
             />
@@ -521,7 +521,7 @@ export default function Signup() {
               <button
                 onClick={handleResendOTP}
                 disabled={otpCountdown > 0 || sendWhatsAppOTP.isPending}
-                className="text-xs text-[#FF5A1F] hover:text-[#FF8A4A] transition-colors disabled:opacity-40 disabled:hover:text-[#FF5A1F] font-medium"
+                className="text-xs text-[#3B82F6] hover:text-[#60A5FA] transition-colors disabled:opacity-40 disabled:hover:text-[#3B82F6] font-medium"
               >
                 {sendWhatsAppOTP.isPending
                   ? 'Sending...'
@@ -534,7 +534,7 @@ export default function Signup() {
             <div className="flex justify-center">
               <button
                 onClick={() => setStep('choose-method')}
-                className="text-xs text-[#9A9A9A] hover:text-white transition-colors font-medium"
+                className="text-xs text-[#94A3B8] hover:text-white transition-colors font-medium"
               >
                 ← Try different method
               </button>
@@ -551,13 +551,13 @@ export default function Signup() {
     return (
       <AuthLayout>
         <div className="w-full max-w-[440px] relative z-10 text-center">
-          <div className="w-16 h-16 rounded-full bg-[rgba(255,90,31,0.08)] border border-[#FF5A1F]/30 flex items-center justify-center mx-auto mb-6">
-            <Lock className="w-8 h-8 text-[#FF5A1F]" />
+          <div className="w-16 h-16 rounded-full bg-[rgba(255,90,31,0.08)] border border-[#3B82F6]/30 flex items-center justify-center mx-auto mb-6">
+            <Lock className="w-8 h-8 text-[#3B82F6]" />
           </div>
           <h2 className="text-[28px] leading-[1.1] tracking-tight font-medium">
             Signup is invite-only
           </h2>
-          <p className="text-[14.5px] text-[#9A9A9A] mt-3 mb-6">
+          <p className="text-[14.5px] text-[#94A3B8] mt-3 mb-6">
             {getApiErrorMessage(
               signupMutation.error,
               'Public signup is disabled. Ask your organization owner for an invite.'
@@ -565,7 +565,7 @@ export default function Signup() {
           </p>
           <Link
             to="/login"
-            className="inline-flex items-center justify-center gap-2 w-full h-12 rounded-full bg-[#FF5A1F] text-white text-sm font-medium hover:bg-[#FF8A4A] transition-colors"
+            className="inline-flex items-center justify-center gap-2 w-full h-12 rounded-full bg-[#3B82F6] text-white text-sm font-medium hover:bg-[#60A5FA] transition-colors"
           >
             Log in
             <ArrowRight className="w-4 h-4" />
@@ -588,19 +588,19 @@ export default function Signup() {
             <CheckCircle className="w-8 h-8 text-emerald-400" />
           </div>
           <h2 className="text-[28px] leading-[1.1] tracking-tight font-medium">Account created</h2>
-          <p className="text-[14.5px] text-[#9A9A9A] mt-3 mb-6">
+          <p className="text-[14.5px] text-[#94A3B8] mt-3 mb-6">
             Your profile is ready and your{' '}
-            <span className="text-[#FF5A1F] font-medium">14-day Starter trial</span> is now active.
+            <span className="text-[#3B82F6] font-medium">14-day Starter trial</span> is now active.
           </p>
 
-          <div className="rounded-[14px] border border-[#1F1F1F] bg-[#141414] p-5 mb-6 text-left">
+          <div className="rounded-[14px] border border-[#1F2937] bg-[#141B2D] p-5 mb-6 text-left">
             <p
-              className="text-[11px] text-[#FF5A1F] font-medium uppercase tracking-[0.12em] mb-2"
+              className="text-[11px] text-[#3B82F6] font-medium uppercase tracking-[0.12em] mb-2"
               style={{ fontFamily: MONO_STACK }}
             >
               Starter Trial · 14 days
             </p>
-            <p className="text-[13px] text-[#9A9A9A] leading-relaxed">
+            <p className="text-[13px] text-[#94A3B8] leading-relaxed">
               Full Starter access for 14 days — campaigns, autopilot, audiences, trust engine.
               Upgrade any time to <span className="text-white font-medium">Professional</span> or{' '}
               <span className="text-white font-medium">Enterprise</span> for unlimited campaigns,
@@ -608,7 +608,7 @@ export default function Signup() {
             </p>
             <button
               onClick={() => navigate('/login', { state: { registered: true, showUpgrade: true } })}
-              className="mt-4 text-xs text-[#FF5A1F] hover:text-[#FF8A4A] transition-colors font-medium"
+              className="mt-4 text-xs text-[#3B82F6] hover:text-[#60A5FA] transition-colors font-medium"
             >
               View plans →
             </button>
@@ -628,7 +628,7 @@ export default function Signup() {
     <>
       <SEO {...pageSEO.signup} url="https://stratum-ai.com/signup" />
 
-      <div className="min-h-screen flex bg-[#0B0B0B] text-white" style={{ fontFamily: FONT_STACK }}>
+      <div className="min-h-screen flex bg-[#0A0E1A] text-white" style={{ fontFamily: FONT_STACK }}>
         <AuthLeftPanel />
 
         <section className="w-full lg:w-3/5 flex flex-col items-center justify-center p-6 lg:p-12 relative overflow-hidden">
@@ -655,7 +655,7 @@ export default function Signup() {
               <h1 className="text-[32px] leading-[1.1] tracking-tight font-medium mt-5">
                 Start in under a minute.
               </h1>
-              <p className="text-[14.5px] text-[#9A9A9A] mt-2">Provision your secure workspace.</p>
+              <p className="text-[14.5px] text-[#94A3B8] mt-2">Provision your secure workspace.</p>
             </div>
 
             <form onSubmit={handleSubmit(onSubmit)} className="space-y-5">
@@ -676,7 +676,7 @@ export default function Signup() {
                   Full name
                 </label>
                 <div className="relative">
-                  <User className="absolute left-4 top-1/2 -translate-y-1/2 w-[18px] h-[18px] text-[#6B6B6B] pointer-events-none" />
+                  <User className="absolute left-4 top-1/2 -translate-y-1/2 w-[18px] h-[18px] text-[#64748B] pointer-events-none" />
                   <input
                     {...register('name')}
                     id="signup-name"
@@ -700,7 +700,7 @@ export default function Signup() {
                   Email
                 </label>
                 <div className="relative">
-                  <Mail className="absolute left-4 top-1/2 -translate-y-1/2 w-[18px] h-[18px] text-[#6B6B6B] pointer-events-none" />
+                  <Mail className="absolute left-4 top-1/2 -translate-y-1/2 w-[18px] h-[18px] text-[#64748B] pointer-events-none" />
                   <input
                     {...register('email')}
                     id="signup-email"
@@ -721,10 +721,10 @@ export default function Signup() {
                   className={labelClass}
                   style={{ fontFamily: MONO_STACK }}
                 >
-                  Phone <span className="normal-case text-[#6B6B6B]">(optional)</span>
+                  Phone <span className="normal-case text-[#64748B]">(optional)</span>
                 </label>
                 <div className="relative">
-                  <Phone className="absolute left-4 top-1/2 -translate-y-1/2 w-[18px] h-[18px] text-[#6B6B6B] pointer-events-none" />
+                  <Phone className="absolute left-4 top-1/2 -translate-y-1/2 w-[18px] h-[18px] text-[#64748B] pointer-events-none" />
                   <input
                     {...register('phone')}
                     id="signup-phone"
@@ -733,7 +733,7 @@ export default function Signup() {
                     className={inputClass}
                   />
                 </div>
-                <p className="text-xs text-[#6B6B6B] ml-1">
+                <p className="text-xs text-[#64748B] ml-1">
                   Include country code to enable WhatsApp verification
                 </p>
                 {errors.phone && (
@@ -751,7 +751,7 @@ export default function Signup() {
                   Password
                 </label>
                 <div className="relative">
-                  <Lock className="absolute left-4 top-1/2 -translate-y-1/2 w-[18px] h-[18px] text-[#6B6B6B] pointer-events-none" />
+                  <Lock className="absolute left-4 top-1/2 -translate-y-1/2 w-[18px] h-[18px] text-[#64748B] pointer-events-none" />
                   <input
                     {...register('password')}
                     id="signup-password"
@@ -761,7 +761,7 @@ export default function Signup() {
                   />
                   <button
                     type="button"
-                    className="absolute right-4 top-1/2 -translate-y-1/2 text-[#6B6B6B] hover:text-white transition-colors"
+                    className="absolute right-4 top-1/2 -translate-y-1/2 text-[#64748B] hover:text-white transition-colors"
                     onClick={() => setShowPassword(!showPassword)}
                     aria-label={showPassword ? 'Hide password' : 'Show password'}
                   >
@@ -783,7 +783,7 @@ export default function Signup() {
                   Confirm password
                 </label>
                 <div className="relative">
-                  <Lock className="absolute left-4 top-1/2 -translate-y-1/2 w-[18px] h-[18px] text-[#6B6B6B] pointer-events-none" />
+                  <Lock className="absolute left-4 top-1/2 -translate-y-1/2 w-[18px] h-[18px] text-[#64748B] pointer-events-none" />
                   <input
                     {...register('confirmPassword')}
                     id="signup-confirm-password"
@@ -793,7 +793,7 @@ export default function Signup() {
                   />
                   <button
                     type="button"
-                    className="absolute right-4 top-1/2 -translate-y-1/2 text-[#6B6B6B] hover:text-white transition-colors"
+                    className="absolute right-4 top-1/2 -translate-y-1/2 text-[#64748B] hover:text-white transition-colors"
                     onClick={() => setShowConfirmPassword(!showConfirmPassword)}
                     aria-label={showConfirmPassword ? 'Hide password' : 'Show password'}
                   >
@@ -815,20 +815,20 @@ export default function Signup() {
                   {...register('acceptTerms')}
                   type="checkbox"
                   id="terms"
-                  className="mt-0.5 w-4 h-4 rounded border border-[#262626] bg-[#141414] accent-[#FF5A1F] cursor-pointer flex-shrink-0"
+                  className="mt-0.5 w-4 h-4 rounded border border-[#1F2937] bg-[#141B2D] accent-[#3B82F6] cursor-pointer flex-shrink-0"
                 />
-                <span className="text-[13px] text-[#9A9A9A] leading-relaxed">
+                <span className="text-[13px] text-[#94A3B8] leading-relaxed">
                   I accept the{' '}
                   <a
                     href="/terms"
-                    className="text-white hover:text-[#FF5A1F] transition-colors font-medium"
+                    className="text-white hover:text-[#3B82F6] transition-colors font-medium"
                   >
                     Terms
                   </a>{' '}
                   and{' '}
                   <a
                     href="/privacy"
-                    className="text-white hover:text-[#FF5A1F] transition-colors font-medium"
+                    className="text-white hover:text-[#3B82F6] transition-colors font-medium"
                   >
                     Privacy Policy
                   </a>
@@ -855,18 +855,18 @@ export default function Signup() {
             </form>
 
             {/* Footer */}
-            <div className="mt-10 pt-6 border-t border-[#1F1F1F]">
-              <p className="text-[13px] text-[#9A9A9A]">
+            <div className="mt-10 pt-6 border-t border-[#1F2937]">
+              <p className="text-[13px] text-[#94A3B8]">
                 Already have an account?
                 <Link
                   to="/login"
-                  className="text-white hover:text-[#FF5A1F] transition-colors font-medium ml-1"
+                  className="text-white hover:text-[#3B82F6] transition-colors font-medium ml-1"
                 >
                   Sign in
                 </Link>
               </p>
               <div
-                className="mt-6 flex items-center gap-5 text-[11px] uppercase tracking-[0.12em] text-[#6B6B6B]"
+                className="mt-6 flex items-center gap-5 text-[11px] uppercase tracking-[0.12em] text-[#64748B]"
                 style={{ fontFamily: MONO_STACK }}
               >
                 <a href="/privacy" className="hover:text-white transition-colors">
