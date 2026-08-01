@@ -228,7 +228,7 @@ def verify_password(plain: str, hashed: str) -> bool:
 | Digits | 6 |
 | Interval | 30 seconds |
 | Algorithm | SHA1 |
-| Issuer | "Stratum AI" |
+| Issuer | "ADs Growth System" |
 | Valid Window | ±1 step (clock drift) |
 
 ### Backup Codes

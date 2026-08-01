@@ -1,5 +1,5 @@
 # =============================================================================
-# Stratum AI - Autopilot Enforcer Unit Tests
+# ADs Growth System - Autopilot Enforcer Unit Tests
 # =============================================================================
 """
 Comprehensive unit tests for the Autopilot Enforcer service.

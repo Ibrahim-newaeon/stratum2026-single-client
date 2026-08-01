@@ -1,5 +1,5 @@
 # =============================================================================
-# Stratum AI - Platform Executor Unit Tests
+# ADs Growth System - Platform Executor Unit Tests
 # =============================================================================
 """
 Comprehensive unit tests for the platform executors in apply_actions_queue.

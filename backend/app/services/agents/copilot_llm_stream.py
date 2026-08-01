@@ -1,5 +1,5 @@
 # =============================================================================
-# Stratum AI - Copilot LLM Streaming Bridge
+# ADs Growth System - Copilot LLM Streaming Bridge
 # =============================================================================
 """
 Streaming variant of the Copilot LLM bridge.

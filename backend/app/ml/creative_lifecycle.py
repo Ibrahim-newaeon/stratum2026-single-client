@@ -1,5 +1,5 @@
 # =============================================================================
-# Stratum AI - Creative Lifecycle & Fatigue Prediction
+# ADs Growth System - Creative Lifecycle & Fatigue Prediction
 # =============================================================================
 """
 ML-based creative fatigue prediction and lifecycle management.

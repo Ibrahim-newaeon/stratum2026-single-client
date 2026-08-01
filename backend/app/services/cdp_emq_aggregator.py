@@ -1,5 +1,5 @@
 # =============================================================================
-# Stratum AI - CDP EMQ Aggregator Service
+# ADs Growth System - CDP EMQ Aggregator Service
 # =============================================================================
 """
 CDP EMQ Aggregator Service for Trust Engine Integration.

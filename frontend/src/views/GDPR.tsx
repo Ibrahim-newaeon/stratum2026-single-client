@@ -68,7 +68,7 @@ export default function GDPR() {
           Data &amp; Privacy
         </h1>
         <p className="mt-1 text-sm text-muted-foreground">
-          GDPR &amp; CCPA controls — export, delete, or audit the data Stratum holds about you and
+          GDPR &amp; CCPA controls — export, delete, or audit the data ADs Growth System holds about you and
           your tenant. Every action is audit-logged.
         </p>
       </div>

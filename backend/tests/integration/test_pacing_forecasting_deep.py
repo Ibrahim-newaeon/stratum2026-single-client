@@ -1,5 +1,5 @@
 # =============================================================================
-# Stratum AI - Forecasting Service Deep Integration Tests
+# ADs Growth System - Forecasting Service Deep Integration Tests
 # =============================================================================
 """DB-backed integration tests for ``app.services.pacing.forecasting``.
 

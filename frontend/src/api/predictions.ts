@@ -1,5 +1,5 @@
 /**
- * Stratum AI - Predictions & Optimization API
+ * ADs Growth System - Predictions & Optimization API
  *
  * ML-powered predictions and budget optimization
  */

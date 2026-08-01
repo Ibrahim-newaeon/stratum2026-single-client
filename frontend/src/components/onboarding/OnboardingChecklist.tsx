@@ -244,7 +244,7 @@ export function OnboardingChecklist({
               </motion.div>
               <h2 className="text-2xl font-bold mb-2">You're All Set!</h2>
               <p className="text-muted-foreground mb-6">
-                You've completed the essential setup. Stratum AI is now ready to optimize your
+                You've completed the essential setup. ADs Growth System is now ready to optimize your
                 campaigns with trust-gated automation.
               </p>
               <div className="flex gap-3 justify-center">

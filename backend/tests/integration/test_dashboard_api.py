@@ -1,5 +1,5 @@
 # =============================================================================
-# Stratum AI - Dashboard Endpoint Integration Tests
+# ADs Growth System - Dashboard Endpoint Integration Tests
 # =============================================================================
 """Integration tests for the main dashboard API under ``/api/v1/dashboard/...``:
 overview KPIs, campaign performance, recommendations, activity feed,

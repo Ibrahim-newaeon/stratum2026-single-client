@@ -1,12 +1,12 @@
-# Stratum AI — First-Time User Tutorial
+# ADs Growth System — First-Time User Tutorial
 
-> **Welcome to Stratum AI.** This tutorial walks you from signup to your first automated campaign decision in 20 minutes. No prior experience required.
+> **Welcome to ADs Growth System.** This tutorial walks you from signup to your first automated campaign decision in 20 minutes. No prior experience required.
 
 ---
 
 ## Table of Contents
 
-1. [What Is Stratum AI?](#what-is-stratum-ai)
+1. [What Is ADs Growth System?](#what-is-stratum-ai)
 2. [Create Your Account](#step-1-create-your-account)
 3. [Set Up Your First Tenant](#step-2-set-up-your-first-tenant)
 4. [Connect Your Ad Platforms](#step-3-connect-your-ad-platforms)
@@ -20,13 +20,13 @@
 
 ---
 
-## What Is Stratum AI?
+## What Is ADs Growth System?
 
-Stratum AI is a **Revenue Operating System** for marketing agencies and growth teams. It brings all your ad platforms, customer data, and campaign intelligence into one place — then automates decisions **only when your data quality is good enough**.
+ADs Growth System is a **Revenue Operating System** for marketing agencies and growth teams. It brings all your ad platforms, customer data, and campaign intelligence into one place — then automates decisions **only when your data quality is good enough**.
 
 ### The Core Idea: Trust-Gated Automation
 
-Most automation tools execute blindly. Stratum AI checks the health of your data signals first:
+Most automation tools execute blindly. ADs Growth System checks the health of your data signals first:
 
 ```
 Signal Health Check → Trust Gate → Automation Decision
@@ -94,7 +94,7 @@ Click **Create Tenant**. You'll land on the **Overview Dashboard**.
 
 ## Step 3: Connect Your Ad Platforms
 
-Without data, Stratum AI can't help you. Let's connect your first platform.
+Without data, ADs Growth System can't help you. Let's connect your first platform.
 
 ### Go to Settings → Integrations
 
@@ -230,7 +230,7 @@ Follow the recommendation, wait 24 hours for data to refresh, and watch your sco
 
 ## Step 7: Set Up Autopilot
 
-Autopilot is where Stratum AI earns its name. It monitors your campaigns and takes action — but only when your Trust Score permits.
+Autopilot is where ADs Growth System earns its name. It monitors your campaigns and takes action — but only when your Trust Score permits.
 
 ### Go to Autopilot → Settings
 
@@ -348,4 +348,4 @@ You've completed the essentials. Here's your 30-60-90 day roadmap:
 
 ---
 
-> 🎉 **Congratulations!** You're now a Stratum AI operator. The platform learns from every decision you make — the more you use it, the smarter it gets.
+> 🎉 **Congratulations!** You're now a ADs Growth System operator. The platform learns from every decision you make — the more you use it, the smarter it gets.

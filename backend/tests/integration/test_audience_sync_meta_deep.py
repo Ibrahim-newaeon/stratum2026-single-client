@@ -1,5 +1,5 @@
 # =============================================================================
-# Stratum AI - Meta Audience Connector Deep Integration Tests (#342 Batch 5+6)
+# ADs Growth System - Meta Audience Connector Deep Integration Tests (#342 Batch 5+6)
 # =============================================================================
 """HTTP-level integration tests for ``MetaAudienceConnector``.
 

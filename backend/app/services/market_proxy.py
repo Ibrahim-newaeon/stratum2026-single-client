@@ -1,5 +1,5 @@
 # =============================================================================
-# Stratum AI - Market Intelligence Proxy
+# ADs Growth System - Market Intelligence Proxy
 # =============================================================================
 """
 Market intelligence service that abstracts competitor data sources.

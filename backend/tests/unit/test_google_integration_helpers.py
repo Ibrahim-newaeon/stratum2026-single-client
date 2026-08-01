@@ -1,5 +1,5 @@
 # =============================================================================
-# Stratum AI - Google Ads Integration Pure-Helper Unit Tests
+# ADs Growth System - Google Ads Integration Pure-Helper Unit Tests
 # =============================================================================
 """Unit tests for the pure helpers in
 ``app.stratum.integrations.google_complete``:

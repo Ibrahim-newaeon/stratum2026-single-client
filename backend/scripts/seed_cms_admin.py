@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """
-Stratum AI - CMS Root Admin Seed Script
+ADs Growth System - CMS Root Admin Seed Script
 
 Creates a protected root admin account for the CMS.
 This account cannot be deleted or demoted by other admins.
@@ -47,7 +47,7 @@ async def seed_cms_admin(email: str, password: str, name: str):
     async_session = sessionmaker(engine, class_=AsyncSession, expire_on_commit=False)
 
     print("=" * 60)
-    print("  Stratum AI - CMS Root Admin Setup")
+    print("  ADs Growth System - CMS Root Admin Setup")
     print("=" * 60)
 
     async with async_session() as db:

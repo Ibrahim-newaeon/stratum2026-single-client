@@ -1,5 +1,5 @@
 /**
- * Login Page — Stratum figma theme
+ * Login Page — ADs Growth System figma theme
  * Split-screen: testimonial panel + ember-accented sign-in form
  */
 
@@ -160,7 +160,7 @@ export default function Login() {
     <>
       <SEO {...pageSEO.login} url="https://stratum-ai.com/login" />
 
-      <div className="min-h-screen flex bg-[#0B0B0B] text-white" style={{ fontFamily: FONT_STACK }}>
+      <div className="min-h-screen flex bg-[#0A0E1A] text-white" style={{ fontFamily: FONT_STACK }}>
         <AuthLeftPanel />
 
         <section className="w-full lg:w-3/5 flex flex-col items-center justify-center p-6 lg:p-12 relative overflow-hidden">
@@ -177,7 +177,7 @@ export default function Login() {
           {/* Mobile wordmark */}
           <div className="lg:hidden mb-8 self-start">
             <a href="/landing.html" className="text-[18px] font-medium tracking-tight text-white">
-              stratum.ai
+              adsgrowthsystem.com
             </a>
           </div>
 
@@ -188,19 +188,19 @@ export default function Login() {
                 className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full text-[11.5px] uppercase tracking-[0.06em] font-medium text-[#ECECEC] mb-5"
                 style={{
                   background: 'rgba(255,255,255,0.02)',
-                  border: '1px solid #1F1F1F',
+                  border: '1px solid #1F2937',
                 }}
               >
                 <span
-                  className="w-1.5 h-1.5 rounded-full bg-[#FF5A1F]"
-                  style={{ boxShadow: '0 0 8px #FF5A1F' }}
+                  className="w-1.5 h-1.5 rounded-full bg-[#3B82F6]"
+                  style={{ boxShadow: '0 0 8px #3B82F6' }}
                 />
                 Sign in
               </span>
               <h1 className="text-[34px] leading-[1.1] tracking-tight font-medium mt-5">
                 Welcome back.
               </h1>
-              <p className="text-[14.5px] text-[#9A9A9A] mt-2">
+              <p className="text-[14.5px] text-[#94A3B8] mt-2">
                 Access your trust-gated revenue operations.
               </p>
             </div>
@@ -209,7 +209,7 @@ export default function Login() {
               <form onSubmit={handleMfaSubmit} className="space-y-5">
                 <div>
                   <h2 className="text-lg font-medium text-white">Two-factor authentication</h2>
-                  <p className="text-[13px] text-[#9A9A9A] mt-1">
+                  <p className="text-[13px] text-[#94A3B8] mt-1">
                     Enter the 6-digit code from your authenticator app, or a backup code.
                   </p>
                 </div>
@@ -220,7 +220,7 @@ export default function Login() {
                   </div>
                 )}
                 <div>
-                  <label htmlFor="mfa-code" className="block text-[13px] text-[#9A9A9A] mb-1.5">
+                  <label htmlFor="mfa-code" className="block text-[13px] text-[#94A3B8] mb-1.5">
                     Verification code
                   </label>
                   <input
@@ -234,13 +234,13 @@ export default function Login() {
                     onChange={(e) => setMfaCode(e.target.value.replace(/\s/g, ''))}
                     maxLength={8}
                     placeholder="123456"
-                    className="w-full h-12 px-4 rounded-[12px] bg-[#141414] border border-[#262626] text-white text-center tracking-[0.4em] text-lg placeholder:text-[#5A5A5A] focus:border-[#FF5A1F] focus:outline-none transition-colors"
+                    className="w-full h-12 px-4 rounded-[12px] bg-[#141B2D] border border-[#1F2937] text-white text-center tracking-[0.4em] text-lg placeholder:text-[#5A5A5A] focus:border-[#3B82F6] focus:outline-none transition-colors"
                   />
                 </div>
                 <button
                   type="submit"
                   disabled={isLoading}
-                  className="w-full h-12 rounded-full bg-[#FF5A1F] text-white font-medium text-[14px] flex items-center justify-center gap-2 transition-all hover:bg-[#FF6E3A] hover:-translate-y-px disabled:opacity-50 disabled:hover:translate-y-0 disabled:cursor-not-allowed"
+                  className="w-full h-12 rounded-full bg-[#3B82F6] text-white font-medium text-[14px] flex items-center justify-center gap-2 transition-all hover:bg-[#2563EB] hover:-translate-y-px disabled:opacity-50 disabled:hover:translate-y-0 disabled:cursor-not-allowed"
                   style={{ boxShadow: '0 4px 14px rgba(255,90,31,0.3)' }}
                 >
                   {isLoading ? 'Verifying...' : 'Verify'}
@@ -248,7 +248,7 @@ export default function Login() {
                 <button
                   type="button"
                   onClick={cancelMfa}
-                  className="w-full text-[13px] text-[#9A9A9A] hover:text-white transition-colors"
+                  className="w-full text-[13px] text-[#94A3B8] hover:text-white transition-colors"
                 >
                   Back to sign in
                 </button>
@@ -257,7 +257,7 @@ export default function Login() {
             <form ref={formRef} onSubmit={handleSubmit} className="space-y-5">
               {/* Verification banner */}
               {showVerificationBanner && (
-                <div className="flex items-start gap-2 p-3 rounded-[12px] text-sm bg-[rgba(255,90,31,0.06)] border border-[#FF5A1F]/30 text-[#FFB89A]">
+                <div className="flex items-start gap-2 p-3 rounded-[12px] text-sm bg-[rgba(255,90,31,0.06)] border border-[#3B82F6]/30 text-[#FFB89A]">
                   <Mail className="w-4 h-4 flex-shrink-0 mt-0.5" />
                   <div>
                     <span>
@@ -266,7 +266,7 @@ export default function Login() {
                     </span>
                     <Link
                       to="/verify-email"
-                      className="block mt-1 text-[#FF5A1F] font-medium hover:text-[#FF8A4A] transition-colors text-xs"
+                      className="block mt-1 text-[#3B82F6] font-medium hover:text-[#60A5FA] transition-colors text-xs"
                     >
                       Resend verification email
                     </Link>
@@ -276,7 +276,7 @@ export default function Login() {
 
               {/* Lockout */}
               {isLockedOut && (
-                <div className="flex items-center gap-3 p-4 rounded-[12px] text-sm bg-[rgba(255,90,31,0.06)] border border-[#FF5A1F]/30 text-[#FFB89A]">
+                <div className="flex items-center gap-3 p-4 rounded-[12px] text-sm bg-[rgba(255,90,31,0.06)] border border-[#3B82F6]/30 text-[#FFB89A]">
                   <Clock className="w-5 h-5 flex-shrink-0 animate-pulse" />
                   <div className="flex-1">
                     <p className="font-semibold text-white text-sm mb-0.5">
@@ -304,13 +304,13 @@ export default function Login() {
               <div className="space-y-2">
                 <label
                   htmlFor="login-email"
-                  className="text-[11px] uppercase tracking-[0.12em] text-[#6B6B6B] ml-1"
+                  className="text-[11px] uppercase tracking-[0.12em] text-[#64748B] ml-1"
                   style={{ fontFamily: MONO_STACK }}
                 >
                   Email
                 </label>
                 <div className="relative">
-                  <Mail className="absolute left-4 top-1/2 -translate-y-1/2 w-[18px] h-[18px] text-[#6B6B6B] pointer-events-none" />
+                  <Mail className="absolute left-4 top-1/2 -translate-y-1/2 w-[18px] h-[18px] text-[#64748B] pointer-events-none" />
                   <input
                     id="login-email"
                     name="email"
@@ -325,7 +325,7 @@ export default function Login() {
                     disabled={isLoading}
                     aria-invalid={!!emailError}
                     aria-describedby={emailError ? 'login-email-error' : undefined}
-                    className="w-full h-12 bg-[rgba(255,255,255,0.015)] border border-[#1F1F1F] rounded-[12px] pl-11 pr-4 text-sm text-white placeholder-[#6B6B6B] outline-none focus:ring-4 focus:ring-[#FF5A1F]/[0.12] focus:border-[#FF5A1F]/50 transition-colors"
+                    className="w-full h-12 bg-[rgba(255,255,255,0.015)] border border-[#1F2937] rounded-[12px] pl-11 pr-4 text-sm text-white placeholder-[#64748B] outline-none focus:ring-4 focus:ring-[#3B82F6]/[0.12] focus:border-[#3B82F6]/50 transition-colors"
                   />
                 </div>
                 {emailError && (
@@ -340,20 +340,20 @@ export default function Login() {
                 <div className="flex justify-between items-center ml-1">
                   <label
                     htmlFor="login-password"
-                    className="text-[11px] uppercase tracking-[0.12em] text-[#6B6B6B]"
+                    className="text-[11px] uppercase tracking-[0.12em] text-[#64748B]"
                     style={{ fontFamily: MONO_STACK }}
                   >
                     Password
                   </label>
                   <Link
                     to="/forgot-password"
-                    className="text-xs text-[#FF5A1F] hover:text-[#FF8A4A] transition-colors font-medium"
+                    className="text-xs text-[#3B82F6] hover:text-[#60A5FA] transition-colors font-medium"
                   >
                     Forgot?
                   </Link>
                 </div>
                 <div className="relative">
-                  <Lock className="absolute left-4 top-1/2 -translate-y-1/2 w-[18px] h-[18px] text-[#6B6B6B] pointer-events-none" />
+                  <Lock className="absolute left-4 top-1/2 -translate-y-1/2 w-[18px] h-[18px] text-[#64748B] pointer-events-none" />
                   <input
                     id="login-password"
                     name="password"
@@ -368,11 +368,11 @@ export default function Login() {
                     disabled={isLoading}
                     aria-invalid={!!passwordError}
                     aria-describedby={passwordError ? 'login-password-error' : undefined}
-                    className="w-full h-12 bg-[rgba(255,255,255,0.015)] border border-[#1F1F1F] rounded-[12px] pl-11 pr-11 text-sm text-white placeholder-[#6B6B6B] outline-none focus:ring-4 focus:ring-[#FF5A1F]/[0.12] focus:border-[#FF5A1F]/50 transition-colors"
+                    className="w-full h-12 bg-[rgba(255,255,255,0.015)] border border-[#1F2937] rounded-[12px] pl-11 pr-11 text-sm text-white placeholder-[#64748B] outline-none focus:ring-4 focus:ring-[#3B82F6]/[0.12] focus:border-[#3B82F6]/50 transition-colors"
                   />
                   <button
                     type="button"
-                    className="absolute right-4 top-1/2 -translate-y-1/2 text-[#6B6B6B] hover:text-white transition-colors"
+                    className="absolute right-4 top-1/2 -translate-y-1/2 text-[#64748B] hover:text-white transition-colors"
                     onClick={() => setShowPassword(!showPassword)}
                     aria-label={showPassword ? 'Hide password' : 'Show password'}
                   >
@@ -393,16 +393,16 @@ export default function Login() {
                   id="remember"
                   checked={rememberMe}
                   onChange={() => setRememberMe(!rememberMe)}
-                  className="w-4 h-4 rounded border border-[#262626] bg-[#141414] accent-[#FF5A1F] cursor-pointer"
+                  className="w-4 h-4 rounded border border-[#1F2937] bg-[#141B2D] accent-[#3B82F6] cursor-pointer"
                 />
-                <span className="text-[13px] text-[#9A9A9A]">Keep session active for 24h</span>
+                <span className="text-[13px] text-[#94A3B8]">Keep session active for 24h</span>
               </label>
 
               {/* Submit */}
               <button
                 type="submit"
                 disabled={isLoading || isLockedOut}
-                className="w-full h-12 rounded-full bg-[#FF5A1F] text-white font-medium text-[14px] flex items-center justify-center gap-2 transition-all hover:bg-[#FF6E3A] hover:-translate-y-px disabled:opacity-50 disabled:hover:translate-y-0 disabled:cursor-not-allowed"
+                className="w-full h-12 rounded-full bg-[#3B82F6] text-white font-medium text-[14px] flex items-center justify-center gap-2 transition-all hover:bg-[#2563EB] hover:-translate-y-px disabled:opacity-50 disabled:hover:translate-y-0 disabled:cursor-not-allowed"
                 style={{ boxShadow: '0 4px 14px rgba(255,90,31,0.3)' }}
               >
                 {isLockedOut ? (
@@ -441,18 +441,18 @@ export default function Login() {
             )}
 
             {/* Footer */}
-            <div className="mt-10 pt-6 border-t border-[#1F1F1F]">
-              <p className="text-[13px] text-[#9A9A9A]">
+            <div className="mt-10 pt-6 border-t border-[#1F2937]">
+              <p className="text-[13px] text-[#94A3B8]">
                 Don't have an account?
                 <Link
                   to="/signup"
-                  className="text-white hover:text-[#FF5A1F] transition-colors font-medium ml-1"
+                  className="text-white hover:text-[#3B82F6] transition-colors font-medium ml-1"
                 >
                   Create one
                 </Link>
               </p>
               <div
-                className="mt-6 flex items-center gap-5 text-[11px] uppercase tracking-[0.12em] text-[#6B6B6B]"
+                className="mt-6 flex items-center gap-5 text-[11px] uppercase tracking-[0.12em] text-[#64748B]"
                 style={{ fontFamily: MONO_STACK }}
               >
                 <a href="/privacy" className="hover:text-white transition-colors">

@@ -1,5 +1,5 @@
 # =============================================================================
-# Stratum AI - Analytics Logic Unit Tests
+# ADs Growth System - Analytics Logic Unit Tests
 # =============================================================================
 """
 Unit tests for analytics logic modules:

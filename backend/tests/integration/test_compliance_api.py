@@ -1,5 +1,5 @@
 # =============================================================================
-# Stratum AI - Enterprise Compliance Endpoint Integration Tests
+# ADs Growth System - Enterprise Compliance Endpoint Integration Tests
 # =============================================================================
 """Integration tests for the compliance surface under
 ``/api/v1/admin/compliance/...``: audit-log search/summary, RBAC

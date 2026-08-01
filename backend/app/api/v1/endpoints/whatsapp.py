@@ -1,5 +1,5 @@
 # =============================================================================
-# Stratum AI - WhatsApp Integration Endpoints
+# ADs Growth System - WhatsApp Integration Endpoints
 # =============================================================================
 """
 WhatsApp Business API integration endpoints.

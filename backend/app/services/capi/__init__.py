@@ -1,5 +1,5 @@
 # =============================================================================
-# Stratum AI - Conversion API (CAPI) Service
+# ADs Growth System - Conversion API (CAPI) Service
 # =============================================================================
 """
 Server-side Conversion API integration for streaming first-party data

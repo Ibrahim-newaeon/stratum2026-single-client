@@ -1,5 +1,5 @@
 # =============================================================================
-# Stratum AI - Pipedrive Sync Service
+# ADs Growth System - Pipedrive Sync Service
 # =============================================================================
 """
 Pipedrive data synchronization service.

@@ -1,9 +1,9 @@
 /**
  * =============================================================================
- * Stratum AI Platform - k6 Load Testing Script
+ * ADs Growth System Platform - k6 Load Testing Script
  * =============================================================================
  *
- * Comprehensive load testing for Stratum AI API endpoints.
+ * Comprehensive load testing for ADs Growth System API endpoints.
  * Tests health checks, authentication, and key business endpoints.
  *
  * Usage:
@@ -548,7 +548,7 @@ function textSummary(data, options) {
     let output = '\n';
 
     output += '='.repeat(70) + '\n';
-    output += `  Stratum AI Load Test Summary - ${selectedScenario.toUpperCase()}\n`;
+    output += `  ADs Growth System Load Test Summary - ${selectedScenario.toUpperCase()}\n`;
     output += '='.repeat(70) + '\n\n';
 
     // Thresholds summary

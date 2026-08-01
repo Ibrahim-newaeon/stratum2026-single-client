@@ -1,5 +1,5 @@
 # =============================================================================
-# Stratum AI - Automated Reporting API Endpoints
+# ADs Growth System - Automated Reporting API Endpoints
 # =============================================================================
 """
 API endpoints for automated report generation and scheduling.

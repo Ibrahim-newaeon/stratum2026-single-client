@@ -227,7 +227,7 @@ const content_json: GlossaryPageContent = {
         {
           term: 'Writeback',
           definition:
-            'Syncing Stratum AI data (ad performance, attribution) back to CRM records.',
+            'Syncing ADs Growth System data (ad performance, attribution) back to CRM records.',
         },
         {
           term: 'Identity Matching',
@@ -304,7 +304,7 @@ const content_json: GlossaryPageContent = {
       terms: [
         {
           term: 'Supported Platforms',
-          definition: 'Ad networks integrated with Stratum AI.',
+          definition: 'Ad networks integrated with ADs Growth System.',
         },
         {
           term: 'Entity Hierarchy',
@@ -336,7 +336,7 @@ const entry: MarketingSeedEntry = {
   template: 'glossary',
   meta_title: 'Platform Terminology',
   meta_description:
-    'Complete reference of terms, metrics, and values used across Stratum AI.',
+    'Complete reference of terms, metrics, and values used across ADs Growth System.',
   content_json,
 };
 

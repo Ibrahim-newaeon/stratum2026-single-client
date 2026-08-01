@@ -1,5 +1,5 @@
 # =============================================================================
-# Stratum AI - Owner Console Endpoint Integration Tests
+# ADs Growth System - Owner Console Endpoint Integration Tests
 # =============================================================================
 """Integration tests for the platform Owner API under
 ``/api/v1/console/...``: system health, audit log, dashboard, credentials

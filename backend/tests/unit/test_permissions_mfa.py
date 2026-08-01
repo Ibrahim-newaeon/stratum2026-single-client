@@ -1,5 +1,5 @@
 # =============================================================================
-# Stratum AI - RBAC Permissions & MFA Test Suite
+# ADs Growth System - RBAC Permissions & MFA Test Suite
 # =============================================================================
 """
 Comprehensive tests for the two untested Authentication sub-systems:
@@ -32,6 +32,7 @@ from datetime import UTC, datetime, timedelta
 from types import SimpleNamespace
 from typing import Optional
 from unittest.mock import AsyncMock, MagicMock, patch
+from urllib.parse import quote
 
 import pyotp
 import pytest
@@ -881,7 +882,7 @@ class TestMFAConstants:
     def test_totp_config(self) -> None:
         assert TOTP_DIGITS == 6
         assert TOTP_INTERVAL == 30
-        assert TOTP_ISSUER == "Stratum AI"
+        assert TOTP_ISSUER == "ADs Growth System"
 
     def test_rate_limiting_config(self) -> None:
         assert MAX_FAILED_ATTEMPTS == 5
@@ -928,7 +929,11 @@ class TestGetTOTPUri:
     def test_contains_issuer(self) -> None:
         secret = generate_totp_secret()
         uri = get_totp_uri(secret, "user@test.com")
-        assert "Stratum" in uri
+        # Assert against TOTP_ISSUER rather than a brand literal. The hardcoded
+        # "Stratum" here survived the rename in #60 and failed silently on main
+        # until the CI aggregator surfaced it; sourcing the expectation from the
+        # constant means the next rename cannot desynchronise the two.
+        assert quote(TOTP_ISSUER) in uri
 
     def test_contains_email(self) -> None:
         secret = generate_totp_secret()

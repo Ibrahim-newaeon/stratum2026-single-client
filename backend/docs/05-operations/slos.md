@@ -1,8 +1,8 @@
-# Stratum AI - Service Level Objectives (SLOs)
+# ADs Growth System - Service Level Objectives (SLOs)
 
 ## Overview
 
-This document defines the Service Level Objectives (SLOs) for the Stratum AI
+This document defines the Service Level Objectives (SLOs) for the ADs Growth System
 platform. These targets guide operational decisions, alerting thresholds, and
 capacity planning.
 

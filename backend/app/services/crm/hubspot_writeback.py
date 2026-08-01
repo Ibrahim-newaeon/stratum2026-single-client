@@ -1,5 +1,5 @@
 # =============================================================================
-# Stratum AI - HubSpot Writeback Service
+# ADs Growth System - HubSpot Writeback Service
 # =============================================================================
 """
 Service for writing attribution data back to HubSpot.
@@ -37,7 +37,7 @@ logger = get_logger(__name__)
 # Custom Property Definitions
 # =============================================================================
 
-# Stratum AI custom properties for contacts
+# ADs Growth System custom properties for contacts
 CONTACT_PROPERTIES = [
     {
         "name": "stratum_ad_platform",
@@ -118,7 +118,7 @@ CONTACT_PROPERTIES = [
     },
 ]
 
-# Stratum AI custom properties for deals
+# ADs Growth System custom properties for deals
 DEAL_PROPERTIES = [
     {
         "name": "stratum_attributed_platform",

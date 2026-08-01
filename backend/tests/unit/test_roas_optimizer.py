@@ -1,5 +1,5 @@
 # =============================================================================
-# Stratum AI - ROAS Optimizer Unit Tests
+# ADs Growth System - ROAS Optimizer Unit Tests
 # =============================================================================
 """Unit tests for the pure scoring helpers of ``app.ml.roas_optimizer``.
 

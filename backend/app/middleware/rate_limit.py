@@ -1,5 +1,5 @@
 # =============================================================================
-# Stratum AI - Rate Limiting Middleware
+# ADs Growth System - Rate Limiting Middleware
 # =============================================================================
 """
 Sliding-window rate limiting using Redis (distributed) with in-memory fallback.

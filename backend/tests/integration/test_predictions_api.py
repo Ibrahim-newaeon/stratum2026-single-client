@@ -1,5 +1,5 @@
 # =============================================================================
-# Stratum AI - Live Predictions API Integration Tests
+# ADs Growth System - Live Predictions API Integration Tests
 # =============================================================================
 """Integration tests for the live-predictions / ROAS-optimization API.
 

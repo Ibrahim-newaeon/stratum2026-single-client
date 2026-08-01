@@ -1,5 +1,5 @@
 # =============================================================================
-# Stratum AI - Pacing Alert Service
+# ADs Growth System - Pacing Alert Service
 # =============================================================================
 """
 Alert service for pacing and performance monitoring.
@@ -829,7 +829,7 @@ class AlertNotificationService:
                 "elements": [
                     {
                         "type": "mrkdwn",
-                        "text": f":clock1: {timestamp} | Stratum AI Pacing Alerts",
+                        "text": f":clock1: {timestamp} | ADs Growth System Pacing Alerts",
                     }
                 ],
             }
@@ -948,14 +948,16 @@ class AlertNotificationService:
                 f"{context_rows}</table>"
             )
 
-        subject = f"[Stratum AI] {severity_val.upper()} Pacing Alert: {alert.title}"
+        subject = (
+            f"[ADs Growth System] {severity_val.upper()} Pacing Alert: {alert.title}"
+        )
 
         html_content = f"""<!DOCTYPE html>
 <html>
 <head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1.0"></head>
 <body style="font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;line-height:1.6;color:#333;max-width:600px;margin:0 auto;padding:20px;">
   <div style="text-align:center;margin-bottom:30px;">
-    <h1 style="color:#2563eb;margin:0;">Stratum AI</h1>
+    <h1 style="color:#2563eb;margin:0;">ADs Growth System</h1>
   </div>
   <div style="background:{bg};border:1px solid {border};border-left:4px solid {color};border-radius:8px;padding:24px;margin-bottom:20px;">
     <h2 style="margin-top:0;color:{color};">{alert.title}</h2>
@@ -969,7 +971,7 @@ class AlertNotificationService:
     </div>
   </div>
   <div style="text-align:center;color:#94a3b8;font-size:12px;">
-    <p>&copy; {datetime.now(timezone.utc).year} Stratum AI. All rights reserved.</p>
+    <p>&copy; {datetime.now(timezone.utc).year} ADs Growth System. All rights reserved.</p>
   </div>
 </body>
 </html>"""
@@ -1056,7 +1058,7 @@ class AlertNotificationService:
 
         severity_val = alert.severity.value if alert.severity else "warning"
         text_body = (
-            f"[{severity_val.upper()}] Stratum AI Pacing Alert\n\n"
+            f"[{severity_val.upper()}] ADs Growth System Pacing Alert\n\n"
             f"{alert.title}\n\n"
             f"{alert.message}"
         )

@@ -3,7 +3,7 @@ apiVersion: 1
 providers:
   - name: 'Stratum Dashboards'
     orgId: 1
-    folder: 'Stratum AI'
+    folder: 'ADs Growth System'
     folderUid: 'stratum'
     type: file
     disableDeletion: false

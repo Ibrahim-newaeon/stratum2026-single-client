@@ -1,5 +1,5 @@
 # =============================================================================
-# Stratum AI - Pacing/Profit Route Prefix Tests
+# ADs Growth System - Pacing/Profit Route Prefix Tests
 # =============================================================================
 """
 Tests for removing the doubled URL prefix on the pacing and profit routers

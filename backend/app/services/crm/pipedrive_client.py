@@ -1,5 +1,5 @@
 # =============================================================================
-# Stratum AI - Pipedrive Client
+# ADs Growth System - Pipedrive Client
 # =============================================================================
 """
 Pipedrive API client with OAuth support.

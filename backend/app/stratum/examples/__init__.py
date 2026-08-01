@@ -1,5 +1,5 @@
 """
-Stratum AI: Example Scripts
+ADs Growth System: Example Scripts
 ===========================
 
 This package contains example scripts demonstrating Stratum integration.

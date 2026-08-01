@@ -56,7 +56,7 @@ const RELEASES: Release[] = [
       {
         type: 'feature',
         title: 'Interactive Demo Mode',
-        description: 'Experience Stratum AI with sample data',
+        description: 'Experience ADs Growth System with sample data',
       },
       {
         type: 'feature',

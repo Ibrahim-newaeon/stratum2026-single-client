@@ -1,5 +1,5 @@
 /**
- * Stratum AI - Landing CMS API
+ * ADs Growth System - Landing CMS API
  *
  * Public landing page and blog content.
  */

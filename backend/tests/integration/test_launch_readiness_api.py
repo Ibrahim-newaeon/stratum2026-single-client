@@ -1,5 +1,5 @@
 # =============================================================================
-# Stratum AI - Launch Readiness API Integration Tests
+# ADs Growth System - Launch Readiness API Integration Tests
 # =============================================================================
 """
 Integration tests for the Launch Readiness go-live wizard.

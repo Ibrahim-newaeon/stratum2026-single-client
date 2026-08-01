@@ -1,5 +1,5 @@
 # =============================================================================
-# Stratum AI - Multi-Platform Server Events Formatter Unit Tests
+# ADs Growth System - Multi-Platform Server Events Formatter Unit Tests
 # =============================================================================
 """Unit tests for the pure ``_format_event`` helpers of the Google, TikTok,
 and Snapchat senders in ``app.stratum.events``. Each shapes a ``ServerEvent``

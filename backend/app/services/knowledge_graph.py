@@ -1,5 +1,5 @@
 # =============================================================================
-# Stratum AI - Knowledge Graph Service
+# ADs Growth System - Knowledge Graph Service
 # =============================================================================
 """
 Knowledge Graph service for analytics, insights, and problem detection.

@@ -1,5 +1,5 @@
 # =============================================================================
-# Stratum AI - Owner Analytics Endpoint Integration Tests
+# ADs Growth System - Owner Analytics Endpoint Integration Tests
 # =============================================================================
 """Integration tests for the platform-wide owner analytics under
 ``/api/v1/console/...``: platform overview, signal-health

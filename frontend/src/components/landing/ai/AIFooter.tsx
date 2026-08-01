@@ -84,7 +84,7 @@ export default function AIFooter() {
           {/* Brand Column */}
           <div className="col-span-2 md:col-span-1">
             <a href="/" className="flex items-center gap-3 mb-6">
-              <img src="/images/stratum-logo.png" alt="Stratum AI" className="h-7" loading="lazy" decoding="async" />
+              <span className="font-display font-semibold text-lg tracking-tight text-foreground">ADs Growth <span className="text-primary">System</span></span>
             </a>
             <p className="text-sm text-muted-foreground mb-6">
               AI-Powered Revenue Operating System with Trust-Gated Autopilot.
@@ -130,7 +130,7 @@ export default function AIFooter() {
       <div className="border-t border-foreground/[0.05]">
         <div className="max-w-7xl mx-auto px-6 py-6">
           <div className="flex flex-col md:flex-row items-center justify-between gap-4">
-            <p className="text-sm text-muted-foreground">{currentYear} Stratum AI. All rights reserved.</p>
+            <p className="text-sm text-muted-foreground">{currentYear} ADs Growth System. All rights reserved.</p>
 
             <div className="flex items-center gap-6">
               {/* Compliance Badges */}

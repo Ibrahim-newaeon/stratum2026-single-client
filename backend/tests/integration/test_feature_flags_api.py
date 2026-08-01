@@ -1,5 +1,5 @@
 # =============================================================================
-# Stratum AI - Feature Flags API Integration Tests
+# ADs Growth System - Feature Flags API Integration Tests
 # =============================================================================
 """Integration tests for the org + owner feature-flags API.
 

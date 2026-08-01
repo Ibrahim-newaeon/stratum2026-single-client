@@ -1,4 +1,4 @@
-# Stratum AI - Platform Onboarding Guide
+# ADs Growth System - Platform Onboarding Guide
 
 ## Table of Contents
 
@@ -23,7 +23,7 @@
 
 ## 1. Platform Overview
 
-Stratum AI is a **Revenue Operating System** with a Trust-Gated Autopilot architecture. It combines campaign management, customer data, analytics, and intelligent automation into a single platform.
+ADs Growth System is a **Revenue Operating System** with a Trust-Gated Autopilot architecture. It combines campaign management, customer data, analytics, and intelligent automation into a single platform.
 
 ### Core Concept: Trust-Gated Automation
 

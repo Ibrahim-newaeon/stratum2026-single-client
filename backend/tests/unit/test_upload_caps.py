@@ -1,5 +1,5 @@
 # =============================================================================
-# Stratum AI - Upload size cap tests (API-001)
+# ADs Growth System - Upload size cap tests (API-001)
 # =============================================================================
 """
 Uploads must be bounded so a large body can't OOM the process. read_upload_capped

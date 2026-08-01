@@ -1,5 +1,5 @@
 # =============================================================================
-# Stratum AI - MFA-Gated Login Integration Tests
+# ADs Growth System - MFA-Gated Login Integration Tests
 # =============================================================================
 """Integration tests for the two-step MFA login flow:
 

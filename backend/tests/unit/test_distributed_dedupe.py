@@ -1,5 +1,5 @@
 # =============================================================================
-# Stratum AI - Distributed Event Deduplication unit tests
+# ADs Growth System - Distributed Event Deduplication unit tests
 # =============================================================================
 """Unit tests for app.services.capi.distributed_dedupe.
 

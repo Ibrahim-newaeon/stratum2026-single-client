@@ -1,5 +1,5 @@
 # =============================================================================
-# Stratum AI - Client Installer Stack (registry pull-only)
+# ADs Growth System - Client Installer Stack (registry pull-only)
 # -----------------------------------------------------------------------------
 # This compose file NEVER builds images. It pulls prebuilt, domain-generic
 # images from a private registry (see deploy/build-and-push.sh, run once by
@@ -198,7 +198,7 @@ services:
       - SMTP_PASSWORD=${SMTP_PASSWORD:-}
       - SMTP_TLS=${SMTP_TLS:-true}
       - SMTP_SSL=${SMTP_SSL:-false}
-      - EMAIL_FROM_NAME=${EMAIL_FROM_NAME:-Stratum AI}
+      - EMAIL_FROM_NAME=${EMAIL_FROM_NAME:-ADs Growth System}
       - EMAIL_FROM_ADDRESS=${EMAIL_FROM_ADDRESS:-noreply@stratumhq.com}
     volumes:
       - asset_uploads:/app/uploads

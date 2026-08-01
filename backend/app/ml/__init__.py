@@ -1,5 +1,5 @@
 # =============================================================================
-# Stratum AI - ML Module
+# ADs Growth System - ML Module
 # =============================================================================
 """
 Machine Learning module implementing the Hybrid ML Strategy.

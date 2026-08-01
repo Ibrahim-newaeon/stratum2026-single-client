@@ -1,5 +1,5 @@
 # =============================================================================
-# Stratum AI - Conversion API Endpoints
+# ADs Growth System - Conversion API Endpoints
 # =============================================================================
 """
 API endpoints for server-side Conversion API integration.

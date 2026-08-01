@@ -1,8 +1,8 @@
-# Stratum AI Landing Page - Improvement Recommendations
+# ADs Growth System Landing Page - Improvement Recommendations
 
 ## Current Page Analysis
 
-Your existing Stratum AI landing page (landing.html) is **excellent** with:
+Your existing ADs Growth System landing page (landing.html) is **excellent** with:
 - ✅ Beautiful dark Infobip-inspired design
 - ✅ Trust-Gated Autopilot messaging
 - ✅ Animated dashboard preview
@@ -103,7 +103,7 @@ Your existing Stratum AI landing page (landing.html) is **excellent** with:
             <div style="color: var(--text-secondary);">Attribution Accuracy</div>
         </div>
         <div style="text-align: center; padding: 1.5rem; background: rgba(109, 207, 167, 0.1); border: 1px solid rgba(109, 207, 167, 0.3); border-radius: 16px;">
-            <div style="color: var(--text-muted); margin-bottom: 0.5rem;">Stratum AI</div>
+            <div style="color: var(--text-muted); margin-bottom: 0.5rem;">ADs Growth System</div>
             <div style="font-size: 2.5rem; font-weight: 800; color: var(--accent-green);">98.7%</div>
             <div style="color: var(--text-secondary);">Attribution Accuracy</div>
         </div>
@@ -209,7 +209,7 @@ Your existing Stratum AI landing page (landing.html) is **excellent** with:
     <div class="container">
         <div class="section-header">
             <div class="section-label">Customer Success</div>
-            <h2>Before vs After Stratum AI</h2>
+            <h2>Before vs After ADs Growth System</h2>
             <p class="section-description">Real results from real clients</p>
         </div>
 
@@ -452,7 +452,7 @@ Your existing Stratum AI landing page (landing.html) is **excellent** with:
                 <div style="font-weight: 700; font-size: 1.1rem; margin-bottom: 1rem;">How is this different from other marketing automation tools?</div>
                 <p style="color: var(--text-secondary); line-height: 1.6;">
                     Other tools (Smartly, Sprinklr, Skai) automate blindly. If your pixel is broken or
-                    attribution is off, they keep running and wasting budget. Stratum AI monitors data quality
+                    attribution is off, they keep running and wasting budget. ADs Growth System monitors data quality
                     24/7 and only automates when it's safe.
                 </p>
             </div>

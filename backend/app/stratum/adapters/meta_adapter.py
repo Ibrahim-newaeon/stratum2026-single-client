@@ -1,5 +1,5 @@
 """
-Stratum AI: Meta Marketing API Adapter
+ADs Growth System: Meta Marketing API Adapter
 ======================================
 
 This adapter provides complete bi-directional integration with Meta's Marketing API,

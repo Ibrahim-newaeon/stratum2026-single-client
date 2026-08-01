@@ -1,6 +1,6 @@
 /**
  * =============================================================================
- * Stratum AI Platform - k6 Configuration Module
+ * ADs Growth System Platform - k6 Configuration Module
  * =============================================================================
  *
  * Shared configuration for all k6 load tests.

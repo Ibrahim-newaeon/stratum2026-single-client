@@ -1,5 +1,5 @@
 /**
- * Stratum AI - Centralized Metrics Registry
+ * ADs Growth System - Centralized Metrics Registry
  *
  * Defines all ~120 platform metrics across Meta, Google, TikTok, and Snapchat.
  * Each metric includes per-platform availability, display format, category,

@@ -1,5 +1,5 @@
 # =============================================================================
-# Stratum AI - Audience Sync Service Deep Integration Tests (#342 Batch 5+6)
+# ADs Growth System - Audience Sync Service Deep Integration Tests (#342 Batch 5+6)
 # =============================================================================
 """DB-backed integration tests for ``AudienceSyncService``.
 

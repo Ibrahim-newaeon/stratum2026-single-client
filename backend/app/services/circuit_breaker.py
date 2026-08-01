@@ -1,5 +1,5 @@
 # =============================================================================
-# Stratum AI - Circuit Breaker for External API Calls
+# ADs Growth System - Circuit Breaker for External API Calls
 # =============================================================================
 """
 Simple circuit breaker to prevent cascading failures when external APIs are down.

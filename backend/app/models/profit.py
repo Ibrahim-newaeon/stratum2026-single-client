@@ -1,5 +1,5 @@
 # =============================================================================
-# Stratum AI - Profit ROAS Database Models
+# ADs Growth System - Profit ROAS Database Models
 # =============================================================================
 """
 Database models for Profit ROAS calculations.

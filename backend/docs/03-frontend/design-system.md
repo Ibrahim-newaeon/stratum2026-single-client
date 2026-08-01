@@ -2,7 +2,7 @@
 
 ## Overview
 
-Stratum AI's design system is built on Tailwind CSS with custom design tokens for consistent branding.
+ADs Growth System's design system is built on Tailwind CSS with custom design tokens for consistent branding.
 
 ---
 

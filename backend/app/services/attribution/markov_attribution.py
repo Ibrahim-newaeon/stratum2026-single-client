@@ -1,5 +1,5 @@
 # =============================================================================
-# Stratum AI - Markov Chain Attribution Model
+# ADs Growth System - Markov Chain Attribution Model
 # =============================================================================
 """
 Data-driven attribution using Markov Chain models.

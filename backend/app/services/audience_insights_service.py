@@ -1,5 +1,5 @@
 # =============================================================================
-# Stratum AI - Predictive Audience Insights Service
+# ADs Growth System - Predictive Audience Insights Service
 # =============================================================================
 """
 Service for predictive audience analysis and targeting recommendations.

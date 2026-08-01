@@ -1,5 +1,5 @@
 # =============================================================================
-# Stratum AI - WhatsApp Contacts API Integration Tests
+# ADs Growth System - WhatsApp Contacts API Integration Tests
 # =============================================================================
 """
 Integration tests for the WhatsApp contact lifecycle: create, list, update,

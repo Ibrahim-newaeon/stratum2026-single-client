@@ -1,5 +1,5 @@
 # =============================================================================
-# Stratum AI - Platform App Credentials CRUD (owner/admin)
+# ADs Growth System - Platform App Credentials CRUD (owner/admin)
 # =============================================================================
 """
 Owner/admin management of per-deployment OAuth app credentials.

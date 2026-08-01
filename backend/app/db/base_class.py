@@ -1,5 +1,5 @@
 # =============================================================================
-# Stratum AI - Base Class Compatibility Layer
+# ADs Growth System - Base Class Compatibility Layer
 # =============================================================================
 # Re-exports from base.py for backwards compatibility
 

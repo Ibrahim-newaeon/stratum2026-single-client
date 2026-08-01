@@ -1,5 +1,5 @@
 # =============================================================================
-# Stratum AI - Authentication Endpoints
+# ADs Growth System - Authentication Endpoints
 # =============================================================================
 """
 Authentication and authorization endpoints.
@@ -1121,7 +1121,7 @@ async def forgot_password(
                 )
                 await whatsapp_client.send_text_message(
                     recipient_phone=request_data.phone_number.replace("+", ""),
-                    message=f"Your Stratum AI password reset link:\n{reset_url}\n\nThis link expires in 1 hour.",
+                    message=f"Your ADs Growth System password reset link:\n{reset_url}\n\nThis link expires in 1 hour.",
                 )
                 logger.info("password_reset_whatsapp_sent", user_id=user.id)
             except (ConnectionError, TimeoutError, OSError) as e:
@@ -1425,7 +1425,7 @@ async def verify_email(
         success=True,
         data=VerifyEmailResponse(
             success=True,
-            message="Email verified successfully. Welcome to Stratum AI!",
+            message="Email verified successfully. Welcome to ADs Growth System!",
         ),
         message="Email verified",
     )

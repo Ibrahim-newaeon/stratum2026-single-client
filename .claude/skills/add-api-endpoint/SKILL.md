@@ -1,11 +1,11 @@
 ---
 name: add-api-endpoint
-description: Use when adding a new FastAPI endpoint to Stratum AI. Encodes the standard route → schema → service → repo → test → docs pattern so endpoints land complete with auth, tenant scoping, audit logging, and rate limiting. Trigger when the user says "add endpoint", "add API", "new route", or creates a file under `backend/app/api/v1/endpoints/`.
+description: Use when adding a new FastAPI endpoint to ADs Growth System. Encodes the standard route → schema → service → repo → test → docs pattern so endpoints land complete with auth, tenant scoping, audit logging, and rate limiting. Trigger when the user says "add endpoint", "add API", "new route", or creates a file under `backend/app/api/v1/endpoints/`.
 ---
 
 # Add API Endpoint
 
-Stratum AI has 50+ FastAPI endpoints. They all follow the same shape so reviewers can scan them quickly and so cross-cutting concerns (auth, tenant scoping, audit, rate limiting) are guaranteed.
+ADs Growth System has 50+ FastAPI endpoints. They all follow the same shape so reviewers can scan them quickly and so cross-cutting concerns (auth, tenant scoping, audit, rate limiting) are guaranteed.
 
 ## The 6-Layer Pattern
 

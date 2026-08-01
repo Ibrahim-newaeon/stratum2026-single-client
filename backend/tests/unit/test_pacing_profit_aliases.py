@@ -1,5 +1,5 @@
 # =============================================================================
-# Stratum AI - Pacing/Profit Frontend-Alias Route Tests
+# ADs Growth System - Pacing/Profit Frontend-Alias Route Tests
 # =============================================================================
 """
 Tests for the frontend-compatibility route aliases (Tier 3, Pacing/Profit

@@ -1,5 +1,5 @@
 # =============================================================================
-# Stratum AI - SendGrid Inbound Webhook
+# ADs Growth System - SendGrid Inbound Webhook
 # =============================================================================
 """
 Receive SendGrid event webhooks for delivery tracking, bounces, opens, clicks,

@@ -65,11 +65,7 @@ export function Footer() {
           {/* Brand */}
           <div className="col-span-2">
             <Link to="/" className="inline-flex items-center gap-2 mb-4">
-              <img
-                src="/images/stratum-logo.png"
-                alt="Stratum AI"
-                className="h-7"
-              />
+              <span className="font-display font-semibold text-lg tracking-tight text-foreground">ADs Growth <span className="text-primary">System</span></span>
             </Link>
             <p className="text-body text-muted-foreground mb-6 max-w-xs">
               Your AI Partner for Ad Growth. Unify, optimize, and scale with
@@ -156,7 +152,7 @@ export function Footer() {
         {/* Bottom bar */}
         <div className="pt-8 border-t border-border flex flex-col md:flex-row items-center justify-between gap-4">
           <p className="text-micro text-muted-foreground">
-            &copy; {new Date().getFullYear()} Stratum AI. All rights reserved.
+            &copy; {new Date().getFullYear()} ADs Growth System. All rights reserved.
           </p>
 
           <div className="flex items-center gap-6">

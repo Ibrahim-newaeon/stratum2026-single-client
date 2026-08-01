@@ -1,5 +1,5 @@
 # =============================================================================
-# Stratum AI - Developer Portal Endpoint Integration Tests
+# ADs Growth System - Developer Portal Endpoint Integration Tests
 # =============================================================================
 """Integration tests for the developer-portal surface under
 ``/api/v1/developer/...``: portal config, usage analytics, and self-service

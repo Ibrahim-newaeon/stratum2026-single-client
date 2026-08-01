@@ -2,7 +2,7 @@
 
 > **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [ ]`) syntax for tracking.
 
-**Goal:** Convert the multi-tenant Stratum AI codebase in-place to the Single-Client edition per `STRATUM_AI_SINGLE_CLIENT_REBUILD_PROMPT_v2.1_FINAL.md` — remove exactly the §0.1 removal ledger (billing/commercial packaging + multi-tenant partitioning), preserve everything else.
+**Goal:** Convert the multi-tenant ADs Growth System codebase in-place to the Single-Client edition per `STRATUM_AI_SINGLE_CLIENT_REBUILD_PROMPT_v2.1_FINAL.md` — remove exactly the §0.1 removal ledger (billing/commercial packaging + multi-tenant partitioning), preserve everything else.
 
 **Architecture:** Phased, always-green refactor on branch `feature/STRAT-SC-001-single-client-conversion`. Phase A removes billing (Stripe/tiers/editions/licensing). Phase B renames `superadmin`→`owner`. Phase C removes backend tenancy (Tenant→Organization singleton, middleware, per-tenant PII keys, key de-namespacing, fresh Alembic chain). Phase D removes frontend tenancy (TenantLayout twin, tenantStore→appStore, X-Tenant-ID). Phase E adds the CI residue gate and final validation. Each task ends with the affected test suite green and a commit.
 

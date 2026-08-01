@@ -1,5 +1,5 @@
 # =============================================================================
-# Stratum AI - Offline Conversion Service unit tests
+# ADs Growth System - Offline Conversion Service unit tests
 # =============================================================================
 """Unit tests for app.services.offline_conversion_service.
 

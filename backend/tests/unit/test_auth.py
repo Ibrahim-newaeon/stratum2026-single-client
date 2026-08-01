@@ -1,5 +1,5 @@
 # =============================================================================
-# Stratum AI - Authentication & Security Test Suite
+# ADs Growth System - Authentication & Security Test Suite
 # =============================================================================
 """
 Comprehensive authentication and authorization test suite.

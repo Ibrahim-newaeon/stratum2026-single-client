@@ -1,5 +1,5 @@
 # =============================================================================
-# Stratum AI - Newsletter / Email Campaign API
+# ADs Growth System - Newsletter / Email Campaign API
 # =============================================================================
 """
 Newsletter campaign management endpoints.
@@ -980,12 +980,12 @@ async def public_unsubscribe(
     html = """
     <!DOCTYPE html>
     <html>
-    <head><meta charset="utf-8"><title>Unsubscribed - Stratum AI</title>
+    <head><meta charset="utf-8"><title>Unsubscribed - ADs Growth System</title>
     <style>body{font-family:-apple-system,BlinkMacSystemFont,sans-serif;display:flex;align-items:center;justify-content:center;min-height:100vh;margin:0;background:#000;color:#fff}
     .card{text-align:center;padding:3rem;border-radius:1.5rem;background:rgba(255,255,255,0.03);border:1px solid rgba(255,255,255,0.08);max-width:400px}
     h1{font-size:1.5rem;margin-bottom:0.5rem}p{color:rgba(255,255,255,0.5);font-size:0.9rem}</style>
     </head>
-    <body><div class="card"><h1>You've been unsubscribed</h1><p>You will no longer receive newsletter emails from Stratum AI.</p></div></body>
+    <body><div class="card"><h1>You've been unsubscribed</h1><p>You will no longer receive newsletter emails from ADs Growth System.</p></div></body>
     </html>
     """
     return Response(content=html, media_type="text/html")

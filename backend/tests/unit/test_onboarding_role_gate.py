@@ -1,5 +1,5 @@
 # =============================================================================
-# Stratum AI - Onboarding Role Gate Tests
+# ADs Growth System - Onboarding Role Gate Tests
 # =============================================================================
 """Onboarding writes are owner/admin-only; reads stay open (guard uses them)."""
 

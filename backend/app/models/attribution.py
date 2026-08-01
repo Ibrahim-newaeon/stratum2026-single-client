@@ -1,5 +1,5 @@
 # =============================================================================
-# Stratum AI - Attribution Database Models
+# ADs Growth System - Attribution Database Models
 # =============================================================================
 """
 Database models for Multi-Touch Attribution (MTA).

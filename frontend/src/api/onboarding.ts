@@ -1,5 +1,5 @@
 /**
- * Stratum AI - Onboarding API
+ * ADs Growth System - Onboarding API
  *
  * API endpoints for the onboarding wizard flow.
  * Guides new users through platform setup in 5 steps:
@@ -187,7 +187,14 @@ export const onboardingApi = {
   checkRequired: async (): Promise<{ required: boolean; redirect_to: string | null }> => {
     const response =
       await apiClient.get<ApiResponse<{ required: boolean; redirect_to: string | null }>>(
-        '/onboarding/check'
+        '/onboarding/check',
+        // Overrides the client-wide 30s timeout. OnboardingGuard blocks the
+        // entire dashboard behind this one probe, so an unreachable API meant
+        // 30s + one retry = up to a minute of spinner before the guard's
+        // fail-open branch could ever run. This is a readiness check, not a
+        // data fetch — if it cannot answer in 5s, proceeding is better than
+        // holding the app hostage.
+        { timeout: 5000 }
       );
     return response.data.data;
   },
@@ -293,6 +300,10 @@ export function useOnboardingCheck(enabled = true) {
     queryFn: onboardingApi.checkRequired,
     enabled,
     staleTime: 60 * 1000, // 1 minute
+    // No retry, unlike the global default of 1. A failed readiness probe
+    // should reach the guard's fail-open branch immediately rather than
+    // doubling the time the dashboard is unreachable.
+    retry: false,
   });
 }
 

@@ -1,5 +1,5 @@
 # =============================================================================
-# Stratum AI - Autopilot Enforcement API Router
+# ADs Growth System - Autopilot Enforcement API Router
 # =============================================================================
 """
 API endpoints for Autopilot Enforcement features:

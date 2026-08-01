@@ -1,5 +1,5 @@
 # =============================================================================
-# Stratum AI - CMS Feature Test Suite
+# ADs Growth System - CMS Feature Test Suite
 # =============================================================================
 """
 Comprehensive tests for the CMS feature (Feature #9):

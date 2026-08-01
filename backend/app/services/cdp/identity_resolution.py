@@ -1,5 +1,5 @@
 # =============================================================================
-# Stratum AI - CDP Identity Resolution Service
+# ADs Growth System - CDP Identity Resolution Service
 # =============================================================================
 """
 Identity resolution and profile merging for CDP.

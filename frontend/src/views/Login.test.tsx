@@ -86,9 +86,9 @@ describe('Login', () => {
     render(<Login />);
     const email = screen.getByLabelText(/Email/i) as HTMLInputElement;
     const password = screen.getByLabelText(/Password/i, { selector: 'input' }) as HTMLInputElement;
-    fireEvent.change(email, { target: { value: 'jane@stratum.ai' } });
+    fireEvent.change(email, { target: { value: 'jane@adsgrowthsystem.com' } });
     fireEvent.change(password, { target: { value: 'secret123' } });
-    expect(email.value).toBe('jane@stratum.ai');
+    expect(email.value).toBe('jane@adsgrowthsystem.com');
     expect(password.value).toBe('secret123');
   });
 
@@ -104,13 +104,13 @@ describe('Login', () => {
     mockLogin.mockResolvedValueOnce({ success: true });
     render(<Login />);
     fireEvent.change(screen.getByLabelText(/Email/i), {
-      target: { value: 'jane@stratum.ai' },
+      target: { value: 'jane@adsgrowthsystem.com' },
     });
     fireEvent.change(screen.getByLabelText(/Password/i, { selector: 'input' }), {
       target: { value: 'secret123' },
     });
     fireEvent.click(screen.getByRole('button', { name: /Sign in/i }));
-    await waitFor(() => expect(mockLogin).toHaveBeenCalledWith('jane@stratum.ai', 'secret123'));
+    await waitFor(() => expect(mockLogin).toHaveBeenCalledWith('jane@adsgrowthsystem.com', 'secret123'));
     await waitFor(() => expect(mockNavigate).toHaveBeenCalled());
   });
 
@@ -118,7 +118,7 @@ describe('Login', () => {
     mockLogin.mockResolvedValueOnce({ success: false, error: 'Invalid credentials' });
     render(<Login />);
     fireEvent.change(screen.getByLabelText(/Email/i), {
-      target: { value: 'jane@stratum.ai' },
+      target: { value: 'jane@adsgrowthsystem.com' },
     });
     fireEvent.change(screen.getByLabelText(/Password/i, { selector: 'input' }), {
       target: { value: 'wrong' },
@@ -131,7 +131,7 @@ describe('Login', () => {
     mockLogin.mockResolvedValueOnce({ success: false, lockoutSeconds: 90 });
     render(<Login />);
     fireEvent.change(screen.getByLabelText(/Email/i), {
-      target: { value: 'jane@stratum.ai' },
+      target: { value: 'jane@adsgrowthsystem.com' },
     });
     fireEvent.change(screen.getByLabelText(/Password/i, { selector: 'input' }), {
       target: { value: 'x' },

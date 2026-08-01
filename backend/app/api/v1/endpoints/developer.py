@@ -1,5 +1,5 @@
 # =============================================================================
-# Stratum AI — Developer Experience (Gap #8)
+# ADs Growth System — Developer Experience (Gap #8)
 # =============================================================================
 """
 Developer-centric endpoints:
@@ -476,7 +476,7 @@ async def test_webhook_endpoint(
         "event": "webhook.test",
         "webhook_id": webhook_id,
         "timestamp": datetime.now(UTC).isoformat(),
-        "data": {"message": "This is a test event from Stratum AI"},
+        "data": {"message": "This is a test event from ADs Growth System"},
     }
 
     webhook_url = "https://httpbin.org/post"  # Test endpoint

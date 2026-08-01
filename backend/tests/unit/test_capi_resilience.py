@@ -1,5 +1,5 @@
 # =============================================================================
-# Stratum AI - CAPI Resilience Primitives Unit Tests
+# ADs Growth System - CAPI Resilience Primitives Unit Tests
 # =============================================================================
 """Unit tests for the pure resilience primitives in
 ``app.services.capi.platform_connectors``:

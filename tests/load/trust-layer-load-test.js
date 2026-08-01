@@ -1,5 +1,5 @@
 /**
- * Stratum AI - Trust Layer Load Test
+ * ADs Growth System - Trust Layer Load Test
  *
  * Tests the Trust Layer and EMQ (Event Match Quality) endpoints under load.
  *

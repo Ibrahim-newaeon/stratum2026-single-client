@@ -1,6 +1,6 @@
-# Stratum AI - Environment Variables Reference
+# ADs Growth System - Environment Variables Reference
 
-Complete reference for all environment variables used by Stratum AI.
+Complete reference for all environment variables used by ADs Growth System.
 
 ---
 
@@ -25,7 +25,7 @@ Complete reference for all environment variables used by Stratum AI.
 |----------|----------|---------|-------------|
 | `ENVIRONMENT` | Yes | `development` | Environment mode: `development`, `staging`, `production` |
 | `DEBUG` | No | `true` | Enable debug mode (set `false` in production) |
-| `APP_NAME` | No | `Stratum AI` | Application display name |
+| `APP_NAME` | No | `ADs Growth System` | Application display name |
 | `APP_URL` | Yes | - | Base URL of the application (e.g., `https://app.stratum.ai`) |
 | `API_URL` | Yes | - | Base URL of the API (e.g., `https://api.stratum.ai`) |
 | `API_V1_PREFIX` | No | `/api/v1` | API version prefix |
@@ -38,7 +38,7 @@ Complete reference for all environment variables used by Stratum AI.
 ```bash
 ENVIRONMENT=production
 DEBUG=false
-APP_NAME=Stratum AI
+APP_NAME=ADs Growth System
 APP_URL=https://app.stratum.ai
 API_URL=https://api.stratum.ai
 API_V1_PREFIX=/api/v1
@@ -169,7 +169,7 @@ ALLOWED_HOSTS=app.stratum.ai,api.stratum.ai
 | `SMTP_USER` | Yes | - | SMTP username |
 | `SMTP_PASSWORD` | Yes | - | SMTP password or API key |
 | `SMTP_FROM_EMAIL` | Yes | - | Default sender email |
-| `SMTP_FROM_NAME` | No | `Stratum AI` | Default sender name |
+| `SMTP_FROM_NAME` | No | `ADs Growth System` | Default sender name |
 | `SMTP_TLS` | No | `true` | Enable TLS |
 | `SMTP_SSL` | No | `false` | Enable SSL |
 
@@ -181,7 +181,7 @@ SMTP_PORT=587
 SMTP_USER=apikey
 SMTP_PASSWORD=SG.your-sendgrid-api-key
 SMTP_FROM_EMAIL=noreply@stratum.ai
-SMTP_FROM_NAME=Stratum AI
+SMTP_FROM_NAME=ADs Growth System
 SMTP_TLS=true
 ```
 
@@ -193,7 +193,7 @@ SMTP_PORT=587
 SMTP_USER=your-ses-smtp-username
 SMTP_PASSWORD=your-ses-smtp-password
 SMTP_FROM_EMAIL=noreply@stratum.ai
-SMTP_FROM_NAME=Stratum AI
+SMTP_FROM_NAME=ADs Growth System
 SMTP_TLS=true
 ```
 
@@ -361,13 +361,13 @@ FEATURE_API_RATE_LIMITING=true
 
 ```bash
 # =============================================================================
-# Stratum AI - Development Environment
+# ADs Growth System - Development Environment
 # =============================================================================
 
 # Application
 ENVIRONMENT=development
 DEBUG=true
-APP_NAME=Stratum AI (Dev)
+APP_NAME=ADs Growth System (Dev)
 APP_URL=http://localhost:5173
 API_URL=http://localhost:8000
 
@@ -411,13 +411,13 @@ LOG_FORMAT=text
 
 ```bash
 # =============================================================================
-# Stratum AI - Production Environment
+# ADs Growth System - Production Environment
 # =============================================================================
 
 # Application
 ENVIRONMENT=production
 DEBUG=false
-APP_NAME=Stratum AI
+APP_NAME=ADs Growth System
 APP_URL=https://app.stratum.ai
 API_URL=https://api.stratum.ai
 
@@ -448,7 +448,7 @@ SMTP_PORT=587
 SMTP_USER=apikey
 SMTP_PASSWORD=SENDGRID_API_KEY
 SMTP_FROM_EMAIL=noreply@stratum.ai
-SMTP_FROM_NAME=Stratum AI
+SMTP_FROM_NAME=ADs Growth System
 SMTP_TLS=true
 
 # Stripe (live keys)

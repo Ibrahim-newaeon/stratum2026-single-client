@@ -156,7 +156,7 @@ const entry: MarketingSeedEntry = {
   template: 'integrations',
   meta_title: 'Integrations',
   meta_description:
-    'Connect Stratum AI with Meta, Google, TikTok, Snapchat, and 30+ marketing platforms. Unified data, one dashboard.',
+    'Connect ADs Growth System with Meta, Google, TikTok, Snapchat, and 30+ marketing platforms. Unified data, one dashboard.',
   content_json,
 };
 

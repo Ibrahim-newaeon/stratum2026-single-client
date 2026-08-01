@@ -1,5 +1,5 @@
 # =============================================================================
-# Stratum AI - A/B Test Power Analysis & Sample Size Calculator
+# ADs Growth System - A/B Test Power Analysis & Sample Size Calculator
 # =============================================================================
 """
 Statistical power analysis for A/B testing experiments.

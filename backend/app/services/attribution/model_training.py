@@ -1,5 +1,5 @@
 # =============================================================================
-# Stratum AI - Attribution Model Training Service
+# ADs Growth System - Attribution Model Training Service
 # =============================================================================
 """
 Service for training, storing, and managing data-driven attribution models.

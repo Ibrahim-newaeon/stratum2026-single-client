@@ -2,7 +2,7 @@
 
 ## Overview
 
-Stratum AI uses structured logging with Structlog and error tracking with Sentry.
+ADs Growth System uses structured logging with Structlog and error tracking with Sentry.
 
 ---
 
@@ -248,7 +248,7 @@ raise HTTPException(
 # app/core/exceptions.py
 
 class StratumException(Exception):
-    """Base exception for Stratum AI."""
+    """Base exception for ADs Growth System."""
     def __init__(self, message: str, code: str = None):
         self.message = message
         self.code = code

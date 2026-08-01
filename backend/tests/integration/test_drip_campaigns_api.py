@@ -1,5 +1,5 @@
 # =============================================================================
-# Stratum AI - Drip Campaigns API Integration Tests
+# ADs Growth System - Drip Campaigns API Integration Tests
 # =============================================================================
 """Integration tests for the drip-campaigns (email sequence) API.
 

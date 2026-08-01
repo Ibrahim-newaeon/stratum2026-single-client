@@ -1,5 +1,5 @@
 # =============================================================================
-# Stratum AI - Meta (Facebook/Instagram) OAuth Service
+# ADs Growth System - Meta (Facebook/Instagram) OAuth Service
 # =============================================================================
 """
 OAuth implementation for Meta Business Suite (Facebook/Instagram Ads).

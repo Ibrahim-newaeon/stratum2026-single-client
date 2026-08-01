@@ -1,5 +1,5 @@
 # =============================================================================
-# Stratum AI - Signal Health Daily Rollup Task
+# ADs Growth System - Signal Health Daily Rollup Task
 # =============================================================================
 """
 Celery task for daily signal health rollup.

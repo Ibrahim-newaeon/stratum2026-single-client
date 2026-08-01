@@ -1,5 +1,5 @@
 # =============================================================================
-# Stratum AI - Security (Redis & auth-flow paths) Unit Tests
+# ADs Growth System - Security (Redis & auth-flow paths) Unit Tests
 # =============================================================================
 """Unit tests for the Redis-backed and auth-flow paths of
 ``app.core.security``.

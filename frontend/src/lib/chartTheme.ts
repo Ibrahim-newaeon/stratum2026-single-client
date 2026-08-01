@@ -2,7 +2,7 @@ import type { TooltipProps } from 'recharts'
 
 /**
  * Centralized Chart Theme Configuration
- * Analytics Design System + Stratum AI Brand
+ * Analytics Design System + ADs Growth System Brand
  *
  * Colors reference CSS custom properties so charts adapt to light/dark mode.
  * Platform colors are brand identities and remain static.
@@ -50,19 +50,23 @@ export const chartTheme = {
   // Platform color palette (ordered) — brand identities
   platformColors: ['#0866FF', '#4285F4', '#00F2EA', '#FFFC00', '#0A66C2', '#25D366'],
 
-  // Regional breakdown colors — kept as static accent palette
-  regionColors: ['#6366f1', '#ec4899', '#f97316', '#14b8a6', '#8b5cf6', '#f43f5e'],
+  // Regional breakdown colors — superads.xml data series, cycled.
+  // data-1 blue, data-2 purple, data-3 pink, data-4 green, data-5 cyan,
+  // then state-warning orange to reach six without repeating a hue.
+  regionColors: ['#3b82f6', '#8b5cf6', '#ec4899', '#10b981', '#06b6d4', '#f97316'],
 
-  // Chart series colors (for multi-series) — static accent palette
+  // Chart series colors (for multi-series) — the same five data-* tokens in
+  // order, then the state colors, so a 6th+ series stays inside the theme
+  // palette instead of introducing hues the design system never declares.
   seriesColors: [
-    '#6366f1',
-    '#0ea5e9',
-    '#10b981',
-    '#f59e0b',
-    '#ec4899',
-    '#8b5cf6',
-    '#14b8a6',
-    '#f97316',
+    '#3b82f6', // data-1
+    '#8b5cf6', // data-2
+    '#ec4899', // data-3
+    '#10b981', // data-4
+    '#06b6d4', // data-5
+    '#f97316', // state-warning
+    '#ef4444', // state-error
+    '#60a5fa', // brand-accent-hover
   ],
 
   // Tooltip styling — theme-aware surface

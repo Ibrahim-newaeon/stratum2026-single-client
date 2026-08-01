@@ -5,7 +5,7 @@ description: Use when reviewing a Dependabot PR or manually bumping a dependency
 
 # Upgrade Dependency
 
-Stratum AI auto-runs Dependabot. Most PRs are safe, some aren't. This is the checklist before clicking merge.
+ADs Growth System auto-runs Dependabot. Most PRs are safe, some aren't. This is the checklist before clicking merge.
 
 ## Triage by version delta
 

@@ -1,5 +1,5 @@
 // =============================================================================
-// Stratum AI — Integration Hub (Gap #6)
+// ADs Growth System — Integration Hub (Gap #6)
 // =============================================================================
 
 import { useState } from 'react';
@@ -29,7 +29,7 @@ export default function IntegrationHub() {
             Integration Hub
           </h1>
           <p className="text-muted-foreground mt-2">
-            Connect Stratum AI to your external tools and data warehouses
+            Connect ADs Growth System to your external tools and data warehouses
           </p>
         </header>
 
@@ -384,7 +384,7 @@ function TeamsPanel() {
         headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${getToken()}` },
         body: JSON.stringify({
           webhook_id: id,
-          title: 'Test Alert from Stratum AI',
+          title: 'Test Alert from ADs Growth System',
           text: 'This is a test message to verify your Microsoft Teams integration is working.',
           theme_color: 'FF1F6D',
           facts: [

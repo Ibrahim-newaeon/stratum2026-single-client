@@ -1,5 +1,5 @@
 # =============================================================================
-# Stratum AI - LTV Forecasting unit tests
+# ADs Growth System - LTV Forecasting unit tests
 # =============================================================================
 """Unit tests for app.analytics.logic.ltv_forecasting.
 

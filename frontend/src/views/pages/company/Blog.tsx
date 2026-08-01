@@ -39,7 +39,7 @@ export default function Blog() {
     <PageLayout>
       <SEO
         title="Blog"
-        description="Marketing intelligence insights, product updates, and best practices from the Stratum AI team."
+        description="Marketing intelligence insights, product updates, and best practices from the ADs Growth System team."
         url="https://stratum-ai.com/blog"
       />
 
@@ -48,7 +48,7 @@ export default function Blog() {
         badgeIcon={NewspaperIcon}
         title="Insights &"
         highlight="resources"
-        subtitle="Latest news, guides, and insights from the Stratum AI team."
+        subtitle="Latest news, guides, and insights from the ADs Growth System team."
       />
 
       {/* Categories */}

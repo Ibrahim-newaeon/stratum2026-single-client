@@ -2,7 +2,7 @@
 
 ## Outcome
 
-Stratum AI shipped to production on Railway with a working signup flow, email delivery via Resend SMTP, WhatsApp webhook integration with Meta, and a hardened deploy pipeline. Both backend and frontend are healthy and serving traffic.
+ADs Growth System shipped to production on Railway with a working signup flow, email delivery via Resend SMTP, WhatsApp webhook integration with Meta, and a hardened deploy pipeline. Both backend and frontend are healthy and serving traffic.
 
 ---
 

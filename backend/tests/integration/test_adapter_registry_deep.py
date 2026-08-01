@@ -1,5 +1,5 @@
 # =============================================================================
-# Stratum AI - Adapter Registry Deep Coverage Tests (#342 Batch 5+6)
+# ADs Growth System - Adapter Registry Deep Coverage Tests (#342 Batch 5+6)
 # =============================================================================
 """
 Deep tests for ``app.stratum.adapters.registry``.

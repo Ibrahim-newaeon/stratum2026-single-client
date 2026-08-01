@@ -1,5 +1,5 @@
 # =============================================================================
-# Stratum AI - CDP Segments API Integration Tests
+# ADs Growth System - CDP Segments API Integration Tests
 # =============================================================================
 """Integration tests for the CDP segments API.
 

@@ -1,4 +1,4 @@
-# Stratum AI - Enterprise Plan Tutorial
+# ADs Growth System - Enterprise Plan Tutorial
 
 > **REMOVED (historical) — 2026-07**: subscription tiers/plans were
 > removed in the single-client conversion (STRAT-SC-001) — there is no
@@ -11,7 +11,7 @@
 
 ---
 
-## Welcome to Stratum AI Enterprise Plan
+## Welcome to ADs Growth System Enterprise Plan
 
 This tutorial covers the advanced features exclusive to the **Enterprise Plan**. You'll master:
 
@@ -876,10 +876,10 @@ PUT  /api/v1/dashboards/custom/{id}/layout
 
 ---
 
-**Congratulations!** You've completed the Enterprise Plan tutorial. You now have the knowledge to leverage all of Stratum AI's most powerful features.
+**Congratulations!** You've completed the Enterprise Plan tutorial. You now have the knowledge to leverage all of ADs Growth System's most powerful features.
 
 **Need help implementing any feature?** Contact your dedicated Success Manager or reach out to support-enterprise@stratum.ai.
 
 ---
 
-*Stratum AI Enterprise - The Complete Revenue Operating System*
+*ADs Growth System Enterprise - The Complete Revenue Operating System*

@@ -1,5 +1,5 @@
 # =============================================================================
-# Stratum AI - Campaign Management Endpoints
+# ADs Growth System - Campaign Management Endpoints
 # =============================================================================
 """
 Campaign CRUD operations and metrics retrieval.

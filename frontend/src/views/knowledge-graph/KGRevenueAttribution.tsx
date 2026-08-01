@@ -100,7 +100,7 @@ export default function KGRevenueAttribution() {
   return (
     <>
       <Helmet>
-        <title>Revenue Attribution - Knowledge Graph | Stratum AI</title>
+        <title>Revenue Attribution - Knowledge Graph | ADs Growth System</title>
       </Helmet>
 
       <div className="space-y-6 max-w-7xl mx-auto">

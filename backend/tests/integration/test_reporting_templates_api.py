@@ -1,5 +1,5 @@
 # =============================================================================
-# Stratum AI - Reporting Templates API Integration Tests
+# ADs Growth System - Reporting Templates API Integration Tests
 # =============================================================================
 """Integration tests for the reporting/templates API.
 

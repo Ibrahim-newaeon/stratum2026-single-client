@@ -1,8 +1,8 @@
-# Stratum AI - OWASP Security Compliance Checklist
+# ADs Growth System - OWASP Security Compliance Checklist
 
 ## Overview
 
-This document tracks compliance with OWASP (Open Web Application Security Project) security standards for the Stratum AI platform.
+This document tracks compliance with OWASP (Open Web Application Security Project) security standards for the ADs Growth System platform.
 
 **Last Updated:** January 2026
 **OWASP Top 10 Version:** 2021

@@ -1,6 +1,6 @@
 /**
  * Overview — COMMAND CENTER DESIGN SYSTEM
- * Premium dashboard overview for Stratum AI
+ * Premium dashboard overview for ADs Growth System
  */
 
 import { useState, useEffect, useCallback, useMemo, useRef } from 'react'
@@ -84,8 +84,8 @@ function Sparkline({ positive = true }: { positive?: boolean }) {
       <svg viewBox="0 0 120 40" className="w-full h-full" preserveAspectRatio="none">
         <defs>
           <linearGradient id={`spark-${positive}`} x1="0" y1="0" x2="0" y2="1">
-            <stop offset="0%" stopColor={positive ? '#FF5A1F' : '#E85D5D'} stopOpacity="0.3" />
-            <stop offset="100%" stopColor={positive ? '#FF5A1F' : '#E85D5D'} stopOpacity="0" />
+            <stop offset="0%" stopColor={positive ? '#3B82F6' : '#E85D5D'} stopOpacity="0.3" />
+            <stop offset="100%" stopColor={positive ? '#3B82F6' : '#E85D5D'} stopOpacity="0" />
           </linearGradient>
         </defs>
         <path
@@ -101,7 +101,7 @@ function Sparkline({ positive = true }: { positive?: boolean }) {
             : 'M0,5 C10,8 20,12 30,10 C40,18 50,22 60,20 C70,28 80,25 90,32 C100,35 110,38 120,40'
           }
           fill="none"
-          stroke={positive ? '#FF8A4A' : '#E85D5D'}
+          stroke={positive ? '#60A5FA' : '#E85D5D'}
           strokeWidth="1.5"
           strokeLinecap="round"
         />
@@ -469,7 +469,7 @@ export function Overview() {
         <div>
           <h1 className="text-2xl lg:text-3xl font-bold text-foreground">{t('overview.title')}</h1>
           <p className="mt-1 text-sm text-muted-foreground">
-            Last updated: {simulation.lastUpdated.toLocaleString()} · <span className="text-success">Stratum AI</span>
+            Last updated: {simulation.lastUpdated.toLocaleString()} · <span className="text-success">ADs Growth System</span>
           </p>
         </div>
         <div className="flex items-center gap-3">
@@ -543,12 +543,12 @@ export function Overview() {
               <svg viewBox="0 0 600 200" className="w-full h-full" preserveAspectRatio="none">
                 <defs>
                   <linearGradient id="perf-grad" x1="0" y1="0" x2="0" y2="1">
-                    <stop offset="0%" stopColor="#FF8A4A" stopOpacity="0.4" />
-                    <stop offset="100%" stopColor="#FF8A4A" stopOpacity="0" />
+                    <stop offset="0%" stopColor="#60A5FA" stopOpacity="0.4" />
+                    <stop offset="100%" stopColor="#60A5FA" stopOpacity="0" />
                   </linearGradient>
                 </defs>
                 <path d="M0,180 C50,170 100,140 150,150 C200,120 250,80 300,90 C350,50 400,60 450,30 C500,20 550,10 600,5 L600,200 L0,200 Z" fill="url(#perf-grad)" />
-                <path d="M0,180 C50,170 100,140 150,150 C200,120 250,80 300,90 C350,50 400,60 450,30 C500,20 550,10 600,5" fill="none" stroke="#FF8A4A" strokeWidth="2" />
+                <path d="M0,180 C50,170 100,140 150,150 C200,120 250,80 300,90 C350,50 400,60 450,30 C500,20 550,10 600,5" fill="none" stroke="#60A5FA" strokeWidth="2" />
                 <path d="M0,190 C60,185 120,175 180,180 C240,170 300,160 360,165 C420,155 480,150 540,145 C580,140 600,138" fill="none" stroke="#27C39D" strokeWidth="2" strokeDasharray="4 4" />
               </svg>
             </div>

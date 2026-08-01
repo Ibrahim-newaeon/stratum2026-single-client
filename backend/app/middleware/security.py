@@ -1,5 +1,5 @@
 # =============================================================================
-# Stratum AI - Security Headers Middleware
+# ADs Growth System - Security Headers Middleware
 # =============================================================================
 """
 Security middleware that adds protective HTTP headers to all responses.

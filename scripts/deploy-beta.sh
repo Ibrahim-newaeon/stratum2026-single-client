@@ -1,6 +1,6 @@
 #!/bin/bash
 # =============================================================================
-# Stratum AI - Beta Deployment Script
+# ADs Growth System - Beta Deployment Script
 # =============================================================================
 # Usage: ./scripts/deploy-beta.sh [command]
 # Commands: setup, deploy, update, logs, status, backup, rollback
@@ -438,7 +438,7 @@ case "${1:-help}" in
         shell $2
         ;;
     *)
-        echo "Stratum AI Beta Deployment Script"
+        echo "ADs Growth System Beta Deployment Script"
         echo ""
         echo "Usage: $0 [command]"
         echo ""

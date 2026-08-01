@@ -43,7 +43,7 @@ const fallbackFaqs: FAQItem[] = [
   // Pricing & Plans
   {
     id: '1',
-    question: 'What pricing plans does Stratum AI offer?',
+    question: 'What pricing plans does ADs Growth System offer?',
     answer:
       'We offer three tiers: Starter ($499/mo) for growing teams, Professional ($1,499/mo) for scaling businesses with advanced automation, and custom Enterprise plans for large organizations. Each tier includes a 14-day free trial with full feature access.',
     category: 'pricing',
@@ -111,7 +111,7 @@ const fallbackFaqs: FAQItem[] = [
     id: '10',
     question: 'How do I connect my ad accounts?',
     answer:
-      'Go to Tenant Settings → Connect Platforms. Click "Connect" on any platform to start the OAuth flow. You\'ll be redirected to the platform to grant permissions, then automatically returned to Stratum AI.',
+      'Go to Tenant Settings → Connect Platforms. Click "Connect" on any platform to start the OAuth flow. You\'ll be redirected to the platform to grant permissions, then automatically returned to ADs Growth System.',
     category: 'integrations',
   },
   {
@@ -169,7 +169,7 @@ const fallbackFaqs: FAQItem[] = [
     id: '18',
     question: 'How can I contact the team?',
     answer:
-      'Email us at support@stratum.ai for support, sales@stratum.ai for sales inquiries, or use the in-app chat. Enterprise customers have direct Slack channels with our team.',
+      'Email us at support@adsgrowthsystem.com for support, sales@adsgrowthsystem.com for sales inquiries, or use the in-app chat. Enterprise customers have direct Slack channels with our team.',
     category: 'support',
   },
 ];
@@ -211,7 +211,7 @@ export default function FAQ() {
         badgeIcon={QuestionMarkCircleIcon}
         title="Frequently asked"
         highlight="questions"
-        subtitle="Everything you need to know about Stratum AI."
+        subtitle="Everything you need to know about ADs Growth System."
       >
         <p
           className="mt-4 text-body text-muted-foreground animate-enter"
@@ -321,7 +321,7 @@ export default function FAQ() {
                 Contact Support
               </a>
               <a
-                href="mailto:sales@stratum.ai"
+                href="mailto:sales@adsgrowthsystem.com"
                 className="inline-flex items-center justify-center px-7 py-3.5 rounded-full bg-card border border-border text-foreground font-semibold text-body hover:bg-foreground/5 transition-colors duration-200"
               >
                 Email Us

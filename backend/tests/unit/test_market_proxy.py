@@ -1,5 +1,5 @@
 # =============================================================================
-# Stratum AI - Market Intelligence Proxy unit tests
+# ADs Growth System - Market Intelligence Proxy unit tests
 # =============================================================================
 """Unit tests for app.services.market_proxy.
 

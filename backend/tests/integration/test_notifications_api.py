@@ -1,5 +1,5 @@
 # =============================================================================
-# Stratum AI - Notifications API Integration Tests
+# ADs Growth System - Notifications API Integration Tests
 # =============================================================================
 """Integration tests for the in-app notifications API.
 

@@ -1,5 +1,5 @@
 # =============================================================================
-# Stratum AI - Application Exception Hierarchy
+# ADs Growth System - Application Exception Hierarchy
 # =============================================================================
 """
 Structured exception classes for consistent error handling across the API.
@@ -20,7 +20,7 @@ from typing import Any, Optional
 
 
 class AppException(Exception):  # noqa: N818 — intentional base class name
-    """Base exception for all Stratum AI application errors."""
+    """Base exception for all ADs Growth System application errors."""
 
     status_code: int = 500
     error_code: str = "INTERNAL_ERROR"
@@ -126,7 +126,7 @@ class TierLimitError(AppException):
 
 
 # =============================================================================
-# Stratum AI — Domain Exception Classes
+# ADs Growth System — Domain Exception Classes
 # =============================================================================
 """
 Standardized exceptions with error codes for API consumers.
@@ -136,7 +136,7 @@ that maps to a documented error in the API reference.
 
 
 class StratumError(Exception):
-    """Base exception for all Stratum AI domain errors."""
+    """Base exception for all ADs Growth System domain errors."""
 
     error_code: str = "STRATUM_ERROR"
     status_code: int = 500

@@ -1,5 +1,5 @@
 /**
- * Stratum AI - Platform Setup Modal
+ * ADs Growth System - Platform Setup Modal
  *
  * Shows all required tokens, IDs, and credentials needed to connect
  * each integration platform. Opens when user clicks a platform card.
@@ -180,7 +180,7 @@ export const platformCredentials: PlatformCredentialConfig[] = [
         placeholder: '1//xxxxxxxxxxxxxxxxxx',
         helpText: 'Long-lived refresh token for persistent API access.',
         whereToFind:
-          'Generated during OAuth consent flow — Stratum handles this automatically after first connection.',
+          'Generated during OAuth consent flow — ADs Growth System handles this automatically after first connection.',
         required: true,
       },
       {
@@ -251,7 +251,7 @@ export const platformCredentials: PlatformCredentialConfig[] = [
         type: 'password',
         placeholder: 'xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx',
         helpText: 'OAuth access token (valid 24 hours, auto-refreshed).',
-        whereToFind: 'Generated during OAuth flow — Stratum handles this automatically.',
+        whereToFind: 'Generated during OAuth flow — ADs Growth System handles this automatically.',
         required: true,
       },
       {
@@ -378,7 +378,7 @@ export const platformCredentials: PlatformCredentialConfig[] = [
     color: 'from-orange-500 to-orange-700',
     icon: 'H',
     subtitle: 'CRM & Marketing Hub',
-    description: 'Sync contacts, companies, and deals between Stratum AI and HubSpot CRM.',
+    description: 'Sync contacts, companies, and deals between ADs Growth System and HubSpot CRM.',
     docsUrl: 'https://developers.hubspot.com/docs/api/overview',
     authMethod: 'oauth',
     credentials: [
@@ -767,7 +767,7 @@ export const platformCredentials: PlatformCredentialConfig[] = [
       },
     ],
     notes: [
-      'Install the GTM snippet on your website to use with Stratum.',
+      'Install the GTM snippet on your website to use with ADs Growth System.',
       'Server-side GTM containers can be used for enhanced data control.',
     ],
   },

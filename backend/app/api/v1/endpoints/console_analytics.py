@@ -1,5 +1,5 @@
 # =============================================================================
-# Stratum AI - Owner Console Analytics API
+# ADs Growth System - Owner Console Analytics API
 # =============================================================================
 """
 API endpoints for Owner console analytics and platform health monitoring.

@@ -1,5 +1,5 @@
 /**
- * Stratum AI - Notifications API
+ * ADs Growth System - Notifications API
  *
  * In-app notification management.
  */

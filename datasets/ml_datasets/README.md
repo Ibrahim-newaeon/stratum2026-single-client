@@ -1,6 +1,6 @@
-# Stratum AI - ML Training Datasets & Scripts
+# ADs Growth System - ML Training Datasets & Scripts
 
-This directory contains training datasets and scripts for Stratum AI's predictive models.
+This directory contains training datasets and scripts for ADs Growth System's predictive models.
 
 ## Quick Start
 

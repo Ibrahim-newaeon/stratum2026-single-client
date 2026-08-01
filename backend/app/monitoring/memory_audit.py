@@ -1,5 +1,5 @@
 # =============================================================================
-# Stratum AI - Memory Audit Core Engine
+# ADs Growth System - Memory Audit Core Engine
 # =============================================================================
 """
 Core memory auditing engine using tracemalloc, psutil, gc.
@@ -104,7 +104,7 @@ class MemorySnapshot:
 
 class MemoryAuditor:
     """
-    Core memory auditing engine for Stratum AI.
+    Core memory auditing engine for ADs Growth System.
 
     Usage:
         auditor = MemoryAuditor()

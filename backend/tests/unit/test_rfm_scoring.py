@@ -1,5 +1,5 @@
 # =============================================================================
-# Stratum AI - RFM Scoring Unit Tests
+# ADs Growth System - RFM Scoring Unit Tests
 # =============================================================================
 """Unit tests for the pure RFM scoring logic in
 ``app.services.cdp.computed_traits_service.RFMAnalysisService``:

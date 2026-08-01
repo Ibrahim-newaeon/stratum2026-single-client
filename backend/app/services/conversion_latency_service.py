@@ -1,5 +1,5 @@
 # =============================================================================
-# Stratum AI - Real-Time Conversion Latency Tracking Service
+# ADs Growth System - Real-Time Conversion Latency Tracking Service
 # =============================================================================
 """
 Service for tracking conversion latency in real-time.

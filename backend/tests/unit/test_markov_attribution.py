@@ -1,5 +1,5 @@
 # =============================================================================
-# Stratum AI - Markov Attribution Unit Tests
+# ADs Growth System - Markov Attribution Unit Tests
 # =============================================================================
 """Unit tests for ``MarkovChainModel`` in
 app.services.attribution.markov_attribution — pure removal-effect math.

@@ -254,11 +254,11 @@ export const generalTour: TourConfig = {
   id: 'general-tour',
   role: 'general',
   name: 'Platform Overview',
-  description: 'Get familiar with the Stratum AI platform',
+  description: 'Get familiar with the ADs Growth System platform',
   steps: [
     {
       target: 'body',
-      content: 'Welcome to Stratum AI! Let\'s take a quick tour of the platform.',
+      content: 'Welcome to ADs Growth System! Let\'s take a quick tour of the platform.',
       placement: 'center',
       disableBeacon: true,
     },

@@ -1,5 +1,5 @@
 # =============================================================================
-# Stratum AI - Data Quality Analyzer
+# ADs Growth System - Data Quality Analyzer
 # =============================================================================
 """
 AI-powered data quality analysis for Conversion APIs.

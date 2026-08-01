@@ -1,4 +1,4 @@
-# Stratum AI Development Session - February 4, 2026
+# ADs Growth System Development Session - February 4, 2026
 
 ## Session Summary
 
@@ -86,14 +86,14 @@ Generated audio files using Microsoft Edge TTS (edge-tts Python library):
 
 **English Greeting (`greeting-en.mp3` - 57KB):**
 ```
-Hi there! Welcome to Stratum AI. I am here to help you get started
+Hi there! Welcome to ADs Growth System. I am here to help you get started
 with our Revenue Operating System. Want to chat?
 ```
 Voice: `en-US-JennyNeural`
 
 **Arabic Greeting (`greeting-ar.mp3` - 70KB):**
 ```
-مرحباً! أهلاً بك في Stratum AI. أنا هنا لمساعدتك في البدء مع نظام
+مرحباً! أهلاً بك في ADs Growth System. أنا هنا لمساعدتك في البدء مع نظام
 تشغيل الإيرادات. هل تريد الدردشة؟
 ```
 Voice: `ar-SA-ZariyahNeural`
@@ -151,7 +151,7 @@ aaecdf1 Merge pull request #69 from Ibrahim-newaeon/feature/enable-dtz-rule
 ### Local Commits (Before Merge)
 
 ```
-8aab6ac chore: initial commit of Stratum AI platform
+8aab6ac chore: initial commit of ADs Growth System platform
 0113c25 fix(onboarding): fix Redis URL attribute and update AI assistant theme
 ```
 

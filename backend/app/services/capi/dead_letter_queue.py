@@ -1,5 +1,5 @@
 # =============================================================================
-# Stratum AI - Dead Letter Queue for Failed Events (P0 Gap Fix)
+# ADs Growth System - Dead Letter Queue for Failed Events (P0 Gap Fix)
 # =============================================================================
 """
 Dead Letter Queue (DLQ) implementation for CAPI event failures.

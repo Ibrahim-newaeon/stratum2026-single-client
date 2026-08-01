@@ -1,5 +1,5 @@
 # =============================================================================
-# Stratum AI - CDP Audience Sync API Integration Tests
+# ADs Growth System - CDP Audience Sync API Integration Tests
 # =============================================================================
 """Integration tests for the CDP audience-sync API.
 

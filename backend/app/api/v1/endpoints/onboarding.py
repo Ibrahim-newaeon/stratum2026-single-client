@@ -1,5 +1,5 @@
 # =============================================================================
-# Stratum AI - Onboarding API Endpoints
+# ADs Growth System - Onboarding API Endpoints
 # =============================================================================
 """
 Onboarding wizard endpoints for initial org setup.
@@ -670,7 +670,7 @@ async def save_trust_gate_config(
             completed=True,
             next_step=None,
             progress_percentage=100,
-            message="Onboarding completed! Welcome to Stratum AI.",
+            message="Onboarding completed! Welcome to ADs Growth System.",
         ),
     )
 

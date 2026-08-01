@@ -1,5 +1,5 @@
 # =============================================================================
-# Stratum AI - Pacing Alert Service Deep Integration Tests
+# ADs Growth System - Pacing Alert Service Deep Integration Tests
 # =============================================================================
 """Service-layer integration tests for
 ``app.services.pacing.alert_service`` (#342 Batch 4).
@@ -903,7 +903,10 @@ class TestEmailNotification:
         assert ok is True
         assert email_service._send_email.call_count == 2
         kwargs = email_service._create_message.call_args.kwargs
-        assert kwargs["subject"] == f"[Stratum AI] CRITICAL Pacing Alert: {alert.title}"
+        assert (
+            kwargs["subject"]
+            == f"[ADs Growth System] CRITICAL Pacing Alert: {alert.title}"
+        )
         html = kwargs["html_content"]
         assert "MTD Actual" in html
         assert "MTD Expected" in html
@@ -1000,7 +1003,7 @@ class TestWhatsAppNotification:
         assert wa_client.send_text_message.await_count == 2
         kwargs = wa_client.send_text_message.await_args.kwargs
         assert kwargs["recipient_phone"] == "+201001234567"
-        assert "[CRITICAL] Stratum AI Pacing Alert" in kwargs["text"]
+        assert "[CRITICAL] ADs Growth System Pacing Alert" in kwargs["text"]
         assert "Deviation: +40.0%" in kwargs["text"]
         assert "Days Remaining: 15" in kwargs["text"]
 

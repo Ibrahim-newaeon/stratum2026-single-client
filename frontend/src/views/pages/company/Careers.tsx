@@ -92,7 +92,7 @@ export default function Careers() {
 
   return (
     <PageLayout>
-      <SEO title="Careers" description="Join the Stratum AI team. Help build the future of trust-gated marketing automation." url="https://stratum-ai.com/careers" />
+      <SEO title="Careers" description="Join the ADs Growth System team. Help build the future of trust-gated marketing automation." url="https://stratum-ai.com/careers" />
 
       <MktHero
         badge="We're Hiring"
@@ -105,7 +105,7 @@ export default function Careers() {
       {/* Benefits */}
       <section className="pb-12">
         <div className="max-w-7xl mx-auto px-6 lg:px-8">
-          <MktSectionHeader eyebrow="Perks" title="Why" highlight="Stratum AI?" />
+          <MktSectionHeader eyebrow="Perks" title="Why" highlight="ADs Growth System?" />
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
             {benefits.map((benefit, i) => (
               <MktFeatureCard

@@ -89,7 +89,7 @@ export function FeedbackWidget() {
 
     toast({
       title: 'Thank you for your feedback!',
-      description: 'Your input helps us improve Stratum AI.',
+      description: 'Your input helps us improve ADs Growth System.',
     });
 
     // Reset & close
@@ -150,7 +150,7 @@ export function FeedbackWidget() {
                 </div>
                 <div>
                   <h3 className="text-sm font-semibold text-white">Send Feedback</h3>
-                  <p className="text-[11px] text-foreground/40">Help us improve Stratum AI</p>
+                  <p className="text-[11px] text-foreground/40">Help us improve ADs Growth System</p>
                 </div>
               </div>
               <button

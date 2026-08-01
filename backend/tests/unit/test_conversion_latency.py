@@ -1,5 +1,5 @@
 # =============================================================================
-# Stratum AI - Conversion Latency Service unit tests
+# ADs Growth System - Conversion Latency Service unit tests
 # =============================================================================
 """Unit tests for app.services.conversion_latency_service.
 

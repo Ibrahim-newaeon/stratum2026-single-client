@@ -1,5 +1,5 @@
 # =============================================================================
-# Stratum AI - Attribution Calculator Unit Tests
+# ADs Growth System - Attribution Calculator Unit Tests
 # =============================================================================
 """Unit tests for the pure attribution-weight math in
 ``app.services.attribution.attribution_service``:

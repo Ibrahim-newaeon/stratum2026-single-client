@@ -1,5 +1,5 @@
 # =============================================================================
-# Stratum AI - QA Fixes Endpoint Integration Tests
+# ADs Growth System - QA Fixes Endpoint Integration Tests
 # =============================================================================
 """Integration tests for the QA-fixes surface under ``/api/v1/qa-fixes/...``:
 quality-issue detection, the prioritized fix playbook, and applied-fix

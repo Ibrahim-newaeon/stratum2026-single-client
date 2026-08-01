@@ -1,5 +1,5 @@
 /**
- * Stratum AI - Automated Reporting API
+ * ADs Growth System - Automated Reporting API
  *
  * Handles report templates, scheduling, generation, and delivery.
  */

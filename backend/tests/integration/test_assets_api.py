@@ -1,5 +1,5 @@
 # =============================================================================
-# Stratum AI - Creative Assets Endpoint Integration Tests
+# ADs Growth System - Creative Assets Endpoint Integration Tests
 # =============================================================================
 """Integration tests for the DB-backed ``/assets`` CRUD surface (the JSON
 create/list/get/update/soft-delete paths). The multipart ``/upload`` route

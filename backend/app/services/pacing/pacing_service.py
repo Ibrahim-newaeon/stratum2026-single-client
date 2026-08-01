@@ -1,5 +1,5 @@
 # =============================================================================
-# Stratum AI - Pacing Service
+# ADs Growth System - Pacing Service
 # =============================================================================
 """
 Pacing service for calculating target progress and projections.

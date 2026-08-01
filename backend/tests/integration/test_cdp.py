@@ -1,5 +1,5 @@
 # =============================================================================
-# Stratum AI - CDP Integration Tests
+# ADs Growth System - CDP Integration Tests
 # =============================================================================
 """
 Integration tests for CDP (Customer Data Platform) module.

@@ -1,5 +1,5 @@
 # =============================================================================
-# Stratum AI - Drip Campaign Models
+# ADs Growth System - Drip Campaign Models
 # =============================================================================
 """SQLAlchemy models for drip (email sequence) campaigns.
 

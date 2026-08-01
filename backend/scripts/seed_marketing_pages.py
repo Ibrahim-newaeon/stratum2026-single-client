@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """
-Stratum AI - Marketing Pages Seed Script
+ADs Growth System - Marketing Pages Seed Script
 
 Loads the public marketing pages' built-in content into the CMS as editable,
 published pages so they appear under /cms/pages and the public pages render the
@@ -58,7 +58,7 @@ async def seed_marketing_pages(overwrite: bool) -> None:
     async_session = sessionmaker(engine, class_=AsyncSession, expire_on_commit=False)
 
     print("=" * 60)
-    print("  Stratum AI - Marketing Pages Seed")
+    print("  ADs Growth System - Marketing Pages Seed")
     print("=" * 60)
     print(f"  Source: {DATA_FILE.name} ({len(pages)} pages)")
     print("=" * 60)

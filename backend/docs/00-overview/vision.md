@@ -1,8 +1,8 @@
-# Stratum AI - Vision & Mission
+# ADs Growth System - Vision & Mission
 
 ## Overview
 
-Stratum AI is an **Enterprise Marketing Intelligence Platform** that provides unified analytics across Meta, Google, TikTok, and Snapchat advertising platforms. At its core, Stratum AI operates as a **Revenue Operating System** with a unique **Trust-Gated Autopilot** architecture.
+ADs Growth System is an **Enterprise Marketing Intelligence Platform** that provides unified analytics across Meta, Google, TikTok, and Snapchat advertising platforms. At its core, ADs Growth System operates as a **Revenue Operating System** with a unique **Trust-Gated Autopilot** architecture.
 
 ## Mission Statement
 
@@ -10,7 +10,7 @@ Stratum AI is an **Enterprise Marketing Intelligence Platform** that provides un
 
 ## Core Philosophy: Trust-Gated Automation
 
-Unlike traditional marketing automation platforms that execute actions blindly, Stratum AI implements a safety-first approach where automation decisions are gated by signal health checks:
+Unlike traditional marketing automation platforms that execute actions blindly, ADs Growth System implements a safety-first approach where automation decisions are gated by signal health checks:
 
 ```
 Signal Health Check → Trust Gate → Automation Decision
@@ -76,7 +76,7 @@ Signal Health Check → Trust Gate → Automation Decision
 
 ## Key Differentiators
 
-| Feature | Stratum AI | Traditional Platforms |
+| Feature | ADs Growth System | Traditional Platforms |
 |---------|------------|----------------------|
 | Automation Safety | Trust-gated execution | Blind execution |
 | Data Quality | Built-in EMQ scoring | External validation needed |

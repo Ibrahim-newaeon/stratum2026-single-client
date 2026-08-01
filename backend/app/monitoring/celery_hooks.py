@@ -1,5 +1,5 @@
 # =============================================================================
-# Stratum AI - Celery Memory Profiling Hooks
+# ADs Growth System - Celery Memory Profiling Hooks
 # =============================================================================
 """
 Celery signal hooks that track memory usage per task type.

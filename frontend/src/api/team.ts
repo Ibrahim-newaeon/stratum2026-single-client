@@ -1,5 +1,5 @@
 /**
- * Stratum AI - Team API
+ * ADs Growth System - Team API
  *
  * Tenant-scoped team member management (backed by /users endpoints).
  * Replaces the former adminApi wiring in TeamManagement, which pointed

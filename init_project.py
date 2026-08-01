@@ -1,9 +1,9 @@
 #!/usr/bin/env python3
 """
-Stratum AI - Project Initialization Script
+ADs Growth System - Project Initialization Script
 ==========================================
 
-This script creates the entire Stratum AI project structure when executed.
+This script creates the entire ADs Growth System project structure when executed.
 It generates all directories, configuration files, and source code.
 
 Usage:
@@ -81,11 +81,11 @@ FILES: Dict[str, str] = {}
 # -----------------------------------------------------------------------------
 
 FILES[".env.example"] = '''# =============================================================================
-# Stratum AI - Environment Configuration
+# ADs Growth System - Environment Configuration
 # =============================================================================
 
 # Application
-APP_NAME=Stratum AI
+APP_NAME=ADs Growth System
 APP_ENV=development
 DEBUG=true
 SECRET_KEY=your-secret-key-change-in-production
@@ -336,7 +336,7 @@ volumes:
   redis_data:
 '''
 
-FILES["README.md"] = '''# Stratum AI
+FILES["README.md"] = '''# ADs Growth System
 
 Enterprise Marketing SaaS Platform with AI Intelligence
 
@@ -528,7 +528,7 @@ format = %(levelname)-5.5s [%(name)s] %(message)s
 datefmt = %H:%M:%S
 '''
 
-FILES["backend/app/__init__.py"] = '''"""Stratum AI Backend Application."""
+FILES["backend/app/__init__.py"] = '''"""ADs Growth System Backend Application."""
 __version__ = "1.0.0"
 '''
 
@@ -551,7 +551,7 @@ class Settings(BaseSettings):
     )
 
     # Application
-    app_name: str = "Stratum AI"
+    app_name: str = "ADs Growth System"
     app_env: str = "development"
     debug: bool = True
     secret_key: str = "change-me-in-production"
@@ -923,7 +923,7 @@ FILES["frontend/index.html"] = '''<!doctype html>
     <meta charset="UTF-8" />
     <link rel="icon" type="image/svg+xml" href="/vite.svg" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Stratum AI</title>
+    <title>ADs Growth System</title>
   </head>
   <body>
     <div id="root"></div>
@@ -1050,7 +1050,7 @@ FILES["frontend/src/i18n/locales/en/translation.json"] = '''{
   "nav": {
     "overview": "Overview",
     "campaigns": "Campaigns",
-    "stratum": "Stratum AI",
+    "stratum": "ADs Growth System",
     "benchmarks": "Benchmarks",
     "assets": "Assets",
     "rules": "Rules",
@@ -1158,7 +1158,7 @@ FILES["frontend/src/i18n/locales/uk/translation.json"] = '''{
   "nav": {
     "overview": "Огляд",
     "campaigns": "Кампанії",
-    "stratum": "Stratum AI",
+    "stratum": "ADs Growth System",
     "benchmarks": "Бенчмарки",
     "assets": "Активи",
     "rules": "Правила",
@@ -1220,7 +1220,7 @@ FILES["frontend/src/i18n/locales/uk/translation.json"] = '''{
 def create_project_structure(target_dir: Path) -> None:
     """Create the project directory structure and files."""
     print(f"\\n{'='*60}")
-    print(f"  Stratum AI - Project Initialization")
+    print(f"  ADs Growth System - Project Initialization")
     print(f"{'='*60}\\n")
     print(f"Target directory: {target_dir}\\n")
 
@@ -1263,7 +1263,7 @@ def create_project_structure(target_dir: Path) -> None:
 def main():
     """Main entry point."""
     parser = argparse.ArgumentParser(
-        description="Initialize Stratum AI project structure"
+        description="Initialize ADs Growth System project structure"
     )
     parser.add_argument(
         "--target-dir",

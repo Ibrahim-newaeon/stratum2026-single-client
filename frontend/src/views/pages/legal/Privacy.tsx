@@ -48,7 +48,7 @@ export default function Privacy() {
                 <section>
                   <h2 className="text-h2 text-foreground font-semibold mb-4">1. Introduction</h2>
                   <p className="text-body text-muted-foreground leading-relaxed">
-                    Stratum AI, Inc. (&quot;Stratum AI,&quot; &quot;we,&quot; &quot;us,&quot; or
+                    ADs Growth System, Inc. (&quot;ADs Growth System,&quot; &quot;we,&quot; &quot;us,&quot; or
                     &quot;our&quot;) respects your privacy and is committed to protecting your
                     personal data. This privacy policy explains how we collect, use, disclose, and
                     safeguard your information when you use our services.
@@ -149,7 +149,7 @@ export default function Privacy() {
                     Data Protection Officer at:
                   </p>
                   <p className="mt-4 text-body text-muted-foreground leading-relaxed">
-                    <strong className="text-foreground">Email:</strong> privacy@stratum.ai
+                    <strong className="text-foreground">Email:</strong> privacy@adsgrowthsystem.com
                     <br />
                     <strong className="text-foreground">Address:</strong> 548 Market Street, Suite 35000,
                     San Francisco, CA 94104

@@ -1,5 +1,5 @@
 # =============================================================================
-# Stratum AI - Auth Login Endpoint Integration Tests
+# ADs Growth System - Auth Login Endpoint Integration Tests
 # =============================================================================
 """Integration tests for ``POST /auth/login`` — password verification and
 access/refresh token issuance. A dedicated user fixture is created with the

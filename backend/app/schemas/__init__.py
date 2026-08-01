@@ -1,5 +1,5 @@
 # =============================================================================
-# Stratum AI - Schemas Package
+# ADs Growth System - Schemas Package
 # =============================================================================
 # Re-exports all schemas for backwards compatibility
 

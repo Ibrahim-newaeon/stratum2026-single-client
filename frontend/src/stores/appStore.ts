@@ -1,5 +1,5 @@
 /**
- * Stratum AI - App Store
+ * ADs Growth System - App Store
  *
  * Zustand store for managing session/user state and dashboard UI
  * preferences. Single-client app — no tenant context, no tenant ID.

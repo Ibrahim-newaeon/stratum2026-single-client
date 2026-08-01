@@ -1,5 +1,5 @@
 # =============================================================================
-# Stratum AI - Salesforce Writeback Service
+# ADs Growth System - Salesforce Writeback Service
 # =============================================================================
 """
 Service for writing attribution data back to Salesforce.
@@ -38,7 +38,7 @@ logger = get_logger(__name__)
 # Custom Field Definitions
 # =============================================================================
 
-# Stratum AI custom fields for Contacts
+# ADs Growth System custom fields for Contacts
 CONTACT_CUSTOM_FIELDS = [
     {
         "api_name": "Stratum_Ad_Platform__c",
@@ -107,7 +107,7 @@ CONTACT_CUSTOM_FIELDS = [
     },
 ]
 
-# Stratum AI custom fields for Opportunities
+# ADs Growth System custom fields for Opportunities
 OPPORTUNITY_CUSTOM_FIELDS = [
     {
         "api_name": "Stratum_Attributed_Platform__c",

@@ -1,5 +1,5 @@
 /**
- * Stratum AI - Auth API
+ * ADs Growth System - Auth API
  *
  * Authentication endpoints for signup, login, email verification,
  * password reset, and token management.

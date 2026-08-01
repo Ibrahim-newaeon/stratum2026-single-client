@@ -11,7 +11,7 @@ export const integrationsArticles: DocArticle[] = [
     blocks: [
       {
         type: 'paragraph',
-        text: 'The Meta integration connects your Business and ad accounts to Stratum through the Meta Marketing API. Once connected, signal collectors pull campaign performance and event deliveries, a per-platform health calculation feeds Signal Health, and your trust-gated automations can manage budgets, bids, and campaign status.',
+        text: 'The Meta integration connects your Business and ad accounts to ADs Growth System through the Meta Marketing API. Once connected, signal collectors pull campaign performance and event deliveries, a per-platform health calculation feeds Signal Health, and your trust-gated automations can manage budgets, bids, and campaign status.',
       },
       { type: 'heading', text: 'What you can do' },
       {
@@ -29,14 +29,14 @@ export const integrationsArticles: DocArticle[] = [
         ordered: true,
         items: [
           'Open Integrations and choose Meta.',
-          'Complete Meta’s consent flow — Stratum never sees your password and stores only an encrypted refresh token.',
-          'Select the Business and ad accounts you want Stratum to read and manage.',
+          'Complete Meta’s consent flow — ADs Growth System never sees your password and stores only an encrypted refresh token.',
+          'Select the Business and ad accounts you want ADs Growth System to read and manage.',
           'Wait a few minutes for collectors to begin pulling metrics and events.',
         ],
       },
       {
         type: 'paragraph',
-        text: 'Stratum requests the minimum scopes needed to read ads performance and manage the entities your automations control. Meta access tokens are short-lived; Stratum refreshes them automatically from the stored encrypted token, so you do not have to reconnect routinely.',
+        text: 'ADs Growth System requests the minimum scopes needed to read ads performance and manage the entities your automations control. Meta access tokens are short-lived; ADs Growth System refreshes them automatically from the stored encrypted token, so you do not have to reconnect routinely.',
       },
       { type: 'heading', text: 'Conversions API and Custom Audiences' },
       {
@@ -47,7 +47,7 @@ export const integrationsArticles: DocArticle[] = [
         type: 'callout',
         tone: 'warning',
         title: 'Least scope, hashed PII',
-        text: 'Stratum requests only the scopes it needs, and email and phone identifiers are lower-cased, trimmed, and SHA-256 hashed before they are sent to Meta for matching. Raw PII is never required for CAPI or audience sync.',
+        text: 'ADs Growth System requests only the scopes it needs, and email and phone identifiers are lower-cased, trimmed, and SHA-256 hashed before they are sent to Meta for matching. Raw PII is never required for CAPI or audience sync.',
       },
       { type: 'heading', text: 'Troubleshooting' },
       {
@@ -66,7 +66,7 @@ export const integrationsArticles: DocArticle[] = [
     blocks: [
       {
         type: 'paragraph',
-        text: 'The Google integration connects your Google Ads accounts through the Google Ads API. Stratum reads performance across Search, Display, and YouTube, lets automations manage your campaigns behind the trust gate, and activates CDP segments as Customer Match audiences.',
+        text: 'The Google integration connects your Google Ads accounts through the Google Ads API. ADs Growth System reads performance across Search, Display, and YouTube, lets automations manage your campaigns behind the trust gate, and activates CDP segments as Customer Match audiences.',
       },
       { type: 'heading', text: 'What you can do' },
       {
@@ -84,13 +84,13 @@ export const integrationsArticles: DocArticle[] = [
         ordered: true,
         items: [
           'Open Integrations and choose Google.',
-          'Complete Google’s OAuth consent flow — Stratum stores only an encrypted refresh token, never your password.',
-          'Select the Google Ads accounts Stratum should read and manage.',
+          'Complete Google’s OAuth consent flow — ADs Growth System stores only an encrypted refresh token, never your password.',
+          'Select the Google Ads accounts ADs Growth System should read and manage.',
         ],
       },
       {
         type: 'paragraph',
-        text: 'The Google Ads API is accessed through a developer token alongside your OAuth grant. Stratum manages the developer token centrally, so you only complete the OAuth consent — there is nothing to paste. We request the minimum scopes needed to read performance data and manage the entities automations control.',
+        text: 'The Google Ads API is accessed through a developer token alongside your OAuth grant. ADs Growth System manages the developer token centrally, so you only complete the OAuth consent — there is nothing to paste. We request the minimum scopes needed to read performance data and manage the entities automations control.',
       },
       { type: 'heading', text: 'Conversion import and Customer Match' },
       {
@@ -120,7 +120,7 @@ export const integrationsArticles: DocArticle[] = [
     blocks: [
       {
         type: 'paragraph',
-        text: 'The TikTok integration connects your advertiser accounts through the TikTok Ads API. Stratum reads campaign performance, manages entities behind the trust gate, sends server-side conversions through the Events API, and activates CDP segments as TikTok Custom Audiences.',
+        text: 'The TikTok integration connects your advertiser accounts through the TikTok Ads API. ADs Growth System reads campaign performance, manages entities behind the trust gate, sends server-side conversions through the Events API, and activates CDP segments as TikTok Custom Audiences.',
       },
       { type: 'heading', text: 'What you can do' },
       {
@@ -138,13 +138,13 @@ export const integrationsArticles: DocArticle[] = [
         ordered: true,
         items: [
           'Open Integrations and choose TikTok.',
-          'Complete TikTok’s OAuth consent flow — Stratum stores only an encrypted refresh token.',
-          'Select the advertiser accounts Stratum should read and manage.',
+          'Complete TikTok’s OAuth consent flow — ADs Growth System stores only an encrypted refresh token.',
+          'Select the advertiser accounts ADs Growth System should read and manage.',
         ],
       },
       {
         type: 'paragraph',
-        text: 'As with every platform, Stratum requests the minimum scopes needed to read performance data and manage the entities your automations control. The connection is registered in the integration registry, and collectors begin pulling metrics and events within a few minutes.',
+        text: 'As with every platform, ADs Growth System requests the minimum scopes needed to read performance data and manage the entities your automations control. The connection is registered in the integration registry, and collectors begin pulling metrics and events within a few minutes.',
       },
       { type: 'heading', text: 'Events API and Custom Audiences' },
       {
@@ -168,12 +168,12 @@ export const integrationsArticles: DocArticle[] = [
     blocks: [
       {
         type: 'paragraph',
-        text: 'Beyond ad platforms, Stratum integrates with CRM and messaging systems. HubSpot and Zoho sync contacts and companies into the Customer Data Platform for enrichment and segmentation, while Slack and WhatsApp Business carry notifications out to your team and customers.',
+        text: 'Beyond ad platforms, ADs Growth System integrates with CRM and messaging systems. HubSpot and Zoho sync contacts and companies into the Customer Data Platform for enrichment and segmentation, while Slack and WhatsApp Business carry notifications out to your team and customers.',
       },
       { type: 'heading', text: 'HubSpot and Zoho' },
       {
         type: 'paragraph',
-        text: 'Connecting a CRM lets Stratum mirror your contact and company records into the CDP, where they merge with behavioral events to build unified profiles. Those profiles power computed traits, lifecycle stages, and the segments you later activate as ad-platform audiences.',
+        text: 'Connecting a CRM lets ADs Growth System mirror your contact and company records into the CDP, where they merge with behavioral events to build unified profiles. Those profiles power computed traits, lifecycle stages, and the segments you later activate as ad-platform audiences.',
       },
       {
         type: 'list',
@@ -189,7 +189,7 @@ export const integrationsArticles: DocArticle[] = [
         ordered: true,
         items: [
           'Open Integrations and choose HubSpot or Zoho.',
-          'Complete the provider’s OAuth consent flow — Stratum stores only an encrypted refresh token.',
+          'Complete the provider’s OAuth consent flow — ADs Growth System stores only an encrypted refresh token.',
           'Pick the objects to sync; the initial backfill begins immediately.',
         ],
       },

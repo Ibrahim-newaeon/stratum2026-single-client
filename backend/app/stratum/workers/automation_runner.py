@@ -1,5 +1,5 @@
 """
-Stratum AI: Automation Runner Workers
+ADs Growth System: Automation Runner Workers
 =====================================
 
 Celery tasks for executing autopilot actions across platforms.

@@ -1,7 +1,7 @@
 /**
  * PageLayout Component
  * Shared layout for all public-facing pages with header and footer
- * Theme: Stratum AI Command Center (#0B0B0B + solid surfaces)
+ * Theme: ADs Growth System Command Center (#0B0B0B + solid surfaces)
  */
 
 import { useEffect, useState } from 'react';
@@ -16,7 +16,6 @@ interface PageLayoutProps {
 const navLinks = [
   { name: 'Product', href: '/features' },
   { name: 'Solutions', href: '/solutions/cdp' },
-  { name: 'Pricing', href: '/pricing' },
   { name: 'Docs', href: '/docs' },
 ];
 
@@ -98,11 +97,7 @@ export function PageLayout({ children }: PageLayoutProps) {
           <nav className="flex items-center justify-between">
             {/* Logo */}
             <Link to="/" className="flex items-center gap-3 group">
-              <img
-                src="/images/stratum-logo.png"
-                alt="Stratum AI"
-                className="h-8"
-              />
+              <span className="font-display font-semibold text-lg tracking-tight text-foreground">ADs Growth <span className="text-primary">System</span></span>
             </Link>
 
             {/* Desktop Navigation Links */}
@@ -180,7 +175,7 @@ export function PageLayout({ children }: PageLayoutProps) {
               </Link>
               <Link
                 to="/signup"
-                className="px-5 py-2.5 rounded-full text-sm font-semibold text-primary-foreground bg-stratum-500 hover:brightness-110 hover:shadow-glow transition-shadow duration-200"
+                className="px-5 py-2.5 rounded-full text-sm font-semibold text-primary-foreground bg-cta hover:bg-cta-hover hover:shadow-glow transition-shadow duration-200"
               >
                 Start Partnering
               </Link>
@@ -277,7 +272,7 @@ export function PageLayout({ children }: PageLayoutProps) {
                 </Link>
                 <Link
                   to="/signup"
-                  className="py-3 px-4 rounded-full text-sm font-semibold text-primary-foreground text-center bg-stratum-500 hover:brightness-110 transition-opacity"
+                  className="py-3 px-4 rounded-full text-sm font-semibold text-primary-foreground text-center bg-cta hover:bg-cta-hover transition-colors"
                   onClick={() => setIsMobileMenuOpen(false)}
                 >
                   Start Partnering
@@ -301,11 +296,9 @@ export function PageLayout({ children }: PageLayoutProps) {
             {/* Brand */}
             <div className="col-span-2">
               <Link to="/" className="inline-flex items-center gap-3 mb-4">
-                <img
-                  src="/images/stratum-logo.png"
-                  alt="Stratum AI"
-                  className="h-7"
-                />
+                <span className="font-display font-semibold text-lg tracking-tight text-foreground">
+                  ADs Growth <span className="text-primary">System</span>
+                </span>
               </Link>
               <p className="text-sm text-muted-foreground mb-6 max-w-xs">
                 Your AI Partner for Ad Growth. Unify, optimize, and scale with
@@ -407,7 +400,7 @@ export function PageLayout({ children }: PageLayoutProps) {
           {/* Bottom bar */}
           <div className="pt-8 border-t border-border flex flex-col md:flex-row items-center justify-between gap-4">
             <p className="text-xs text-muted-foreground">
-              &copy; {new Date().getFullYear()} Stratum AI. All rights
+              &copy; {new Date().getFullYear()} ADs Growth System. All rights
               reserved.
             </p>
 

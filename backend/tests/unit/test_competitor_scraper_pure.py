@@ -1,5 +1,5 @@
 # =============================================================================
-# Stratum AI - Competitor Scraper Pure-Logic Unit Tests
+# ADs Growth System - Competitor Scraper Pure-Logic Unit Tests
 # =============================================================================
 """Unit tests for the pure helpers in ``app.services.competitor_scraper``:
 

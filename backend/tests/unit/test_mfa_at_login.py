@@ -1,5 +1,5 @@
 # =============================================================================
-# Stratum AI - MFA-at-Login Tests
+# ADs Growth System - MFA-at-Login Tests
 # =============================================================================
 """
 Tests for the MFA-at-login enforcement (P0-1).

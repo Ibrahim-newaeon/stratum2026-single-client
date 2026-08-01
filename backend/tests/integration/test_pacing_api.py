@@ -1,5 +1,5 @@
 # =============================================================================
-# Stratum AI - Pacing & Forecasting Endpoint Integration Tests
+# ADs Growth System - Pacing & Forecasting Endpoint Integration Tests
 # =============================================================================
 """Integration tests for the pacing/forecasting surface under
 ``/api/v1/pacing/...``: target CRUD, pacing reads, forecasting, and alerts.

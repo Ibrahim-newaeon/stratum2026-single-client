@@ -60,7 +60,7 @@ const fallbackFeatures: FeatureRow[] = [
     category: 'Trust Engine',
     stratum: 'yes',
     competitors: { segment: 'no', braze: 'no', mparticle: 'no', amplitude: 'no' },
-    tooltip: 'Unique to Stratum AI',
+    tooltip: 'Unique to ADs Growth System',
   },
   {
     feature: 'Signal Health Monitoring',
@@ -290,15 +290,15 @@ export default function ComparisonPage() {
       <MktHero
         badge="Compare"
         badgeIcon={ChartBarIcon}
-        title="How Stratum AI"
+        title="How ADs Growth System"
         highlight="compares"
-        subtitle="See how Stratum AI stacks up against other marketing platforms. Trust-gated automation is our unique differentiator."
+        subtitle="See how ADs Growth System stacks up against other marketing platforms. Trust-gated automation is our unique differentiator."
       />
 
       {/* Key Differentiators */}
       <section className="pb-12">
         <div className="max-w-7xl mx-auto px-6 lg:px-8">
-          <MktSectionHeader eyebrow="Why Stratum" title="What makes us" highlight="different" />
+          <MktSectionHeader eyebrow="Why ADs Growth System" title="What makes us" highlight="different" />
           <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-6">
             {differentiators.map((diff, i) => (
               <MktFeatureCard
@@ -318,7 +318,7 @@ export default function ComparisonPage() {
         <div className="max-w-5xl mx-auto px-6 lg:px-8">
           <MktSectionHeader
             eyebrow="Feature Matrix"
-            title="Stratum AI vs."
+            title="ADs Growth System vs."
             highlight="the field"
           />
 
@@ -347,7 +347,7 @@ export default function ComparisonPage() {
               <div className="text-meta uppercase text-muted-foreground">Feature</div>
               <div className="text-center">
                 <span className="text-meta uppercase text-secondary font-semibold">
-                  Stratum AI
+                  ADs Growth System
                 </span>
               </div>
               <div className="text-center">

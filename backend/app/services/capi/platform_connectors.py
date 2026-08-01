@@ -1,5 +1,5 @@
 # =============================================================================
-# Stratum AI - Platform CAPI Connectors
+# ADs Growth System - Platform CAPI Connectors
 # =============================================================================
 """
 Server-side Conversion API connectors for ad platforms.

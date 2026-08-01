@@ -1,5 +1,5 @@
 /**
- * ThemeProvider tests — Stratum figma theme system.
+ * ThemeProvider tests — ADs Growth System figma theme system.
  *
  * Contract under test:
  * - Defaults to 'system' when localStorage is empty.

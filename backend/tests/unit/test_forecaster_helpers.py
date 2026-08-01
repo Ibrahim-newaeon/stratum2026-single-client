@@ -1,5 +1,5 @@
 # =============================================================================
-# Stratum AI - ROAS Forecaster Pure-Helper Unit Tests
+# ADs Growth System - ROAS Forecaster Pure-Helper Unit Tests
 # =============================================================================
 """Unit tests for the pure helpers of ``app.ml.forecaster.ROASForecaster``:
 baseline aggregation, linear ROAS trend, weekday/weekend seasonality, and

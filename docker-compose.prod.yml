@@ -1,5 +1,5 @@
 # =============================================================================
-# Stratum AI - Production Docker Compose Override
+# ADs Growth System - Production Docker Compose Override
 # =============================================================================
 # Usage: docker compose -f docker-compose.yml -f docker-compose.prod.yml up -d
 # =============================================================================

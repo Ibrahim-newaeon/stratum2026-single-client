@@ -50,7 +50,7 @@ export default function DPA() {
                     <h2 className="text-h2 text-foreground font-semibold mb-4">1. Introduction</h2>
                     <p className="text-body text-muted-foreground leading-relaxed">
                       This Data Processing Agreement (&quot;DPA&quot;) forms part of the Terms of
-                      Service between Stratum AI, Inc. (&quot;Processor&quot;) and the Customer
+                      Service between ADs Growth System, Inc. (&quot;Processor&quot;) and the Customer
                       (&quot;Controller&quot;) and governs the processing of personal data by Processor
                       on behalf of Controller.
                     </p>
@@ -123,7 +123,7 @@ export default function DPA() {
                     <p className="text-body text-muted-foreground leading-relaxed">
                       Controller provides general authorization for Processor to engage Sub-processors.
                       Processor maintains a list of current Sub-processors at
-                      stratum.ai/legal/subprocessors. Processor will notify Controller of any new
+                      adsgrowthsystem.com/legal/subprocessors. Processor will notify Controller of any new
                       Sub-processors 30 days in advance.
                     </p>
                   </section>
@@ -199,7 +199,7 @@ export default function DPA() {
                       For questions about this DPA, please contact our Data Protection Officer at:
                     </p>
                     <p className="mt-4 text-body text-muted-foreground leading-relaxed">
-                      <strong className="text-foreground">Email:</strong> dpo@stratum.ai
+                      <strong className="text-foreground">Email:</strong> dpo@adsgrowthsystem.com
                       <br />
                       <strong className="text-foreground">Address:</strong> 548 Market Street, Suite 35000,
                       San Francisco, CA 94104

@@ -1,5 +1,5 @@
 # =============================================================================
-# Stratum AI - TikTok Campaign Sync Service
+# ADs Growth System - TikTok Campaign Sync Service
 # =============================================================================
 """
 Syncs campaigns and reports from TikTok Marketing API v1.3.

@@ -1,5 +1,5 @@
 # =============================================================================
-# Stratum AI - Mock Ad Network Client unit tests
+# ADs Growth System - Mock Ad Network Client unit tests
 # =============================================================================
 """Unit tests for app.services.mock_client.
 

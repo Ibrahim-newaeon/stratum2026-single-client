@@ -1,5 +1,5 @@
 # =============================================================================
-# Stratum AI - Authentication & Authorization Module
+# ADs Growth System - Authentication & Authorization Module
 # =============================================================================
 """
 Authentication and authorization components including:

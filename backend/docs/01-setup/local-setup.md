@@ -1,6 +1,6 @@
 # Local Development Setup
 
-This guide walks you through setting up Stratum AI for local development.
+This guide walks you through setting up ADs Growth System for local development.
 
 ## Prerequisites
 

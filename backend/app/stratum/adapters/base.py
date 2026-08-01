@@ -1,5 +1,5 @@
 # =============================================================================
-# Stratum AI - Base Platform Adapter
+# ADs Growth System - Base Platform Adapter
 # =============================================================================
 """
 Base Adapter Interface for Platform Integrations.

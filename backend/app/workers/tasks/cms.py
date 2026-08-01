@@ -1,5 +1,5 @@
 # =============================================================================
-# Stratum AI - CMS Publishing Tasks
+# ADs Growth System - CMS Publishing Tasks
 # =============================================================================
 """
 Background tasks for CMS content publishing and scheduling.

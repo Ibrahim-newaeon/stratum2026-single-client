@@ -1,5 +1,5 @@
 # =============================================================================
-# Stratum AI - Owner Console Dashboard Endpoints
+# ADs Growth System - Owner Console Dashboard Endpoints
 # =============================================================================
 """
 Owner console endpoints for platform-level management.

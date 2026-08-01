@@ -1,5 +1,5 @@
 # =============================================================================
-# Stratum AI - Integration Test Configuration
+# ADs Growth System - Integration Test Configuration
 # =============================================================================
 """
 Pytest configuration and fixtures for integration tests.
@@ -196,7 +196,7 @@ async def app():
     from app.middleware.auth_context import AuthContextMiddleware
 
     application = FastAPI(
-        title="Stratum AI (test)",
+        title="ADs Growth System (test)",
         default_response_class=ORJSONResponse,
     )
 

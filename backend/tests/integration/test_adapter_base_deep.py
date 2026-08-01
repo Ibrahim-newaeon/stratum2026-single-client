@@ -1,5 +1,5 @@
 # =============================================================================
-# Stratum AI - Base Adapter Deep Integration Tests
+# ADs Growth System - Base Adapter Deep Integration Tests
 # =============================================================================
 """Deep coverage tests for ``app.stratum.adapters.base`` (#342 Batch 5+6).
 

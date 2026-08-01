@@ -1,5 +1,5 @@
 # =============================================================================
-# Stratum AI - CDP (Customer Data Platform) Database Models
+# ADs Growth System - CDP (Customer Data Platform) Database Models
 # =============================================================================
 """
 Database models for the Stratum CDP module.

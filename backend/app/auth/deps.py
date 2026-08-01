@@ -1,5 +1,5 @@
 # =============================================================================
-# Stratum AI - Authentication Dependencies
+# ADs Growth System - Authentication Dependencies
 # =============================================================================
 """
 FastAPI dependencies for authentication and authorization.

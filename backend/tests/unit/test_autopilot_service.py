@@ -1,5 +1,5 @@
 # =============================================================================
-# Stratum AI - Autopilot Service Unit Tests
+# ADs Growth System - Autopilot Service Unit Tests
 # =============================================================================
 """
 Unit tests for AutopilotService and recommendation-to-action mapping.

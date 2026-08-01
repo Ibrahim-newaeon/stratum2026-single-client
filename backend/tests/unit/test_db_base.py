@@ -1,5 +1,5 @@
 # =============================================================================
-# Stratum AI - DB Base / Mixins unit tests
+# ADs Growth System - DB Base / Mixins unit tests
 # =============================================================================
 """Unit tests for app.db.base.
 

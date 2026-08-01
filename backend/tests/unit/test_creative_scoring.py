@@ -1,5 +1,5 @@
 # =============================================================================
-# Stratum AI - Creative Scoring unit tests
+# ADs Growth System - Creative Scoring unit tests
 # =============================================================================
 """Unit tests for app.analytics.logic.creative_scoring.
 

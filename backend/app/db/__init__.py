@@ -1,5 +1,5 @@
 # =============================================================================
-# Stratum AI - Database Module
+# ADs Growth System - Database Module
 # =============================================================================
 from app.db.base import Base
 from app.db.session import (

@@ -1,5 +1,5 @@
 # =============================================================================
-# Stratum AI - Report Scheduling Service
+# ADs Growth System - Report Scheduling Service
 # =============================================================================
 """
 Handles scheduling and automatic execution of reports.

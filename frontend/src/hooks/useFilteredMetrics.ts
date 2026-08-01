@@ -1,5 +1,5 @@
 /**
- * Stratum AI - Filtered Metrics Hook
+ * ADs Growth System - Filtered Metrics Hook
  *
  * Combines the cost toggle (usePriceMetrics), hidden metrics (useMetricVisibility),
  * and optional platform / category filters to return a filtered list of metrics.

@@ -1,5 +1,5 @@
 # =============================================================================
-# Stratum AI - CMS (Content Management System) Endpoints
+# ADs Growth System - CMS (Content Management System) Endpoints
 # =============================================================================
 """
 CMS API endpoints for managing blog posts, pages, and contact submissions.

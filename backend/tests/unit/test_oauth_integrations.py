@@ -1,5 +1,5 @@
 # =============================================================================
-# Stratum AI - OAuth Integrations Test Suite
+# ADs Growth System - OAuth Integrations Test Suite
 # =============================================================================
 """
 Comprehensive tests for OAuth integrations (Feature #8):

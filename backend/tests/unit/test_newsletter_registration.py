@@ -1,5 +1,5 @@
 # =============================================================================
-# Stratum AI - Newsletter Task Registration Tests
+# ADs Growth System - Newsletter Task Registration Tests
 # =============================================================================
 """
 Tests for registering the newsletter task module (Tier 3).

@@ -24,7 +24,7 @@ interface CMSSettingsData {
 
 export default function CMSSettings() {
   const [settings, setSettings] = useState<CMSSettingsData>({
-    siteName: 'Stratum AI Blog',
+    siteName: 'ADs Growth System Blog',
     siteDescription: 'Revenue Operating System insights, guides, and updates',
     postsPerPage: 12,
     defaultPostStatus: 'draft',

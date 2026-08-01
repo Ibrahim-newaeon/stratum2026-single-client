@@ -1,5 +1,5 @@
 # =============================================================================
-# Stratum AI - Zoho CRM Client
+# ADs Growth System - Zoho CRM Client
 # =============================================================================
 """
 Zoho CRM API client with OAuth support.
@@ -40,7 +40,7 @@ ZOHO_TOKEN_URL = "https://accounts.zoho.com/oauth/v2/token"
 ZOHO_API_BASE = "https://www.zohoapis.com/crm/v3"
 ZOHO_REVOKE_URL = "https://accounts.zoho.com/oauth/v2/token/revoke"
 
-# Required scopes for Stratum AI integration
+# Required scopes for ADs Growth System integration
 ZOHO_SCOPES = [
     "ZohoCRM.modules.contacts.READ",
     "ZohoCRM.modules.contacts.WRITE",

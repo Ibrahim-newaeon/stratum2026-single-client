@@ -1,5 +1,5 @@
 /**
- * Stratum AI - Attribution Page
+ * ADs Growth System - Attribution Page
  *
  * Multi-touch attribution analysis with data-driven models (Markov, Shapley).
  */

@@ -1,5 +1,5 @@
 """
-Stratum AI - Platform Datasets Loader
+ADs Growth System - Platform Datasets Loader
 
 Loads synthetic ad datasets into PostgreSQL for development and testing.
 Dynamically creates tables based on CSV structure.
@@ -175,7 +175,7 @@ def main():
     """Main entry point for data loading."""
 
     print("=" * 70)
-    print("🚀 Stratum AI - Platform Datasets Loader")
+    print("🚀 ADs Growth System - Platform Datasets Loader")
     print("=" * 70)
     print()
 

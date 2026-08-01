@@ -1,5 +1,5 @@
 # =============================================================================
-# Stratum AI - TikTok Custom Audience Connector Deep Tests
+# ADs Growth System - TikTok Custom Audience Connector Deep Tests
 # =============================================================================
 """Deep integration tests for the TikTok DMP Custom Audience connector.
 

@@ -1,5 +1,5 @@
 /**
- * Stratum AI - CRM Integration API
+ * ADs Growth System - CRM Integration API
  *
  * Handles HubSpot integration, contacts, deals, and sync operations.
  */

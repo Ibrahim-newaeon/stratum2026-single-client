@@ -1,5 +1,5 @@
 # =============================================================================
-# Stratum AI - Integration Module Tests
+# ADs Growth System - Integration Module Tests
 # =============================================================================
 """
 Test suite for the Stratum integration module.

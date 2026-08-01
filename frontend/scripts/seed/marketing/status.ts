@@ -33,9 +33,9 @@ const entry: MarketingSeedEntry = {
   slug: 'status',
   title: 'System Status',
   template: 'status',
-  meta_title: 'Stratum AI System Status',
+  meta_title: 'ADs Growth System System Status',
   meta_description:
-    'Real-time status and uptime monitoring for all Stratum AI services.',
+    'Real-time status and uptime monitoring for all ADs Growth System services.',
   content_json,
 };
 

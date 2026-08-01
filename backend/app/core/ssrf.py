@@ -1,5 +1,5 @@
 # =============================================================================
-# Stratum AI - Outbound URL / SSRF validation (SEC-001)
+# ADs Growth System - Outbound URL / SSRF validation (SEC-001)
 # =============================================================================
 """
 Shared guard for outbound HTTP requests to operator- or user-supplied URLs

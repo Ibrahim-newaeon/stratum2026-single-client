@@ -1,5 +1,5 @@
 # =============================================================================
-# Stratum AI - Pacing & Forecasting Services Package
+# ADs Growth System - Pacing & Forecasting Services Package
 # =============================================================================
 """
 Services for targets, pacing, and forecasting.

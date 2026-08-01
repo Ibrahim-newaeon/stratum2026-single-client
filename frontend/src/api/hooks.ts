@@ -1,5 +1,5 @@
 /**
- * Stratum AI - API Hooks
+ * ADs Growth System - API Hooks
  *
  * Centralized barrel file that re-exports all API hooks
  * and adds new hooks for platform owner console endpoints.

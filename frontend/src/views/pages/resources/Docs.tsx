@@ -37,7 +37,7 @@ export default function DocsPage() {
         badge="Documentation"
         badgeIcon={BookOpenIcon}
         title="Learn how to build with"
-        highlight="Stratum AI"
+        highlight="ADs Growth System"
         subtitle="Comprehensive guides, API references, and tutorials to help you integrate and maximize the power of trust-gated automation."
       >
         <div

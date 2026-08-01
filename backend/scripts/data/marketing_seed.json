@@ -4,7 +4,7 @@
     "title": "Features",
     "template": "features",
     "meta_title": "Features",
-    "meta_description": "Explore Stratum AI features: Trust Engine, Signal Health monitoring, CDP with audience sync, predictive analytics, and more.",
+    "meta_description": "Explore ADs Growth System features: Trust Engine, Signal Health monitoring, CDP with audience sync, predictive analytics, and more.",
     "content_json": {
       "features": [
         {
@@ -88,7 +88,7 @@
     "title": "Pricing",
     "template": "pricing",
     "meta_title": "Pricing",
-    "meta_description": "Simple, transparent pricing for Stratum AI. Start with a 14-day free trial. Plans from $499/month for growing teams.",
+    "meta_description": "Simple, transparent pricing for ADs Growth System. Start with a 14-day free trial. Plans from $499/month for growing teams.",
     "content_json": {
       "tiers": [
         {
@@ -173,7 +173,7 @@
     "title": "Integrations",
     "template": "integrations",
     "meta_title": "Integrations",
-    "meta_description": "Connect Stratum AI with Meta, Google, TikTok, Snapchat, and 30+ marketing platforms. Unified data, one dashboard.",
+    "meta_description": "Connect ADs Growth System with Meta, Google, TikTok, Snapchat, and 30+ marketing platforms. Unified data, one dashboard.",
     "content_json": {
       "categories": [
         {
@@ -420,34 +420,9 @@
       "mission": "We're on a mission to help growth teams make smarter decisions with AI-powered intelligence and trust-gated automation.",
       "team": [
         {
-          "name": "Sarah Chen",
-          "role": "CEO & Co-Founder",
-          "image": "SC"
-        },
-        {
-          "name": "Marcus Rodriguez",
-          "role": "CTO & Co-Founder",
-          "image": "MR"
-        },
-        {
-          "name": "Emily Watson",
-          "role": "VP of Product",
-          "image": "EW"
-        },
-        {
-          "name": "David Kim",
-          "role": "VP of Engineering",
-          "image": "DK"
-        },
-        {
-          "name": "Lisa Thompson",
-          "role": "VP of Sales",
-          "image": "LT"
-        },
-        {
-          "name": "James Park",
-          "role": "VP of Customer Success",
-          "image": "JP"
+          "name": "Ibrahim M. Abed Rabboh",
+          "role": "Owner & Executer",
+          "image": "IA"
         }
       ],
       "values": [
@@ -494,7 +469,7 @@
     "title": "Careers",
     "template": "careers",
     "meta_title": "Careers",
-    "meta_description": "Join the Stratum AI team. Help build the future of trust-gated marketing automation.",
+    "meta_description": "Join the ADs Growth System team. Help build the future of trust-gated marketing automation.",
     "content_json": {
       "positions": [
         {
@@ -543,7 +518,7 @@
           "location": "Remote (US)",
           "type": "Full-time",
           "salary": "$100K - $130K",
-          "description": "Partner with customers to ensure adoption and long-term success on Stratum AI."
+          "description": "Partner with customers to ensure adoption and long-term success on ADs Growth System."
         }
       ],
       "benefits": [
@@ -596,7 +571,7 @@
     "title": "Case Studies",
     "template": "case-studies",
     "meta_title": "Case Studies — Success Stories from Industry Leaders",
-    "meta_description": "Discover how companies across industries use Stratum AI to transform their marketing performance with trust-gated automation.",
+    "meta_description": "Discover how companies across industries use ADs Growth System to transform their marketing performance with trust-gated automation.",
     "content_json": {
       "stats": [
         {
@@ -637,7 +612,7 @@
               "value": "20hrs/week"
             }
           ],
-          "quote": "Stratum AI changed how we think about automation. The trust gates give us confidence to scale aggressively.",
+          "quote": "ADs Growth System changed how we think about automation. The trust gates give us confidence to scale aggressively.",
           "quotee": "Sarah Chen"
         },
         {
@@ -763,7 +738,7 @@
     "slug": "changelog",
     "title": "Changelog",
     "template": "changelog",
-    "meta_title": "Changelog — What's New in Stratum AI",
+    "meta_title": "Changelog — What's New in ADs Growth System",
     "meta_description": "Stay up to date with the latest features, improvements, and fixes.",
     "content_json": {
       "releases": [
@@ -919,8 +894,8 @@
     "slug": "compare",
     "title": "Compare",
     "template": "comparison",
-    "meta_title": "Compare — How Stratum AI Compares",
-    "meta_description": "See how Stratum AI stacks up against other marketing platforms. Trust-gated automation is our unique differentiator.",
+    "meta_title": "Compare — How ADs Growth System Compares",
+    "meta_description": "See how ADs Growth System stacks up against other marketing platforms. Trust-gated automation is our unique differentiator.",
     "content_json": {
       "differentiators": [
         {
@@ -981,7 +956,7 @@
             "mparticle": "no",
             "amplitude": "no"
           },
-          "tooltip": "Unique to Stratum AI"
+          "tooltip": "Unique to ADs Growth System"
         },
         {
           "feature": "Signal Health Monitoring",
@@ -1212,7 +1187,7 @@
     "title": "Glossary",
     "template": "glossary",
     "meta_title": "Platform Terminology",
-    "meta_description": "Complete reference of terms, metrics, and values used across Stratum AI.",
+    "meta_description": "Complete reference of terms, metrics, and values used across ADs Growth System.",
     "content_json": {
       "categories": [
         {
@@ -1415,7 +1390,7 @@
           "terms": [
             {
               "term": "Writeback",
-              "definition": "Syncing Stratum AI data (ad performance, attribution) back to CRM records."
+              "definition": "Syncing ADs Growth System data (ad performance, attribution) back to CRM records."
             },
             {
               "term": "Identity Matching",
@@ -1487,7 +1462,7 @@
           "terms": [
             {
               "term": "Supported Platforms",
-              "definition": "Ad networks integrated with Stratum AI."
+              "definition": "Ad networks integrated with ADs Growth System."
             },
             {
               "term": "Entity Hierarchy",
@@ -1598,8 +1573,8 @@
     "slug": "status",
     "title": "System Status",
     "template": "status",
-    "meta_title": "Stratum AI System Status",
-    "meta_description": "Real-time status and uptime monitoring for all Stratum AI services.",
+    "meta_title": "ADs Growth System System Status",
+    "meta_description": "Real-time status and uptime monitoring for all ADs Growth System services.",
     "content_json": {
       "services": [
         {
@@ -1672,7 +1647,7 @@
     "slug": "solutions-cdp",
     "title": "Customer Data Platform",
     "template": "solution",
-    "meta_title": "Customer Data Platform — Stratum AI",
+    "meta_title": "Customer Data Platform — ADs Growth System",
     "meta_description": "Unify customer profiles across every touchpoint. Build powerful segments and sync them to all your ad platforms instantly.",
     "content_json": {
       "hero": {
@@ -1744,7 +1719,7 @@
     "slug": "solutions-audience-sync",
     "title": "Audience Sync",
     "template": "solution",
-    "meta_title": "Audience Sync — Stratum AI",
+    "meta_title": "Audience Sync — ADs Growth System",
     "meta_description": "Sync CDP segments to Meta, Google, TikTok, and Snapchat in real-time. Unified audience management across all ad platforms.",
     "content_json": {
       "hero": {
@@ -1811,7 +1786,7 @@
     "slug": "solutions-trust-engine",
     "title": "Trust Engine",
     "template": "solution",
-    "meta_title": "Trust Engine — Stratum AI",
+    "meta_title": "Trust Engine — ADs Growth System",
     "meta_description": "Signal health monitoring and trust-gated automation. Ensure your automations only execute when data is reliable.",
     "content_json": {
       "hero": {
@@ -1868,7 +1843,7 @@
     "slug": "solutions-predictions",
     "title": "Predictive Analytics",
     "template": "solution",
-    "meta_title": "Predictive Analytics — Stratum AI",
+    "meta_title": "Predictive Analytics — ADs Growth System",
     "meta_description": "ML-powered predictions for ROAS, churn risk, and budget optimization. Make data-driven decisions with confidence.",
     "content_json": {
       "hero": {
@@ -1931,25 +1906,25 @@
     "title": "Privacy Policy",
     "template": "default",
     "meta_title": "Privacy Policy",
-    "meta_description": "Stratum AI Privacy Policy. Learn how we collect, use, and protect your personal data.",
+    "meta_description": "ADs Growth System Privacy Policy. Learn how we collect, use, and protect your personal data.",
     "content_json": null,
-    "content": "<p>Last updated: January 15, 2026</p>\n<h2>1. Introduction</h2>\n<p>Stratum AI, Inc. (\"Stratum AI,\" \"we,\" \"us,\" or \"our\") respects your privacy and is committed to protecting your personal data. This privacy policy explains how we collect, use, disclose, and safeguard your information when you use our services.</p>\n<h2>2. Information We Collect</h2>\n<h3>2.1 Information You Provide</h3>\n<ul>\n<li>Account registration information (name, email, company)</li>\n<li>Payment and billing information</li>\n<li>Communications with our support team</li>\n<li>Survey responses and feedback</li>\n</ul>\n<h3>2.2 Information Collected Automatically</h3>\n<ul>\n<li>Device and browser information</li>\n<li>IP address and location data</li>\n<li>Usage data and analytics</li>\n<li>Cookies and similar technologies</li>\n</ul>\n<h2>3. How We Use Your Information</h2>\n<ul>\n<li>Provide and maintain our services</li>\n<li>Process transactions and send billing information</li>\n<li>Send technical notices and security alerts</li>\n<li>Respond to your comments and questions</li>\n<li>Analyze usage patterns to improve our services</li>\n<li>Detect and prevent fraud and abuse</li>\n</ul>\n<h2>4. Data Sharing</h2>\n<p>We may share your information with:</p>\n<ul>\n<li>Service providers who assist in our operations</li>\n<li>Business partners with your consent</li>\n<li>Legal authorities when required by law</li>\n<li>Parties involved in a business transaction (merger, acquisition)</li>\n</ul>\n<h2>5. Data Security</h2>\n<p>We implement industry-standard security measures to protect your data, including encryption at rest and in transit, access controls, and regular security audits. However, no method of transmission over the internet is 100% secure.</p>\n<h2>6. Your Rights</h2>\n<p>Depending on your location, you may have the right to:</p>\n<ul>\n<li>Access your personal data</li>\n<li>Correct inaccurate data</li>\n<li>Delete your data</li>\n<li>Object to or restrict processing</li>\n<li>Data portability</li>\n<li>Withdraw consent</li>\n</ul>\n<h2>7. International Transfers</h2>\n<p>Your data may be transferred to and processed in countries other than your own. We ensure appropriate safeguards are in place, including Standard Contractual Clauses approved by the European Commission.</p>\n<h2>8. Data Retention</h2>\n<p>We retain your data for as long as your account is active or as needed to provide services. We may retain certain information as required by law or for legitimate business purposes.</p>\n<h2>9. Contact Us</h2>\n<p>For questions about this privacy policy or our data practices, please contact our Data Protection Officer at:</p>\n<p><strong>Email:</strong> privacy@stratum.ai<br /><strong>Address:</strong> 548 Market Street, Suite 35000, San Francisco, CA 94104</p>"
+    "content": "<p>Last updated: January 15, 2026</p>\n<h2>1. Introduction</h2>\n<p>ADs Growth System, Inc. (\"ADs Growth System,\" \"we,\" \"us,\" or \"our\") respects your privacy and is committed to protecting your personal data. This privacy policy explains how we collect, use, disclose, and safeguard your information when you use our services.</p>\n<h2>2. Information We Collect</h2>\n<h3>2.1 Information You Provide</h3>\n<ul>\n<li>Account registration information (name, email, company)</li>\n<li>Payment and billing information</li>\n<li>Communications with our support team</li>\n<li>Survey responses and feedback</li>\n</ul>\n<h3>2.2 Information Collected Automatically</h3>\n<ul>\n<li>Device and browser information</li>\n<li>IP address and location data</li>\n<li>Usage data and analytics</li>\n<li>Cookies and similar technologies</li>\n</ul>\n<h2>3. How We Use Your Information</h2>\n<ul>\n<li>Provide and maintain our services</li>\n<li>Process transactions and send billing information</li>\n<li>Send technical notices and security alerts</li>\n<li>Respond to your comments and questions</li>\n<li>Analyze usage patterns to improve our services</li>\n<li>Detect and prevent fraud and abuse</li>\n</ul>\n<h2>4. Data Sharing</h2>\n<p>We may share your information with:</p>\n<ul>\n<li>Service providers who assist in our operations</li>\n<li>Business partners with your consent</li>\n<li>Legal authorities when required by law</li>\n<li>Parties involved in a business transaction (merger, acquisition)</li>\n</ul>\n<h2>5. Data Security</h2>\n<p>We implement industry-standard security measures to protect your data, including encryption at rest and in transit, access controls, and regular security audits. However, no method of transmission over the internet is 100% secure.</p>\n<h2>6. Your Rights</h2>\n<p>Depending on your location, you may have the right to:</p>\n<ul>\n<li>Access your personal data</li>\n<li>Correct inaccurate data</li>\n<li>Delete your data</li>\n<li>Object to or restrict processing</li>\n<li>Data portability</li>\n<li>Withdraw consent</li>\n</ul>\n<h2>7. International Transfers</h2>\n<p>Your data may be transferred to and processed in countries other than your own. We ensure appropriate safeguards are in place, including Standard Contractual Clauses approved by the European Commission.</p>\n<h2>8. Data Retention</h2>\n<p>We retain your data for as long as your account is active or as needed to provide services. We may retain certain information as required by law or for legitimate business purposes.</p>\n<h2>9. Contact Us</h2>\n<p>For questions about this privacy policy or our data practices, please contact our Data Protection Officer at:</p>\n<p><strong>Email:</strong> privacy@stratum.ai<br /><strong>Address:</strong> 548 Market Street, Suite 35000, San Francisco, CA 94104</p>"
   },
   {
     "slug": "terms",
     "title": "Terms of Service",
     "template": "default",
     "meta_title": "Terms of Service",
-    "meta_description": "Stratum AI Terms of Service. Review the terms governing your use of our revenue operating system.",
+    "meta_description": "ADs Growth System Terms of Service. Review the terms governing your use of our revenue operating system.",
     "content_json": null,
-    "content": "<p>Last updated: January 15, 2026</p>\n<h2>1. Acceptance of Terms</h2>\n<p>By accessing or using Stratum AI's services, you agree to be bound by these Terms of Service. If you do not agree to these terms, please do not use our services.</p>\n<h2>2. Description of Services</h2>\n<p>Stratum AI provides a revenue operating system with trust-gated automation, customer data platform, and marketing intelligence capabilities. Our services include but are not limited to signal health monitoring, audience synchronization, predictive analytics, and automated campaign optimization.</p>\n<h2>3. Account Registration</h2>\n<ul>\n<li>You must provide accurate and complete registration information</li>\n<li>You are responsible for maintaining the security of your account</li>\n<li>You must notify us immediately of any unauthorized access</li>\n<li>You may not share your account credentials with others</li>\n</ul>\n<h2>4. Acceptable Use</h2>\n<p>You agree not to:</p>\n<ul>\n<li>Violate any applicable laws or regulations</li>\n<li>Infringe on the rights of others</li>\n<li>Transmit harmful code or interfere with our services</li>\n<li>Attempt to gain unauthorized access to our systems</li>\n<li>Use our services for spam or unsolicited communications</li>\n<li>Reverse engineer or decompile our software</li>\n</ul>\n<h2>5. Payment Terms</h2>\n<ul>\n<li>Fees are billed in advance on a monthly or annual basis</li>\n<li>All fees are non-refundable unless otherwise stated</li>\n<li>We may change pricing with 30 days notice</li>\n<li>You are responsible for all applicable taxes</li>\n</ul>\n<h2>6. Intellectual Property</h2>\n<p>All intellectual property rights in our services remain with Stratum AI. You are granted a limited, non-exclusive license to use our services for your internal business purposes. You retain ownership of your data.</p>\n<h2>7. Data Processing</h2>\n<p>Our processing of personal data is governed by our Privacy Policy and Data Processing Agreement. You represent that you have the right to provide us with any data you submit and that such data complies with applicable laws.</p>\n<h2>8. Limitation of Liability</h2>\n<p>TO THE MAXIMUM EXTENT PERMITTED BY LAW, STRATUM AI SHALL NOT BE LIABLE FOR ANY INDIRECT, INCIDENTAL, SPECIAL, CONSEQUENTIAL, OR PUNITIVE DAMAGES. OUR TOTAL LIABILITY SHALL NOT EXCEED THE AMOUNTS PAID BY YOU IN THE TWELVE MONTHS PRECEDING THE CLAIM.</p>\n<h2>9. Indemnification</h2>\n<p>You agree to indemnify and hold harmless Stratum AI from any claims, damages, or expenses arising from your use of our services or violation of these terms.</p>\n<h2>10. Termination</h2>\n<p>Either party may terminate this agreement with 30 days written notice. We may suspend or terminate your access immediately for violation of these terms. Upon termination, you may request export of your data within 30 days.</p>\n<h2>11. Governing Law</h2>\n<p>These terms are governed by the laws of the State of California. Any disputes shall be resolved in the courts of San Francisco County, California.</p>\n<h2>12. Contact</h2>\n<p>For questions about these terms, please contact us at:<br /><strong>Email:</strong> legal@stratum.ai</p>"
+    "content": "<p>Last updated: January 15, 2026</p>\n<h2>1. Acceptance of Terms</h2>\n<p>By accessing or using ADs Growth System's services, you agree to be bound by these Terms of Service. If you do not agree to these terms, please do not use our services.</p>\n<h2>2. Description of Services</h2>\n<p>ADs Growth System provides a revenue operating system with trust-gated automation, customer data platform, and marketing intelligence capabilities. Our services include but are not limited to signal health monitoring, audience synchronization, predictive analytics, and automated campaign optimization.</p>\n<h2>3. Account Registration</h2>\n<ul>\n<li>You must provide accurate and complete registration information</li>\n<li>You are responsible for maintaining the security of your account</li>\n<li>You must notify us immediately of any unauthorized access</li>\n<li>You may not share your account credentials with others</li>\n</ul>\n<h2>4. Acceptable Use</h2>\n<p>You agree not to:</p>\n<ul>\n<li>Violate any applicable laws or regulations</li>\n<li>Infringe on the rights of others</li>\n<li>Transmit harmful code or interfere with our services</li>\n<li>Attempt to gain unauthorized access to our systems</li>\n<li>Use our services for spam or unsolicited communications</li>\n<li>Reverse engineer or decompile our software</li>\n</ul>\n<h2>5. Payment Terms</h2>\n<ul>\n<li>Fees are billed in advance on a monthly or annual basis</li>\n<li>All fees are non-refundable unless otherwise stated</li>\n<li>We may change pricing with 30 days notice</li>\n<li>You are responsible for all applicable taxes</li>\n</ul>\n<h2>6. Intellectual Property</h2>\n<p>All intellectual property rights in our services remain with ADs Growth System. You are granted a limited, non-exclusive license to use our services for your internal business purposes. You retain ownership of your data.</p>\n<h2>7. Data Processing</h2>\n<p>Our processing of personal data is governed by our Privacy Policy and Data Processing Agreement. You represent that you have the right to provide us with any data you submit and that such data complies with applicable laws.</p>\n<h2>8. Limitation of Liability</h2>\n<p>TO THE MAXIMUM EXTENT PERMITTED BY LAW, ADS GROWTH SYSTEM SHALL NOT BE LIABLE FOR ANY INDIRECT, INCIDENTAL, SPECIAL, CONSEQUENTIAL, OR PUNITIVE DAMAGES. OUR TOTAL LIABILITY SHALL NOT EXCEED THE AMOUNTS PAID BY YOU IN THE TWELVE MONTHS PRECEDING THE CLAIM.</p>\n<h2>9. Indemnification</h2>\n<p>You agree to indemnify and hold harmless ADs Growth System from any claims, damages, or expenses arising from your use of our services or violation of these terms.</p>\n<h2>10. Termination</h2>\n<p>Either party may terminate this agreement with 30 days written notice. We may suspend or terminate your access immediately for violation of these terms. Upon termination, you may request export of your data within 30 days.</p>\n<h2>11. Governing Law</h2>\n<p>These terms are governed by the laws of the State of California. Any disputes shall be resolved in the courts of San Francisco County, California.</p>\n<h2>12. Contact</h2>\n<p>For questions about these terms, please contact us at:<br /><strong>Email:</strong> legal@stratum.ai</p>"
   },
   {
     "slug": "security",
     "title": "Security",
     "template": "default",
     "meta_title": "Security",
-    "meta_description": "Enterprise-grade security at Stratum AI. SOC 2 Type II certified, GDPR compliant, with encryption at rest and in transit.",
+    "meta_description": "Enterprise-grade security at ADs Growth System. SOC 2 Type II certified, GDPR compliant, with encryption at rest and in transit.",
     "content_json": null,
     "content": "<h2>Security Features</h2>\n<h3>Encryption at Rest</h3>\n<p>All data is encrypted using AES-256 encryption when stored.</p>\n<h3>Encryption in Transit</h3>\n<p>TLS 1.3 encryption for all data transmission.</p>\n<h3>Access Controls</h3>\n<p>Role-based access control with multi-factor authentication.</p>\n<h3>Audit Logging</h3>\n<p>Comprehensive audit logs for all system activities.</p>\n<h3>SOC 2 Type II</h3>\n<p>Annual SOC 2 Type II certification for security controls.</p>\n<h3>GDPR Compliant</h3>\n<p>Full compliance with GDPR, CCPA, and other privacy regulations.</p>\n<h2>Our Security Practices</h2>\n<h3>Infrastructure Security</h3>\n<p>Our infrastructure is hosted on AWS with multiple availability zones for high availability. We use VPCs, security groups, and network ACLs to isolate and protect our systems.</p>\n<h3>Application Security</h3>\n<p>We follow secure development practices including code reviews, static analysis, and regular penetration testing. All dependencies are continuously monitored for vulnerabilities.</p>\n<h3>Data Protection</h3>\n<p>Customer data is isolated using tenant-specific encryption keys. We implement data minimization principles and retain data only as long as necessary.</p>\n<h3>Incident Response</h3>\n<p>We maintain a 24/7 security operations team and have a documented incident response plan. Customers are notified within 72 hours of any security incident affecting their data.</p>\n<h3>Employee Security</h3>\n<p>All employees undergo background checks and security training. Access to customer data is limited to those who require it for their job function.</p>\n<h2>Certifications &amp; Compliance</h2>\n<ul>\n<li>SOC 2 Type II</li>\n<li>GDPR</li>\n<li>CCPA</li>\n<li>ISO 27001</li>\n<li>HIPAA Ready</li>\n</ul>\n<h2>Security Questions?</h2>\n<p>Contact our security team for questions, vulnerability reports, or to request our SOC 2 report.</p>\n<p><strong>Email:</strong> <a href=\"mailto:security@stratum.ai\">security@stratum.ai</a></p>"
   },
@@ -1958,8 +1933,8 @@
     "title": "Data Processing Agreement",
     "template": "default",
     "meta_title": "Data Processing Agreement",
-    "meta_description": "Stratum AI Data Processing Agreement. Details on how we process personal data on behalf of our customers.",
+    "meta_description": "ADs Growth System Data Processing Agreement. Details on how we process personal data on behalf of our customers.",
     "content_json": null,
-    "content": "<p>Last updated: January 15, 2026</p>\n<h2>1. Introduction</h2>\n<p>This Data Processing Agreement (\"DPA\") forms part of the Terms of Service between Stratum AI, Inc. (\"Processor\") and the Customer (\"Controller\") and governs the processing of personal data by Processor on behalf of Controller.</p>\n<h2>2. Definitions</h2>\n<ul>\n<li><strong>\"Personal Data\"</strong> means any information relating to an identified or identifiable natural person.</li>\n<li><strong>\"Processing\"</strong> means any operation performed on Personal Data.</li>\n<li><strong>\"Data Subject\"</strong> means the individual to whom Personal Data relates.</li>\n<li><strong>\"Sub-processor\"</strong> means any third party engaged by Processor to process Personal Data.</li>\n</ul>\n<h2>3. Scope of Processing</h2>\n<h3>3.1 Subject Matter</h3>\n<p>Processor processes Personal Data to provide the services described in the Terms of Service, including customer data platform, audience synchronization, and marketing automation.</p>\n<h3>3.2 Categories of Data</h3>\n<ul>\n<li>Contact information (name, email, phone)</li>\n<li>Identifiers (customer IDs, device IDs)</li>\n<li>Behavioral data (events, page views, purchases)</li>\n<li>Marketing data (campaign interactions, conversions)</li>\n</ul>\n<h3>3.3 Categories of Data Subjects</h3>\n<ul>\n<li>Controller's customers and prospects</li>\n<li>Controller's website visitors</li>\n<li>Controller's employees (if applicable)</li>\n</ul>\n<h2>4. Processor Obligations</h2>\n<ul>\n<li>Process Personal Data only on documented instructions from Controller</li>\n<li>Ensure personnel are bound by confidentiality obligations</li>\n<li>Implement appropriate technical and organizational security measures</li>\n<li>Assist Controller with Data Subject requests</li>\n<li>Assist Controller with security incident notifications</li>\n<li>Delete or return Personal Data upon termination</li>\n<li>Make available information necessary for compliance audits</li>\n</ul>\n<h2>5. Sub-processors</h2>\n<p>Controller provides general authorization for Processor to engage Sub-processors. Processor maintains a list of current Sub-processors at stratum.ai/legal/subprocessors. Processor will notify Controller of any new Sub-processors 30 days in advance.</p>\n<h2>6. International Transfers</h2>\n<p>For transfers of Personal Data outside the EEA, Processor ensures appropriate safeguards through:</p>\n<ul>\n<li>Standard Contractual Clauses (SCCs)</li>\n<li>Data Privacy Framework certification (where applicable)</li>\n<li>Other lawful transfer mechanisms</li>\n</ul>\n<h2>7. Security Measures</h2>\n<p>Processor implements the following security measures:</p>\n<ul>\n<li>Encryption of data at rest and in transit</li>\n<li>Access controls and authentication</li>\n<li>Regular security testing and audits</li>\n<li>Incident response procedures</li>\n<li>Employee security training</li>\n<li>Physical security of data centers</li>\n</ul>\n<h2>8. Data Subject Rights</h2>\n<p>Processor will assist Controller in responding to Data Subject requests for access, rectification, erasure, restriction, portability, and objection, taking into account the nature of the processing.</p>\n<h2>9. Data Breach Notification</h2>\n<p>Processor will notify Controller without undue delay, and in any event within 48 hours, after becoming aware of a Personal Data breach. Notification will include the nature of the breach, categories of data affected, and recommended mitigation measures.</p>\n<h2>10. Audit Rights</h2>\n<p>Controller may audit Processor's compliance with this DPA once per year with reasonable notice. Processor will provide SOC 2 Type II reports and other compliance documentation upon request.</p>\n<h2>11. Term and Termination</h2>\n<p>This DPA remains in effect for the duration of the Terms of Service. Upon termination, Processor will delete all Personal Data within 90 days unless retention is required by law.</p>\n<h2>12. Contact</h2>\n<p>For questions about this DPA, please contact our Data Protection Officer at:</p>\n<p><strong>Email:</strong> dpo@stratum.ai<br /><strong>Address:</strong> 548 Market Street, Suite 35000, San Francisco, CA 94104</p>"
+    "content": "<p>Last updated: January 15, 2026</p>\n<h2>1. Introduction</h2>\n<p>This Data Processing Agreement (\"DPA\") forms part of the Terms of Service between ADs Growth System, Inc. (\"Processor\") and the Customer (\"Controller\") and governs the processing of personal data by Processor on behalf of Controller.</p>\n<h2>2. Definitions</h2>\n<ul>\n<li><strong>\"Personal Data\"</strong> means any information relating to an identified or identifiable natural person.</li>\n<li><strong>\"Processing\"</strong> means any operation performed on Personal Data.</li>\n<li><strong>\"Data Subject\"</strong> means the individual to whom Personal Data relates.</li>\n<li><strong>\"Sub-processor\"</strong> means any third party engaged by Processor to process Personal Data.</li>\n</ul>\n<h2>3. Scope of Processing</h2>\n<h3>3.1 Subject Matter</h3>\n<p>Processor processes Personal Data to provide the services described in the Terms of Service, including customer data platform, audience synchronization, and marketing automation.</p>\n<h3>3.2 Categories of Data</h3>\n<ul>\n<li>Contact information (name, email, phone)</li>\n<li>Identifiers (customer IDs, device IDs)</li>\n<li>Behavioral data (events, page views, purchases)</li>\n<li>Marketing data (campaign interactions, conversions)</li>\n</ul>\n<h3>3.3 Categories of Data Subjects</h3>\n<ul>\n<li>Controller's customers and prospects</li>\n<li>Controller's website visitors</li>\n<li>Controller's employees (if applicable)</li>\n</ul>\n<h2>4. Processor Obligations</h2>\n<ul>\n<li>Process Personal Data only on documented instructions from Controller</li>\n<li>Ensure personnel are bound by confidentiality obligations</li>\n<li>Implement appropriate technical and organizational security measures</li>\n<li>Assist Controller with Data Subject requests</li>\n<li>Assist Controller with security incident notifications</li>\n<li>Delete or return Personal Data upon termination</li>\n<li>Make available information necessary for compliance audits</li>\n</ul>\n<h2>5. Sub-processors</h2>\n<p>Controller provides general authorization for Processor to engage Sub-processors. Processor maintains a list of current Sub-processors at stratum.ai/legal/subprocessors. Processor will notify Controller of any new Sub-processors 30 days in advance.</p>\n<h2>6. International Transfers</h2>\n<p>For transfers of Personal Data outside the EEA, Processor ensures appropriate safeguards through:</p>\n<ul>\n<li>Standard Contractual Clauses (SCCs)</li>\n<li>Data Privacy Framework certification (where applicable)</li>\n<li>Other lawful transfer mechanisms</li>\n</ul>\n<h2>7. Security Measures</h2>\n<p>Processor implements the following security measures:</p>\n<ul>\n<li>Encryption of data at rest and in transit</li>\n<li>Access controls and authentication</li>\n<li>Regular security testing and audits</li>\n<li>Incident response procedures</li>\n<li>Employee security training</li>\n<li>Physical security of data centers</li>\n</ul>\n<h2>8. Data Subject Rights</h2>\n<p>Processor will assist Controller in responding to Data Subject requests for access, rectification, erasure, restriction, portability, and objection, taking into account the nature of the processing.</p>\n<h2>9. Data Breach Notification</h2>\n<p>Processor will notify Controller without undue delay, and in any event within 48 hours, after becoming aware of a Personal Data breach. Notification will include the nature of the breach, categories of data affected, and recommended mitigation measures.</p>\n<h2>10. Audit Rights</h2>\n<p>Controller may audit Processor's compliance with this DPA once per year with reasonable notice. Processor will provide SOC 2 Type II reports and other compliance documentation upon request.</p>\n<h2>11. Term and Termination</h2>\n<p>This DPA remains in effect for the duration of the Terms of Service. Upon termination, Processor will delete all Personal Data within 90 days unless retention is required by law.</p>\n<h2>12. Contact</h2>\n<p>For questions about this DPA, please contact our Data Protection Officer at:</p>\n<p><strong>Email:</strong> dpo@stratum.ai<br /><strong>Address:</strong> 548 Market Street, Suite 35000, San Francisco, CA 94104</p>"
   }
 ]

@@ -1,5 +1,5 @@
 # =============================================================================
-# Stratum AI - Rules + Competitor Intelligence Shelving Tests
+# ADs Growth System - Rules + Competitor Intelligence Shelving Tests
 # =============================================================================
 """
 Tests for shelving Automation Rules and Competitor Intelligence behind flags

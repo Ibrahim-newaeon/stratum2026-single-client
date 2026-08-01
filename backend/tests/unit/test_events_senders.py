@@ -1,5 +1,5 @@
 # =============================================================================
-# Stratum AI - Server Events Formatter Unit Tests
+# ADs Growth System - Server Events Formatter Unit Tests
 # =============================================================================
 """Unit tests for the pure formatting helpers in ``app.stratum.events``:
 

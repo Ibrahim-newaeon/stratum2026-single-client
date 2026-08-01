@@ -1,5 +1,5 @@
 # =============================================================================
-# Stratum AI - CDP Unit Tests
+# ADs Growth System - CDP Unit Tests
 # =============================================================================
 """
 Unit tests for CDP (Customer Data Platform) module.

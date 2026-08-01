@@ -1,5 +1,5 @@
 # =============================================================================
-# Stratum AI - WhatsApp Messaging Tasks
+# ADs Growth System - WhatsApp Messaging Tasks
 # =============================================================================
 """
 Background tasks for WhatsApp Business API messaging.

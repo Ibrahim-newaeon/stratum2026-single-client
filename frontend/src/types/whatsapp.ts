@@ -1,5 +1,5 @@
 // =============================================================================
-// Stratum AI - WhatsApp Types
+// ADs Growth System - WhatsApp Types
 // =============================================================================
 
 export type OptInStatus = 'pending' | 'opted_in' | 'opted_out'

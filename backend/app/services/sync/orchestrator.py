@@ -1,5 +1,5 @@
 # =============================================================================
-# Stratum AI - Platform Sync Orchestrator
+# ADs Growth System - Platform Sync Orchestrator
 # =============================================================================
 """
 Coordinates campaign sync across Meta, TikTok, and Snapchat.

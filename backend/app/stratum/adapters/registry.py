@@ -1,5 +1,5 @@
 # =============================================================================
-# Stratum AI - Adapter Registry
+# ADs Growth System - Adapter Registry
 # =============================================================================
 """
 Adapter Registry for Platform Integration.

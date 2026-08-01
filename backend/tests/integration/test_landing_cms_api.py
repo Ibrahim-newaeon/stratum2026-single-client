@@ -1,5 +1,5 @@
 # =============================================================================
-# Stratum AI - Landing CMS (public) Endpoint Integration Tests
+# ADs Growth System - Landing CMS (public) Endpoint Integration Tests
 # =============================================================================
 """Integration tests for the public Landing CMS surface under
 ``/api/v1/landing-cms/...``: published pages, posts, categories, and tags.

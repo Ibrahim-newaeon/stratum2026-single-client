@@ -1,5 +1,5 @@
 /**
- * Stratum AI - Profit ROAS Page
+ * ADs Growth System - Profit ROAS Page
  *
  * Manages products, COGS, margins, and profit calculations for True ROAS.
  */

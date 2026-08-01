@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """
-Stratum AI - Demo Data Seed Script
+ADs Growth System - Demo Data Seed Script
 
 This script populates the database with realistic demo data for testing
 the unified dashboard. Run this after database migrations.
@@ -246,7 +246,7 @@ DEMO_REPORT_TEMPLATES = [
 async def seed_demo_data():
     """Seed the database with demo data."""
     print("=" * 60)
-    print("Stratum AI - Demo Data Seeder")
+    print("ADs Growth System - Demo Data Seeder")
     print("=" * 60)
 
     # Create async engine

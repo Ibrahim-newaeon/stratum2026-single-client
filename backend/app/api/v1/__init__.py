@@ -1,5 +1,5 @@
 # =============================================================================
-# Stratum AI - API v1 Router Configuration
+# ADs Growth System - API v1 Router Configuration
 # =============================================================================
 """
 Main API router that aggregates all endpoint routers.

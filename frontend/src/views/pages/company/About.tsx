@@ -24,14 +24,7 @@ import {
 
 const valueIcons = [ShieldCheckIcon, UserGroupIcon, ChartBarIcon, BoltIcon];
 
-const fallbackTeam = [
-  { name: 'Sarah Chen', role: 'CEO & Co-Founder', image: 'SC' },
-  { name: 'Marcus Rodriguez', role: 'CTO & Co-Founder', image: 'MR' },
-  { name: 'Emily Watson', role: 'VP of Product', image: 'EW' },
-  { name: 'David Kim', role: 'VP of Engineering', image: 'DK' },
-  { name: 'Lisa Thompson', role: 'VP of Sales', image: 'LT' },
-  { name: 'James Park', role: 'VP of Customer Success', image: 'JP' },
-];
+const fallbackTeam = [{ name: 'Ibrahim M. Abed Rabboh', role: 'Owner & Executer', image: 'IA' }];
 
 const fallbackValues = [
   {
@@ -93,7 +86,7 @@ export default function About() {
             <h2 className="text-h1 text-foreground font-semibold mb-6">Our Story</h2>
             <div className="space-y-4 text-body text-muted-foreground leading-relaxed">
               <p>
-                Stratum AI was founded in 2024 by a team of marketing technologists who experienced
+                ADs Growth System was founded in 2024 by a team of marketing technologists who experienced
                 firsthand the chaos of managing campaigns across multiple platforms with unreliable
                 data.
               </p>
@@ -103,7 +96,7 @@ export default function About() {
                 automated the system, the bigger the potential for disaster.
               </p>
               <p>
-                That&apos;s why we built Stratum AI - a revenue operating system with trust at its
+                That&apos;s why we built ADs Growth System - a revenue operating system with trust at its
                 core. Our Trust-Gated Autopilot ensures that automations only execute when your data
                 is healthy, preventing costly mistakes while still enabling the speed and scale that
                 modern growth teams need.
@@ -135,9 +128,17 @@ export default function About() {
       <section className="py-24 lg:py-28">
         <div className="max-w-7xl mx-auto px-6 lg:px-8">
           <MktSectionHeader eyebrow="The people" title="Leadership" highlight="team" />
-          <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-6">
+          {/* Flex-wrap rather than a fixed 6-column grid: the team is a single
+              person, and a lone grid child stretches into one narrow column
+              off to the left. Wrapping centres one card and still lays out
+              cleanly if the CMS supplies more. */}
+          <div className="flex flex-wrap justify-center gap-6">
             {team.map((member, i) => (
-              <MktCard key={member.name} className="p-6 text-center" delay={(i % 6) * 0.05}>
+              <MktCard
+                key={member.name}
+                className="w-full max-w-[260px] p-6 text-center"
+                delay={(i % 6) * 0.05}
+              >
                 <div className="w-20 h-20 rounded-2xl bg-secondary/10 border border-secondary/20 flex items-center justify-center text-display-xs font-semibold text-secondary mx-auto mb-4">
                   {member.image}
                 </div>

@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 # =============================================================================
-# Stratum AI — SQLAlchemy 2.0 Modernization Script
+# ADs Growth System — SQLAlchemy 2.0 Modernization Script
 # =============================================================================
 """
 Automated migration tool to convert legacy SQLAlchemy `Column(...)` declarations

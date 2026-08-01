@@ -1,5 +1,5 @@
 # =============================================================================
-# Stratum AI - Monitoring Stack (Prometheus + Grafana)
+# ADs Growth System - Monitoring Stack (Prometheus + Grafana)
 # =============================================================================
 # Usage: docker compose -f docker-compose.yml -f docker-compose.monitoring.yml up -d
 

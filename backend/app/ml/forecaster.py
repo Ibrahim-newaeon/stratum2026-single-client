@@ -1,5 +1,5 @@
 # =============================================================================
-# Stratum AI - ROAS Forecaster
+# ADs Growth System - ROAS Forecaster
 # =============================================================================
 """
 Time-series forecasting for ROAS predictions.

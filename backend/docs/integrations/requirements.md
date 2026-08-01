@@ -1,9 +1,9 @@
-# Stratum AI - Integration Requirements
+# ADs Growth System - Integration Requirements
 
 **Version:** 1.0.0
 **Last Updated:** January 2026
 
-> **2026-07 note**: Stratum AI is a single-client deployment
+> **2026-07 note**: ADs Growth System is a single-client deployment
 > (STRAT-SC-001) — there is no subscription-tier system anymore, so
 > every **"Plan Availability: Starter / Professional / Enterprise"**
 > line below is historical and does not gate anything in the current
@@ -11,7 +11,7 @@
 > header and `tenant_id` payload field in §6 are also historical (no
 > tenant concept remains) — see `docs/single-client-conversion.md`.
 
-This document outlines the requirements, setup steps, and prerequisites for all Stratum AI integrations.
+This document outlines the requirements, setup steps, and prerequisites for all ADs Growth System integrations.
 
 ---
 
@@ -224,7 +224,7 @@ audience.read
 
 2. **Authenticate**
    - Log into TikTok for Business
-   - Authorize Stratum AI app
+   - Authorize ADs Growth System app
    - Select advertiser accounts
 
 3. **Configure**
@@ -675,7 +675,7 @@ ZohoCRM.users.READ
 1. **Create Slack App**
    - Go to api.slack.com/apps
    - Create New App > From scratch
-   - Name: "Stratum AI Notifications"
+   - Name: "ADs Growth System Notifications"
    - Select your workspace
 
 2. **Enable Incoming Webhooks**

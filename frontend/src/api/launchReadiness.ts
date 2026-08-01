@@ -1,5 +1,5 @@
 /**
- * Stratum AI - Launch Readiness API
+ * ADs Growth System - Launch Readiness API
  *
  * Owner-only. Drives the sequential go-live wizard: phase N+1 is
  * locked until phase N is 100% complete. Each check/uncheck appends to

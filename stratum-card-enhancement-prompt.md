@@ -1,4 +1,4 @@
-# STRATUM AI DASHBOARD ENHANCEMENT PROMPT
+# ADS GROWTH SYSTEM DASHBOARD ENHANCEMENT PROMPT
 
 **Task:** Update existing dashboard with enhanced background nodes and colored shiny cards  
 **Context:** Dark theme dashboard needs more visual depth and card prominence
@@ -437,7 +437,7 @@ Copy this entire block to apply all enhancements:
 
 ```css
 /* ═══════════════════════════════════════════════════════════════════════════
-   STRATUM AI DASHBOARD ENHANCEMENTS
+   ADS GROWTH SYSTEM DASHBOARD ENHANCEMENTS
    - Dense Neural Network Background (15 nodes, 10 lines)
    - Colored Shiny Cards with Hover Effects
    ═══════════════════════════════════════════════════════════════════════════ */
@@ -2143,7 +2143,7 @@ Active/selected state?     → .metric-card.active (cyan)
 ```html
 <aside class="sidebar">
   <div class="sidebar-logo">
-    <img src="logo.svg" alt="Stratum AI">
+    <img src="logo.svg" alt="ADs Growth System">
   </div>
   
   <div class="sidebar-section">
@@ -2279,5 +2279,5 @@ Active/selected state?     → .metric-card.active (cyan)
 ---
 
 **Version:** 1.0  
-**For:** Stratum AI Dashboard Updates  
+**For:** ADs Growth System Dashboard Updates  
 **Maintains:** NN/g compliance (solid cards, no transparency on data)

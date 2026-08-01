@@ -1,5 +1,5 @@
 # =============================================================================
-# Stratum AI - AuthContextMiddleware token enforcement tests (AUTH-001)
+# ADs Growth System - AuthContextMiddleware token enforcement tests (AUTH-001)
 # =============================================================================
 """
 Ported from test_tenant_mw_blacklist.py (STRAT-SC-001 Task C2): TenantMiddleware

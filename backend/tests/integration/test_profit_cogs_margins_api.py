@@ -1,5 +1,5 @@
 # =============================================================================
-# Stratum AI - Profit COGS + Margin Rules API Integration Tests
+# ADs Growth System - Profit COGS + Margin Rules API Integration Tests
 # =============================================================================
 """Integration tests for the profit COGS-setting and margin-rules APIs.
 

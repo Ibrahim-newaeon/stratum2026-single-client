@@ -1,5 +1,5 @@
 # =============================================================================
-# Stratum AI - Pacing & Forecasting Database Models
+# ADs Growth System - Pacing & Forecasting Database Models
 # =============================================================================
 """
 Database models for targets, pacing, and forecasting.

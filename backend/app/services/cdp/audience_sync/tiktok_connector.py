@@ -1,5 +1,5 @@
 # =============================================================================
-# Stratum AI - TikTok Custom Audience Connector
+# ADs Growth System - TikTok Custom Audience Connector
 # =============================================================================
 """
 TikTok Marketing API Custom Audience Connector.

@@ -18,7 +18,7 @@ export function HowItWorks() {
     {
       number: '02',
       title: 'AI Analyzes Your Data',
-      description: 'Stratum calculates EMQ scores, detects anomalies, identifies scaling opportunities, and monitors signal health.',
+      description: 'ADs Growth System calculates EMQ scores, detects anomalies, identifies scaling opportunities, and monitors signal health.',
       icon: CpuChipIcon,
       color: 'text-stratum-400',
       bgColor: 'bg-stratum-500/10',
@@ -95,7 +95,7 @@ export function HowItWorks() {
               <div>
                 <h4 className="text-h3 text-white mb-2">The Result?</h4>
                 <p className="text-body text-muted-foreground mb-4">
-                  Teams using Stratum AI report an average <span className="text-success font-semibold">23% improvement in ROAS</span> within
+                  Teams using ADs Growth System report an average <span className="text-success font-semibold">23% improvement in ROAS</span> within
                   the first 90 days, with <span className="text-success font-semibold">60% less time</span> spent on manual optimization.
                 </p>
                 <div className="flex flex-wrap gap-4 text-meta text-muted-foreground">

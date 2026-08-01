@@ -1,5 +1,5 @@
 # =============================================================================
-# Stratum AI - ML Training Pipeline (Enhanced)
+# ADs Growth System - ML Training Pipeline (Enhanced)
 # =============================================================================
 """
 Training pipeline for ML models.
@@ -76,7 +76,7 @@ PLATFORMS = ["meta", "google", "tiktok", "snapchat", "linkedin"]
 
 class ModelTrainer:
     """
-    Trains and saves ML models for the Stratum AI platform.
+    Trains and saves ML models for the ADs Growth System platform.
 
     Models:
     - roas_predictor: Predicts ROAS based on campaign features

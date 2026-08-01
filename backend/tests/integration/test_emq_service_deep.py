@@ -1,5 +1,5 @@
 # =============================================================================
-# Stratum AI - EMQ Service Deep Integration Tests
+# ADs Growth System - EMQ Service Deep Integration Tests
 # =============================================================================
 """DB-backed integration tests for ``app.services.emq_service``.
 

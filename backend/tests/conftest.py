@@ -1,5 +1,5 @@
 # =============================================================================
-# Stratum AI - Test Configuration (conftest.py)
+# ADs Growth System - Test Configuration (conftest.py)
 # =============================================================================
 """
 Pytest configuration for unit tests.

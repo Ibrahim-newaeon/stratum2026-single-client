@@ -1,5 +1,5 @@
 # =============================================================================
-# Stratum AI - Attribution API Endpoints
+# ADs Growth System - Attribution API Endpoints
 # =============================================================================
 """
 Multi-Touch Attribution (MTA) API endpoints.

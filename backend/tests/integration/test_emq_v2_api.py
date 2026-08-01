@@ -1,5 +1,5 @@
 # =============================================================================
-# Stratum AI - EMQ v2 Playbook Endpoint Integration Tests
+# ADs Growth System - EMQ v2 Playbook Endpoint Integration Tests
 # =============================================================================
 """Integration tests for the DB-backed EMQ playbook item-state endpoints
 under ``/emq/playbook``. The router is guarded by get_current_user; the

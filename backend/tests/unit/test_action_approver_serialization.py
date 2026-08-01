@@ -1,5 +1,5 @@
 # =============================================================================
-# Stratum AI - Action Approver Serialization Tests
+# ADs Growth System - Action Approver Serialization Tests
 # =============================================================================
 """
 Tests for the accountability surface on the actions API: _approver_info /

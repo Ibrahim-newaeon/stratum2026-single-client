@@ -2,7 +2,7 @@
 
 ## Overview
 
-Stratum AI frontend is built with Vite and deployed as a static SPA.
+ADs Growth System frontend is built with Vite and deployed as a static SPA.
 
 ---
 

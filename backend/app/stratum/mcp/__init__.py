@@ -1,8 +1,8 @@
 """
-Stratum AI: MCP Server Integration
+ADs Growth System: MCP Server Integration
 ==================================
 
-MCP (Model Context Protocol) Integration for Stratum AI Platform.
+MCP (Model Context Protocol) Integration for ADs Growth System Platform.
 
 What is MCP?
 ------------
@@ -797,7 +797,7 @@ def create_mcp_server(config_path: str = "config.yaml"):
         from fastmcp import FastMCP
         from app.stratum.mcp import create_mcp_server
 
-        mcp = FastMCP("Stratum AI")
+        mcp = FastMCP("ADs Growth System")
         stratum = create_mcp_server()
 
         @mcp.tool()

@@ -1,5 +1,5 @@
 /**
- * Stratum AI - Feature Flags Store
+ * ADs Growth System - Feature Flags Store
  *
  * Zustand store for managing the organization's feature flags.
  * Provides gating helpers for conditional feature rendering.

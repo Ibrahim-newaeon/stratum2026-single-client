@@ -1,5 +1,5 @@
 # =============================================================================
-# Stratum AI - Continuous Integration
+# ADs Growth System - Continuous Integration
 # =============================================================================
 name: CI
 
@@ -563,6 +563,22 @@ jobs:
     # its PR-comment API calls). Dependency bumps can't introduce repo secrets;
     # gitleaks still runs on pushes and human PRs.
     if: github.actor != 'dependabot[bot]'
+
+    # On pull_request, gitleaks-action calls GET /repos/{o}/{r}/pulls/{n}/commits
+    # to work out the commit range to scan. The repository default workflow
+    # permission is `read`, which covers contents but NOT pull-requests, so that
+    # call returned 403 and the action died:
+    #
+    #   event type: pull_request
+    #   RequestError [HttpError]: Resource not accessible by integration
+    #     at async Object.ScanPullRequest (.../dist/index.js:127929:17)
+    #
+    # It passed on main only because push events never hit that endpoint — so
+    # `secrets`, a Release Gate requirement, was red on every human PR while
+    # main looked clean.
+    permissions:
+      contents: read
+      pull-requests: read
 
     steps:
       - name: Checkout code

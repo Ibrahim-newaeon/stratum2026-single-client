@@ -1,5 +1,5 @@
 # =============================================================================
-# Stratum AI - Onboarding API Integration Tests
+# ADs Growth System - Onboarding API Integration Tests
 # =============================================================================
 """Integration tests for the multi-step onboarding wizard API.
 

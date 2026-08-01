@@ -1,5 +1,5 @@
 # =============================================================================
-# Stratum AI - AI Analytics Endpoint Integration Tests
+# ADs Growth System - AI Analytics Endpoint Integration Tests
 # =============================================================================
 """Integration tests for the AI-analytics surface under
 ``/api/v1/analytics/ai/...``: Trust-Engine scoring (scaling, creative fatigue),

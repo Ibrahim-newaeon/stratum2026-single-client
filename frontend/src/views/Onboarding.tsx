@@ -434,11 +434,11 @@ export default function Onboarding() {
             <div className="h-10 w-10 rounded-xl  flex items-center justify-center shadow-glow">
               <span className="text-white font-bold text-xl">S</span>
             </div>
-            <span className="text-2xl font-bold">Stratum AI</span>
+            <span className="text-2xl font-bold">ADs Growth System</span>
           </div>
           <h1 className="text-3xl font-bold mb-2">Let's set up your account</h1>
           <p className="text-muted-foreground">
-            Complete these steps to get the most out of Stratum AI
+            Complete these steps to get the most out of ADs Growth System
           </p>
         </div>
 
@@ -450,7 +450,7 @@ export default function Onboarding() {
                 <Zap className="w-5 h-5 text-primary" />
               </div>
               <div>
-                <p className="font-semibold text-sm">Welcome to Stratum AI!</p>
+                <p className="font-semibold text-sm">Welcome to ADs Growth System!</p>
                 <p className="text-sm text-muted-foreground">
                   Customize your workspace in a few steps, or jump straight into the dashboard.
                   You can always configure these settings later.

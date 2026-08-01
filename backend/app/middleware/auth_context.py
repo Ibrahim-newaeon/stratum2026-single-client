@@ -1,5 +1,5 @@
 # =============================================================================
-# Stratum AI - Auth Context Middleware
+# ADs Growth System - Auth Context Middleware
 # =============================================================================
 """
 Middleware that decodes the request's JWT (if any) and establishes the

@@ -1,5 +1,5 @@
 /**
- * Stratum AI - ProtectedRoute Tests
+ * ADs Growth System - ProtectedRoute Tests
  *
  * Tests for authentication gating, role hierarchy checks,
  * portal/agency user type filtering, and permission checks.

@@ -1,4 +1,4 @@
-# Stratum AI Platform - Complete Feature Documentation v1.0.0
+# ADs Growth System Platform - Complete Feature Documentation v1.0.0
 
 **Release Date:** January 13, 2026
 **Version:** 1.0.0
@@ -33,7 +33,7 @@
 
 ## Platform Overview
 
-Stratum AI is a **Revenue Operating System** with **Trust-Gated Autopilot Architecture**. The platform enables marketing teams to automate campaign management while ensuring data quality through intelligent safety mechanisms.
+ADs Growth System is a **Revenue Operating System** with **Trust-Gated Autopilot Architecture**. The platform enables marketing teams to automate campaign management while ensuring data quality through intelligent safety mechanisms.
 
 ### Core Concept
 
@@ -73,7 +73,7 @@ The platform operates on a multi-tenant architecture where each organization (te
 
 ```
 ┌─────────────────────────────────────────────────────────────────┐
-│                        STRATUM AI PLATFORM                       │
+│                        ADS GROWTH SYSTEM PLATFORM                       │
 ├─────────────────────────────────────────────────────────────────┤
 │  ┌──────────────┐  ┌──────────────┐  ┌──────────────┐          │
 │  │   Frontend   │  │   Backend    │  │   Workers    │          │
@@ -970,6 +970,6 @@ open http://localhost:8000/docs
 
 ---
 
-**Stratum AI v1.0.0** - Revenue Operating System with Trust-Gated Autopilot
+**ADs Growth System v1.0.0** - Revenue Operating System with Trust-Gated Autopilot
 
 *Built with precision. Deployed with confidence.*

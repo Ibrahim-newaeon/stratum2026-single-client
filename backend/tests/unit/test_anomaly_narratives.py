@@ -1,5 +1,5 @@
 # =============================================================================
-# Stratum AI - Anomaly Narratives unit tests
+# ADs Growth System - Anomaly Narratives unit tests
 # =============================================================================
 """Unit tests for app.analytics.logic.anomaly_narratives.
 

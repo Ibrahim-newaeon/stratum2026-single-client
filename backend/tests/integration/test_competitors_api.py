@@ -1,5 +1,5 @@
 # =============================================================================
-# Stratum AI - Competitor Intelligence API Integration Tests
+# ADs Growth System - Competitor Intelligence API Integration Tests
 # =============================================================================
 """Integration tests for the competitor-intelligence API.
 

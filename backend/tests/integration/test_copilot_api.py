@@ -1,5 +1,5 @@
 # =============================================================================
-# Stratum AI - Copilot Endpoint Integration Tests
+# ADs Growth System - Copilot Endpoint Integration Tests
 # =============================================================================
 """Integration tests for the AI Copilot chat endpoint under
 ``/api/v1/copilot/chat``.

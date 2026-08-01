@@ -1,5 +1,5 @@
 /**
- * Stratum AI - Account Dashboard Hooks
+ * ADs Growth System - Account Dashboard Hooks
  *
  * React Query hooks for account-scoped dashboard data.
  */

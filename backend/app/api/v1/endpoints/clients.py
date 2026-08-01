@@ -1,5 +1,5 @@
 # =============================================================================
-# Stratum AI - Client Management Endpoints
+# ADs Growth System - Client Management Endpoints
 # =============================================================================
 """
 Client CRUD, user assignments, portal invitations, and KPI summaries.

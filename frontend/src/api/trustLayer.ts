@@ -1,5 +1,5 @@
 /**
- * Stratum AI - Trust Layer API Hooks
+ * ADs Growth System - Trust Layer API Hooks
  *
  * React Query hooks for Trust Layer features:
  * - Signal health monitoring

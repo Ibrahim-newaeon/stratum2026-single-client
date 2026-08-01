@@ -1,5 +1,5 @@
 # =============================================================================
-# Stratum AI - CAPI (Conversions API) Endpoint Integration Tests
+# ADs Growth System - CAPI (Conversions API) Endpoint Integration Tests
 # =============================================================================
 """Integration tests for the CAPI surface under ``/api/v1/capi/...``: platform
 connection status, per-platform setup requirements, data-quality reads, and

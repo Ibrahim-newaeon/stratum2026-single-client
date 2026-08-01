@@ -1,7 +1,7 @@
 /**
  * KpiStrip — 4 compact KPI cards across the top of the Overview.
  *
- * Real Stratum metrics, not LLM-playground placeholders:
+ * Real ADs Growth System metrics, not LLM-playground placeholders:
  *   1. Trust Gate (gate decision + holds count)
  *   2. Signal Health (composite 0-100)
  *   3. ROAS (today)

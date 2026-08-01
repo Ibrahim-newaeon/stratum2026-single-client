@@ -1,5 +1,5 @@
 # =============================================================================
-# Stratum AI - Campaign Builder Models
+# ADs Growth System - Campaign Builder Models
 # =============================================================================
 """
 Database models for the Campaign Builder feature:
@@ -142,7 +142,7 @@ class PlatformConnection(Base):
 
 class AdAccount(Base):
     """
-    Ad accounts enabled for use in Stratum AI.
+    Ad accounts enabled for use in ADs Growth System.
     Synced from platform after OAuth authorization.
     """
 

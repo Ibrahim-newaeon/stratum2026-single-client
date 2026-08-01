@@ -181,7 +181,7 @@ export function CopilotChat() {
           id: 'welcome',
           role: 'assistant',
           content:
-            "Hi! I'm your Stratum AI Copilot. I can help you understand your campaigns, signal health, anomalies, and more. What would you like to know?",
+            "Hi! I'm your ADs Growth System Copilot. I can help you understand your campaigns, signal health, anomalies, and more. What would you like to know?",
           timestamp: new Date().toISOString(),
           suggestions: [
             'How are my campaigns doing?',
@@ -329,7 +329,7 @@ export function CopilotChat() {
               </div>
               <div>
                 <h3 className="text-sm font-bold tracking-tight">AI Copilot</h3>
-                <p className="text-[10px] text-foreground/70 font-medium">Stratum Intelligence</p>
+                <p className="text-[10px] text-foreground/70 font-medium">ADs Growth System Intelligence</p>
               </div>
             </div>
             <div className="flex items-center gap-1">

@@ -1,5 +1,5 @@
 # =============================================================================
-# Stratum AI - Funnel Step Evaluator Unit Tests
+# ADs Growth System - Funnel Step Evaluator Unit Tests
 # =============================================================================
 """Unit tests for ``FunnelStepEvaluator`` in app.services.cdp.funnel_service.
 

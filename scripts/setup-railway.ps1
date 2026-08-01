@@ -3,7 +3,7 @@
 
 <#
 .SYNOPSIS
-    Setup Stratum AI on Railway via CLI
+    Setup ADs Growth System on Railway via CLI
 .DESCRIPTION
     Creates Railway project, services, databases, sets env vars, and deploys.
     Run this from the project root directory.
@@ -86,7 +86,7 @@ try {
 
 info "Checking project root..."
 if (-not (Test-Path "backend/Dockerfile") -or -not (Test-Path "frontend/Dockerfile")) {
-    err "Not in project root. Run this from the Stratum AI repo root."
+    err "Not in project root. Run this from the ADs Growth System repo root."
     exit 1
 }
 ok "Project root confirmed"

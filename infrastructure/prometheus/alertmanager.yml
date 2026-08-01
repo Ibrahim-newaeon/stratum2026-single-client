@@ -1,5 +1,5 @@
 # =============================================================================
-# Stratum AI - Alertmanager Configuration
+# ADs Growth System - Alertmanager Configuration
 # =============================================================================
 # Routes alerts from Prometheus to notification channels.
 # Configure receivers below with your Slack webhook or email SMTP.

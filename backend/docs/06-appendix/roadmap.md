@@ -2,7 +2,7 @@
 
 ## Overview
 
-This document outlines the planned features, improvements, and strategic direction for the Stratum AI platform.
+This document outlines the planned features, improvements, and strategic direction for the ADs Growth System platform.
 
 **Last Updated**: January 2025
 **Planning Horizon**: 12 months

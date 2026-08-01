@@ -1,5 +1,5 @@
 # =============================================================================
-# Stratum AI - Knowledge Graph Problem Serialization Unit Tests
+# ADs Growth System - Knowledge Graph Problem Serialization Unit Tests
 # =============================================================================
 """Unit tests for the pure dataclass serialization in
 ``app.services.knowledge_graph``: ``Problem.to_dict`` (including nested

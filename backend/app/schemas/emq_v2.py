@@ -1,5 +1,5 @@
 # =============================================================================
-# Stratum AI - EMQ v2 Schemas
+# ADs Growth System - EMQ v2 Schemas
 # =============================================================================
 """
 Pydantic models for EMQ (Event Measurement Quality) v2 API endpoints.

@@ -1,5 +1,5 @@
 # =============================================================================
-# Stratum AI - Insights & Recommendations API Router
+# ADs Growth System - Insights & Recommendations API Router
 # =============================================================================
 """
 API endpoints for Intelligence Layer features:

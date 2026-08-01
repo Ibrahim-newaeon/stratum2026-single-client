@@ -1,5 +1,5 @@
 # =============================================================================
-# Stratum AI - Analytics Dashboard Endpoint Integration Tests
+# ADs Growth System - Analytics Dashboard Endpoint Integration Tests
 # =============================================================================
 """Integration tests for the analytics dashboard surface under
 ``/api/v1/analytics/...``: KPI tiles, demographics, heatmap, platform &

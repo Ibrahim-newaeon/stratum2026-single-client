@@ -1,5 +1,5 @@
 # =============================================================================
-# Stratum AI - Collaborative Annotations unit tests
+# ADs Growth System - Collaborative Annotations unit tests
 # =============================================================================
 """Unit tests for app.analytics.logic.collaborative_annotations.
 
@@ -50,7 +50,7 @@ class TestGeneration:
         roas_note = next(a for a in resp.annotations if a.target_id == "roas")
         assert "Strong performance" in roas_note.content
         assert roas_note.pinned is False
-        assert roas_note.author.name == "Stratum AI"
+        assert roas_note.author.name == "ADs Growth System"
 
     def test_weak_roas_overall_note_pinned(self):
         resp = build_collaborative_annotations(

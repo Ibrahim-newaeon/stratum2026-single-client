@@ -1,5 +1,5 @@
 # =============================================================================
-# Stratum AI - Rules Engine Tasks
+# ADs Growth System - Rules Engine Tasks
 # =============================================================================
 """
 Background tasks for automation rules evaluation and execution.

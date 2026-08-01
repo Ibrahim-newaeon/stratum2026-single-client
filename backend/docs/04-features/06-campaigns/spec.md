@@ -99,7 +99,7 @@ class PlatformConnection:
 
 ### AdAccount
 
-Ad accounts enabled for use in Stratum AI. Synced from the platform after OAuth.
+Ad accounts enabled for use in ADs Growth System. Synced from the platform after OAuth.
 
 ```python
 class AdAccount:

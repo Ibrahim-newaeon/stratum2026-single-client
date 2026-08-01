@@ -7,11 +7,11 @@ Realtime: `/ws` + SSE channel/room naming (tenant rooms?), socket auth handshake
 ## EMAIL & NOTIFICATIONS — OPERATIONAL (agent-verified, evidence-backed)
 Fully de-tenanted; no null-variable rendering. All email bodies are Python f-strings in `services/email_service.py` (no .html/.j2/.mjml templates).
 - **No tenant variable, subdomain, or removed-`Tenant`-field dereference in any sent output.** No `{{tenant_name}}`/`undefined`/`None` leaks; every name interpolation has a fallback (`user_name`→'there', `org_name`→'your organization').
-- **Brand is a hardcoded literal "Stratum AI"** in every template header (email_service.py:187,258,331) — was tenant-branded pre-conversion, now correctly a single hardcoded brand (not a null field).
+- **Brand is a hardcoded literal "ADs Growth System"** in every template header (email_service.py:187,258,331) — was tenant-branded pre-conversion, now correctly a single hardcoded brand (not a null field).
 - **All email links use `settings.frontend_url`** (verify/reset/welcome/invite/billing + newsletter open/click/unsubscribe) — no `https://{tenant}.app.com` subdomain interpolation anywhere. (frontend_url = config.py:330.)
 - **Sender identity single-sourced**: `settings.email_from_name/email_from_address` for transactional; per-campaign user config for newsletter; per-schedule config for reports. No per-tenant from/reply-to dereference.
 - **Invite `org_name` correctly dereferences the surviving `Organization`** (`get_organization(db).name`, users.py:339-357) with a safe fallback — not the removed Tenant.
-- **In-app / push / Slack notifications** carry no tenant variable; push default title "Stratum AI" hardcoded. Drip campaigns are flag-gated off (503) — no live template surface.
+- **In-app / push / Slack notifications** carry no tenant variable; push default title "ADs Growth System" hardcoded. Drip campaigns are flag-gated off (503) — no live template surface.
 
 ## REALTIME — FINDING (traced end-to-end)
 The WebSocket handshake is sound and correctly de-tenanted: `/ws` requires a valid **access** token, rejects refresh/anonymous with close 4001 (main.py:855-883), keys on `user_id`, reads **no tenant claim**. The channel naming is internally consistent (NOT a mismatch — I verified both pairs):
@@ -68,7 +68,7 @@ Confirm via:    Open the dashboard, watch Network — no /ws upgrade and no Even
 
 ## Observations (not findings)
 - **OBS-8-a (config, non-tenant)**: newsletter open/click/unsubscribe URLs are `/api/v1/...` paths built on `settings.frontend_url` (newsletter_tasks.py:134). If `frontend_url` doesn't also front the API (separate API host), these tracking links 404. Verify `frontend_url` routing in deployment; not a tenant leak.
-- **OBS-8-b (branding residue)**: newsletter footer hardcodes "stratumai.app" / "Stratum AI" (newsletter_tasks.py:88-89) and email brand is hardcoded "Stratum AI" — correct single-org pattern, but stale for the Opal Hotel single-client rebrand (cross-ref Phase 11 branding). Cosmetic.
+- **OBS-8-b (branding residue)**: newsletter footer hardcodes "stratumai.app" / "ADs Growth System" (newsletter_tasks.py:88-89) and email brand is hardcoded "ADs Growth System" — correct single-org pattern, but stale for the Opal Hotel single-client rebrand (cross-ref Phase 11 branding). Cosmetic.
 - **OBS-8-c (dead code)**: `slack_service.py` has 4 methods (send_trust_gate_alert/send_signal_health_alert/send_anomaly_alert/daily report) that take a required `org_name` positional with no fallback and are called by nothing. Latent: if wired without supplying `org_name` from Organization, they'd raise. NEEDS-REMOVAL or wire correctly.
 
 ## Phase 8 summary

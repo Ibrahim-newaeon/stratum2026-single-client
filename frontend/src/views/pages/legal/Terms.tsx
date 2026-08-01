@@ -48,7 +48,7 @@ export default function Terms() {
                 <section>
                   <h2 className="text-h2 text-foreground font-semibold mb-4">1. Acceptance of Terms</h2>
                   <p className="text-body text-muted-foreground leading-relaxed">
-                    By accessing or using Stratum AI&apos;s services, you agree to be bound by these
+                    By accessing or using ADs Growth System&apos;s services, you agree to be bound by these
                     Terms of Service. If you do not agree to these terms, please do not use our
                     services.
                   </p>
@@ -57,7 +57,7 @@ export default function Terms() {
                 <section>
                   <h2 className="text-h2 text-foreground font-semibold mb-4">2. Description of Services</h2>
                   <p className="text-body text-muted-foreground leading-relaxed">
-                    Stratum AI provides a revenue operating system with trust-gated automation,
+                    ADs Growth System provides a revenue operating system with trust-gated automation,
                     customer data platform, and marketing intelligence capabilities. Our services
                     include but are not limited to signal health monitoring, audience synchronization,
                     predictive analytics, and automated campaign optimization.
@@ -100,7 +100,7 @@ export default function Terms() {
                 <section>
                   <h2 className="text-h2 text-foreground font-semibold mb-4">6. Intellectual Property</h2>
                   <p className="text-body text-muted-foreground leading-relaxed">
-                    All intellectual property rights in our services remain with Stratum AI. You are
+                    All intellectual property rights in our services remain with ADs Growth System. You are
                     granted a limited, non-exclusive license to use our services for your internal
                     business purposes. You retain ownership of your data.
                   </p>
@@ -118,7 +118,7 @@ export default function Terms() {
                 <section>
                   <h2 className="text-h2 text-foreground font-semibold mb-4">8. Limitation of Liability</h2>
                   <p className="text-body text-muted-foreground leading-relaxed">
-                    TO THE MAXIMUM EXTENT PERMITTED BY LAW, STRATUM AI SHALL NOT BE LIABLE FOR ANY
+                    TO THE MAXIMUM EXTENT PERMITTED BY LAW, ADS GROWTH SYSTEM SHALL NOT BE LIABLE FOR ANY
                     INDIRECT, INCIDENTAL, SPECIAL, CONSEQUENTIAL, OR PUNITIVE DAMAGES. OUR TOTAL
                     LIABILITY SHALL NOT EXCEED THE AMOUNTS PAID BY YOU IN THE TWELVE MONTHS PRECEDING
                     THE CLAIM.
@@ -128,7 +128,7 @@ export default function Terms() {
                 <section>
                   <h2 className="text-h2 text-foreground font-semibold mb-4">9. Indemnification</h2>
                   <p className="text-body text-muted-foreground leading-relaxed">
-                    You agree to indemnify and hold harmless Stratum AI from any claims, damages, or
+                    You agree to indemnify and hold harmless ADs Growth System from any claims, damages, or
                     expenses arising from your use of our services or violation of these terms.
                   </p>
                 </section>
@@ -155,7 +155,7 @@ export default function Terms() {
                   <p className="text-body text-muted-foreground leading-relaxed">
                     For questions about these terms, please contact us at:
                     <br />
-                    <strong className="text-foreground">Email:</strong> legal@stratum.ai
+                    <strong className="text-foreground">Email:</strong> legal@adsgrowthsystem.com
                   </p>
                 </section>
               </div>

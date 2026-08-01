@@ -2,9 +2,9 @@ import type { MarketingSeedEntry } from './types';
 
 const content = `<p>Last updated: January 15, 2026</p>
 <h2>1. Acceptance of Terms</h2>
-<p>By accessing or using Stratum AI's services, you agree to be bound by these Terms of Service. If you do not agree to these terms, please do not use our services.</p>
+<p>By accessing or using ADs Growth System's services, you agree to be bound by these Terms of Service. If you do not agree to these terms, please do not use our services.</p>
 <h2>2. Description of Services</h2>
-<p>Stratum AI provides a revenue operating system with trust-gated automation, customer data platform, and marketing intelligence capabilities. Our services include but are not limited to signal health monitoring, audience synchronization, predictive analytics, and automated campaign optimization.</p>
+<p>ADs Growth System provides a revenue operating system with trust-gated automation, customer data platform, and marketing intelligence capabilities. Our services include but are not limited to signal health monitoring, audience synchronization, predictive analytics, and automated campaign optimization.</p>
 <h2>3. Account Registration</h2>
 <ul>
 <li>You must provide accurate and complete registration information</li>
@@ -30,13 +30,13 @@ const content = `<p>Last updated: January 15, 2026</p>
 <li>You are responsible for all applicable taxes</li>
 </ul>
 <h2>6. Intellectual Property</h2>
-<p>All intellectual property rights in our services remain with Stratum AI. You are granted a limited, non-exclusive license to use our services for your internal business purposes. You retain ownership of your data.</p>
+<p>All intellectual property rights in our services remain with ADs Growth System. You are granted a limited, non-exclusive license to use our services for your internal business purposes. You retain ownership of your data.</p>
 <h2>7. Data Processing</h2>
 <p>Our processing of personal data is governed by our Privacy Policy and Data Processing Agreement. You represent that you have the right to provide us with any data you submit and that such data complies with applicable laws.</p>
 <h2>8. Limitation of Liability</h2>
-<p>TO THE MAXIMUM EXTENT PERMITTED BY LAW, STRATUM AI SHALL NOT BE LIABLE FOR ANY INDIRECT, INCIDENTAL, SPECIAL, CONSEQUENTIAL, OR PUNITIVE DAMAGES. OUR TOTAL LIABILITY SHALL NOT EXCEED THE AMOUNTS PAID BY YOU IN THE TWELVE MONTHS PRECEDING THE CLAIM.</p>
+<p>TO THE MAXIMUM EXTENT PERMITTED BY LAW, ADS GROWTH SYSTEM SHALL NOT BE LIABLE FOR ANY INDIRECT, INCIDENTAL, SPECIAL, CONSEQUENTIAL, OR PUNITIVE DAMAGES. OUR TOTAL LIABILITY SHALL NOT EXCEED THE AMOUNTS PAID BY YOU IN THE TWELVE MONTHS PRECEDING THE CLAIM.</p>
 <h2>9. Indemnification</h2>
-<p>You agree to indemnify and hold harmless Stratum AI from any claims, damages, or expenses arising from your use of our services or violation of these terms.</p>
+<p>You agree to indemnify and hold harmless ADs Growth System from any claims, damages, or expenses arising from your use of our services or violation of these terms.</p>
 <h2>10. Termination</h2>
 <p>Either party may terminate this agreement with 30 days written notice. We may suspend or terminate your access immediately for violation of these terms. Upon termination, you may request export of your data within 30 days.</p>
 <h2>11. Governing Law</h2>
@@ -50,7 +50,7 @@ const entry: MarketingSeedEntry = {
   template: 'default',
   meta_title: 'Terms of Service',
   meta_description:
-    'Stratum AI Terms of Service. Review the terms governing your use of our revenue operating system.',
+    'ADs Growth System Terms of Service. Review the terms governing your use of our revenue operating system.',
   content,
 };
 

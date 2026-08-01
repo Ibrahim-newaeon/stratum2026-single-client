@@ -1,5 +1,5 @@
 /**
- * Stratum AI - GDPR Compliance API
+ * ADs Growth System - GDPR Compliance API
  *
  * GDPR data management, export, anonymization, and audit logs
  */

@@ -1,5 +1,5 @@
 # =============================================================================
-# Stratum AI - Copilot Agent (Feature #4)
+# ADs Growth System - Copilot Agent (Feature #4)
 # =============================================================================
 """
 AI Copilot Agent — a data-aware conversational assistant for the dashboard.
@@ -248,7 +248,7 @@ def generate_greeting_response(user_name: Optional[str] = None) -> CopilotRespon
 
     return CopilotResponse(
         message=(
-            f"{greeting}, {name}! I'm your Stratum AI Copilot. "
+            f"{greeting}, {name}! I'm your ADs Growth System Copilot. "
             f"I can help you understand your campaign performance, signal health, "
             f"anomalies, and recommendations. What would you like to know?"
         ),
@@ -721,7 +721,7 @@ def generate_help_response() -> CopilotResponse:
     """Generate help/capabilities response."""
     return CopilotResponse(
         message=(
-            "I'm your Stratum AI Copilot! Here's what I can help with:\n\n"
+            "I'm your ADs Growth System Copilot! Here's what I can help with:\n\n"
             '**Performance** — "How are my campaigns doing?" or "Show me an overview"\n\n'
             '**Signal Health** — "Is my signal healthy?" or "Check EMQ"\n\n'
             '**Anomalies** — "Any anomalies?" or "Is anything unusual?"\n\n'

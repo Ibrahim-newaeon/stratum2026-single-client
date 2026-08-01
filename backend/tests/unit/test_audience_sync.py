@@ -1,5 +1,5 @@
 # =============================================================================
-# Stratum AI - Audience Sync Unit Tests
+# ADs Growth System - Audience Sync Unit Tests
 # =============================================================================
 """
 Comprehensive unit tests for the CDP Audience Sync feature.

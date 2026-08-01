@@ -1,9 +1,9 @@
-# Stratum AI Documentation
+# ADs Growth System Documentation
 
 **Version:** 2.0.0
 **Last Updated:** January 2026
 
-Welcome to the Stratum AI documentation hub. Find everything you need to get started and master the platform.
+Welcome to the ADs Growth System documentation hub. Find everything you need to get started and master the platform.
 
 ---
 
@@ -145,4 +145,4 @@ Found an error or want to improve the documentation?
 
 ---
 
-*Copyright 2026 Stratum AI. All Rights Reserved.*
+*Copyright 2026 ADs Growth System. All Rights Reserved.*

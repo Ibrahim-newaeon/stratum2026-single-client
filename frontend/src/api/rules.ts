@@ -1,5 +1,5 @@
 /**
- * Stratum AI - Automation Rules API
+ * ADs Growth System - Automation Rules API
  *
  * Automation rules builder and execution endpoints
  */

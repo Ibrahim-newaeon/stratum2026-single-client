@@ -1,5 +1,5 @@
 # =============================================================================
-# Stratum AI - Pydantic Schemas
+# ADs Growth System - Pydantic Schemas
 # =============================================================================
 """
 Pydantic models for API request/response validation.

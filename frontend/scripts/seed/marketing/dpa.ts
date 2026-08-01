@@ -2,7 +2,7 @@ import type { MarketingSeedEntry } from './types';
 
 const content = `<p>Last updated: January 15, 2026</p>
 <h2>1. Introduction</h2>
-<p>This Data Processing Agreement ("DPA") forms part of the Terms of Service between Stratum AI, Inc. ("Processor") and the Customer ("Controller") and governs the processing of personal data by Processor on behalf of Controller.</p>
+<p>This Data Processing Agreement ("DPA") forms part of the Terms of Service between ADs Growth System, Inc. ("Processor") and the Customer ("Controller") and governs the processing of personal data by Processor on behalf of Controller.</p>
 <h2>2. Definitions</h2>
 <ul>
 <li><strong>"Personal Data"</strong> means any information relating to an identified or identifiable natural person.</li>
@@ -73,7 +73,7 @@ const entry: MarketingSeedEntry = {
   template: 'default',
   meta_title: 'Data Processing Agreement',
   meta_description:
-    'Stratum AI Data Processing Agreement. Details on how we process personal data on behalf of our customers.',
+    'ADs Growth System Data Processing Agreement. Details on how we process personal data on behalf of our customers.',
   content,
 };
 

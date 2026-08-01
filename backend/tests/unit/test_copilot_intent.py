@@ -1,5 +1,5 @@
 # =============================================================================
-# Stratum AI - Copilot Intent Classification Unit Tests
+# ADs Growth System - Copilot Intent Classification Unit Tests
 # =============================================================================
 """Unit tests for the pure NL helpers in
 ``app.services.agents.copilot_agent``: keyword-scored ``classify_intent``

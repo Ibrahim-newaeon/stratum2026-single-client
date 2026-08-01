@@ -1,5 +1,5 @@
 # =============================================================================
-# Stratum AI - MFA (Two-Factor Authentication) API Endpoints
+# ADs Growth System - MFA (Two-Factor Authentication) API Endpoints
 # =============================================================================
 """
 Two-Factor Authentication endpoints for managing TOTP-based 2FA.

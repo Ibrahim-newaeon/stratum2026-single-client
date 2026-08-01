@@ -1,5 +1,5 @@
 # =============================================================================
-# Stratum AI - Unified Audience Sync Service
+# ADs Growth System - Unified Audience Sync Service
 # =============================================================================
 """
 Main service for syncing CDP segments to ad platforms.

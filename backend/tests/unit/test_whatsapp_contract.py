@@ -1,5 +1,5 @@
 # =============================================================================
-# Stratum AI - WhatsApp Send/Broadcast Contract Tests
+# ADs Growth System - WhatsApp Send/Broadcast Contract Tests
 # =============================================================================
 """
 Tests for aligning the WhatsApp async pipeline (Tier 3).

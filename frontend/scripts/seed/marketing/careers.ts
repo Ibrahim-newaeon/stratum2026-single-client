@@ -49,7 +49,7 @@ const content_json: CareersPageContent = {
       location: 'Remote (US)',
       type: 'Full-time',
       salary: '$100K - $130K',
-      description: 'Partner with customers to ensure adoption and long-term success on Stratum AI.',
+      description: 'Partner with customers to ensure adoption and long-term success on ADs Growth System.',
     },
   ],
   benefits: [
@@ -70,7 +70,7 @@ const entry: MarketingSeedEntry = {
   template: 'careers',
   meta_title: 'Careers',
   meta_description:
-    'Join the Stratum AI team. Help build the future of trust-gated marketing automation.',
+    'Join the ADs Growth System team. Help build the future of trust-gated marketing automation.',
   content_json,
 };
 

@@ -1,5 +1,5 @@
 /**
- * Stratum AI - Slack Integration API
+ * ADs Growth System - Slack Integration API
  *
  * Slack webhook configuration and notifications.
  */

@@ -1,5 +1,5 @@
 # =============================================================================
-# Stratum AI - Platform Credentials CRUD API Tests
+# ADs Growth System - Platform Credentials CRUD API Tests
 # =============================================================================
 """Platform credentials CRUD: role gate, secret masking, keep-secret update."""
 

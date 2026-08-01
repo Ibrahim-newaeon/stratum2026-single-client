@@ -1,5 +1,5 @@
 # =============================================================================
-# Stratum AI - Integrations (HubSpot) Endpoint Integration Tests
+# ADs Growth System - Integrations (HubSpot) Endpoint Integration Tests
 # =============================================================================
 """Integration tests for the HubSpot integration reads under
 ``/api/v1/integrations/...``: connection status and pipeline ROAS. These read

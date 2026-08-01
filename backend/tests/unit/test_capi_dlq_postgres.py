@@ -1,5 +1,5 @@
 # =============================================================================
-# Stratum AI - CAPI Dead Letter Queue Postgres persistence tests (CAPI-001)
+# ADs Growth System - CAPI Dead Letter Queue Postgres persistence tests (CAPI-001)
 # =============================================================================
 """
 Failed CAPI events must land durably in Postgres (capi_dead_letter_queue), not

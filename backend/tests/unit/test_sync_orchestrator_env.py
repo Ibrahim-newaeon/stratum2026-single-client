@@ -1,5 +1,5 @@
 # =============================================================================
-# Stratum AI - Sync Orchestrator Env-Credential Unit Tests
+# ADs Growth System - Sync Orchestrator Env-Credential Unit Tests
 # =============================================================================
 """Unit tests for ``PlatformSyncOrchestrator._get_env_credentials`` in
 ``app.services.sync.orchestrator`` — the pure staticmethod that resolves a

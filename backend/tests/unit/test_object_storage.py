@@ -1,5 +1,5 @@
 # =============================================================================
-# Stratum AI - Object storage abstraction tests (INF-001)
+# ADs Growth System - Object storage abstraction tests (INF-001)
 # =============================================================================
 """
 Uploaded assets must persist through a backend abstraction rather than a hard

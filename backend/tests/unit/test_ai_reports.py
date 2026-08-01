@@ -1,5 +1,5 @@
 # =============================================================================
-# Stratum AI - AI Reports unit tests
+# ADs Growth System - AI Reports unit tests
 # =============================================================================
 """Unit tests for app.analytics.logic.ai_reports.
 

@@ -1,5 +1,5 @@
 # =============================================================================
-# Stratum AI - Report Generation Service
+# ADs Growth System - Report Generation Service
 # =============================================================================
 """
 Service for generating reports from templates.

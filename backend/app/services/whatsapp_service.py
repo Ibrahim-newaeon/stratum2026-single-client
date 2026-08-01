@@ -1,5 +1,5 @@
 # =============================================================================
-# Stratum AI - WhatsApp Service
+# ADs Growth System - WhatsApp Service
 # =============================================================================
 """
 WhatsApp Business API service layer for contact management,

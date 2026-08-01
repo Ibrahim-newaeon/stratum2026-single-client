@@ -1,5 +1,5 @@
 # =============================================================================
-# Stratum AI - EMQ (Event Measurement Quality) Calculation Logic
+# ADs Growth System - EMQ (Event Measurement Quality) Calculation Logic
 # =============================================================================
 """
 Real EMQ calculation logic that computes scores from platform metrics.

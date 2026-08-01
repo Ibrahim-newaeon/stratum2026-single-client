@@ -5,7 +5,7 @@
 
 ## Business context (drives every decision here)
 
-Stratum AI is sold as a **black-box, single-client deployment**: each customer
+ADs Growth System is sold as a **black-box, single-client deployment**: each customer
 gets their own copy on their own server/domain. The vendor configures only
 infra-level env at deploy time (domains, DB, email, superadmin seed). The
 customer's owner then performs **first-run setup exactly once** through the

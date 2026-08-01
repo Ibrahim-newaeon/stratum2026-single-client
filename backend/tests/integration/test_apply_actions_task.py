@@ -1,5 +1,5 @@
 # =============================================================================
-# Stratum AI - Apply Actions Task Integration Tests
+# ADs Growth System - Apply Actions Task Integration Tests
 # =============================================================================
 """
 Integration tests for the autopilot execution pipeline

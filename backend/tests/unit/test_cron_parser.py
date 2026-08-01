@@ -1,5 +1,5 @@
 # =============================================================================
-# Stratum AI - Cron Parser Unit Tests
+# ADs Growth System - Cron Parser Unit Tests
 # =============================================================================
 """Unit tests for the pure ``CronParser`` in
 ``app.services.reporting.scheduler``: field parsing (wildcards, lists,

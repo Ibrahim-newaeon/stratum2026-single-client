@@ -1,5 +1,5 @@
 /**
- * Stratum AI - EMQ v2 Enhanced API
+ * ADs Growth System - EMQ v2 Enhanced API
  *
  * Event Measurement Quality endpoints with Trust Layer integration
  */

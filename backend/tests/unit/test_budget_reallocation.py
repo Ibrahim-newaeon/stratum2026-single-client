@@ -1,5 +1,5 @@
 # =============================================================================
-# Stratum AI - Budget Reallocation Service unit tests
+# ADs Growth System - Budget Reallocation Service unit tests
 # =============================================================================
 """Unit tests for app.services.budget_reallocation_service.
 

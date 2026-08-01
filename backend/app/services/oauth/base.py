@@ -1,5 +1,5 @@
 # =============================================================================
-# Stratum AI - OAuth Base Service
+# ADs Growth System - OAuth Base Service
 # =============================================================================
 """
 Abstract base class for OAuth services.

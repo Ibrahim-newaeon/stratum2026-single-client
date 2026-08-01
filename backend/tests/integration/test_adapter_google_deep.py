@@ -1,5 +1,5 @@
 # =============================================================================
-# Stratum AI - Google Ads Adapter Deep Coverage Tests (#342 Batch 5+6)
+# ADs Growth System - Google Ads Adapter Deep Coverage Tests (#342 Batch 5+6)
 # =============================================================================
 """
 Deep integration tests for ``app.stratum.adapters.google_adapter``.

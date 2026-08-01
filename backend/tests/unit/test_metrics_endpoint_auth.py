@@ -1,5 +1,5 @@
 # =============================================================================
-# Stratum AI - /metrics Bearer Gate Tests
+# ADs Growth System - /metrics Bearer Gate Tests
 # =============================================================================
 """
 Tests for metrics_access_allowed, the gate protecting the /metrics

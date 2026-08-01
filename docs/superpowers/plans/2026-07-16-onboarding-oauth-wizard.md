@@ -209,7 +209,7 @@ Expected: FAIL — `Cannot find module './connections'`.
 ```ts
 // frontend/src/api/connections.ts
 /**
- * Stratum AI - Ad platform connection state + OAuth launch helper.
+ * ADs Growth System - Ad platform connection state + OAuth launch helper.
  *
  * Single source of truth for "which platforms are live" (GET /oauth/status)
  * and the shared authorize-then-redirect launcher used by the onboarding

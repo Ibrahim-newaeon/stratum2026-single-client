@@ -1,5 +1,5 @@
 # =============================================================================
-# Stratum AI - ML Simulator Endpoints
+# ADs Growth System - ML Simulator Endpoints
 # =============================================================================
 """
 What-If Simulator and ML prediction endpoints.

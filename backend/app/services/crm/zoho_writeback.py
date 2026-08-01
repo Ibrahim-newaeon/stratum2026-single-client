@@ -1,5 +1,5 @@
 # =============================================================================
-# Stratum AI - Zoho CRM Writeback Service
+# ADs Growth System - Zoho CRM Writeback Service
 # =============================================================================
 """
 Service for writing attribution data back to Zoho CRM.
@@ -41,7 +41,7 @@ logger = get_logger(__name__)
 # Custom Field Definitions for Zoho
 # =============================================================================
 
-# Stratum AI custom fields for contacts
+# ADs Growth System custom fields for contacts
 # Note: Zoho field names use underscores and are case-sensitive
 CONTACT_FIELDS = [
     {
@@ -119,7 +119,7 @@ CONTACT_FIELDS = [
     },
 ]
 
-# Stratum AI custom fields for deals
+# ADs Growth System custom fields for deals
 DEAL_FIELDS = [
     {
         "field_label": "Stratum Attributed Platform",

@@ -204,7 +204,7 @@ class Settings(BaseSettings):
     )
 
     # Application
-    app_name: str = "Stratum AI"
+    app_name: str = "ADs Growth System"
     app_env: Literal["development", "staging", "production"]
     debug: bool = True
 

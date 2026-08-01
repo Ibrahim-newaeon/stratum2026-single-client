@@ -1,5 +1,5 @@
 # =============================================================================
-# Stratum AI - Workers Package
+# ADs Growth System - Workers Package
 # =============================================================================
 """
 Celery workers for background task processing.

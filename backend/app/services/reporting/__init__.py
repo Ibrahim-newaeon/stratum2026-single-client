@@ -1,5 +1,5 @@
 # =============================================================================
-# Stratum AI - Reporting Services Package
+# ADs Growth System - Reporting Services Package
 # =============================================================================
 """
 Automated reporting services including generation, scheduling, and delivery.

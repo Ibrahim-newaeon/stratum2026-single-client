@@ -1,5 +1,5 @@
 # =============================================================================
-# Stratum AI - Automated Reporting Database Models
+# ADs Growth System - Automated Reporting Database Models
 # =============================================================================
 """
 Database models for automated reporting system.

@@ -1,5 +1,5 @@
 # =============================================================================
-# Stratum AI - EMQ API Integration Tests
+# ADs Growth System - EMQ API Integration Tests
 # =============================================================================
 """
 Integration tests for EMQ v2 API endpoints.

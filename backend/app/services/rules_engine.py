@@ -1,5 +1,5 @@
 # =============================================================================
-# Stratum AI - Rules Engine Service
+# ADs Growth System - Rules Engine Service
 # =============================================================================
 """
 IFTTT-style automation rules engine.

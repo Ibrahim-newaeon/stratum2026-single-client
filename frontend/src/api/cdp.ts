@@ -1,5 +1,5 @@
 /**
- * Stratum AI - CDP (Customer Data Platform) API Client
+ * ADs Growth System - CDP (Customer Data Platform) API Client
  *
  * API client with TypeScript types and React Query hooks for CDP endpoints.
  * Handles event ingestion, profile lookups, and source management.

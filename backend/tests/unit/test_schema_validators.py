@@ -1,5 +1,5 @@
 # =============================================================================
-# Stratum AI - Schema Validators unit tests
+# ADs Growth System - Schema Validators unit tests
 # =============================================================================
 """Unit tests for Pydantic validators in app.schemas.client and
 app.schemas.embed_widgets.

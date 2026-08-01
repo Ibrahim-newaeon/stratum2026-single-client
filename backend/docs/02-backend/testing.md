@@ -2,7 +2,7 @@
 
 ## Overview
 
-Stratum AI uses pytest for backend testing with a target of 90%+ coverage for core modules.
+ADs Growth System uses pytest for backend testing with a target of 90%+ coverage for core modules.
 
 ---
 

@@ -1,5 +1,5 @@
 /**
- * Stratum AI - API Client
+ * ADs Growth System - API Client
  *
  * Centralized axios client with authentication (single-client app —
  * no per-account routing header).

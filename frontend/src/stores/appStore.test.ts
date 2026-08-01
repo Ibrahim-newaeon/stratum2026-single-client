@@ -1,5 +1,5 @@
 /**
- * Stratum AI - App Store Tests
+ * ADs Growth System - App Store Tests
  *
  * Comprehensive Vitest test suite for the Zustand app store
  * covering state management, role checks, owner controls,
@@ -44,7 +44,7 @@ Object.defineProperty(window, 'localStorage', { value: mockLocalStorage });
 
 const createMockUser = (overrides: Partial<User> = {}): User => ({
   id: 1,
-  email: 'user@stratum.ai',
+  email: 'user@adsgrowthsystem.com',
   full_name: 'Test User',
   role: 'analyst',
   avatar_url: null,
@@ -58,10 +58,10 @@ const createMockUser = (overrides: Partial<User> = {}): User => ({
 });
 
 const createOwnerUser = (overrides: Partial<User> = {}): User =>
-  createMockUser({ id: 99, email: 'admin@stratum.ai', full_name: 'Owner', role: 'owner', ...overrides });
+  createMockUser({ id: 99, email: 'admin@adsgrowthsystem.com', full_name: 'Owner', role: 'owner', ...overrides });
 
 const createAdminUser = (overrides: Partial<User> = {}): User =>
-  createMockUser({ id: 2, email: 'admin@stratum.ai', full_name: 'Admin User', role: 'admin', ...overrides });
+  createMockUser({ id: 2, email: 'admin@adsgrowthsystem.com', full_name: 'Admin User', role: 'admin', ...overrides });
 
 // =============================================================================
 // Reset helper

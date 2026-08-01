@@ -1,5 +1,5 @@
 # =============================================================================
-# Stratum AI - Auth Password-Reset Endpoint Integration Tests
+# ADs Growth System - Auth Password-Reset Endpoint Integration Tests
 # =============================================================================
 """Integration tests for ``POST /auth/forgot-password`` and
 ``POST /auth/reset-password`` — the DB + Redis password-reset flow. The

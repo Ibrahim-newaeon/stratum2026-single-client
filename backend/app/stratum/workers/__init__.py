@@ -1,5 +1,5 @@
 # =============================================================================
-# Stratum AI - Workers Module
+# ADs Growth System - Workers Module
 # =============================================================================
 """
 Celery workers for automation and data synchronization.

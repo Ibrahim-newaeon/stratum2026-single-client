@@ -96,7 +96,7 @@ const entry: MarketingSeedEntry = {
   template: 'features',
   meta_title: 'Features',
   meta_description:
-    'Explore Stratum AI features: Trust Engine, Signal Health monitoring, CDP with audience sync, predictive analytics, and more.',
+    'Explore ADs Growth System features: Trust Engine, Signal Health monitoring, CDP with audience sync, predictive analytics, and more.',
   content_json,
 };
 

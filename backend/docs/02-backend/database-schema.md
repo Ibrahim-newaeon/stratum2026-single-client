@@ -1,6 +1,6 @@
 # Database Schema
 
-Complete reference for Stratum AI database models.
+Complete reference for ADs Growth System database models.
 
 > **STALE — pre single-client-conversion schema (2026-07)**: the
 > `TenantMixin`, `Tenant`/`tenants` table, and every `tenant_id` column

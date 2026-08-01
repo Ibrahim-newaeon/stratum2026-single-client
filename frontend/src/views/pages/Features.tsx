@@ -1,6 +1,6 @@
 /**
  * Features Page — landing-themed (ink + ember).
- * Showcases all Stratum AI platform features.
+ * Showcases all ADs Growth System platform features.
  */
 
 import { usePageContent, type FeaturesPageContent } from '@/api/cms';
@@ -137,7 +137,7 @@ export default function Features() {
         badgeIcon={SparklesIcon}
         title="Everything you need to"
         highlight="scale revenue operations"
-        subtitle="From signal-health monitoring to ML-powered predictions, Stratum AI provides the complete toolkit for modern growth teams."
+        subtitle="From signal-health monitoring to ML-powered predictions, ADs Growth System provides the complete toolkit for modern growth teams."
         primary={{ label: 'Start Free Trial', href: '/signup' }}
         secondary={{ label: 'View Pricing', href: '/pricing' }}
       />

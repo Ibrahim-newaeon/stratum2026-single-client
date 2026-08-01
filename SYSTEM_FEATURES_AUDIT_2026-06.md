@@ -1,4 +1,4 @@
-# Stratum AI — Enterprise System Features Audit (Re-Audit)
+# ADs Growth System — Enterprise System Features Audit (Re-Audit)
 
 **Date:** 2026-06-03
 **Branch:** `claude/system-features-audit-DiYfj`

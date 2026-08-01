@@ -1,5 +1,5 @@
 # =============================================================================
-# Stratum AI - PlatformConnection status-filter regression tests
+# ADs Growth System - PlatformConnection status-filter regression tests
 # =============================================================================
 """Regression tests for the ``PlatformConnection.is_connected`` phantom
 attribute (spec-audit P0-4). The model's source of truth is ``status ==

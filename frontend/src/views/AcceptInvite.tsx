@@ -1,5 +1,5 @@
 /**
- * Accept Invite Page - Stratum AI
+ * Accept Invite Page - ADs Growth System
  *
  * Allows invited users to set their password and full name.
  * Reads the invitation token from URL query params, submits to
@@ -179,14 +179,7 @@ export default function AcceptInvite() {
       <section className="w-full lg:w-3/5 flex flex-col items-center justify-center p-6 lg:p-12 relative">
         {/* Mobile logo */}
         <div className="lg:hidden mb-8">
-          <img
-            src="/images/stratum-logo.png"
-            alt="Stratum AI"
-            className="h-8"
-            
-            loading="lazy"
-            decoding="async"
-          />
+          <span className="font-display font-semibold text-lg tracking-tight text-foreground">ADs Growth <span className="text-primary">System</span></span>
         </div>
 
         <div className="w-full max-w-md bg-card border border-border rounded-xl p-8 shadow-xl">
@@ -194,7 +187,7 @@ export default function AcceptInvite() {
             Join your team
           </h1>
           <p className="text-sm text-muted-foreground mb-6">
-            You've been invited to Stratum AI. Set up your account to get started.
+            You've been invited to ADs Growth System. Set up your account to get started.
           </p>
 
           <form onSubmit={handleSubmit} className="space-y-5">

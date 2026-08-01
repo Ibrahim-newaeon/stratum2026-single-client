@@ -1,5 +1,5 @@
 # =============================================================================
-# Stratum AI - Root Makefile
+# ADs Growth System - Root Makefile
 # =============================================================================
 # Delegates to backend/Makefile so commands work from project root.
 

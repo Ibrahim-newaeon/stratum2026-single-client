@@ -1,5 +1,5 @@
 # =============================================================================
-# Stratum AI - Newsletter API Integration Tests
+# ADs Growth System - Newsletter API Integration Tests
 # =============================================================================
 """Integration tests for the newsletter API.
 

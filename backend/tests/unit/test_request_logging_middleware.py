@@ -1,5 +1,5 @@
 # =============================================================================
-# Stratum AI - Request Logging Middleware Tests
+# ADs Growth System - Request Logging Middleware Tests
 # =============================================================================
 """
 Tests for the request logging middleware that assigns request IDs,

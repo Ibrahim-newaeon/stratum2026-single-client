@@ -1,5 +1,5 @@
 # =============================================================================
-# Stratum AI - CDP Computed Traits Service
+# ADs Growth System - CDP Computed Traits Service
 # =============================================================================
 """
 Computed Traits service for CDP profile enrichment.

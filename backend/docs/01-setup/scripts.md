@@ -1,6 +1,6 @@
 # Available Scripts & Commands
 
-Reference for all available scripts and commands in Stratum AI.
+Reference for all available scripts and commands in ADs Growth System.
 
 ---
 

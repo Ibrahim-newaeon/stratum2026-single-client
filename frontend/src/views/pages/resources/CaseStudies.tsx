@@ -35,7 +35,7 @@ const fallbackCaseStudies = [
       { label: 'Time Saved', value: '20hrs/week' },
     ],
     quote:
-      'Stratum AI changed how we think about automation. The trust gates give us confidence to scale aggressively.',
+      'ADs Growth System changed how we think about automation. The trust gates give us confidence to scale aggressively.',
     author: 'Sarah Chen',
     role: 'VP of Growth',
   },
@@ -172,7 +172,7 @@ export default function CaseStudiesPage() {
         badgeIcon={TrophyIcon}
         title="Success stories from"
         highlight="industry leaders"
-        subtitle="Discover how companies across industries use Stratum AI to transform their marketing performance with trust-gated automation."
+        subtitle="Discover how companies across industries use ADs Growth System to transform their marketing performance with trust-gated automation."
       />
 
       {/* Stats */}

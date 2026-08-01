@@ -1,5 +1,5 @@
 # =============================================================================
-# Stratum AI - RFM Segmenter unit tests
+# ADs Growth System - RFM Segmenter unit tests
 # =============================================================================
 """Unit tests for app.ml.rfm_segmenter (pure numpy/dataclass logic, no I/O)."""
 

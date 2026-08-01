@@ -1,4 +1,4 @@
-# Stratum AI - User Guide
+# ADs Growth System - User Guide
 
 ## Table of Contents
 

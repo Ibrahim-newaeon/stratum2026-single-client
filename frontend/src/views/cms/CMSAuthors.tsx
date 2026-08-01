@@ -312,7 +312,7 @@ export default function CMSAuthors() {
                     value={formData.company}
                     onChange={(e) => setFormData((f) => ({ ...f, company: e.target.value }))}
                     className="w-full px-4 py-2.5 bg-foreground/5 border border-foreground/10 rounded-lg text-white placeholder-foreground/30 focus:outline-none focus:border-purple-500/50"
-                    placeholder="Stratum AI"
+                    placeholder="ADs Growth System"
                   />
                 </div>
               </div>

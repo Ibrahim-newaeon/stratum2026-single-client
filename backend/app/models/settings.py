@@ -1,5 +1,5 @@
 # =============================================================================
-# Stratum AI - Settings Models (Webhooks, Notifications, Changelog)
+# ADs Growth System - Settings Models (Webhooks, Notifications, Changelog)
 # =============================================================================
 """
 Models for org-level settings features:

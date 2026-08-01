@@ -1,5 +1,5 @@
 /**
- * Stratum AI - API Client Tests
+ * ADs Growth System - API Client Tests
  *
  * Tests for token management, request interceptors (auth headers),
  * and response interceptor (401 handling + token refresh mutex).

@@ -1,5 +1,5 @@
 /**
- * Stratum AI - Clients API
+ * ADs Growth System - Clients API
  *
  * Client management, assignments, and portal invitations.
  */

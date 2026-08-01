@@ -1,5 +1,5 @@
 # =============================================================================
-# Stratum AI - Zoho CRM Integration Unit Tests
+# ADs Growth System - Zoho CRM Integration Unit Tests
 # =============================================================================
 """
 Unit tests for Zoho CRM integration:

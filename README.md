@@ -1,4 +1,4 @@
-# Stratum AI Platform
+# ADs Growth System Platform
 
 **A Revenue Operating System with Trust-Gated Autopilot.**
 Automation executes **only when signal health passes safety thresholds** — never on degraded data.
@@ -32,7 +32,7 @@ Automation executes **only when signal health passes safety thresholds** — nev
 
 ## What it is
 
-Stratum AI helps marketing agencies manage many client accounts across ad
+ADs Growth System helps marketing agencies manage many client accounts across ad
 platforms (Meta, Google, TikTok, Snapchat). It pairs a **Customer Data
 Platform (CDP)** and a real analytics/attribution engine with an
 **Autopilot** that can adjust budgets, bids, and campaign state — but only

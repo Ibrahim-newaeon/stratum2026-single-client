@@ -1,5 +1,5 @@
 # =============================================================================
-# Stratum AI - Auth Registration Endpoint Integration Tests
+# ADs Growth System - Auth Registration Endpoint Integration Tests
 # =============================================================================
 """Integration tests for ``POST /auth/register`` — the verified-signup flow
 that provisions a single global admin ``User`` row (STRAT-SC-001: there is

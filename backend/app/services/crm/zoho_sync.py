@@ -1,8 +1,8 @@
 # =============================================================================
-# Stratum AI - Zoho CRM Sync Service
+# ADs Growth System - Zoho CRM Sync Service
 # =============================================================================
 """
-Synchronizes contacts and deals from Zoho CRM to Stratum AI.
+Synchronizes contacts and deals from Zoho CRM to ADs Growth System.
 Supports scheduled syncs and incremental updates.
 """
 
@@ -58,7 +58,7 @@ ZOHO_STAGE_MAPPING = {
 
 class ZohoSyncService:
     """
-    Handles synchronization of Zoho CRM data to Stratum AI.
+    Handles synchronization of Zoho CRM data to ADs Growth System.
 
     Features:
     - Incremental sync (only updated records)

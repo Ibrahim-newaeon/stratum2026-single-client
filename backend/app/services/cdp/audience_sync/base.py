@@ -1,5 +1,5 @@
 # =============================================================================
-# Stratum AI - Base Audience Connector
+# ADs Growth System - Base Audience Connector
 # =============================================================================
 """
 Abstract base class for platform-specific audience connectors.
