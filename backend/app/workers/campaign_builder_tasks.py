@@ -342,28 +342,31 @@ def publish_campaign(self, draft_id: str, publish_log_id: str):
             if not connection or connection.status != ConnectionStatus.CONNECTED:
                 raise Exception("Platform not connected")
 
-            # Publish to platform API
-            # In production: result = publish_to_platform(draft.platform, connection, draft.draft_json)
-
-            # Mock success
-            platform_campaign_id = f"camp_{draft_id[:8]}"
-
-            # Update draft
-            draft.status = DraftStatus.PUBLISHED
-            draft.platform_campaign_id = platform_campaign_id
-            draft.published_at = datetime.now(timezone.utc)
-
-            # Update publish log
-            publish_log.result_status = PublishResult.SUCCESS
-            publish_log.platform_campaign_id = platform_campaign_id
-            publish_log.response_json = {"campaign_id": platform_campaign_id}
-
-            db.commit()
-            logger.info(
-                f"Successfully published campaign {draft_id} as {platform_campaign_id}"
+            # No publish adapter exists yet. This previously synthesised a
+            # campaign id and recorded PublishResult.SUCCESS without making a
+            # single network call, which meant CampaignPublishLog — the record
+            # of what was spent and by whom — filled with fiction the moment
+            # anyone enabled the feature flag to smoke-test it. Failing loudly
+            # is the only honest behaviour until publish_to_platform lands.
+            # See docs/architecture/campaign-publish-plan.md (Phase 4).
+            raise NotImplementedError(
+                f"No publish adapter implemented for platform '{draft.platform}'. "
+                "Campaign publishing is not yet operational."
             )
 
-            return {"status": "success", "platform_campaign_id": platform_campaign_id}
+        except NotImplementedError as e:
+            # Permanent, not transient: retrying cannot make an unimplemented
+            # adapter exist. Record the failure and stop, rather than burning
+            # three retries and reporting a retry exhaustion that misdescribes
+            # the cause.
+            logger.error(f"Publish unavailable for draft {draft_id}: {e}")
+
+            draft.status = DraftStatus.FAILED
+            publish_log.result_status = PublishResult.FAILURE
+            publish_log.error_message = str(e)
+
+            db.commit()
+            return {"status": "error", "reason": "not implemented"}
 
         except Exception as e:
             logger.error(f"Error publishing campaign: {e}")

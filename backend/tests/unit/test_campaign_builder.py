@@ -1089,10 +1089,19 @@ class TestRejectCampaignDraft:
 
 
 class TestPublishCampaignDraft:
-    """Tests for POST /campaign-drafts/{draft_id}/publish"""
+    """Tests for POST /campaign-drafts/{draft_id}/publish
+
+    The endpoint validates fully and then refuses with 501: there is no
+    platform publish adapter (STRAT-CB-001 P0). It previously marked drafts
+    PUBLISHED and wrote a SUCCESS log with no network call — the assertions
+    below deliberately invert that. Behaviour once an adapter lands is
+    specified in docs/architecture/campaign-publish-plan.md.
+    """
 
     @pytest.mark.asyncio
-    async def test_publish_approved_draft(self):
+    async def test_publish_approved_draft_refuses_and_does_not_publish(self):
+        from fastapi import HTTPException
+
         from app.api.v1.endpoints.campaign_builder import publish_campaign_draft
 
         acc = _make_ad_account(daily_budget_cap=10000)
@@ -1103,13 +1112,15 @@ class TestPublishCampaignDraft:
         )
         db = _make_db()
         db.execute.return_value = _make_scalar_result(draft)
-        bg = MagicMock()
 
-        resp = await publish_campaign_draft(_make_request(), draft.id, bg, db)
-        assert resp.success is True
-        assert draft.status == DraftStatus.PUBLISHED
-        # platform_campaign_id is set by background task after platform API returns real ID
-        assert draft.published_at is not None
+        with pytest.raises(HTTPException) as exc_info:
+            await publish_campaign_draft(draft.id, db)
+
+        assert exc_info.value.status_code == 501
+        # The draft stays exactly as it was — still approved, still publishable.
+        assert draft.status == DraftStatus.APPROVED
+        assert draft.published_at is None
+        assert draft.platform_campaign_id is None
 
     @pytest.mark.asyncio
     async def test_publish_non_approved_fails(self):
@@ -1120,10 +1131,9 @@ class TestPublishCampaignDraft:
         draft = _make_draft(status=DraftStatus.SUBMITTED)
         db = _make_db()
         db.execute.return_value = _make_scalar_result(draft)
-        bg = MagicMock()
 
         with pytest.raises(HTTPException) as exc_info:
-            await publish_campaign_draft(_make_request(), draft.id, bg, db)
+            await publish_campaign_draft(draft.id, db)
         assert exc_info.value.status_code == 400
         assert "Must be approved" in exc_info.value.detail
 
@@ -1141,15 +1151,19 @@ class TestPublishCampaignDraft:
         )
         db = _make_db()
         db.execute.return_value = _make_scalar_result(draft)
-        bg = MagicMock()
 
         with pytest.raises(HTTPException) as exc_info:
-            await publish_campaign_draft(_make_request(), draft.id, bg, db)
+            await publish_campaign_draft(draft.id, db)
+        # Budget guardrail must still win over the 501 — validation runs first,
+        # so a caller learns their budget is wrong rather than only that
+        # publishing is unavailable.
         assert exc_info.value.status_code == 400
         assert "exceeds" in exc_info.value.detail
 
     @pytest.mark.asyncio
-    async def test_publish_no_budget_cap_passes(self):
+    async def test_publish_no_budget_cap_reaches_the_501(self):
+        from fastapi import HTTPException
+
         from app.api.v1.endpoints.campaign_builder import publish_campaign_draft
 
         acc = _make_ad_account(daily_budget_cap=None)
@@ -1160,11 +1174,11 @@ class TestPublishCampaignDraft:
         )
         db = _make_db()
         db.execute.return_value = _make_scalar_result(draft)
-        bg = MagicMock()
 
-        resp = await publish_campaign_draft(_make_request(), draft.id, bg, db)
-        assert resp.success is True
-        assert draft.status == DraftStatus.PUBLISHED
+        with pytest.raises(HTTPException) as exc_info:
+            await publish_campaign_draft(draft.id, db)
+        assert exc_info.value.status_code == 501
+        assert draft.status == DraftStatus.APPROVED
 
     @pytest.mark.asyncio
     async def test_publish_not_found(self):
@@ -1174,25 +1188,30 @@ class TestPublishCampaignDraft:
 
         db = _make_db()
         db.execute.return_value = _make_scalar_result(None)
-        bg = MagicMock()
 
         with pytest.raises(HTTPException) as exc_info:
-            await publish_campaign_draft(_make_request(), uuid4(), bg, db)
+            await publish_campaign_draft(uuid4(), db)
         assert exc_info.value.status_code == 404
 
     @pytest.mark.asyncio
-    async def test_publish_creates_log_entry(self):
+    async def test_publish_writes_no_log_entry(self):
+        """Inverted from the original: nothing is attempted, so nothing is logged.
+
+        CampaignPublishLog is the record of what was sent to a platform. A row
+        written when no request was made is worse than no row at all.
+        """
+        from fastapi import HTTPException
+
         from app.api.v1.endpoints.campaign_builder import publish_campaign_draft
 
         acc = _make_ad_account(daily_budget_cap=None)
         draft = _make_draft(status=DraftStatus.APPROVED, ad_account=acc)
         db = _make_db()
         db.execute.return_value = _make_scalar_result(draft)
-        bg = MagicMock()
 
-        await publish_campaign_draft(_make_request(), draft.id, bg, db)
-        # db.add should be called for the publish log
-        assert db.add.call_count >= 1
+        with pytest.raises(HTTPException):
+            await publish_campaign_draft(draft.id, db)
+        db.add.assert_not_called()
 
 
 # =============================================================================
@@ -1548,7 +1567,14 @@ class TestPublishCampaignTask:
 
         assert result["status"] == "skipped"
 
-    def test_publish_success(self):
+    def test_publish_with_healthy_connection_still_fails_no_adapter(self):
+        """Everything the task needs is present, and it still must not succeed.
+
+        Renamed from test_publish_success. The old assertions — status success,
+        draft PUBLISHED, log SUCCESS — were satisfied by a mock that invented a
+        campaign id without a network call, so the test passed precisely
+        because the production code was lying. See STRAT-CB-001 P0.
+        """
         from app.workers.campaign_builder_tasks import publish_campaign
 
         draft_id = uuid4()
@@ -1558,8 +1584,10 @@ class TestPublishCampaignTask:
         draft.platform = AdPlatform.META
         draft.ad_account_id = uuid4()
         draft.draft_json = {"campaign": {}}
+        draft.platform_campaign_id = None
 
         publish_log = MagicMock()
+        publish_log.platform_campaign_id = None
 
         ad_account = MagicMock()
         connection = MagicMock()
@@ -1580,9 +1608,11 @@ class TestPublishCampaignTask:
                 draft_id=str(draft_id), publish_log_id=str(uuid4())
             )
 
-        assert result["status"] == "success"
-        assert draft.status == DraftStatus.PUBLISHED
-        assert publish_log.result_status == PublishResult.SUCCESS
+        assert result["status"] == "error"
+        assert draft.status == DraftStatus.FAILED
+        assert publish_log.result_status == PublishResult.FAILURE
+        assert draft.platform_campaign_id is None
+        assert publish_log.platform_campaign_id is None
 
 
 class TestPublishRetryTask:
@@ -1684,9 +1714,16 @@ class TestEdgeCases:
                 AdPlatform.SNAPCHAT,
             ]
 
+    # The three budget-boundary cases below assert the guardrail *lets the
+    # request through*. Before STRAT-CB-001 P0 "through" meant a 200; it now
+    # means reaching the 501 refusal at the end of the handler. Either way the
+    # thing under test is the same: these budgets are not rejected as over cap.
+
     @pytest.mark.asyncio
     async def test_publish_budget_zero_amount_passes(self):
         """Zero budget should pass since 0 <= any cap."""
+        from fastapi import HTTPException
+
         from app.api.v1.endpoints.campaign_builder import publish_campaign_draft
 
         acc = _make_ad_account(daily_budget_cap=5000)
@@ -1697,14 +1734,16 @@ class TestEdgeCases:
         )
         db = _make_db()
         db.execute.return_value = _make_scalar_result(draft)
-        bg = MagicMock()
 
-        resp = await publish_campaign_draft(_make_request(), draft.id, bg, db)
-        assert resp.success is True
+        with pytest.raises(HTTPException) as exc_info:
+            await publish_campaign_draft(draft.id, db)
+        assert exc_info.value.status_code == 501
 
     @pytest.mark.asyncio
     async def test_publish_no_budget_in_draft_json(self):
         """If draft_json has no budget field, budget check should pass (amount=0)."""
+        from fastapi import HTTPException
+
         from app.api.v1.endpoints.campaign_builder import publish_campaign_draft
 
         acc = _make_ad_account(daily_budget_cap=5000)
@@ -1715,14 +1754,16 @@ class TestEdgeCases:
         )
         db = _make_db()
         db.execute.return_value = _make_scalar_result(draft)
-        bg = MagicMock()
 
-        resp = await publish_campaign_draft(_make_request(), draft.id, bg, db)
-        assert resp.success is True
+        with pytest.raises(HTTPException) as exc_info:
+            await publish_campaign_draft(draft.id, db)
+        assert exc_info.value.status_code == 501
 
     @pytest.mark.asyncio
     async def test_publish_budget_exactly_at_cap(self):
         """Budget exactly equal to cap should pass (> not >=)."""
+        from fastapi import HTTPException
+
         from app.api.v1.endpoints.campaign_builder import publish_campaign_draft
 
         acc = _make_ad_account(daily_budget_cap=5000)
@@ -1733,10 +1774,10 @@ class TestEdgeCases:
         )
         db = _make_db()
         db.execute.return_value = _make_scalar_result(draft)
-        bg = MagicMock()
 
-        resp = await publish_campaign_draft(_make_request(), draft.id, bg, db)
-        assert resp.success is True
+        with pytest.raises(HTTPException) as exc_info:
+            await publish_campaign_draft(draft.id, db)
+        assert exc_info.value.status_code == 501
 
     @pytest.mark.asyncio
     async def test_disconnect_clears_tokens(self):
