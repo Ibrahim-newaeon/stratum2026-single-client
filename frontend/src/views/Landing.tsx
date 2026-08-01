@@ -33,7 +33,6 @@ export default function Landing() {
     return [
       { name: 'Product', href: '#product' },
       { name: 'Solutions', href: '#solutions' },
-      { name: 'Pricing', href: '/pricing' },
       { name: 'Docs', href: '/docs' },
     ];
   }, [pagesData]);

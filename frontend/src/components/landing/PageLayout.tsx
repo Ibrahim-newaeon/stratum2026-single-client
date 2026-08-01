@@ -16,7 +16,6 @@ interface PageLayoutProps {
 const navLinks = [
   { name: 'Product', href: '/features' },
   { name: 'Solutions', href: '/solutions/cdp' },
-  { name: 'Pricing', href: '/pricing' },
   { name: 'Docs', href: '/docs' },
 ];
 
