@@ -1,7 +1,7 @@
 /**
  * API Keys — workspace credential management at /dashboard/api-keys.
  *
- * Lets agency admins mint scoped API keys for the Stratum public API
+ * Lets agency admins mint scoped API keys for the ADs Growth System public API
  * (server-to-server access to /v1/* endpoints). Backed by hooks in
  * `@/api/apiKeys`:
  *
@@ -192,7 +192,7 @@ export default function APIKeys() {
             API Keys
           </h1>
           <p className="mt-1 text-sm text-muted-foreground">
-            Server-to-server credentials for the Stratum public API. Keys are scoped and
+            Server-to-server credentials for the ADs Growth System public API. Keys are scoped and
             audit-logged on every call.
           </p>
         </div>

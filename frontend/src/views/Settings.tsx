@@ -1047,7 +1047,7 @@ function SecuritySettings({
             <div className="p-4 rounded-xl border border-foreground/10 glass text-center">
               <p className="text-muted-foreground">No API keys created yet</p>
               <p className="text-xs text-muted-foreground mt-1">
-                Create a key to integrate with the Stratum API
+                Create a key to integrate with the ADs Growth System API
               </p>
             </div>
           )}

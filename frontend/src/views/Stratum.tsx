@@ -1373,7 +1373,7 @@ export function Stratum() {
         <div className="flex items-center justify-between mb-4">
           <h3 className="font-semibold flex items-center gap-2">
             <Sparkles className="w-5 h-5 text-primary" />
-            {t('stratum.aiInsights')}
+            {t('adsgrowthsystem.comInsights')}
           </h3>
           <button className="text-sm text-primary hover:underline">
             {t('common.viewAll')}

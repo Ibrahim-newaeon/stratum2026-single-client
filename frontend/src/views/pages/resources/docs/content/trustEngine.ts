@@ -11,7 +11,7 @@ export const trustEngineArticles: DocArticle[] = [
     blocks: [
       {
         type: 'paragraph',
-        text: 'Signal Health is the heartbeat of the Trust Engine. It is a single composite score from 0 to 100 that summarizes how reliable your incoming data is at this moment. Every automation in Stratum reads this score before it acts, so understanding what moves it is the key to understanding why autopilot runs, holds, or stands down.',
+        text: 'Signal Health is the heartbeat of the Trust Engine. It is a single composite score from 0 to 100 that summarizes how reliable your incoming data is at this moment. Every automation in ADs Growth System reads this score before it acts, so understanding what moves it is the key to understanding why autopilot runs, holds, or stands down.',
       },
       {
         type: 'paragraph',
@@ -41,13 +41,13 @@ export const trustEngineArticles: DocArticle[] = [
       { type: 'heading', text: 'How the bands map to action' },
       {
         type: 'paragraph',
-        text: 'The raw score is meaningless without the bands that translate it into a decision. Stratum uses three:',
+        text: 'The raw score is meaningless without the bands that translate it into a decision. ADs Growth System uses three:',
       },
       {
         type: 'list',
         items: [
           '70–100 Healthy (green) — signals are reliable and autopilot is enabled.',
-          '40–69 Degraded (yellow) — quality is questionable, so Stratum alerts and holds rather than acts.',
+          '40–69 Degraded (yellow) — quality is questionable, so ADs Growth System alerts and holds rather than acts.',
           '0–39 Unhealthy (red) — data cannot be trusted and manual intervention is required.',
         ],
       },
@@ -146,7 +146,7 @@ export const trustEngineArticles: DocArticle[] = [
       {
         type: 'list',
         items: [
-          'Advisory — Stratum recommends the action but executes nothing. Use it to evaluate the engine’s judgment.',
+          'Advisory — ADs Growth System recommends the action but executes nothing. Use it to evaluate the engine’s judgment.',
           'Soft-Block — executes when health is healthy; holds and alerts when degraded.',
           'Hard-Block — executes only when healthy; anything below threshold requires manual approval.',
         ],
@@ -207,7 +207,7 @@ export const trustEngineArticles: DocArticle[] = [
         type: 'callout',
         tone: 'warning',
         title: 'The hard floor',
-        text: 'Stratum never auto-executes when signal_health is below 70. You can raise the healthy threshold, but autopilot will not act on degraded data regardless of how a rule is configured.',
+        text: 'ADs Growth System never auto-executes when signal_health is below 70. You can raise the healthy threshold, but autopilot will not act on degraded data regardless of how a rule is configured.',
       },
       { type: 'heading', text: 'Configuring per tenant' },
       {

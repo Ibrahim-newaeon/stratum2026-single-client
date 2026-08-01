@@ -97,14 +97,14 @@ export default function Contact() {
                 <EnvelopeIcon className="w-8 h-8 mb-4 text-secondary" />
                 <h3 className="text-h3 text-foreground font-semibold mb-2">Email Us</h3>
                 <p className="text-body text-muted-foreground">
-                  <a href="mailto:hello@stratum.ai" className="hover:text-foreground transition-colors">
-                    hello@stratum.ai
+                  <a href="mailto:hello@adsgrowthsystem.com" className="hover:text-foreground transition-colors">
+                    hello@adsgrowthsystem.com
                   </a>
                 </p>
                 <p className="text-meta uppercase text-muted-foreground mt-2">For sales inquiries</p>
                 <p className="text-body text-muted-foreground">
-                  <a href="mailto:sales@stratum.ai" className="hover:text-foreground transition-colors">
-                    sales@stratum.ai
+                  <a href="mailto:sales@adsgrowthsystem.com" className="hover:text-foreground transition-colors">
+                    sales@adsgrowthsystem.com
                   </a>
                 </p>
               </MktCard>
@@ -130,8 +130,8 @@ export default function Contact() {
                     Help Center
                   </a>{' '}
                   or email{' '}
-                  <a href="mailto:support@stratum.ai" className="text-secondary hover:underline">
-                    support@stratum.ai
+                  <a href="mailto:support@adsgrowthsystem.com" className="text-secondary hover:underline">
+                    support@adsgrowthsystem.com
                   </a>
                 </p>
               </MktCard>

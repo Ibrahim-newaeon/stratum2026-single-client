@@ -151,7 +151,7 @@ export function JoyrideProvider({ children, userRole = 'general', autoStart = fa
           callback={handleJoyrideCallback}
           styles={{
             options: {
-              primaryColor: '#a855f7', // Stratum purple
+              primaryColor: '#a855f7', // ADs Growth System purple
               zIndex: 10000,
               backgroundColor: '#0A0A0A',
               textColor: '#ffffff',

@@ -155,7 +155,7 @@ export default function Terms() {
                   <p className="text-body text-muted-foreground leading-relaxed">
                     For questions about these terms, please contact us at:
                     <br />
-                    <strong className="text-foreground">Email:</strong> legal@stratum.ai
+                    <strong className="text-foreground">Email:</strong> legal@adsgrowthsystem.com
                   </p>
                 </section>
               </div>

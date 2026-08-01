@@ -24,7 +24,7 @@ export default function CDPCalculator() {
             </Link>
             <div className="flex items-center gap-2">
               <Database className="w-5 h-5 text-primary" />
-              <span className="font-semibold">Stratum CDP</span>
+              <span className="font-semibold">ADs Growth System CDP</span>
             </div>
             <Link
               to="/signup"
@@ -42,7 +42,7 @@ export default function CDPCalculator() {
         <div className="text-center mb-12">
           <h1 className="text-4xl font-bold tracking-tight mb-4">CDP ROI Calculator</h1>
           <p className="text-xl text-muted-foreground max-w-2xl mx-auto">
-            Estimate the business impact of improving your customer identity resolution with Stratum
+            Estimate the business impact of improving your customer identity resolution with ADs Growth System
             CDP's first-party data platform.
           </p>
         </div>
@@ -111,7 +111,7 @@ export default function CDPCalculator() {
               Start Free Pilot
             </Link>
             <a
-              href="mailto:sales@stratum.ai"
+              href="mailto:sales@adsgrowthsystem.com"
               className="px-6 py-3 border border-border rounded-lg font-medium hover:bg-muted transition-colors"
             >
               Contact Sales

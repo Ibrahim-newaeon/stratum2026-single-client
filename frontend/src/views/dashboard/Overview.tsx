@@ -1,5 +1,5 @@
 /**
- * Overview — Stratum dashboard home.
+ * Overview — ADs Growth System dashboard home.
  *
  * Composition (top → bottom):
  *   1. KpiStrip       — 4 compact cards (Trust / Signal / ROAS / Pacing)
