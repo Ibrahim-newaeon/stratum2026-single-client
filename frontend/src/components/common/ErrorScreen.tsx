@@ -1,7 +1,7 @@
 /**
  * ErrorScreen — shared terminal-readout surface for HTTP error states.
  *
- * Stratum's domain is signal health and a trust gate that resolves to
+ * ADs Growth System's domain is signal health and a trust gate that resolves to
  * PASS / HOLD / BLOCK. These error pages lean into that: an instrument
  * readout rather than a generic "big gradient number" page. Ink + ember,
  * hairline borders, Geist Mono for status/diagnostics, one ember CTA.
@@ -100,7 +100,7 @@ export function ErrorScreen({
                 className="inline-block h-1.5 w-1.5 rounded-full"
                 style={{ background: ruleColor }}
               />
-              Stratum · System status
+              ADs Growth System · System status
             </span>
             <span className="tabular-nums">HTTP {code}</span>
           </motion.div>

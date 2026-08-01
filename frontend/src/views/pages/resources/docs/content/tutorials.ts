@@ -6,7 +6,7 @@ export const tutorialsArticles: DocArticle[] = [
     category: 'Tutorials',
     title: 'Video Tutorials',
     description:
-      'A short catalog of guided video walkthroughs for the core Stratum workflows.',
+      'A short catalog of guided video walkthroughs for the core ADs Growth System workflows.',
     readTime: '3 min',
     blocks: [
       {
@@ -55,7 +55,7 @@ export const tutorialsArticles: DocArticle[] = [
     blocks: [
       {
         type: 'paragraph',
-        text: 'The patterns below are the ones teams reach for most. Each gives you the goal, the Stratum setup, and the outcome you should expect. They assume at least one connected platform and signal health that has settled.',
+        text: 'The patterns below are the ones teams reach for most. Each gives you the goal, the ADs Growth System setup, and the outcome you should expect. They assume at least one connected platform and signal health that has settled.',
       },
       { type: 'heading', text: 'Protect ROAS during a tracking outage' },
       {
@@ -97,7 +97,7 @@ export const tutorialsArticles: DocArticle[] = [
       },
       {
         type: 'paragraph',
-        text: 'Outcome: Stratum compounds spend into the winner during healthy periods and pauses scaling whenever signal health dips — capturing upside without overcommitting on noisy data.',
+        text: 'Outcome: ADs Growth System compounds spend into the winner during healthy periods and pauses scaling whenever signal health dips — capturing upside without overcommitting on noisy data.',
       },
       { type: 'heading', text: 'Win back At-Risk customers' },
       {
@@ -109,7 +109,7 @@ export const tutorialsArticles: DocArticle[] = [
         ordered: true,
         items: [
           'Build a predictive segment in the CDP targeting the At-Risk lifecycle stage, refined by RFM — low recency, previously high frequency or monetary value.',
-          'Sync the segment to Meta and Google as a custom audience; identifiers are SHA-256 hashed before they leave Stratum.',
+          'Sync the segment to Meta and Google as a custom audience; identifiers are SHA-256 hashed before they leave ADs Growth System.',
           'Run a win-back campaign against that audience and track recovered revenue with data-driven attribution.',
         ],
       },
@@ -250,7 +250,7 @@ export const tutorialsArticles: DocArticle[] = [
       { type: 'subheading', text: 'OAuth token expired or revoked' },
       {
         type: 'paragraph',
-        text: 'Cause: the platform refresh token was revoked, or the connecting user lost access on the platform side. Fix: reconnect the integration to run a fresh OAuth consent flow — Stratum stores only the new encrypted refresh token. Signal collection resumes once the connection is healthy again.',
+        text: 'Cause: the platform refresh token was revoked, or the connecting user lost access on the platform side. Fix: reconnect the integration to run a fresh OAuth consent flow — ADs Growth System stores only the new encrypted refresh token. Signal collection resumes once the connection is healthy again.',
       },
       { type: 'subheading', text: 'Hitting 429 rate limits' },
       {

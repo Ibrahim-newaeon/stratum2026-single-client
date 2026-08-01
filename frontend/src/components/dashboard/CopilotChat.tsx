@@ -329,7 +329,7 @@ export function CopilotChat() {
               </div>
               <div>
                 <h3 className="text-sm font-bold tracking-tight">AI Copilot</h3>
-                <p className="text-[10px] text-foreground/70 font-medium">Stratum Intelligence</p>
+                <p className="text-[10px] text-foreground/70 font-medium">ADs Growth System Intelligence</p>
               </div>
             </div>
             <div className="flex items-center gap-1">

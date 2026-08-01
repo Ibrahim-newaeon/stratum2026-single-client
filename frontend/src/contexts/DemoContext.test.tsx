@@ -376,7 +376,7 @@ describe('DemoContext', () => {
     it('DEMO_USER has expected structure', () => {
       expect(DEMO_USER.id).toBe('demo-user-001');
       expect(DEMO_USER.name).toBe('Demo User');
-      expect(DEMO_USER.email).toBe('demo@stratum.ai');
+      expect(DEMO_USER.email).toBe('demo@adsgrowthsystem.com');
       expect(DEMO_USER.role).toBe('admin');
     });
 

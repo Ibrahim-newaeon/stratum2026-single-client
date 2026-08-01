@@ -28,6 +28,7 @@ import {
   BarChart3,
   Bell,
   Brain,
+  ClipboardList,
   Calculator,
   Clock,
   Code2,
@@ -416,6 +417,14 @@ const navConfig: NavGroup[] = [
         label: 'Integrations',
         href: '/dashboard/settings/integrations',
         icon: Plug,
+        section: 'integrations',
+      },
+      {
+        // Read while gathering credentials — before the connect flow is
+        // usable — so it sits alongside Integrations rather than inside it.
+        label: 'Integration Requirements',
+        href: '/dashboard/integrations/requirements',
+        icon: ClipboardList,
         section: 'integrations',
       },
       {

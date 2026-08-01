@@ -11,7 +11,7 @@ export const apiReferenceArticles: DocArticle[] = [
     blocks: [
       {
         type: 'paragraph',
-        text: 'Webhooks let Stratum push events to your backend the moment something changes — no polling required. They are the server-side counterpart to the dashboard’s live updates: the dashboard streams over WebSocket and SSE, while your systems integrate over webhooks.',
+        text: 'Webhooks let ADs Growth System push events to your backend the moment something changes — no polling required. They are the server-side counterpart to the dashboard’s live updates: the dashboard streams over WebSocket and SSE, while your systems integrate over webhooks.',
       },
       { type: 'heading', text: 'What you can subscribe to' },
       {
@@ -25,7 +25,7 @@ export const apiReferenceArticles: DocArticle[] = [
       },
       {
         type: 'paragraph',
-        text: 'Register an endpoint under Settings → Webhooks, choose the event types you care about, and Stratum will start delivering. Every delivery is a JSON POST to your URL.',
+        text: 'Register an endpoint under Settings → Webhooks, choose the event types you care about, and ADs Growth System will start delivering. Every delivery is a JSON POST to your URL.',
       },
       { type: 'heading', text: 'The delivery payload' },
       {
@@ -40,7 +40,7 @@ export const apiReferenceArticles: DocArticle[] = [
       { type: 'heading', text: 'Verify the signature' },
       {
         type: 'paragraph',
-        text: 'Every request carries an X-Stratum-Signature header — an HMAC-SHA256 of the raw request body, keyed with your webhook secret. Recompute it over the unparsed body and compare with a constant-time function so you reject any forged or replayed delivery.',
+        text: 'Every request carries an X-ADs Growth System-Signature header — an HMAC-SHA256 of the raw request body, keyed with your webhook secret. Recompute it over the unparsed body and compare with a constant-time function so you reject any forged or replayed delivery.',
       },
       {
         type: 'code',
@@ -96,7 +96,7 @@ export const apiReferenceArticles: DocArticle[] = [
       {
         type: 'code',
         language: 'typescript',
-        code: "import { Stratum } from '@stratumai/sdk';\n\nconst stratum = new Stratum({ apiKey: process.env.STRATUM_API_KEY });\n\n// List current signals and their health\nconst signals = await stratum.signals.list();\nfor (const s of signals) {\n  console.log(s.name, s.health, s.state);\n}",
+        code: "import { AdsGrowthSystem } from '@adsgrowthsystem/sdk';\n\nconst client = new AdsGrowthSystem({ apiKey: process.env.ADS_GROWTH_API_KEY });\n\n// List current signals and their health\nconst signals = await client.signals.list();\nfor (const s of signals) {\n  console.log(s.name, s.health, s.state);\n}",
       },
       { type: 'heading', text: 'Python' },
       {
@@ -111,7 +111,7 @@ export const apiReferenceArticles: DocArticle[] = [
       {
         type: 'code',
         language: 'python',
-        code: 'import os\nfrom stratum import Stratum\n\nstratum = Stratum(api_key=os.environ["STRATUM_API_KEY"])\n\n# Send a server-side conversion event\nstratum.events.track(\n    name="Purchase",\n    value=129.0,\n    currency="USD",\n    user={"email_sha256": "9c1185a5c5e9fc54..."},\n)',
+        code: 'import os\nfrom adsgrowthsystem import AdsGrowthSystem\n\nclient = AdsGrowthSystem(api_key=os.environ["ADS_GROWTH_API_KEY"])\n\n# Send a server-side conversion event\nclient.events.track(\n    name="Purchase",\n    value=129.0,\n    currency="USD",\n    user={"email_sha256": "9c1185a5c5e9fc54..."},\n)',
       },
       { type: 'heading', text: 'What the SDKs handle for you' },
       {
@@ -136,12 +136,12 @@ export const apiReferenceArticles: DocArticle[] = [
     category: 'API Reference',
     title: 'Rate Limits',
     description:
-      'How Stratum meters API traffic per tenant, the headers you get back, and how to handle a 429.',
+      'How ADs Growth System meters API traffic per tenant, the headers you get back, and how to handle a 429.',
     readTime: '4 min',
     blocks: [
       {
         type: 'paragraph',
-        text: 'Stratum applies per-tenant rate limits to keep the platform fast and fair. Limits are enforced with a Redis-backed, token-bucket scheme: each workspace refills a budget of requests over time and spends from it as you call the API.',
+        text: 'ADs Growth System applies per-tenant rate limits to keep the platform fast and fair. Limits are enforced with a Redis-backed, token-bucket scheme: each workspace refills a budget of requests over time and spends from it as you call the API.',
       },
       { type: 'heading', text: 'Read the limit headers' },
       {

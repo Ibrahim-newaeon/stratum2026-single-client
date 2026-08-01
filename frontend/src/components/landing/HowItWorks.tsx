@@ -18,7 +18,7 @@ export function HowItWorks() {
     {
       number: '02',
       title: 'AI Analyzes Your Data',
-      description: 'Stratum calculates EMQ scores, detects anomalies, identifies scaling opportunities, and monitors signal health.',
+      description: 'ADs Growth System calculates EMQ scores, detects anomalies, identifies scaling opportunities, and monitors signal health.',
       icon: CpuChipIcon,
       color: 'text-stratum-400',
       bgColor: 'bg-stratum-500/10',

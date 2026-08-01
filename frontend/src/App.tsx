@@ -158,6 +158,9 @@ const CMSUsers = lazyWithRetry(() => import('./views/cms/CMSUsers'));
 // Operator-dashboard surfaces shared with the (now-removed) /app/:tenantId
 // twin shell. These views resolve their scope from context, not the URL.
 const PublishLogs = lazyWithRetry(() => import('./views/operate/PublishLogs'));
+const IntegrationRequirements = lazyWithRetry(
+  () => import('./views/operate/IntegrationRequirements')
+);
 const TeamManagement = lazyWithRetry(() => import('./views/operate/TeamManagement'));
 const AccountAuditLog = lazyWithRetry(() => import('./views/operate/AuditLog'));
 
@@ -1374,6 +1377,19 @@ function App() {
                           element={
                             <LazyRoute>
                               <Pacing />
+                            </LazyRoute>
+                          }
+                        />
+                        {/* Reference page: what each platform needs before it
+                            can be connected. Deliberately a sibling of the
+                            Integrations hub rather than a tab inside it — it is
+                            read while gathering credentials, i.e. before the
+                            connect flow is usable. */}
+                        <Route
+                          path="integrations/requirements"
+                          element={
+                            <LazyRoute>
+                              <IntegrationRequirements />
                             </LazyRoute>
                           }
                         />

@@ -188,7 +188,7 @@ export default function IntegrationsHub() {
             Integrations
           </h1>
           <p className="mt-1 text-sm text-muted-foreground">
-            Connect Stratum to the platforms you run ads on, your CRM, and your downstream tools.
+            Connect ADs Growth System to the platforms you run ads on, your CRM, and your downstream tools.
             Credentials are encrypted at rest and never returned to the dashboard.
           </p>
         </div>
@@ -213,7 +213,7 @@ export default function IntegrationsHub() {
       {/* Section: Ad Platforms */}
       <Section
         title="Ad Platforms"
-        subtitle="OAuth into the platforms running your media. Each connection grants Stratum scoped read + write access."
+        subtitle="OAuth into the platforms running your media. Each connection grants ADs Growth System scoped read + write access."
       >
         <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
           {AD_PLATFORMS.map((p) => (
@@ -338,7 +338,7 @@ export default function IntegrationsHub() {
       {/* Section: Outbound */}
       <Section
         title="Outbound"
-        subtitle="Push Stratum events to Zapier, Make, Slack, or any HTTPS endpoint."
+        subtitle="Push ADs Growth System events to Zapier, Make, Slack, or any HTTPS endpoint."
       >
         <Card>
           <div className="flex items-start justify-between gap-4">
@@ -349,7 +349,7 @@ export default function IntegrationsHub() {
               <div className="min-w-0">
                 <div className="font-medium text-foreground">Zapier · Make · Slack · Teams</div>
                 <div className="text-sm text-muted-foreground mt-0.5">
-                  Wire Stratum's events (campaign created, ROAS alert, trust gate blocked, daily
+                  Wire ADs Growth System's events (campaign created, ROAS alert, trust gate blocked, daily
                   summary, anomaly detected) into your team's tools.
                 </div>
               </div>
@@ -377,7 +377,7 @@ export default function IntegrationsHub() {
           if (!open) setConfirmDisconnect(null);
         }}
         title={`Disconnect ${confirmDisconnect?.name}?`}
-        description="Stratum will stop pulling data and any active automations on this platform will halt at the next trust-gate evaluation. You can reconnect any time."
+        description="ADs Growth System will stop pulling data and any active automations on this platform will halt at the next trust-gate evaluation. You can reconnect any time."
         variant="destructive"
         confirmLabel="Disconnect"
         onConfirm={handleDisconnect}

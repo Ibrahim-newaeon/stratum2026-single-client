@@ -298,7 +298,7 @@ export default function ComparisonPage() {
       {/* Key Differentiators */}
       <section className="pb-12">
         <div className="max-w-7xl mx-auto px-6 lg:px-8">
-          <MktSectionHeader eyebrow="Why Stratum" title="What makes us" highlight="different" />
+          <MktSectionHeader eyebrow="Why ADs Growth System" title="What makes us" highlight="different" />
           <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-6">
             {differentiators.map((diff, i) => (
               <MktFeatureCard

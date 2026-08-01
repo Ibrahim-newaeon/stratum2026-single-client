@@ -101,7 +101,7 @@ export default function ApiDocs() {
     <PageLayout>
       <SEO
         title="API Documentation"
-        description="Build on the Stratum API — REST endpoints for signals, automations, the CDP, and audience sync, with SDKs and real-time webhooks."
+        description="Build on the ADs Growth System API — REST endpoints for signals, automations, the CDP, and audience sync, with SDKs and real-time webhooks."
         url="https://stratumai.app/api-docs"
       />
 
@@ -109,7 +109,7 @@ export default function ApiDocs() {
         badge="API Documentation"
         badgeIcon={CodeBracketIcon}
         title="Build on the"
-        highlight="Stratum API"
+        highlight="ADs Growth System API"
         subtitle="A clean, predictable REST API for signals, automations, the CDP, and audience sync — with SDKs and real-time webhooks."
         primary={{ label: 'Start Free Trial', href: '/signup' }}
         secondary={{ label: 'View integrations', href: '/integrations' }}
