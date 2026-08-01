@@ -1401,7 +1401,24 @@ class TestSyncAdAccountsTask:
 
         assert result["status"] == "skipped"
 
-    def test_sync_with_active_connection(self):
+    @staticmethod
+    def _patched_service(accounts, side_effect=None):
+        """Patch the provider seam sync_ad_accounts now goes through.
+
+        The task used to invent two accounts inline, so these tests only had to
+        patch SessionLocal. It now calls the real OAuthService.fetch_ad_accounts
+        (implemented for all four platforms), so the provider is the thing that
+        must be stubbed — and what comes back is what gets written.
+        """
+        service = MagicMock()
+        service.decrypt_token.return_value = "decrypted-token"
+        service.fetch_ad_accounts = AsyncMock(
+            return_value=accounts, side_effect=side_effect
+        )
+        return service
+
+    def test_sync_writes_exactly_what_the_provider_returns(self):
+        from app.services.oauth.base import AdAccountInfo
         from app.workers.campaign_builder_tasks import sync_ad_accounts
 
         conn = MagicMock()
@@ -1410,18 +1427,71 @@ class TestSyncAdAccountsTask:
 
         mock_db = MagicMock()
         # First call returns connection, subsequent calls return None (no existing accounts)
-        mock_db.execute.return_value.scalar_one_or_none.side_effect = [conn, None, None]
+        mock_db.execute.return_value.scalar_one_or_none.side_effect = [conn, None, None, None]
 
-        with patch("app.workers.campaign_builder_tasks.SessionLocal") as mock_session:
+        accounts = [
+            AdAccountInfo(account_id="act_111", name="Real Account One"),
+            AdAccountInfo(account_id="act_222", name="Real Account Two"),
+            AdAccountInfo(account_id="act_333", name="Real Account Three"),
+        ]
+
+        with patch(
+            "app.workers.campaign_builder_tasks.SessionLocal"
+        ) as mock_session, patch(
+            "app.workers.campaign_builder_tasks._resolve_platform_credentials",
+            new=AsyncMock(return_value=None),
+        ), patch(
+            "app.workers.campaign_builder_tasks.get_oauth_service",
+            return_value=self._patched_service(accounts),
+        ):
             mock_session.return_value.__enter__ = MagicMock(return_value=mock_db)
             mock_session.return_value.__exit__ = MagicMock(return_value=False)
             result = sync_ad_accounts(platform="meta")
 
         assert result["status"] == "success"
-        assert result["synced_count"] == 2  # Mock returns 2 accounts
+        # Three, because the provider returned three. The old assertion was
+        # `== 2` with the comment "Mock returns 2 accounts" — it was pinning the
+        # hardcoded fixture, so it would have passed no matter what the platform
+        # actually held.
+        assert result["synced_count"] == 3
+        written = [c.args[0] for c in mock_db.add.call_args_list]
+        assert [a.platform_account_id for a in written] == [
+            "act_111",
+            "act_222",
+            "act_333",
+        ]
         mock_db.commit.assert_called()
 
+    def test_sync_invents_nothing_when_provider_returns_nothing(self):
+        """An account with no ad accounts must end up with no AdAccount rows."""
+        from app.workers.campaign_builder_tasks import sync_ad_accounts
+
+        conn = MagicMock()
+        conn.id = uuid4()
+        conn.status = ConnectionStatus.CONNECTED
+
+        mock_db = MagicMock()
+        mock_db.execute.return_value.scalar_one_or_none.side_effect = [conn]
+
+        with patch(
+            "app.workers.campaign_builder_tasks.SessionLocal"
+        ) as mock_session, patch(
+            "app.workers.campaign_builder_tasks._resolve_platform_credentials",
+            new=AsyncMock(return_value=None),
+        ), patch(
+            "app.workers.campaign_builder_tasks.get_oauth_service",
+            return_value=self._patched_service([]),
+        ):
+            mock_session.return_value.__enter__ = MagicMock(return_value=mock_db)
+            mock_session.return_value.__exit__ = MagicMock(return_value=False)
+            result = sync_ad_accounts(platform="meta")
+
+        assert result["status"] == "success"
+        assert result["synced_count"] == 0
+        mock_db.add.assert_not_called()
+
     def test_sync_updates_existing_accounts(self):
+        from app.services.oauth.base import AdAccountInfo
         from app.workers.campaign_builder_tasks import sync_ad_accounts
 
         conn = MagicMock()
@@ -1437,14 +1507,55 @@ class TestSyncAdAccountsTask:
             existing_account,
         ]
 
-        with patch("app.workers.campaign_builder_tasks.SessionLocal") as mock_session:
+        accounts = [
+            AdAccountInfo(account_id="act_111", name="Renamed On Platform"),
+            AdAccountInfo(account_id="act_222", name="Also Renamed"),
+        ]
+
+        with patch(
+            "app.workers.campaign_builder_tasks.SessionLocal"
+        ) as mock_session, patch(
+            "app.workers.campaign_builder_tasks._resolve_platform_credentials",
+            new=AsyncMock(return_value=None),
+        ), patch(
+            "app.workers.campaign_builder_tasks.get_oauth_service",
+            return_value=self._patched_service(accounts),
+        ):
             mock_session.return_value.__enter__ = MagicMock(return_value=mock_db)
             mock_session.return_value.__exit__ = MagicMock(return_value=False)
             result = sync_ad_accounts(platform="meta")
 
         assert result["status"] == "success"
-        # Existing accounts should be updated
-        assert existing_account.name is not None
+        # The platform's name wins on update — the old assertion was only
+        # `is not None`, which a MagicMock satisfies without any assignment.
+        assert existing_account.name == "Also Renamed"
+        assert existing_account.sync_error is None
+        mock_db.add.assert_not_called()
+
+    def test_sync_without_access_token_does_not_call_provider(self):
+        from app.workers.campaign_builder_tasks import sync_ad_accounts
+
+        conn = MagicMock()
+        conn.id = uuid4()
+        conn.status = ConnectionStatus.CONNECTED
+        conn.access_token_encrypted = None
+
+        mock_db = MagicMock()
+        mock_db.execute.return_value.scalar_one_or_none.side_effect = [conn]
+
+        with patch(
+            "app.workers.campaign_builder_tasks.SessionLocal"
+        ) as mock_session, patch(
+            "app.workers.campaign_builder_tasks.get_oauth_service"
+        ) as mock_get_service:
+            mock_session.return_value.__enter__ = MagicMock(return_value=mock_db)
+            mock_session.return_value.__exit__ = MagicMock(return_value=False)
+            result = sync_ad_accounts(platform="meta")
+
+        assert result["status"] == "error"
+        assert result["reason"] == "no access token"
+        mock_get_service.assert_not_called()
+        mock_db.add.assert_not_called()
 
 
 class TestRefreshTokensTask:
