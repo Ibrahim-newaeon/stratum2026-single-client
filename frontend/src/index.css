@@ -21,75 +21,74 @@
   :root,
   .dark {
     /* ═══════════════════════════════════════════════════════════════
-       OPAL HOTEL — BRAND THEME (DARK, default)
-       Source of truth: opal-hotel-theme.xml v3.0
-       Dark mode derived from the "reversed" logo variant (white on
-       #000000) + charcoal/gray-dark neutrals from the verified palette.
-       The XML defines no full dark spec — derivation choices are
-       flagged in the changelog.
+       SUPERADS — DASHBOARD THEME (DARK, default)
+       Source of truth: design-system-template/themes/superads.xml
+       (lib/theme/themes/superads.ts), replacing the Opal Hotel gold
+       theme that preceded it.
+
+       GROUNDING: the template extracted accents, fonts, gradients and
+       the mode structure from the real source, but its own README
+       flags surfaces, radii, spacing and shadows as INFERRED — the
+       upstream shared/styles.css was never provided. Surface values
+       below are therefore the template's best estimate, not measured
+       values. Treat them as provisional.
        ═══════════════════════════════════════════════════════════════ */
 
-    /* Surfaces */
-    --background: 0 0% 0%; /* #000000 — reversed-logo background (was #0B0B0B ink) */
-    --foreground: 0 0% 100%; /* #FFFFFF — reversed-logo mark color */
+    /* Surfaces — navy-slate stack (page → surface → elevated) */
+    --background: 225 44% 7%; /* #0A0E1A page */
+    --foreground: 210 40% 98%; /* #F8FAFC text-primary */
 
-    --card: 0 0% 10.2%; /* #1A1A1A — live-site text-dark, reused as dark surface (was #141414) */
-    --card-foreground: 0 0% 100%;
+    --card: 223 38% 13%; /* #141B2D surface */
+    --card-foreground: 210 40% 98%;
 
-    --popover: 0 0% 10.2%;
-    --popover-foreground: 0 0% 100%;
+    --popover: 223 33% 16%; /* #1C2438 surface-elevated */
+    --popover-foreground: 210 40% 98%;
 
-    /* Primary — palette gold #C2A670 (verified brand-primary board).
-       Light mode uses the deployed UI gold #BB8B41; dark mode uses the
-       lighter palette gold for contrast on black. Two intentional golds
-       per XML <resolutions>. */
-    --primary: 40 40% 60%; /* #C2A670 (was #FF5A1F ember) */
-    --primary-foreground: 0 0% 10.2%; /* dark text on gold — white fails contrast */
+    /* Primary — SuperAds blue. Single accent across both modes; only the
+       hover step differs (lighter on dark, darker on light). */
+    --primary: 217 91% 60%; /* #3B82F6 brand-accent */
+    --primary-foreground: 0 0% 100%; /* #FFFFFF on-accent */
 
-    /* Secondary — strip gold #C1A15A (brand-extended, gradient stop / hover) */
-    --secondary: 41 45% 55%; /* #C1A15A (was #FF8A4A ember-2) */
-    --secondary-foreground: 0 0% 0%;
+    /* Secondary — the dark-mode hover step, reused as gradient stop */
+    --secondary: 213 94% 68%; /* #60A5FA brand-accent-hover (dark) */
+    --secondary-foreground: 222 47% 11%;
 
-    /* Muted — charcoal surface for subtle fills */
-    --muted: 0 0% 17.3%; /* #2C2C2C charcoal (was #262626) */
-    --muted-foreground: 0 0% 80%; /* #CCCCCC live-site gray-border, reused as secondary text on dark (was #9A9A9A) */
+    /* Muted — line-tier fill for subtle surfaces */
+    --muted: 215 28% 17%; /* #1F2937 line */
+    --muted-foreground: 215 20% 65%; /* #94A3B8 text-muted */
 
-    /* Accent — slate-blue #394E6C (brand-primary board; multi-series charts,
-       neutral signals). CONTRAST NOTE: dark value on dark bg is low —
-       acceptable as a fill, avoid as small text. */
-    --accent: 215 31% 32%; /* #394E6C (was #06B6D4 cyan) */
+    /* Accent — cyan from the data series; multi-series charts and
+       neutral signals, matching the template's data-5. */
+    --accent: 189 94% 43%; /* #06B6D4 data-5 */
     --accent-foreground: 0 0% 100%;
 
-    /* Destructive — brand burgundy #800020 (only red in the XML palette).
-       CONTRAST NOTE: use as fill with white text, not as text on black. */
-    --destructive: 345 100% 25%; /* #800020 (was #EF4444) */
+    /* Destructive */
+    --destructive: 0 84% 60%; /* #EF4444 state-error */
     --destructive-foreground: 0 0% 100%;
 
     /* Borders / inputs / focus ring */
-    --border: 0 0% 17.3%; /* #2C2C2C charcoal hairline (was #1F1F1F) */
-    --input: 0 0% 17.3%;
-    --ring: 40 40% 60%; /* palette gold */
+    --border: 215 28% 17%; /* #1F2937 line */
+    --input: 215 28% 17%;
+    --ring: 217 91% 60%; /* brand-accent */
 
-    --radius: 1.5625rem; /* 25px — XML <card border-radius="25px"> (was 1rem) */
+    --radius: 1rem; /* 16px — template radius.2xl (was 25px Opal) */
 
-    /* Status — semantic. success/warning retained from the previous theme:
-       the XML defines no green/amber and the Trust Engine UI requires them
-       (system-compatibility carve-out, flagged in changelog). */
-    --success: 158 80% 39%; /* #10B981 healthy — retained, no XML source */
-    --warning: 38 92% 50%; /* #F59E0B hold / degraded — retained, no XML source */
-    --danger: 345 100% 25%; /* #800020 burgundy block / unhealthy */
-    --info: 215 31% 32%; /* #394E6C slate-blue */
-    --insight: 41 45% 55%; /* #C1A15A strip gold */
+    /* Status — semantic, all present in the template palette */
+    --success: 160 84% 39%; /* #10B981 state-success */
+    --warning: 25 95% 53%; /* #F97316 state-warning */
+    --danger: 0 84% 60%; /* #EF4444 state-error */
+    --info: 217 91% 60%; /* #3B82F6 state-info */
+    --insight: 258 90% 66%; /* #8B5CF6 data-2 purple */
 
     /* Status (legacy aliases used by widgets) */
-    --status-healthy: 158 80% 39%;
-    --status-critical: 345 100% 25%;
+    --status-healthy: 160 84% 39%;
+    --status-critical: 0 84% 60%;
 
     /* Surface tier (cards, panels, elevated surfaces) */
-    --surface-primary: 0 0% 0%; /* page bg */
-    --surface-secondary: 0 0% 10.2%; /* card bg #1A1A1A */
-    --surface-tertiary: 0 0% 17.3%; /* #2C2C2C charcoal elevated */
-    --surface-elevated: 0 0% 23.9%; /* #3D3D3D gray-dark tier */
+    --surface-primary: 225 44% 7%; /* #0A0E1A page */
+    --surface-secondary: 223 38% 13%; /* #141B2D surface */
+    --surface-tertiary: 223 33% 16%; /* #1C2438 surface-elevated */
+    --surface-elevated: 218 23% 23%; /* #2D3748 line-strong */
 
     /* Platform colors — kept for ad-platform badges (not theme-driven) */
     --meta: 214 89% 52%;
@@ -98,85 +97,87 @@
     --snapchat: 54 100% 50%;
     --whatsapp: 142 70% 45%;
 
-    /* Glow tokens — gold radial bleed for primary surfaces */
-    --glow-brand: 40 40% 60% / 0.16;
-    --glow-insight: 41 45% 55% / 0.14;
+    /* Glow tokens — blue radial bleed for primary surfaces */
+    --glow-brand: 217 91% 60% / 0.16;
+    --glow-insight: 258 90% 66% / 0.14;
 
-    /* Landing / marketing tokens (used by figma static HTML in /public) */
-    --landing-bg: #000000;
-    --landing-card: #1a1a1a;
-    --landing-border: #2c2c2c;
-    --landing-text: #cccccc;
-    --landing-text-dim: rgba(204, 204, 204, 0.7);
-    --landing-text-faint: rgba(204, 204, 204, 0.5);
-    --landing-accent-primary: #c2a670; /* palette gold (was ember #ff5a1f) */
-    --landing-accent-primary-light: #c1a15a; /* strip gold (was #ff8a4a) */
-    --landing-accent-cyan: #394e6c; /* slate-blue — key kept for compat (was cyan #06b6d4) */
-    --landing-accent-blue: #394e6c; /* slate-blue (was #5b8def) */
+    /* Landing / marketing tokens (used by figma static HTML in /public).
+       Kept as literal hex because the static HTML cannot read Tailwind. */
+    --landing-bg: #0a0e1a; /* page (was #000000) */
+    --landing-card: #141b2d; /* surface (was #1a1a1a) */
+    --landing-border: #1f2937; /* line (was #2c2c2c) */
+    --landing-text: #cbd5e1; /* text-soft (was #cccccc) */
+    --landing-text-dim: rgba(203, 213, 225, 0.7);
+    --landing-text-faint: rgba(203, 213, 225, 0.5);
+    --landing-accent-primary: #3b82f6; /* brand-accent (was gold #c2a670) */
+    --landing-accent-primary-light: #60a5fa; /* brand-accent-hover (was #c1a15a) */
+    --landing-accent-cyan: #06b6d4; /* data-5 cyan — key now matches its name again */
+    --landing-accent-blue: #3b82f6; /* brand-accent (was slate-blue #394e6c) */
     --landing-surface-glass: rgba(255, 255, 255, 0.02);
     --landing-border-glass: rgba(255, 255, 255, 0.08);
     --landing-text-white-soft: rgba(255, 255, 255, 0.5);
     --landing-text-white-mid: rgba(255, 255, 255, 0.8);
     --landing-border-white-dim: rgba(255, 255, 255, 0.06);
-    --landing-bg-deep: #000000;
-    --landing-glow-primary: 0 4px 24px rgba(194, 166, 112, 0.25);
+    --landing-bg-deep: #0d1117; /* surface-sunken (was #000000) */
+    --landing-glow-primary: 0 4px 24px rgba(59, 130, 246, 0.25);
     --landing-status-green: #10b981;
-    --landing-status-red: #800020; /* burgundy (was #ef4444) */
-    --landing-status-yellow: #f59e0b;
+    --landing-status-red: #ef4444; /* state-error (was burgundy #800020) */
+    --landing-status-yellow: #f97316; /* state-warning (was #f59e0b) */
   }
 
   .light {
     /* ═══════════════════════════════════════════════════════════════
-       OPAL HOTEL — BRAND THEME (LIGHT, brand-native mode)
-       Cream surfaces · text-dark · deployed UI gold #BB8B41
-       Source of truth: opal-hotel-theme.xml v3.0 (live-site group +
-       verified brand-primary board)
+       SUPERADS — DASHBOARD THEME (LIGHT)
+       Slate surfaces · slate-900 text · SuperAds blue #3B82F6
+       Source of truth: design-system-template/themes/superads.xml
+       Same GROUNDING caveat as the dark block: surfaces are the
+       template's inferred values, not measured ones.
        ═══════════════════════════════════════════════════════════════ */
 
-    --background: 45 100% 98%; /* #FFFCF3 — logo card-background cream (was #FAFAF7) */
-    --foreground: 0 0% 10.2%; /* #1A1A1A live-site text-dark */
+    --background: 210 40% 98%; /* #F8FAFC page */
+    --foreground: 222 47% 11%; /* #0F172A text-primary */
 
-    --card: 0 0% 100%; /* #FFFFFF */
-    --card-foreground: 0 0% 10.2%;
+    --card: 0 0% 100%; /* #FFFFFF surface */
+    --card-foreground: 222 47% 11%;
 
-    --popover: 0 0% 100%;
-    --popover-foreground: 0 0% 10.2%;
+    --popover: 0 0% 100%; /* #FFFFFF surface-elevated */
+    --popover-foreground: 222 47% 11%;
 
-    --primary: 36 48% 49%; /* #BB8B41 — deployed UI gold: nav, buttons, icons (was #E84F1F ember) */
-    --primary-foreground: 0 0% 100%; /* white — per XML button hover text */
+    --primary: 217 91% 60%; /* #3B82F6 brand-accent */
+    --primary-foreground: 0 0% 100%; /* #FFFFFF on-accent */
 
-    --secondary: 40 40% 60%; /* #C2A670 palette gold */
-    --secondary-foreground: 0 0% 17.3%; /* #2C2C2C charcoal */
+    --secondary: 221 83% 53%; /* #2563EB brand-accent-hover (light) */
+    --secondary-foreground: 0 0% 100%;
 
-    --muted: 0 0% 94.9%; /* #F2F2F2 live-site gray-light-bg (was #F0EFE8) */
-    --muted-foreground: 99 11% 29%; /* #485342 olive-sage — deployed secondary text; NOT in brand guide (flagged conflict) */
+    --muted: 210 40% 96%; /* #F1F5F9 surface-sunken */
+    --muted-foreground: 215 16% 47%; /* #64748B text-muted */
 
-    --accent: 215 31% 32%; /* #394E6C slate-blue (was #0891B2 cyan) */
+    --accent: 189 94% 43%; /* #06B6D4 data-5 cyan */
     --accent-foreground: 0 0% 100%;
 
-    --destructive: 345 100% 25%; /* #800020 burgundy (was #DC2626) */
+    --destructive: 0 84% 60%; /* #EF4444 state-error */
     --destructive-foreground: 0 0% 100%;
 
-    --border: 0 0% 80%; /* #CCCCCC live-site gray-border (was #E8E8E0 — noticeably heavier hairlines) */
-    --input: 0 0% 80%;
-    --ring: 36 48% 49%;
+    --border: 214 32% 91%; /* #E2E8F0 line */
+    --input: 214 32% 91%;
+    --ring: 217 91% 60%;
 
-    --success: 158 84% 31%; /* #059669 — retained, no XML source */
-    --warning: 30 95% 44%; /* #D97706 — retained, no XML source */
-    --danger: 345 100% 25%; /* #800020 burgundy */
-    --info: 215 31% 32%;
-    --insight: 41 45% 55%; /* #C1A15A strip gold */
+    --success: 160 84% 39%; /* #10B981 state-success */
+    --warning: 25 95% 53%; /* #F97316 state-warning */
+    --danger: 0 84% 60%; /* #EF4444 state-error */
+    --info: 217 91% 60%; /* #3B82F6 state-info */
+    --insight: 258 90% 66%; /* #8B5CF6 data-2 purple */
 
-    --status-healthy: 158 84% 31%;
-    --status-critical: 345 100% 25%;
+    --status-healthy: 160 84% 39%;
+    --status-critical: 0 84% 60%;
 
-    --surface-primary: 45 100% 98%;
-    --surface-secondary: 0 0% 100%;
-    --surface-tertiary: 60 56% 91%; /* #F5F5DC cream — verified palette swatch */
+    --surface-primary: 210 40% 98%; /* #F8FAFC page */
+    --surface-secondary: 0 0% 100%; /* #FFFFFF surface */
+    --surface-tertiary: 210 40% 96%; /* #F1F5F9 surface-sunken */
     --surface-elevated: 0 0% 100%;
 
-    --glow-brand: 36 48% 49% / 0.1;
-    --glow-insight: 41 45% 55% / 0.1;
+    --glow-brand: 217 91% 60% / 0.1;
+    --glow-insight: 258 90% 66% / 0.1;
   }
 
   * {
@@ -304,10 +305,12 @@
     @apply focus:outline-none focus:ring-4 focus:ring-primary/15 focus:border-primary/50;
   }
 
-  /* Gradient text — gold family (palette → deployed → strip gold) */
+  /* Gradient text — superads.xml gradient-primary (blue → purple).
+     This is one of the GROUNDED values: the gradient stops were extracted
+     from the source, not inferred. */
   .text-gradient-primary {
     @apply bg-clip-text text-transparent;
-    background-image: linear-gradient(135deg, #c2a670 0%, #bb8b41 50%, #c1a15a 100%);
+    background-image: linear-gradient(135deg, #3b82f6 0%, #8b5cf6 100%);
   }
 
   /* Subtle grid background pattern */

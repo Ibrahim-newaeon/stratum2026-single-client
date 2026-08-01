@@ -13,7 +13,7 @@ export default function AuthLeftPanel({ className }: AuthLeftPanelProps) {
   return (
     <section
       className={cn(
-        'hidden lg:flex w-2/5 bg-[#0B0B0B] relative flex-col justify-between p-12 border-r border-[#1F1F1F] overflow-hidden',
+        'hidden lg:flex w-2/5 bg-[#0A0E1A] relative flex-col justify-between p-12 border-r border-[#1F2937] overflow-hidden',
         className
       )}
       style={{ fontFamily: 'Geist, system-ui, sans-serif' }}
@@ -36,7 +36,7 @@ export default function AuthLeftPanel({ className }: AuthLeftPanelProps) {
         </a>
         <a
           href="/landing.html"
-          className="text-[12px] text-[#9A9A9A] hover:text-white transition-colors flex items-center gap-1"
+          className="text-[12px] text-[#94A3B8] hover:text-white transition-colors flex items-center gap-1"
         >
           ← Back to site
         </a>
@@ -48,12 +48,12 @@ export default function AuthLeftPanel({ className }: AuthLeftPanelProps) {
           className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full text-[11.5px] uppercase tracking-[0.06em] font-medium text-[#ECECEC] mb-6"
           style={{
             background: 'rgba(255,255,255,0.02)',
-            border: '1px solid #1F1F1F',
+            border: '1px solid #1F2937',
           }}
         >
           <span
-            className="w-1.5 h-1.5 rounded-full bg-[#FF5A1F]"
-            style={{ boxShadow: '0 0 8px #FF5A1F' }}
+            className="w-1.5 h-1.5 rounded-full bg-[#3B82F6]"
+            style={{ boxShadow: '0 0 8px #3B82F6' }}
           />
           Trusted by 500+ growth teams
         </span>
@@ -62,22 +62,22 @@ export default function AuthLeftPanel({ className }: AuthLeftPanelProps) {
           every decision auditable and reversible.&rdquo;
         </blockquote>
         <div className="flex items-center gap-3">
-          <div className="w-10 h-10 rounded-full bg-[#262626] flex items-center justify-center text-[#9A9A9A] text-sm font-medium">
+          <div className="w-10 h-10 rounded-full bg-[#1F2937] flex items-center justify-center text-[#94A3B8] text-sm font-medium">
             JD
           </div>
           <div>
             <p className="text-sm font-medium text-white">Jane Doe</p>
-            <p className="text-xs text-[#6B6B6B]">CMO, GrowthCo</p>
+            <p className="text-xs text-[#64748B]">CMO, GrowthCo</p>
           </div>
         </div>
       </div>
 
       {/* Bottom: status marker */}
       <div
-        className="relative z-10 flex items-center gap-2 text-[11px] text-[#6B6B6B] uppercase tracking-[0.12em]"
+        className="relative z-10 flex items-center gap-2 text-[11px] text-[#64748B] uppercase tracking-[0.12em]"
         style={{ fontFamily: 'Geist Mono, monospace' }}
       >
-        <span className="w-1.5 h-1.5 rounded-full bg-[#FF5A1F]" />
+        <span className="w-1.5 h-1.5 rounded-full bg-[#3B82F6]" />
         Trust engine — operational
       </div>
     </section>

@@ -183,14 +183,31 @@ Marketing agencies managing multiple client accounts across ad platforms. Extend
 
 ### Aesthetic Direction
 
-- **Reference**: Apple / Porsche Design — premium materials, restrained palette, obsessive detail
-- **Anti-reference**: Enterprise gray (Salesforce/SAP); 2024-default violet/cyan glassmorphism (Linear, Vercel, every YC AI startup).
-- **Theme**: Dual mode — figma dark (default) + designed-coherent figma light. Both first-class.
-- **Palette**: Ink + ember — see `backend/docs/03-frontend/figma-theme.md` for full token table.
-  - Dark: ink `#0B0B0B` bg · surface `#141414` · line `#1F1F1F` · ember `#FF5A1F` accent · cyan `#06B6D4` info.
-  - Light: warm off-white `#FAFAF7` bg · `#FFFFFF` surface · `#E8E8E0` line · desaturated ember `#E84F1F` accent.
-- **Typography**: Geist (sans + display) + Geist Mono. No Satoshi, no Clash Display, no Inter.
-- **Surfaces**: Hairline borders (1px), subtle inner highlights, ember radial bleeds for emphasis. No glassmorphism.
+- **Theme**: SuperAds — dual mode, dark default. Source of truth
+  `design-system-template/themes/superads.xml`. See
+  `backend/docs/03-frontend/figma-theme.md` for the full token table.
+- **Palette**: Navy-slate surfaces + SuperAds blue.
+  - Dark: page `#0A0E1A` · surface `#141B2D` · elevated `#1C2438` · line `#1F2937` · accent `#3B82F6`.
+  - Light: page `#F8FAFC` · surface `#FFFFFF` · line `#E2E8F0` · accent `#3B82F6`.
+  - Data series: blue `#3B82F6` · purple `#8B5CF6` · pink `#EC4899` · green `#10B981` · cyan `#06B6D4`.
+- **Typography**: Inter (body) + Space Grotesk (display) + JetBrains Mono
+  (labels, status, tabular). Noto Sans Arabic for RTL surfaces.
+- **Surfaces**: Elevation by drop-shadow across a three-tier stack
+  (page → surface → elevated). `--bg-glass` translucency is available for
+  overlay surfaces.
+
+> **Grounding.** The template extracted fonts, accents, gradients and the
+> light/dark structure from the real source, but its README flags
+> **surfaces, radii, spacing, shadows and motion timings as inferred** —
+> the upstream `shared/styles.css` was never provided. Those values are a
+> best estimate, not measured, and should be corrected if the original
+> stylesheet turns up.
+
+**History**: this replaced an Opal Hotel gold theme (`#C2A670` on black),
+which had itself replaced the original ink + ember figma theme
+(`#FF5A1F`). Earlier revisions of this file described ember long after the
+code had moved to gold — check `frontend/src/index.css` before trusting any
+palette documented here.
 
 ### Design Principles
 

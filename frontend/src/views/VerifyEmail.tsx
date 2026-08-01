@@ -59,7 +59,7 @@ export default function VerifyEmail() {
         <AuthLeftPanel />
         <section className="w-full lg:w-3/5 flex flex-col items-center justify-center p-6 lg:p-12 relative">
           <div className="w-full max-w-md bg-card border border-border rounded-xl p-8 shadow-xl text-center">
-            <div className="w-16 h-16 rounded-full border-4 border-secondary/20 border-t-[#FF5A1F] animate-spin mx-auto mb-6" />
+            <div className="w-16 h-16 rounded-full border-4 border-secondary/20 border-t-[#3B82F6] animate-spin mx-auto mb-6" />
             <h2 className="text-2xl font-semibold text-foreground mb-2">
               Verifying your email
             </h2>
