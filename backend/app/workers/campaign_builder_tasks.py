@@ -40,6 +40,12 @@ from app.services.oauth.factory import get_oauth_service
 
 logger = logging.getLogger(__name__)
 
+# Consecutive failed health probes before a connection is marked ERROR. The
+# beat runs every 30 minutes, so three failures means roughly 90 minutes of
+# sustained unreachability — long enough not to trip on one flaky response,
+# short enough to notice the same shift.
+UNHEALTHY_PROBE_THRESHOLD = 3
+
 
 async def _resolve_platform_credentials(platform: str) -> Optional[AppCredentials]:
     """Resolve DB-first, env-fallback app credentials for a platform.
@@ -446,44 +452,60 @@ def connector_health_check(self):
 
         results = []
         for conn in connections:
+            platform = conn.platform.value
+
+            # A connection with no stored token cannot be probed. That is
+            # unhealthy, not healthy-by-default — and critically it must not
+            # reach the success path below, which clears error state.
+            if not conn.access_token_encrypted:
+                conn.last_error = "No access token stored; re-authorization required"
+                conn.error_count += 1
+                if conn.error_count >= UNHEALTHY_PROBE_THRESHOLD:
+                    conn.status = ConnectionStatus.ERROR
+                results.append(
+                    {"platform": platform, "healthy": False, "error": "no access token"}
+                )
+                continue
+
             try:
-                # Check API health
-                # In production: healthy = check_platform_api_health(conn.platform, conn.access_token_encrypted)
+                # There is no dedicated health endpoint on OAuthService, so the
+                # probe is a real authenticated call: if the provider answers
+                # fetch_ad_accounts with this token, the connection works.
+                #
+                # This previously hardcoded `healthy = True` and then cleared
+                # last_error and error_count unconditionally. Two consequences,
+                # the second worse than the first: the else branch was dead so
+                # ConnectionStatus.ERROR could never be set, and a genuinely
+                # broken connection had its diagnostic state erased every 30
+                # minutes — the beat actively destroyed the evidence needed to
+                # notice it was broken.
+                credentials = asyncio.run(_resolve_platform_credentials(platform))
+                service = get_oauth_service(platform, credentials=credentials)
+                access_token = service.decrypt_token(conn.access_token_encrypted)
+                asyncio.run(service.fetch_ad_accounts(access_token))
 
-                # Mock health check
-                healthy = True
-
-                if healthy:
-                    conn.last_error = None
-                    conn.error_count = 0
-                    results.append(
-                        {
-                            "platform": conn.platform.value,
-                            "healthy": True,
-                        }
-                    )
-                else:
-                    conn.error_count += 1
-                    if conn.error_count >= 3:
-                        conn.status = ConnectionStatus.ERROR
-                    results.append(
-                        {
-                            "platform": conn.platform.value,
-                            "healthy": False,
-                        }
-                    )
-
-            except (ConnectionError, TimeoutError, OSError) as e:
-                logger.error(f"Health check failed for connection {conn.id}: {e}")
+            except Exception as e:  # noqa: BLE001 - any failure means unhealthy
+                # Deliberately broad. The previous clause caught only
+                # (ConnectionError, TimeoutError, OSError), which misses the
+                # failures that actually matter here: an expired or revoked
+                # token surfaces as the provider's own error type (e.g.
+                # OAuthProviderError), none of which subclass OSError. A health
+                # check that only notices socket errors is not a health check.
+                logger.warning(f"Health probe failed for {platform}: {e}")
                 conn.last_error = str(e)
                 conn.error_count += 1
+                if conn.error_count >= UNHEALTHY_PROBE_THRESHOLD:
+                    conn.status = ConnectionStatus.ERROR
                 results.append(
-                    {
-                        "platform": conn.platform.value,
-                        "healthy": False,
-                        "error": str(e),
-                    }
+                    {"platform": platform, "healthy": False, "error": str(e)}
                 )
+                continue
+
+            # Reached only on a successful probe. Clearing error state is now
+            # evidence-backed rather than automatic.
+            conn.last_error = None
+            conn.error_count = 0
+            results.append({"platform": platform, "healthy": True})
 
         db.commit()
 
