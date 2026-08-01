@@ -1,5 +1,5 @@
 # =============================================================================
-# Stratum AI - Snapchat Audience Match Connector
+# ADs Growth System - Snapchat Audience Match Connector
 # =============================================================================
 """
 Snapchat Marketing API Audience Match Connector.

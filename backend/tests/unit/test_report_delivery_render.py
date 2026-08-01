@@ -1,5 +1,5 @@
 # =============================================================================
-# Stratum AI - Report Delivery Rendering Unit Tests
+# ADs Growth System - Report Delivery Rendering Unit Tests
 # =============================================================================
 """Unit tests for the pure rendering helpers of the report-delivery channel
 handlers in ``app.services.reporting.delivery``:
@@ -121,7 +121,7 @@ class TestWhatsAppSummary:
 
     def test_summary_contains_key_fields(self, whatsapp):
         summary = whatsapp._build_summary(_execution())
-        assert "Stratum AI Report Ready" in summary
+        assert "ADs Growth System Report Ready" in summary
         assert "Campaign Performance" in summary
         assert "2026-06-01 to 2026-06-30" in summary
         assert "PDF" in summary

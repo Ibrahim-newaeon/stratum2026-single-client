@@ -1,5 +1,5 @@
 # =============================================================================
-# Stratum AI - OAuth Service Factory
+# ADs Growth System - OAuth Service Factory
 # =============================================================================
 """
 Factory function to get the appropriate OAuth service for a platform.

@@ -1,5 +1,5 @@
 # =============================================================================
-# Stratum AI - Data Synchronization Tasks
+# ADs Growth System - Data Synchronization Tasks
 # =============================================================================
 """
 Background tasks for syncing campaign data from ad platforms.

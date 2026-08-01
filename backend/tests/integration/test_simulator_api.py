@@ -1,5 +1,5 @@
 # =============================================================================
-# Stratum AI - What-If Simulator Endpoint Integration Tests
+# ADs Growth System - What-If Simulator Endpoint Integration Tests
 # =============================================================================
 """Integration tests for the ML simulator surface under ``/api/v1/simulate/...``:
 budget-change simulation, ROAS forecasting, conversion prediction, and model

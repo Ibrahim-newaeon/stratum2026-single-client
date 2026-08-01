@@ -1,5 +1,5 @@
 # =============================================================================
-# Stratum AI - Autopilot Enforcer Service
+# ADs Growth System - Autopilot Enforcer Service
 # =============================================================================
 """
 Enforcement layer for autopilot restrictions.
@@ -1279,7 +1279,7 @@ async def send_enforcement_notification(
             if admin_rows:
                 email_service = get_email_service()
                 subject = (
-                    f"[Stratum AI] Enforcement {action_label}: "
+                    f"[ADs Growth System] Enforcement {action_label}: "
                     f"{intervention.entity_type}/{intervention.entity_id}"
                 )
 
@@ -1290,7 +1290,7 @@ async def send_enforcement_notification(
 <body style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
              line-height: 1.6; color: #333; max-width: 600px; margin: 0 auto; padding: 20px;">
   <div style="text-align: center; margin-bottom: 30px;">
-    <h1 style="color: #2563eb; margin: 0;">Stratum AI</h1>
+    <h1 style="color: #2563eb; margin: 0;">ADs Growth System</h1>
   </div>
   <div style="background: #fef2f2; border: 1px solid #fecaca; border-radius: 8px;
               padding: 30px; margin-bottom: 20px;">
@@ -1309,14 +1309,14 @@ async def send_enforcement_notification(
     </table>
   </div>
   <div style="text-align: center; color: #94a3b8; font-size: 12px;">
-    <p>This is an automated notification from the Stratum AI Autopilot Enforcer.</p>
+    <p>This is an automated notification from the ADs Growth System Autopilot Enforcer.</p>
   </div>
 </body>
 </html>
 """
 
                 text_content = (
-                    f"Stratum AI Enforcement Intervention\n\n"
+                    f"ADs Growth System Enforcement Intervention\n\n"
                     f"Action: {action_label}\n"
                     f"Mode: {mode_label}\n"
                     f"Violation: {violation_label}\n"

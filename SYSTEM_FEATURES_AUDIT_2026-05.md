@@ -1,4 +1,4 @@
-# Stratum AI — Enterprise System Features Audit
+# ADs Growth System — Enterprise System Features Audit
 
 **Date:** 2026-05-30
 **Branch:** `claude/system-features-audit-DiYfj`
@@ -9,7 +9,7 @@
 
 ## 1. Executive Verdict
 
-Stratum AI is a **genuinely large, substantially-built platform** — ~67 wired API endpoint domains, ~50 frontend views, ~40 service modules, 1,867 test functions, 49 migrations. It is **not** a skeleton or a demo: the hard algorithmic cores (Markov/Shapley attribution, sklearn ML training, EMQ math, signal-health scoring, identity resolution, OAuth token exchange, audience PII hashing, autopilot enforcement, Stripe billing) are **real implementations**, not stubs.
+ADs Growth System is a **genuinely large, substantially-built platform** — ~67 wired API endpoint domains, ~50 frontend views, ~40 service modules, 1,867 test functions, 49 migrations. It is **not** a skeleton or a demo: the hard algorithmic cores (Markov/Shapley attribution, sklearn ML training, EMQ math, signal-health scoring, identity resolution, OAuth token exchange, audience PII hashing, autopilot enforcement, Stripe billing) are **real implementations**, not stubs.
 
 **However, it is not production-ready as a whole.** The failure pattern is consistent and important: **strong components are let down by wiring, enforcement, and persistence gaps.** Repeatedly, an excellent backend is not reached by the frontend (route mismatches), a real engine is never triggered by a scheduler (orphaned workers), security machinery is defined but never applied (feature gates, MFA, API-key auth), or data is computed but never persisted (audit log, profit metrics, reallocation plans).
 

@@ -1,5 +1,5 @@
 # =============================================================================
-# Stratum AI - Users API Integration Tests
+# ADs Growth System - Users API Integration Tests
 # =============================================================================
 """Integration tests for the users API.
 

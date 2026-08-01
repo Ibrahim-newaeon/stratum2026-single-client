@@ -136,7 +136,7 @@ export default function CMSLogin() {
 
         {/* Footer */}
         <div className="relative z-10 text-sm text-foreground/40">
-          <p>Stratum AI Content Management System</p>
+          <p>ADs Growth System Content Management System</p>
         </div>
       </div>
 

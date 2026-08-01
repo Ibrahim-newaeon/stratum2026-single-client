@@ -1,5 +1,5 @@
 # =============================================================================
-# Stratum AI - Analytics AI Endpoints
+# ADs Growth System - Analytics AI Endpoints
 # =============================================================================
 """
 API endpoints for AI-powered analytics.

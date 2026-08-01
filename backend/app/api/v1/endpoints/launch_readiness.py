@@ -1,5 +1,5 @@
 # =============================================================================
-# Stratum AI - Launch Readiness Endpoints
+# ADs Growth System - Launch Readiness Endpoints
 # =============================================================================
 """
 Owner-only endpoints for the Launch Readiness wizard.

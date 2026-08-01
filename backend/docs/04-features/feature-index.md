@@ -2,7 +2,7 @@
 
 ## Overview
 
-Stratum AI platform features organized by priority and dependency. Each feature includes specification, user flows, API contracts, and edge cases.
+ADs Growth System platform features organized by priority and dependency. Each feature includes specification, user flows, API contracts, and edge cases.
 
 > **2026-07 note (STRAT-SC-001)**: Payments (13) was fully removed in
 > the single-client conversion — the `13-payments/` docs are historical

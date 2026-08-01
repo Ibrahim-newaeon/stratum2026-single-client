@@ -1,5 +1,5 @@
 # =============================================================================
-# Stratum AI — copilot_llm_stream tests (Phase D PR3)
+# ADs Growth System — copilot_llm_stream tests (Phase D PR3)
 # =============================================================================
 """
 Verifies the SSE streaming bridge wires Anthropic streaming + RAG

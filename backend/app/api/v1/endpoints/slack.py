@@ -1,5 +1,5 @@
 # =============================================================================
-# Stratum AI - Slack Integration Endpoints
+# ADs Growth System - Slack Integration Endpoints
 # =============================================================================
 """
 Slack integration management:
@@ -302,7 +302,7 @@ async def send_slack_notification(
                 "elements": [
                     {
                         "type": "mrkdwn",
-                        "text": f"Sent from Stratum AI at {datetime.now(UTC).strftime('%Y-%m-%d %H:%M UTC')}",
+                        "text": f"Sent from ADs Growth System at {datetime.now(UTC).strftime('%Y-%m-%d %H:%M UTC')}",
                     }
                 ],
             },

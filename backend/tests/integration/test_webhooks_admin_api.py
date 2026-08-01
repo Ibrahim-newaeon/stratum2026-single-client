@@ -1,5 +1,5 @@
 # =============================================================================
-# Stratum AI - Webhook Subscription (admin) Endpoint Integration Tests
+# ADs Growth System - Webhook Subscription (admin) Endpoint Integration Tests
 # =============================================================================
 """Integration tests for the super-admin webhook-subscription management API
 under ``/api/v1/webhooks``. Every route is gated by ``require_owner``.

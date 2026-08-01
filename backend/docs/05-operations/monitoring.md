@@ -2,7 +2,7 @@
 
 ## Overview
 
-This document covers the monitoring stack, metrics collection, alerting configuration, and dashboards for the Stratum AI platform.
+This document covers the monitoring stack, metrics collection, alerting configuration, and dashboards for the ADs Growth System platform.
 
 ---
 

@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# Stratum AI Railway Setup Script (Bash)
+# ADs Growth System Railway Setup Script (Bash)
 # Run from the project root directory
 
 set -euo pipefail
@@ -51,7 +51,7 @@ ok "Logged in as $(railway whoami --json 2>/dev/null | jq -r '.email')"
 
 info "Checking project root..."
 if [[ ! -f "backend/Dockerfile" ]] || [[ ! -f "frontend/Dockerfile" ]]; then
-    err "Not in project root. Run this from the Stratum AI repo root."
+    err "Not in project root. Run this from the ADs Growth System repo root."
     exit 1
 fi
 ok "Project root confirmed"

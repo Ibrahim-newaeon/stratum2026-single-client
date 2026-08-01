@@ -1,5 +1,5 @@
 # =============================================================================
-# Stratum AI - Competitor Intelligence Tasks
+# ADs Growth System - Competitor Intelligence Tasks
 # =============================================================================
 """
 Background tasks for fetching and analyzing competitor data.

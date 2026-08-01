@@ -1,5 +1,5 @@
 """
-Stratum AI: Autopilot Engine
+ADs Growth System: Autopilot Engine
 ============================
 
 The Autopilot Engine is where automation rules live. It evaluates campaign

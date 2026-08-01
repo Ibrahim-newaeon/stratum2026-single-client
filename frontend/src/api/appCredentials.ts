@@ -1,5 +1,5 @@
 /**
- * Stratum AI - Platform app credentials (owner/admin).
+ * ADs Growth System - Platform app credentials (owner/admin).
  *
  * Per-deployment OAuth application credentials, managed in the UI for the
  * black-box model. Secrets are write-only: sent on save, never read back.

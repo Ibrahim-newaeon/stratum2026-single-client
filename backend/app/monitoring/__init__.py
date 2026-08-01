@@ -1,8 +1,8 @@
 # =============================================================================
-# Stratum AI - Memory Monitoring Package
+# ADs Growth System - Memory Monitoring Package
 # =============================================================================
 """
-Full memory audit system for Stratum AI platform.
+Full memory audit system for ADs Growth System platform.
 
 Components:
 - MemoryAuditor: Core engine (tracemalloc, psutil, gc, objgraph)

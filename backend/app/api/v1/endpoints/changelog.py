@@ -1,5 +1,5 @@
 # =============================================================================
-# Stratum AI - Changelog / What's New Endpoints
+# ADs Growth System - Changelog / What's New Endpoints
 # =============================================================================
 """
 Product changelog and release notes:

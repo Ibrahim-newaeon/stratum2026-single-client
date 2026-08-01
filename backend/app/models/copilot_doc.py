@@ -1,5 +1,5 @@
 # =============================================================================
-# Stratum AI - Copilot Doc Chunk Model
+# ADs Growth System - Copilot Doc Chunk Model
 # =============================================================================
 """
 SQLAlchemy model for `copilot_doc_chunks` — chunked Stratum docs with

@@ -1,5 +1,5 @@
 # =============================================================================
-# Stratum AI - Copilot Doc Indexer (CLI)
+# ADs Growth System - Copilot Doc Indexer (CLI)
 # =============================================================================
 """
 Re-index the curated Stratum docs corpus into `copilot_doc_chunks`.

@@ -1,5 +1,5 @@
 # =============================================================================
-# Stratum AI - Autopilot Action-Cap Validation Unit Tests
+# ADs Growth System - Autopilot Action-Cap Validation Unit Tests
 # =============================================================================
 """Unit tests for ``validate_action_caps`` in
 ``app.tasks.apply_actions_queue`` — the pure guard that rejects budget

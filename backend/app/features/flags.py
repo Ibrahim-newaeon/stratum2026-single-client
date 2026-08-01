@@ -1,5 +1,5 @@
 # =============================================================================
-# Stratum AI - Feature Flags System
+# ADs Growth System - Feature Flags System
 # =============================================================================
 """
 Org-level feature flag system for the single-client deployment.
@@ -306,7 +306,7 @@ FEATURE_DESCRIPTIONS = {
     "ai_recommendations": "Get AI-powered recommendations for campaign optimization",
     "anomaly_alerts": "Receive alerts when metrics show unusual patterns",
     "creative_fatigue": "Detect when creatives are losing effectiveness",
-    "campaign_builder": "Create and publish campaigns directly from Stratum AI",
+    "campaign_builder": "Create and publish campaigns directly from ADs Growth System",
     "autopilot_level": "Automation level: 0=Suggest, 1=Auto with caps, 2=Approval required",
     "owner_profitability": "Access platform-wide profitability and usage analytics",
     "max_campaigns": "Maximum number of active campaigns",

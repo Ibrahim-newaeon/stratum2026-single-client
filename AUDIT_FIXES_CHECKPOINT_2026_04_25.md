@@ -1,4 +1,4 @@
-# Stratum AI — Audit Remediation Checkpoint
+# ADs Growth System — Audit Remediation Checkpoint
 
 > **Generated:** 2026-04-25  
 > **Session:** Sprint 1 — Critical/Low-priority cleanup + Production readiness blockers  

@@ -1,5 +1,5 @@
 /**
- * Stratum AI - Onboarding API
+ * ADs Growth System - Onboarding API
  *
  * API endpoints for the onboarding wizard flow.
  * Guides new users through platform setup in 5 steps:

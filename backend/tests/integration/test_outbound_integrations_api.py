@@ -1,5 +1,5 @@
 # =============================================================================
-# Stratum AI - Outbound Integrations Endpoint Integration Tests
+# ADs Growth System - Outbound Integrations Endpoint Integration Tests
 # =============================================================================
 """Integration tests for the outbound-integrations surface under
 ``/api/v1/integrations/outbound/...``: Zapier, data-warehouse, and Teams

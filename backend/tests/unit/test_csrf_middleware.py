@@ -1,5 +1,5 @@
 # =============================================================================
-# Stratum AI - CSRF Middleware unit tests
+# ADs Growth System - CSRF Middleware unit tests
 # =============================================================================
 """Unit tests for app.middleware.csrf.
 

@@ -1,5 +1,5 @@
 # =============================================================================
-# Stratum AI - In-App Notifications Endpoints
+# ADs Growth System - In-App Notifications Endpoints
 # =============================================================================
 """
 In-app notification management:

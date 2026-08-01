@@ -1,5 +1,5 @@
 # =============================================================================
-# Stratum AI - Auth Signup-OTP Endpoint Integration Tests
+# ADs Growth System - Auth Signup-OTP Endpoint Integration Tests
 # =============================================================================
 """Integration tests for the signup verification OTP endpoints:
 

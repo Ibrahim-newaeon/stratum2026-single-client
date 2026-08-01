@@ -1,5 +1,5 @@
 # =============================================================================
-# Stratum AI - API Key Authentication Tests
+# ADs Growth System - API Key Authentication Tests
 # =============================================================================
 """
 Tests for inbound API-key authentication (P0-4).

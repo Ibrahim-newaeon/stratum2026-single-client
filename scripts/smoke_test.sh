@@ -1,6 +1,6 @@
 #!/bin/bash
 # =============================================================================
-# Stratum AI - Staging/Production Smoke Tests
+# ADs Growth System - Staging/Production Smoke Tests
 # =============================================================================
 # Usage: BASE_URL=https://api.stratum.ai ./scripts/smoke_test.sh
 # =============================================================================
@@ -22,7 +22,7 @@ check() {
   fi
 }
 
-echo "=== Stratum AI Smoke Tests ==="
+echo "=== ADs Growth System Smoke Tests ==="
 echo "Target: $BASE_URL"
 echo ""
 

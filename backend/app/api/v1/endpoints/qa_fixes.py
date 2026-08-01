@@ -1,5 +1,5 @@
 # =============================================================================
-# Stratum AI - QA Fixes Endpoints
+# ADs Growth System - QA Fixes Endpoints
 # =============================================================================
 """
 EMQ One-Click Fix System endpoints.

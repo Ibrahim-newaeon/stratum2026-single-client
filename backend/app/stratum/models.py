@@ -1,5 +1,5 @@
 # =============================================================================
-# Stratum AI - Unified Data Models for Multiplatform Integration
+# ADs Growth System - Unified Data Models for Multiplatform Integration
 # =============================================================================
 """
 Unified Data Models for Cross-Platform Advertising Management.

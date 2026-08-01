@@ -1,5 +1,5 @@
 /**
- * Stratum AI - DemoContext Tests
+ * ADs Growth System - DemoContext Tests
  *
  * Tests for DemoProvider, useDemo hook, demo mode entry/exit,
  * localStorage persistence, URL parameter handling, and demo data.

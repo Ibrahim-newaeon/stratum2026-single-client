@@ -1,8 +1,8 @@
 # =============================================================================
-# Stratum AI - Agents Package
+# ADs Growth System - Agents Package
 # =============================================================================
 """
-Conversational AI Agents for Stratum AI.
+Conversational AI Agents for ADs Growth System.
 
 This package contains the agent implementations for:
 - User onboarding conversations

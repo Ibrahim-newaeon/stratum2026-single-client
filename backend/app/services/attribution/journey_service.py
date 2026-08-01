@@ -1,5 +1,5 @@
 # =============================================================================
-# Stratum AI - Customer Journey Service
+# ADs Growth System - Customer Journey Service
 # =============================================================================
 """
 Customer journey tracking and visualization service.

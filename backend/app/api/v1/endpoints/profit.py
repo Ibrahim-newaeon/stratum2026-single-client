@@ -1,5 +1,5 @@
 # =============================================================================
-# Stratum AI - Profit ROAS API Endpoints
+# ADs Growth System - Profit ROAS API Endpoints
 # =============================================================================
 """
 API endpoints for Profit ROAS calculations and COGS management.

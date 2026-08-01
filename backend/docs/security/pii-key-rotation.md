@@ -2,7 +2,7 @@
 
 ## Context
 
-Stratum AI encrypts PII columns (`User.email`, `User.full_name`, `User.phone`,
+ADs Growth System encrypts PII columns (`User.email`, `User.full_name`, `User.phone`,
 `User.totp_secret`, OAuth/CRM access & refresh tokens, etc.) at rest with
 Fernet symmetric encryption via `app.core.security.encrypt_pii` /
 `decrypt_pii`. As of the single-client conversion (STRAT-SC-001) there is

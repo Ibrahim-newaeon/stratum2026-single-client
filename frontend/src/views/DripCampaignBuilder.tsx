@@ -1,5 +1,5 @@
 // =============================================================================
-// Stratum AI — Drip Campaign Builder (Drag & Drop Flow Editor)
+// ADs Growth System — Drip Campaign Builder (Drag & Drop Flow Editor)
 // =============================================================================
 
 import { useState, useCallback, useRef } from 'react';

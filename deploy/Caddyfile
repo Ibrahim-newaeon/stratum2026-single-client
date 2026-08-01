@@ -1,5 +1,5 @@
 # =============================================================================
-# Stratum AI - Client Caddyfile
+# ADs Growth System - Client Caddyfile
 # -----------------------------------------------------------------------------
 # One domain per client. Caddy automatically obtains and renews a Let's
 # Encrypt certificate for {$STRATUM_DOMAIN} (set STRATUM_DOMAIN in .env) and

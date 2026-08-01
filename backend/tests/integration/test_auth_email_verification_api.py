@@ -1,5 +1,5 @@
 # =============================================================================
-# Stratum AI - Email Verification Endpoint Integration Tests
+# ADs Growth System - Email Verification Endpoint Integration Tests
 # =============================================================================
 """Integration tests for ``POST /auth/verify-email`` and
 ``POST /auth/resend-verification`` — Redis-backed verification tokens,

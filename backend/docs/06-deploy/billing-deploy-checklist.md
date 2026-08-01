@@ -66,12 +66,12 @@ not configured"** instead of a checkout URL.
 In your Stripe dashboard (live mode):
 
 1. **Create the Starter recurring price**
-   - Product: "Stratum AI — Starter"
+   - Product: "ADs Growth System — Starter"
    - Price: **$499/month**, recurring, USD
    - Copy the price ID (`price_1NX...`)
 
 2. **Create the Professional recurring price**
-   - Product: "Stratum AI — Professional"
+   - Product: "ADs Growth System — Professional"
    - Price: **$999/month**, recurring, USD
    - Copy the price ID
 

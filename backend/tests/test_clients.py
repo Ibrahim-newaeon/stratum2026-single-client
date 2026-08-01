@@ -1,5 +1,5 @@
 # =============================================================================
-# Stratum AI - Client Entity Tests
+# ADs Growth System - Client Entity Tests
 # =============================================================================
 """
 Tests for Client entity, assignments, portal, permissions, and scope enforcement.

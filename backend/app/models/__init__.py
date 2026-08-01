@@ -1,5 +1,5 @@
 # =============================================================================
-# Stratum AI - Models Package
+# ADs Growth System - Models Package
 # =============================================================================
 # Re-exports all models for backwards compatibility
 

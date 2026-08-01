@@ -1,5 +1,5 @@
 # =============================================================================
-# Stratum AI - RBAC Permissions & MFA Test Suite
+# ADs Growth System - RBAC Permissions & MFA Test Suite
 # =============================================================================
 """
 Comprehensive tests for the two untested Authentication sub-systems:
@@ -881,7 +881,7 @@ class TestMFAConstants:
     def test_totp_config(self) -> None:
         assert TOTP_DIGITS == 6
         assert TOTP_INTERVAL == 30
-        assert TOTP_ISSUER == "Stratum AI"
+        assert TOTP_ISSUER == "ADs Growth System"
 
     def test_rate_limiting_config(self) -> None:
         assert MAX_FAILED_ATTEMPTS == 5

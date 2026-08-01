@@ -1,5 +1,5 @@
 # =============================================================================
-# Stratum AI - Newsletter Worker Tasks
+# ADs Growth System - Newsletter Worker Tasks
 # =============================================================================
 """
 Celery tasks for sending newsletter campaigns.
@@ -86,7 +86,7 @@ def _add_unsubscribe_footer(
     footer = f"""
     <div style="margin-top:40px;padding-top:20px;border-top:1px solid rgba(255,255,255,0.1);text-align:center;font-size:12px;color:#86868b;">
         <p>You received this because you subscribed at stratumai.app</p>
-        <p>&copy; {datetime.now().year} Stratum AI &bull;
+        <p>&copy; {datetime.now().year} ADs Growth System &bull;
         <a href="{unsubscribe_url}" style="color:#00c7be;text-decoration:underline;">Unsubscribe</a></p>
     </div>
     """

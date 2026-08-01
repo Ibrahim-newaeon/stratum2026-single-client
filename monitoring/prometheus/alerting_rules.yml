@@ -1,5 +1,5 @@
 # =============================================================================
-# Stratum AI - Prometheus Alerting Rules
+# ADs Growth System - Prometheus Alerting Rules
 # =============================================================================
 # Usage: Include in prometheus.yml under rule_files:
 #   rule_files:

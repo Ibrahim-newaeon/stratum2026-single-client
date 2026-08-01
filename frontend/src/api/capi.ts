@@ -1,5 +1,5 @@
 /**
- * Stratum AI - CAPI (Conversion API) Client
+ * ADs Growth System - CAPI (Conversion API) Client
  *
  * Server-side event streaming and data quality.
  */

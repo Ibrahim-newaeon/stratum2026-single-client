@@ -105,7 +105,7 @@ def predict_budget_impact(current_spend, new_spend):
 
 def main():
     print("=" * 70)
-    print("Stratum AI - ML Model Prediction Tests")
+    print("ADs Growth System - ML Model Prediction Tests")
     print("=" * 70)
     print()
 

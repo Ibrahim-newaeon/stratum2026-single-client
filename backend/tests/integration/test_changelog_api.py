@@ -1,5 +1,5 @@
 # =============================================================================
-# Stratum AI - Changelog API Integration Tests
+# ADs Growth System - Changelog API Integration Tests
 # =============================================================================
 """Integration tests for the changelog API.
 

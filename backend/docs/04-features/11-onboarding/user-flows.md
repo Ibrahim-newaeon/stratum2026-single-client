@@ -27,7 +27,7 @@ Step-by-step user journeys for the onboarding experience.
 
 ```
 ┌─────────────────────────────────────────────────────────────┐
-│  Welcome to Stratum AI                                      │
+│  Welcome to ADs Growth System                                      │
 ├─────────────────────────────────────────────────────────────┤
 │                                                             │
 │  Let's set up your account                                  │
@@ -426,7 +426,7 @@ Step-by-step user journeys for the onboarding experience.
 │                                                             │
 │                    🎉 You're all set!                       │
 │                                                             │
-│  Your Stratum AI account is ready to go.                   │
+│  Your ADs Growth System account is ready to go.                   │
 │                                                             │
 │  ┌─────────────────────────────────────────────────────┐   │
 │  │ Summary                                             │   │

@@ -1,5 +1,5 @@
 # =============================================================================
-# Stratum AI - Platform CAPI Connectors Deep Integration Tests (#342 Batch 5+6)
+# ADs Growth System - Platform CAPI Connectors Deep Integration Tests (#342 Batch 5+6)
 # =============================================================================
 """Contract tests for ``app.services.capi.platform_connectors``.
 

@@ -1,5 +1,5 @@
 # =============================================================================
-# Stratum AI - CMS Pydantic Schemas
+# ADs Growth System - CMS Pydantic Schemas
 # =============================================================================
 """
 Pydantic schemas for CMS API request/response validation.

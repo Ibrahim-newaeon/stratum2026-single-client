@@ -1,5 +1,5 @@
 # =============================================================================
-# Stratum AI - Full-Funnel Server-Side Events
+# ADs Growth System - Full-Funnel Server-Side Events
 # =============================================================================
 """
 This module handles server-side event tracking for the COMPLETE customer journey,

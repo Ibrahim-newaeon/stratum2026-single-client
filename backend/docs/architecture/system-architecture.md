@@ -1,11 +1,11 @@
-# Stratum AI — System Architecture Overview
+# ADs Growth System — System Architecture Overview
 
 > **Document Version:** 1.2.0  
 > **Last Updated:** 2026-04-26  
 > **Audience:** Engineers, DevOps, Technical PMs  
 > **Scope:** Full-stack architecture from client to database
 >
-> **2026-07 update**: Stratum AI was converted to a **single-client
+> **2026-07 update**: ADs Growth System was converted to a **single-client
 > deployment** (STRAT-SC-001) — the multi-tenancy model, subscription
 > tiers, and Stripe billing described below (originally written for the
 > multi-tenant SaaS architecture) were fully removed. One `Organization`
@@ -36,7 +36,7 @@
 
 ## Architecture Philosophy
 
-Stratum AI follows three core architectural principles:
+ADs Growth System follows three core architectural principles:
 
 1. **Safety First**: No automation executes without passing the Trust Gate. The system prefers false negatives (missed opportunities) over false positives (bad automation).
 

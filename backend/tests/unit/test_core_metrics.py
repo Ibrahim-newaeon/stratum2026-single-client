@@ -1,5 +1,5 @@
 # =============================================================================
-# Stratum AI - Core Metrics Unit Tests
+# ADs Growth System - Core Metrics Unit Tests
 # =============================================================================
 """Unit tests for ``app.core.metrics``.
 

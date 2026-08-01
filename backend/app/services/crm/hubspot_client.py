@@ -1,5 +1,5 @@
 # =============================================================================
-# Stratum AI - HubSpot Client
+# ADs Growth System - HubSpot Client
 # =============================================================================
 """
 HubSpot API client with OAuth support.
@@ -33,7 +33,7 @@ HUBSPOT_AUTH_URL = "https://app.hubspot.com/oauth/authorize"
 HUBSPOT_TOKEN_URL = "https://api.hubapi.com/oauth/v1/token"
 HUBSPOT_API_BASE = "https://api.hubapi.com"
 
-# Required scopes for Stratum AI integration
+# Required scopes for ADs Growth System integration
 HUBSPOT_SCOPES = [
     "crm.objects.contacts.read",
     "crm.objects.contacts.write",

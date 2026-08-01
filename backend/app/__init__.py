@@ -1,8 +1,8 @@
 # =============================================================================
-# Stratum AI - Backend Application Package
+# ADs Growth System - Backend Application Package
 # =============================================================================
 """
-Stratum AI: Enterprise Marketing Intelligence Platform
+ADs Growth System: Enterprise Marketing Intelligence Platform
 
 This package contains the core backend application including:
 - API routes and endpoints
@@ -13,4 +13,4 @@ This package contains the core backend application including:
 """
 
 __version__ = "1.0.0"
-__author__ = "Stratum AI Team"
+__author__ = "ADs Growth System Team"

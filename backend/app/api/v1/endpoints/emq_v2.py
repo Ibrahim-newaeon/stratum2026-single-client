@@ -1,5 +1,5 @@
 # =============================================================================
-# Stratum AI - EMQ v2 API Router
+# ADs Growth System - EMQ v2 API Router
 # =============================================================================
 """
 EMQ (Event Measurement Quality) v2 API endpoints.

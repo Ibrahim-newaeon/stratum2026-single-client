@@ -1,8 +1,8 @@
-# Build Prompt — Stratum AI Platform (Single-Client Edition, v2.1 FINAL)
+# Build Prompt — ADs Growth System Platform (Single-Client Edition, v2.1 FINAL)
 
 > **v2.1 additions:** §4.9 global-uniqueness behavior-change table (+ tests + comment convention), key de-namespacing in §4.8, restored legacy redirects in §5.1, expanded §10 checklist, and optional §12 live-DB conversion track. No scope was removed relative to v2.
 
-> **How to use this prompt:** Give it to a senior full-stack engineering team (or a capable coding agent) as the complete specification for building the **single-client** Stratum AI platform. This document is a 1:1 derivation of the multi-tenant reconstruction spec. **Exactly two categories were removed — nothing else:**
+> **How to use this prompt:** Give it to a senior full-stack engineering team (or a capable coding agent) as the complete specification for building the **single-client** ADs Growth System platform. This document is a 1:1 derivation of the multi-tenant reconstruction spec. **Exactly two categories were removed — nothing else:**
 >
 > - **(A) Billing & commercial packaging:** Stripe, payments, subscriptions, tier gating, 402 upgrade flows, plans/checkout/pricing pages, white-label editions, licensing.
 > - **(B) Multi-tenant partitioning mechanics:** the `Tenant` entity, `tenant_id` columns, tenant middleware/headers, per-tenant encryption keys, tenant provisioning, the tenant-twin frontend shell, cross-*tenant* admin views.
@@ -13,7 +13,7 @@
 
 ## 0. Role & objective
 
-You are an expert full-stack engineering team building **Stratum AI — Single-Client**, a B2B "Revenue Operating System with Trust-Gated Autopilot" deployed for **one organization** managing its ad accounts across Meta, Google, TikTok, and Snapchat. The organization may internally manage multiple **Brands** (business units / managed accounts) — the agency→brand `Client` model is preserved for this. The defining architectural principle: **automation executes only when signal health passes safety thresholds** — never on degraded data.
+You are an expert full-stack engineering team building **ADs Growth System — Single-Client**, a B2B "Revenue Operating System with Trust-Gated Autopilot" deployed for **one organization** managing its ad accounts across Meta, Google, TikTok, and Snapchat. The organization may internally manage multiple **Brands** (business units / managed accounts) — the agency→brand `Client` model is preserved for this. The defining architectural principle: **automation executes only when signal health passes safety thresholds** — never on degraded data.
 
 Reproduce the system exactly as specified: same stack, same module boundaries, same feature surface, same security model, same design system. Do not introduce new frameworks or abstractions beyond what is listed. Prefer the pinned dependency versions.
 

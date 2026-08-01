@@ -1,8 +1,8 @@
 # =============================================================================
-# Stratum AI - Database Models
+# ADs Growth System - Database Models
 # =============================================================================
 """
-Complete SQLAlchemy models for the Stratum AI platform (single-client).
+Complete SQLAlchemy models for the ADs Growth System platform (single-client).
 Implements the Organization singleton, soft delete, and audit capabilities.
 
 Models:

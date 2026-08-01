@@ -1,5 +1,5 @@
 # =============================================================================
-# Stratum AI - Audience Lifecycle unit tests
+# ADs Growth System - Audience Lifecycle unit tests
 # =============================================================================
 """Unit tests for app.analytics.logic.audience_lifecycle.
 

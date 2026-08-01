@@ -425,7 +425,7 @@ const fallbackGlossaryData: GlossaryCategory[] = [
     terms: [
       {
         term: 'Writeback',
-        definition: 'Syncing Stratum AI data (ad performance, attribution) back to CRM records.',
+        definition: 'Syncing ADs Growth System data (ad performance, attribution) back to CRM records.',
       },
       {
         term: 'Identity Matching',
@@ -543,7 +543,7 @@ const fallbackGlossaryData: GlossaryCategory[] = [
     terms: [
       {
         term: 'Supported Platforms',
-        definition: 'Ad networks integrated with Stratum AI.',
+        definition: 'Ad networks integrated with ADs Growth System.',
         values: [
           { value: 'META', description: 'Facebook, Instagram, Messenger, WhatsApp' },
           { value: 'GOOGLE', description: 'Google Ads, YouTube, Display Network' },
@@ -622,7 +622,7 @@ export default function GlossaryPage() {
         badgeIcon={BookOpenIcon}
         title="Platform"
         highlight="Terminology"
-        subtitle={`Complete reference of ${totalTerms}+ terms, metrics, and values used across Stratum AI.`}
+        subtitle={`Complete reference of ${totalTerms}+ terms, metrics, and values used across ADs Growth System.`}
       >
         <div
           className="mt-10 relative max-w-xl mx-auto animate-enter"

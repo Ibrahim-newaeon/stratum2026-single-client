@@ -1,5 +1,5 @@
 # =============================================================================
-# Stratum AI - Org-level trust-gate thresholds (TRUST-007)
+# ADs Growth System - Org-level trust-gate thresholds (TRUST-007)
 # =============================================================================
 """
 Onboarding collects org-level trust thresholds but the gate ignored them.

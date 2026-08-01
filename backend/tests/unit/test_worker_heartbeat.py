@@ -1,5 +1,5 @@
 # =============================================================================
-# Stratum AI - Worker liveness heartbeat tests (INF-003)
+# ADs Growth System - Worker liveness heartbeat tests (INF-003)
 # =============================================================================
 """
 Celery has no HTTP endpoint, so the worker writes a heartbeat to Redis and the

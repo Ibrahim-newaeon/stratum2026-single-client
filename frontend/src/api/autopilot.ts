@@ -1,5 +1,5 @@
 /**
- * Stratum AI - Autopilot API Hooks
+ * ADs Growth System - Autopilot API Hooks
  *
  * React Query hooks for autopilot action management:
  * - Action queue

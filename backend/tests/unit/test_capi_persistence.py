@@ -1,5 +1,5 @@
 # =============================================================================
-# Stratum AI - CAPI Delivery Persistence Tests
+# ADs Growth System - CAPI Delivery Persistence Tests
 # =============================================================================
 """
 Tests for wiring CAPI delivery persistence (Tier 3).

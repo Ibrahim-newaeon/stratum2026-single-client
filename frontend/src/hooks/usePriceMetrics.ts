@@ -1,5 +1,5 @@
 /**
- * Stratum AI - Price Metrics Toggle Hook
+ * ADs Growth System - Price Metrics Toggle Hook
  *
  * Reads the show_price_metrics feature flag to control
  * visibility of price-related columns and cards

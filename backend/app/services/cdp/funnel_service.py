@@ -1,5 +1,5 @@
 # =============================================================================
-# Stratum AI - CDP Funnel Service
+# ADs Growth System - CDP Funnel Service
 # =============================================================================
 """
 Funnel analysis service for CDP.

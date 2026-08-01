@@ -2,7 +2,7 @@
 
 ## Overview
 
-Stratum AI uses Celery with Redis for background task processing.
+ADs Growth System uses Celery with Redis for background task processing.
 
 ---
 

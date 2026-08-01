@@ -1,5 +1,5 @@
 # =============================================================================
-# Stratum AI - Report Delivery Service Deep Integration Tests (#342 Batch 4)
+# ADs Growth System - Report Delivery Service Deep Integration Tests (#342 Batch 4)
 # =============================================================================
 """DB-backed integration tests for ``app.services.reporting.delivery``.
 
@@ -553,7 +553,7 @@ class TestWhatsAppDelivery:
         assert result["success"] is True
         payload = session.calls[0]["json"]
         assert payload["type"] == "text"
-        assert "Stratum AI Report Ready" in payload["text"]["body"]
+        assert "ADs Growth System Report Ready" in payload["text"]["body"]
 
     async def test_api_error_response(self, config):
         session = FakeSession(

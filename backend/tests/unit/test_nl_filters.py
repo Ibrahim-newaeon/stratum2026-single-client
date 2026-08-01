@@ -1,5 +1,5 @@
 # =============================================================================
-# Stratum AI - Natural-Language Filters unit tests
+# ADs Growth System - Natural-Language Filters unit tests
 # =============================================================================
 """Unit tests for app.analytics.logic.nl_filters.
 

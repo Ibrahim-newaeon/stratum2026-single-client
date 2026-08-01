@@ -1,5 +1,5 @@
 /**
- * Stratum AI - Competitor Intelligence API
+ * ADs Growth System - Competitor Intelligence API
  *
  * Competitor monitoring and share of voice tracking
  */

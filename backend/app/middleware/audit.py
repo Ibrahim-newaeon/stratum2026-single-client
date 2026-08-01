@@ -1,5 +1,5 @@
 # =============================================================================
-# Stratum AI - Audit Logging Middleware
+# ADs Growth System - Audit Logging Middleware
 # =============================================================================
 """
 Middleware that records all state-changing API requests to the audit log.

@@ -1,5 +1,5 @@
 // =============================================================================
-// Stratum AI - API Service Layer
+// ADs Growth System - API Service Layer
 // =============================================================================
 
 const API_BASE_URL = 'http://localhost:8000/api/v1';

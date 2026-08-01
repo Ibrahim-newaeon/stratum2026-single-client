@@ -1,4 +1,4 @@
-# Stratum AI — Audit Remediation Checkpoint
+# ADs Growth System — Audit Remediation Checkpoint
 
 > **Generated:** 2026-04-26  
 > **Session:** Sprint 3 — MEDIUM Priority (TypeScript cleanup, Celery fixes, infra hardening)  

@@ -25,7 +25,7 @@ test.describe('Mobile Responsiveness', () => {
 
   test('landing page should be responsive', async ({ page }) => {
     await page.goto('/')
-    await expect(page.locator('text=Stratum AI').first()).toBeVisible()
+    await expect(page.locator('text=ADs Growth System').first()).toBeVisible()
     await expect(page.getByRole('button', { name: /Start Free/i }).first()).toBeVisible()
   })
 })

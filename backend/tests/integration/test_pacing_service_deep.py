@@ -1,5 +1,5 @@
 # =============================================================================
-# Stratum AI - Pacing Service Deep Integration Tests
+# ADs Growth System - Pacing Service Deep Integration Tests
 # =============================================================================
 """DB-backed integration tests for ``app.services.pacing.pacing_service``.
 

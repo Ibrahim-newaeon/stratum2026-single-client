@@ -1,4 +1,4 @@
-# Stratum AI - Server Deployment Guide
+# ADs Growth System - Server Deployment Guide
 
 ## Table of Contents
 

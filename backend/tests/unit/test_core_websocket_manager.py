@@ -1,5 +1,5 @@
 # =============================================================================
-# Stratum AI - WebSocket Manager Unit Tests
+# ADs Growth System - WebSocket Manager Unit Tests
 # =============================================================================
 """Unit tests for the in-process half of ``app.core.websocket``.
 

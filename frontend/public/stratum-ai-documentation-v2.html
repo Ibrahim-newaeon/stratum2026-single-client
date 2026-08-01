@@ -3,8 +3,8 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Stratum AI — Platform Documentation</title>
-<meta name="description" content="Complete technical documentation for the Stratum AI Revenue Operating System with Trust-Gated Autopilot.">
+<title>ADs Growth System — Platform Documentation</title>
+<meta name="description" content="Complete technical documentation for the ADs Growth System Revenue Operating System with Trust-Gated Autopilot.">
 <meta name="robots" content="noindex, nofollow">
 <meta name="theme-color" content="#0A0B14">
 <link rel="preconnect" href="https://api.fontshare.com" crossorigin>
@@ -162,7 +162,7 @@ h1,h2,h3,h4,h5,h6{font-family:var(--font-display);line-height:1.2;color:var(--co
 <div class="container">
 <div class="hero fade-up">
 <div class="hero-badge">Documentation</div>
-<h1>Stratum AI Platform Documentation</h1>
+<h1>ADs Growth System Platform Documentation</h1>
 <p>The complete technical guide for the Revenue Operating System with Trust-Gated Autopilot</p>
 <div class="hero-stats">
 <span class="hero-stat"><strong>15</strong>&nbsp;sections</span>
@@ -198,7 +198,7 @@ h1,h2,h3,h4,h5,h6{font-family:var(--font-display);line-height:1.2;color:var(--co
 
 <a class="section-card" href="#section-tiers" style="--accent-color:#FF8C00"><span class="section-num" style="color:#FF8C00">13</span><div class="section-info"><h3>Subscription Tiers</h3><p>Starter, Professional, and Enterprise plan features and limits</p></div><div class="section-meta"><span class="topic-count">3 topics</span></div></a>
 
-<a class="section-card" href="#section-glossary" style="--accent-color:#00D4AA"><span class="section-num" style="color:#00D4AA">14</span><div class="section-info"><h3>Glossary</h3><p>Key terms and definitions used throughout the Stratum AI platform</p></div><div class="section-meta"><span class="topic-count">7 topics</span></div></a>
+<a class="section-card" href="#section-glossary" style="--accent-color:#00D4AA"><span class="section-num" style="color:#00D4AA">14</span><div class="section-info"><h3>Glossary</h3><p>Key terms and definitions used throughout the ADs Growth System platform</p></div><div class="section-meta"><span class="topic-count">7 topics</span></div></a>
 
 <a class="section-card" href="#section-tutorials" style="--accent-color:#FF1F6D"><span class="section-num" style="color:#FF1F6D">15</span><div class="section-info"><h3>Tutorials</h3><p>Step-by-step guides for Starter, Professional, and Enterprise plan users</p></div><div class="section-meta"><span class="topic-count">3 topics</span></div></a>
 
@@ -219,7 +219,7 @@ h1,h2,h3,h4,h5,h6{font-family:var(--font-display);line-height:1.2;color:var(--co
 <a href="#code-standards">Code Standards</a>
 </div>
 
-<div class="topic-block" id="system-overview"><h3 class="topic-title">System Overview</h3><p class="topic-description">Stratum AI is a Revenue Operating System with Trust-Gated Autopilot architecture. Automation executes ONLY when signal health passes safety thresholds. The core flow is: Signal Health Check &rarr; Trust Gate &rarr; Automation Decision.</p><div class="flow-diagram">Signal Sources &rarr; Signal Health Check &rarr; Trust Gate &rarr; Automation Decision
+<div class="topic-block" id="system-overview"><h3 class="topic-title">System Overview</h3><p class="topic-description">ADs Growth System is a Revenue Operating System with Trust-Gated Autopilot architecture. Automation executes ONLY when signal health passes safety thresholds. The core flow is: Signal Health Check &rarr; Trust Gate &rarr; Automation Decision.</p><div class="flow-diagram">Signal Sources &rarr; Signal Health Check &rarr; Trust Gate &rarr; Automation Decision
 
 [HEALTHY 70-100] &rarr; [PASS] &rarr; [EXECUTE]
 [DEGRADED 40-69] &rarr; [HOLD] &rarr; [ALERT ONLY]
@@ -589,7 +589,7 @@ Customer (via purchase)</div><p class="topic-description">The Identity Graph pro
 docker compose logs -f api        # Follow API logs
 docker compose ps                 # Service status</code></pre></div>
 
-<div class="topic-block" id="server-requirements"><h3 class="topic-title">Server Requirements</h3><p class="topic-description">Hardware requirements for running the full Stratum AI platform stack.</p><table class="doc-table"><thead><tr><th>Spec</th><th>Minimum</th><th>Recommended</th></tr></thead><tbody><tr><td>CPU</td><td>4 vCPU</td><td>8 vCPU</td></tr><tr><td>RAM</td><td>16 GB</td><td>32 GB</td></tr><tr><td>Storage</td><td>100 GB SSD</td><td>500 GB SSD</td></tr><tr><td>OS</td><td colspan="2">Ubuntu 22.04 LTS</td></tr></tbody></table></div>
+<div class="topic-block" id="server-requirements"><h3 class="topic-title">Server Requirements</h3><p class="topic-description">Hardware requirements for running the full ADs Growth System platform stack.</p><table class="doc-table"><thead><tr><th>Spec</th><th>Minimum</th><th>Recommended</th></tr></thead><tbody><tr><td>CPU</td><td>4 vCPU</td><td>8 vCPU</td></tr><tr><td>RAM</td><td>16 GB</td><td>32 GB</td></tr><tr><td>Storage</td><td>100 GB SSD</td><td>500 GB SSD</td></tr><tr><td>OS</td><td colspan="2">Ubuntu 22.04 LTS</td></tr></tbody></table></div>
 
 <div class="topic-block" id="env-vars"><h3 class="topic-title">Environment Variables</h3><p class="topic-description">Required environment variables for production deployment. All secrets must be set via environment variables, never committed to the repository.</p><table class="doc-table"><thead><tr><th>Variable</th><th>Purpose</th></tr></thead><tbody><tr><td><code>DATABASE_URL</code></td><td>PostgreSQL connection string</td></tr><tr><td><code>REDIS_URL</code></td><td>Redis connection string</td></tr><tr><td><code>SECRET_KEY</code></td><td>Application secret key</td></tr><tr><td><code>JWT_SECRET</code></td><td>JWT signing secret</td></tr><tr><td><code>META_APP_ID</code></td><td>Meta/Facebook App ID</td></tr><tr><td><code>META_APP_SECRET</code></td><td>Meta/Facebook App Secret</td></tr><tr><td><code>GOOGLE_CLIENT_ID</code></td><td>Google OAuth Client ID</td></tr><tr><td><code>GOOGLE_CLIENT_SECRET</code></td><td>Google OAuth Client Secret</td></tr><tr><td><code>TIKTOK_APP_ID</code></td><td>TikTok App ID</td></tr><tr><td><code>SNAPCHAT_CLIENT_ID</code></td><td>Snapchat Client ID</td></tr><tr><td><code>STRIPE_SECRET_KEY</code></td><td>Stripe payment secret</td></tr><tr><td><code>SENTRY_DSN</code></td><td>Sentry error tracking DSN</td></tr></tbody></table><div class="callout callout-error"><strong>Security:</strong> Never commit .env files or API credentials to the repository.</div></div>
 
@@ -711,7 +711,7 @@ cd frontend &amp;&amp; npm run build  # Production build</code></pre></div>
 <a href="#home" class="back-link">&larr; All Sections</a>
 <div class="section-badge">Section 14 of 15</div>
 <h1 style="color:#00D4AA">Glossary</h1>
-<p class="section-desc">Key terms and definitions used throughout the Stratum AI platform</p>
+<p class="section-desc">Key terms and definitions used throughout the ADs Growth System platform</p>
 <div class="topic-nav"><h4>In this section</h4>
 <a href="#gloss-core">Core Concepts</a>
 <a href="#gloss-cdp">CDP Terms</a>
@@ -752,7 +752,7 @@ cd frontend &amp;&amp; npm run build  # Production build</code></pre></div>
 <a href="#tut-enterprise">Enterprise Plan Tutorial (60 min)</a>
 </div>
 
-<div class="topic-block" id="tut-starter"><h3 class="topic-title">Starter Plan Tutorial (30 min)</h3><p class="topic-description">Getting started with the Stratum AI Starter plan. This tutorial covers connecting your ad platforms, understanding the dashboard, and setting up basic monitoring.</p><div class="tutorial-step" data-step="1"><h4>Connect Ad Platforms</h4><p>Authenticate via OAuth for each platform you want to track. Supported platforms: Meta, Google, TikTok, and Snapchat.</p><ul><li>Navigate to Settings &rarr; Integrations</li><li>Click &quot;Connect&quot; for each platform</li><li>Complete the OAuth flow</li><li>Select ad accounts to monitor</li></ul></div><div class="tutorial-step" data-step="2"><h4>Understanding the Dashboard</h4><p>The overview dashboard displays your key performance indicators at a glance.</p><ul><li><strong>Spend:</strong> Total ad spend across platforms</li><li><strong>Revenue:</strong> Attributed revenue</li><li><strong>ROAS:</strong> Return on Ad Spend</li><li><strong>Conversions:</strong> Total conversion events</li><li><strong>CPA:</strong> Cost per acquisition</li><li><strong>CTR:</strong> Click-through rate</li></ul></div><div class="tutorial-step" data-step="3"><h4>Signal Health Monitoring</h4><p>Monitor your signal health to ensure data reliability. Key metrics to watch:</p><ul><li><strong>EMQ:</strong> Target &ge; 8.0</li><li><strong>Event Loss:</strong> Target &lt; 5%</li><li><strong>Data Freshness:</strong> Target &lt; 60 minutes</li><li><strong>API Error Rate:</strong> Target &lt; 1%</li></ul></div><div class="tutorial-step" data-step="4"><h4>CDP Overview &amp; RFM Analysis</h4><p>Explore your customer data in the CDP section. The RFM analysis automatically segments your customers into 12 groups based on Recency, Frequency, and Monetary value.</p></div><div class="tutorial-step" data-step="5"><h4>Dashboard Export</h4><p>Export your dashboard data in CSV or JSON format for external analysis or reporting.</p></div><div class="tutorial-step" data-step="6"><h4>Slack Notifications</h4><p>Connect Slack to receive real-time alerts about performance changes, anomalies, and daily summaries in your team channels.</p></div></div>
+<div class="topic-block" id="tut-starter"><h3 class="topic-title">Starter Plan Tutorial (30 min)</h3><p class="topic-description">Getting started with the ADs Growth System Starter plan. This tutorial covers connecting your ad platforms, understanding the dashboard, and setting up basic monitoring.</p><div class="tutorial-step" data-step="1"><h4>Connect Ad Platforms</h4><p>Authenticate via OAuth for each platform you want to track. Supported platforms: Meta, Google, TikTok, and Snapchat.</p><ul><li>Navigate to Settings &rarr; Integrations</li><li>Click &quot;Connect&quot; for each platform</li><li>Complete the OAuth flow</li><li>Select ad accounts to monitor</li></ul></div><div class="tutorial-step" data-step="2"><h4>Understanding the Dashboard</h4><p>The overview dashboard displays your key performance indicators at a glance.</p><ul><li><strong>Spend:</strong> Total ad spend across platforms</li><li><strong>Revenue:</strong> Attributed revenue</li><li><strong>ROAS:</strong> Return on Ad Spend</li><li><strong>Conversions:</strong> Total conversion events</li><li><strong>CPA:</strong> Cost per acquisition</li><li><strong>CTR:</strong> Click-through rate</li></ul></div><div class="tutorial-step" data-step="3"><h4>Signal Health Monitoring</h4><p>Monitor your signal health to ensure data reliability. Key metrics to watch:</p><ul><li><strong>EMQ:</strong> Target &ge; 8.0</li><li><strong>Event Loss:</strong> Target &lt; 5%</li><li><strong>Data Freshness:</strong> Target &lt; 60 minutes</li><li><strong>API Error Rate:</strong> Target &lt; 1%</li></ul></div><div class="tutorial-step" data-step="4"><h4>CDP Overview &amp; RFM Analysis</h4><p>Explore your customer data in the CDP section. The RFM analysis automatically segments your customers into 12 groups based on Recency, Frequency, and Monetary value.</p></div><div class="tutorial-step" data-step="5"><h4>Dashboard Export</h4><p>Export your dashboard data in CSV or JSON format for external analysis or reporting.</p></div><div class="tutorial-step" data-step="6"><h4>Slack Notifications</h4><p>Connect Slack to receive real-time alerts about performance changes, anomalies, and daily summaries in your team channels.</p></div></div>
 
 <div class="topic-block" id="tut-professional"><h3 class="topic-title">Professional Plan Tutorial (45 min)</h3><p class="topic-description">Advanced features available on the Professional plan. This tutorial builds on the Starter foundations with funnel analysis, computed traits, and trust gate monitoring.</p><div class="tutorial-step" data-step="1"><h4>Funnel Builder</h4><p>Create custom conversion funnels to analyze user flow and identify drop-off points.</p><ul><li>Define funnel steps (e.g., Page View &rarr; Add to Cart &rarr; Purchase)</li><li>Configure time windows for step completion</li><li>Analyze drop-off rates between steps</li><li>Compare funnels across segments</li></ul></div><div class="tutorial-step" data-step="2"><h4>Computed Traits</h4><p>Set up derived customer attributes that update automatically as new events arrive.</p><ul><li><strong>Aggregation:</strong> Sum, count, average over events</li><li><strong>Most Frequent:</strong> Most common value for an attribute</li><li><strong>First/Last:</strong> First or last value seen</li><li><strong>Unique Count:</strong> Count of distinct values</li></ul></div><div class="tutorial-step" data-step="3"><h4>Trust Gate Audit Logs</h4><p>Review all trust gate decisions with full context. Each log entry shows the decision (PASS/HOLD/BLOCK), the signal health score, and the action that was evaluated.</p></div><div class="tutorial-step" data-step="4"><h4>Action Dry-Run Mode</h4><p>Test automation rules safely before enabling them. Dry-run mode simulates the action without making real changes to campaigns.</p></div><div class="tutorial-step" data-step="5"><h4>Pipedrive CRM Integration</h4><p>Connect Pipedrive for bi-directional sync of contacts, companies, and deals. Changes in either system automatically sync to the other.</p></div><div class="tutorial-step" data-step="6"><h4>Advanced CDP Segmentation</h4><p>Build complex segments using behavioral, demographic, and predictive criteria with nested conditions and time-based rules.</p></div></div>
 
@@ -763,7 +763,7 @@ cd frontend &amp;&amp; npm run build  # Production build</code></pre></div>
 </div></div>
 
 <footer style="text-align:center;padding:2rem;color:var(--color-text-dim);font-size:0.8125rem;border-top:1px solid var(--color-border)">
-<p>Stratum AI Platform Documentation &middot; Revenue Operating System with Trust-Gated Autopilot</p>
+<p>ADs Growth System Platform Documentation &middot; Revenue Operating System with Trust-Gated Autopilot</p>
 </footer>
 
 <script>

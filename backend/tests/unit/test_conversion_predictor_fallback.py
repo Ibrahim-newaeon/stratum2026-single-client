@@ -1,5 +1,5 @@
 # =============================================================================
-# Stratum AI - ConversionPredictor heuristic fallback tests (ML-001)
+# ADs Growth System - ConversionPredictor heuristic fallback tests (ML-001)
 # =============================================================================
 """
 ModelRegistry.predict raises ModelUnavailableError when the model file is

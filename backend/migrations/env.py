@@ -1,5 +1,5 @@
 # =============================================================================
-# Stratum AI - Alembic Migration Environment
+# ADs Growth System - Alembic Migration Environment
 # =============================================================================
 """
 Alembic environment configuration for database migrations.

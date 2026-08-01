@@ -1,5 +1,5 @@
 # =============================================================================
-# Stratum AI - Error Handler Middleware
+# ADs Growth System - Error Handler Middleware
 # =============================================================================
 """
 Last-resort middleware that catches any unhandled exception escaping the

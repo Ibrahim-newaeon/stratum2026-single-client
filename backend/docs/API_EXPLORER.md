@@ -1,4 +1,4 @@
-# Stratum AI — API Explorer & Integration Guide
+# ADs Growth System — API Explorer & Integration Guide
 
 **Base URL:** `https://api.stratumai.app`  
 **API Version:** v1  

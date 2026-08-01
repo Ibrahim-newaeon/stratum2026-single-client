@@ -1,5 +1,5 @@
 # =============================================================================
-# Stratum AI - Cross-Platform Optimizer unit tests
+# ADs Growth System - Cross-Platform Optimizer unit tests
 # =============================================================================
 """Unit tests for app.analytics.logic.cross_platform_optimizer.
 

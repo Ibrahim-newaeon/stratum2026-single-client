@@ -1,5 +1,5 @@
 # =============================================================================
-# Stratum AI - CAPI Data Quality Analyzer unit tests
+# ADs Growth System - CAPI Data Quality Analyzer unit tests
 # =============================================================================
 """Unit tests for app.services.capi.data_quality.
 

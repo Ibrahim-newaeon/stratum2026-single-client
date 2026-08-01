@@ -67,7 +67,7 @@ export default function Integrations() {
     <PageLayout>
       <SEO
         title="Integrations"
-        description="Connect Stratum AI with Meta, Google, TikTok, Snapchat, and 30+ marketing platforms. Unified data, one dashboard."
+        description="Connect ADs Growth System with Meta, Google, TikTok, Snapchat, and 30+ marketing platforms. Unified data, one dashboard."
         url="https://stratumai.app/integrations"
       />
 
@@ -75,7 +75,7 @@ export default function Integrations() {
         badge="Integrations"
         title="Connect your"
         highlight="entire stack"
-        subtitle="Stratum AI integrates with 30+ platforms to unify your marketing data and automate across every channel."
+        subtitle="ADs Growth System integrates with 30+ platforms to unify your marketing data and automate across every channel."
         primary={{ label: 'Start Free Trial', href: '/signup' }}
         secondary={{ label: 'Read the API docs', href: '/api-docs' }}
       />

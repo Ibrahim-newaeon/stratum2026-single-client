@@ -1,11 +1,11 @@
 ---
 name: add-platform-integration
-description: Use when adding a new ad-platform or CRM integration to Stratum AI (e.g., LinkedIn Ads, Pinterest, Salesforce). Encodes the 5-step process for wiring a new source through OAuth, signal collection, health scoring, and the integration registry. Trigger when the user says "add X integration", "wire up Y platform", or creates a new directory under `backend/app/services/`.
+description: Use when adding a new ad-platform or CRM integration to ADs Growth System (e.g., LinkedIn Ads, Pinterest, Salesforce). Encodes the 5-step process for wiring a new source through OAuth, signal collection, health scoring, and the integration registry. Trigger when the user says "add X integration", "wire up Y platform", or creates a new directory under `backend/app/services/`.
 ---
 
 # Add Platform Integration
 
-Stratum AI integrates with external platforms via a uniform contract: OAuth → Collector → Signal → Health → Registry. Skipping any step leaves the integration partially wired and breaks the Trust Engine.
+ADs Growth System integrates with external platforms via a uniform contract: OAuth → Collector → Signal → Health → Registry. Skipping any step leaves the integration partially wired and breaks the Trust Engine.
 
 ## The 5-step process
 

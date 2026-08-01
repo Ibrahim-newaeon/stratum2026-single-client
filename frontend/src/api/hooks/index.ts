@@ -1,5 +1,5 @@
 /**
- * Stratum AI - React Query Hooks
+ * ADs Growth System - React Query Hooks
  *
  * Centralized exports for all API hooks.
  */

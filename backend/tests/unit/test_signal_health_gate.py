@@ -1,5 +1,5 @@
 # =============================================================================
-# Stratum AI - Autopilot Signal-Health Gate Tests (TRUST-001)
+# ADs Growth System - Autopilot Signal-Health Gate Tests (TRUST-001)
 # =============================================================================
 """
 Tests for the execution-time signal-health gate failing CLOSED on no-data.

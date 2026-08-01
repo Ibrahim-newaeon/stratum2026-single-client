@@ -1,5 +1,5 @@
 # =============================================================================
-# Stratum AI - ML Model Explainability with SHAP
+# ADs Growth System - ML Model Explainability with SHAP
 # =============================================================================
 """
 SHAP (SHapley Additive exPlanations) integration for ML model explainability.

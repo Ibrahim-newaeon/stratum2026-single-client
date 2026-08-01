@@ -1,5 +1,5 @@
 # =============================================================================
-# Stratum AI - Autopilot API Router
+# ADs Growth System - Autopilot API Router
 # =============================================================================
 """
 API endpoints for Autopilot features:

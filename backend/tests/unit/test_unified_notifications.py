@@ -1,5 +1,5 @@
 # =============================================================================
-# Stratum AI - Unified Notifications unit tests
+# ADs Growth System - Unified Notifications unit tests
 # =============================================================================
 """Unit tests for app.analytics.logic.unified_notifications.
 

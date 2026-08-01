@@ -1,5 +1,5 @@
 # =============================================================================
-# Stratum AI - Autopilot Enforcement API Integration Tests
+# ADs Growth System - Autopilot Enforcement API Integration Tests
 # =============================================================================
 """
 Integration tests for Autopilot Enforcement API endpoints.

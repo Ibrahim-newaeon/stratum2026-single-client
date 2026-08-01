@@ -1,5 +1,5 @@
 # =============================================================================
-# Stratum AI - CMS Workflow API Integration Tests
+# ADs Growth System - CMS Workflow API Integration Tests
 # =============================================================================
 """Integration tests for the CMS 2026 workflow endpoints.
 

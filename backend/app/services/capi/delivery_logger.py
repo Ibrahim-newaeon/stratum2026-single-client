@@ -1,5 +1,5 @@
 # =============================================================================
-# Stratum AI - CAPI Delivery Log Persistence (P0 Gap Fix)
+# ADs Growth System - CAPI Delivery Log Persistence (P0 Gap Fix)
 # =============================================================================
 """
 Database-backed delivery logging for CAPI events.

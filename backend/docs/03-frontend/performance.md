@@ -2,7 +2,7 @@
 
 ## Overview
 
-Stratum AI implements various performance optimizations for fast load times and smooth interactions.
+ADs Growth System implements various performance optimizations for fast load times and smooth interactions.
 
 ---
 

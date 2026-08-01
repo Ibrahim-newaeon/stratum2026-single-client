@@ -1,5 +1,5 @@
 # =============================================================================
-# Stratum AI - Deep Endpoint Tests for Features 7-9
+# ADs Growth System - Deep Endpoint Tests for Features 7-9
 # (Analytics, OAuth & Integrations, CMS)
 # =============================================================================
 """

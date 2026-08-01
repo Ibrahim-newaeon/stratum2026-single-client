@@ -1,5 +1,5 @@
 # =============================================================================
-# Stratum AI - Snapchat Campaign Sync Service
+# ADs Growth System - Snapchat Campaign Sync Service
 # =============================================================================
 """
 Syncs campaigns and stats from Snapchat Marketing API v1.

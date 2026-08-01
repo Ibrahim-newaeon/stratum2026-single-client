@@ -1,5 +1,5 @@
 # =============================================================================
-# Stratum AI - Clients API Integration Tests
+# ADs Growth System - Clients API Integration Tests
 # =============================================================================
 """Integration tests for the client-management CRUD API.
 

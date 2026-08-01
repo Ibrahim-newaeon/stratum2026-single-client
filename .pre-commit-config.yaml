@@ -1,5 +1,5 @@
 # =============================================================================
-# Stratum AI - Pre-commit Configuration
+# ADs Growth System - Pre-commit Configuration
 # =============================================================================
 # Install: pip install pre-commit && pre-commit install
 # Run all: pre-commit run --all-files

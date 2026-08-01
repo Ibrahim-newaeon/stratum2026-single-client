@@ -1,5 +1,5 @@
 # =============================================================================
-# Stratum AI - RBAC Permissions System
+# ADs Growth System - RBAC Permissions System
 # =============================================================================
 """
 Role-Based Access Control (RBAC) implementation.

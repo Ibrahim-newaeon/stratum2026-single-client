@@ -1,5 +1,5 @@
 # =============================================================================
-# Stratum AI - Shared Constants
+# ADs Growth System - Shared Constants
 # =============================================================================
 """
 Cross-cutting constants shared between producers and consumers.

@@ -1,5 +1,5 @@
 """
-Stratum AI: Google Ads API Adapter
+ADs Growth System: Google Ads API Adapter
 ==================================
 
 This adapter provides bi-directional integration with Google's Ads API, enabling

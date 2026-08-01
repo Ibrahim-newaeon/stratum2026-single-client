@@ -1,5 +1,5 @@
 # =============================================================================
-# Stratum AI - Snapchat Audience Match Connector Deep Tests
+# ADs Growth System - Snapchat Audience Match Connector Deep Tests
 # =============================================================================
 """Deep integration tests for the Snapchat SAM (Snap Audience Match) connector.
 

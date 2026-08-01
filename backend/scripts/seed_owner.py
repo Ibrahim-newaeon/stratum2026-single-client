@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """
-Stratum AI - Owner Seed Script
+ADs Growth System - Owner Seed Script
 
 Creates the Organization singleton (id=1) and the owner user for this
 single-client deployment. STRAT-SC-001: replaces the old per-tenant
@@ -39,7 +39,7 @@ SUPERADMIN_EMAIL = os.environ.get("SUPERADMIN_EMAIL")
 SUPERADMIN_PASSWORD = os.environ.get("SUPERADMIN_PASSWORD")
 SUPERADMIN_NAME = os.environ.get("SUPERADMIN_NAME", "Platform Owner")
 # Organization identity (single-client: there is exactly one org, id=1).
-ORG_NAME = os.environ.get("SUPERADMIN_TENANT_NAME", "Stratum AI")
+ORG_NAME = os.environ.get("SUPERADMIN_TENANT_NAME", "ADs Growth System")
 ORG_SLUG = os.environ.get("SUPERADMIN_TENANT_SLUG", "stratum-ai")
 
 
@@ -188,7 +188,7 @@ async def create_owner():
 
 if __name__ == "__main__":
     print("\n" + "=" * 50)
-    print("Stratum AI - Owner Seed Script")
+    print("ADs Growth System - Owner Seed Script")
     print("=" * 50 + "\n")
 
     try:

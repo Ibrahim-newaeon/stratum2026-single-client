@@ -22,7 +22,7 @@ const content_json: CaseStudiesPageContent = {
         { metric: 'Time Saved', value: '20hrs/week' },
       ],
       quote:
-        'Stratum AI changed how we think about automation. The trust gates give us confidence to scale aggressively.',
+        'ADs Growth System changed how we think about automation. The trust gates give us confidence to scale aggressively.',
       quotee: 'Sarah Chen',
     },
     {
@@ -114,7 +114,7 @@ const entry: MarketingSeedEntry = {
   template: 'case-studies',
   meta_title: 'Case Studies — Success Stories from Industry Leaders',
   meta_description:
-    'Discover how companies across industries use Stratum AI to transform their marketing performance with trust-gated automation.',
+    'Discover how companies across industries use ADs Growth System to transform their marketing performance with trust-gated automation.',
   content_json,
 };
 

@@ -1,5 +1,5 @@
 # =============================================================================
-# Stratum AI - Actions Queue Integration Tests
+# ADs Growth System - Actions Queue Integration Tests
 # =============================================================================
 """
 Integration tests for autopilot actions queue API endpoints.

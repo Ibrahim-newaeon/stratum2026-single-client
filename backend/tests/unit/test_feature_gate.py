@@ -1,5 +1,5 @@
 # =============================================================================
-# Stratum AI - Feature Gate unit tests
+# ADs Growth System - Feature Gate unit tests
 # =============================================================================
 """
 Direct unit coverage for ``app.core.feature_gate`` (STRAT-SC-001 gap fix).

@@ -1,4 +1,4 @@
-# Stratum AI - Glossary
+# ADs Growth System - Glossary
 
 ## Core Concepts
 
@@ -137,7 +137,7 @@ LTV = Average Order Value × Purchase Frequency × Customer Lifespan
 ## Platform & Infrastructure
 
 ### Organization
-The single-org root entity (`app/base_models.py`). Stratum AI is a
+The single-org root entity (`app/base_models.py`). ADs Growth System is a
 single-client deployment: one `Organization` row holds account-wide
 settings (`feature_flags` jsonb, trust gate thresholds, autopilot
 enforcement mode). There is no per-customer isolation layer — every
@@ -194,7 +194,7 @@ Bidirectional communication protocol for real-time updates:
 Unidirectional server-to-client streaming for dashboard updates.
 
 ### OAuth
-Authentication protocol for connecting to ad platforms. Stratum AI implements OAuth flows for:
+Authentication protocol for connecting to ad platforms. ADs Growth System implements OAuth flows for:
 - Meta/Facebook
 - Google Ads
 - TikTok Ads
@@ -257,7 +257,7 @@ JSON-formatted logs with consistent fields:
 ## Data & Compliance
 
 ### GDPR
-General Data Protection Regulation (EU privacy law). Stratum AI supports:
+General Data Protection Regulation (EU privacy law). ADs Growth System supports:
 - Data export
 - Right to erasure
 - Consent management

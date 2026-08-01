@@ -1,5 +1,5 @@
 # =============================================================================
-# Stratum AI - EMQ Playbook Models
+# ADs Growth System - EMQ Playbook Models
 # =============================================================================
 """
 Persistence for EMQ fix-playbook progress.

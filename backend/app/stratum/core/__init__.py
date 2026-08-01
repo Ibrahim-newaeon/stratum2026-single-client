@@ -1,5 +1,5 @@
 # =============================================================================
-# Stratum AI - Core Trust Engine Components
+# ADs Growth System - Core Trust Engine Components
 # =============================================================================
 """
 Core components for the Trust-Gated Autopilot system.

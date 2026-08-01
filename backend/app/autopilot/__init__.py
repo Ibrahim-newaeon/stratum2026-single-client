@@ -1,5 +1,5 @@
 # =============================================================================
-# Stratum AI - Autopilot Module
+# ADs Growth System - Autopilot Module
 # =============================================================================
 """
 Autopilot system for automated campaign optimization.

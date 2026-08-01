@@ -1,5 +1,5 @@
 # =============================================================================
-# Stratum AI - Rules Engine (pure logic) Unit Tests
+# ADs Growth System - Rules Engine (pure logic) Unit Tests
 # =============================================================================
 """Unit tests for the I/O-free logic of ``app.services.rules_engine``.
 

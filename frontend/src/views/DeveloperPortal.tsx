@@ -1,5 +1,5 @@
 // =============================================================================
-// Stratum AI — Developer Portal (Gap #8)
+// ADs Growth System — Developer Portal (Gap #8)
 // =============================================================================
 
 import { useState } from 'react';

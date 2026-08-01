@@ -135,7 +135,7 @@ export default function TrustEngine() {
               }}
             >
               <ShieldCheckIcon className="w-4 h-4" style={{ color: 'hsl(var(--success))' }} />
-              <span className="text-sm font-medium" style={{ color: 'hsl(var(--success))' }}>Unique to Stratum AI</span>
+              <span className="text-sm font-medium" style={{ color: 'hsl(var(--success))' }}>Unique to ADs Growth System</span>
             </div>
           </div>
 

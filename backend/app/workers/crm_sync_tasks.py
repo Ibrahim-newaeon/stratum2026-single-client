@@ -1,5 +1,5 @@
 # =============================================================================
-# Stratum AI - CRM Sync Celery Tasks
+# ADs Growth System - CRM Sync Celery Tasks
 # =============================================================================
 """
 Background tasks for CRM data synchronization.

@@ -1,4 +1,4 @@
-# Stratum AI Documentation Plan - Memo
+# ADs Growth System Documentation Plan - Memo
 
 **Saved**: 2026-01-25
 **Status**: Ready for Implementation
@@ -7,7 +7,7 @@
 
 ## Overview
 
-Create comprehensive documentation for the Stratum AI platform following the structure:
+Create comprehensive documentation for the ADs Growth System platform following the structure:
 - `/docs/00-overview` - Vision, glossary, architecture, decisions
 - `/docs/01-setup` - Local setup, environment variables, scripts
 - `/docs/02-backend` - Backend overview, API reference, database, auth, jobs

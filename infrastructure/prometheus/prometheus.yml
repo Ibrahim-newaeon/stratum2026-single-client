@@ -1,5 +1,5 @@
 # =============================================================================
-# Stratum AI - Prometheus Configuration
+# ADs Growth System - Prometheus Configuration
 # =============================================================================
 global:
   scrape_interval: 15s

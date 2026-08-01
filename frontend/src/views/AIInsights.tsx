@@ -1,5 +1,5 @@
 // =============================================================================
-// Stratum AI — AI Insights Dashboard (Gap #3)
+// ADs Growth System — AI Insights Dashboard (Gap #3)
 // =============================================================================
 
 import { useState } from 'react';

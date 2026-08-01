@@ -1,5 +1,5 @@
 # =============================================================================
-# Stratum AI - Creative Lifecycle & Fatigue Prediction unit tests
+# ADs Growth System - Creative Lifecycle & Fatigue Prediction unit tests
 # =============================================================================
 """Unit tests for app.ml.creative_lifecycle.
 

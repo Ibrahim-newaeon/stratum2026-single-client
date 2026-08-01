@@ -1,5 +1,5 @@
 # =============================================================================
-# Stratum AI - Autopilot Service
+# ADs Growth System - Autopilot Service
 # =============================================================================
 """
 Service for managing autopilot actions and execution.

@@ -1,9 +1,9 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 720 200" width="360" height="100" role="img" aria-labelledby="logo2-title">
-  <title id="logo2-title">Stratum AI — Option 2: Cyber Performance</title>
+  <title id="logo2-title">ADs Growth System — Option 2: Cyber Performance</title>
   <defs>
     <!-- Pink to Orange gradient -->
     <linearGradient id="cyber-grad" x1="0%" y1="0%" x2="100%" y2="0%">
-      <stop offset="0%" stop-color="#FF1F6D"/>
+      <stop offset="0%" stop-color="#3B82F6"/>
       <stop offset="50%" stop-color="#FF5E3A"/>
       <stop offset="100%" stop-color="#FF8C00"/>
     </linearGradient>
@@ -21,16 +21,16 @@
     <!-- Bar 2 (middle) -->
     <path d="M38,111 L148,111 L160,89 L50,89Z" fill="#1a2540"/>
     <!-- Bar 3 ambient glow -->
-    <path d="M55,74 L138,74 L150,52 L67,52Z" fill="#FF1F6D" opacity="0.08" filter="url(#cyan-glow)"/>
+    <path d="M55,74 L138,74 L150,52 L67,52Z" fill="#3B82F6" opacity="0.08" filter="url(#cyan-glow)"/>
     <!-- Bar 3 (top, narrowest, brightest) -->
     <path d="M55,74 L138,74 L150,52 L67,52Z" fill="url(#cyber-grad)"/>
     <!-- Edge highlights -->
-    <line x1="67" y1="52" x2="150" y2="52" stroke="#00F5FF" stroke-width="0.6" opacity="0.5"/>
-    <line x1="55" y1="74" x2="67" y2="52" stroke="#FF1F6D" stroke-width="0.4" opacity="0.3"/>
+    <line x1="67" y1="52" x2="150" y2="52" stroke="#06B6D4" stroke-width="0.6" opacity="0.5"/>
+    <line x1="55" y1="74" x2="67" y2="52" stroke="#3B82F6" stroke-width="0.4" opacity="0.3"/>
     <!-- Energy dots -->
-    <circle cx="105" cy="100" r="1.5" fill="#00F5FF" opacity="0.4"/>
-    <circle cx="80" cy="100" r="0.8" fill="#00F5FF" opacity="0.2"/>
-    <circle cx="130" cy="100" r="0.8" fill="#00F5FF" opacity="0.2"/>
+    <circle cx="105" cy="100" r="1.5" fill="#06B6D4" opacity="0.4"/>
+    <circle cx="80" cy="100" r="0.8" fill="#06B6D4" opacity="0.2"/>
+    <circle cx="130" cy="100" r="0.8" fill="#06B6D4" opacity="0.2"/>
     <circle cx="97" cy="82" r="1.2" fill="#FF5E3A" opacity="0.5"/>
   </g>
 

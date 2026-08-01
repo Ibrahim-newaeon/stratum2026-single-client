@@ -1,5 +1,5 @@
 # =============================================================================
-# Stratum AI - CAPI Dead Letter Queue Deep Integration Tests (#342 Batch 5)
+# ADs Growth System - CAPI Dead Letter Queue Deep Integration Tests (#342 Batch 5)
 # =============================================================================
 """Deep integration tests for ``app.services.capi.dead_letter_queue``.
 

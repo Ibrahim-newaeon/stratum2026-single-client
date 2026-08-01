@@ -181,7 +181,7 @@ class SlackNotificationService:
                 "elements": [
                     {
                         "type": "mrkdwn",
-                        "text": f"🕐 {timestamp} | Stratum AI Trust Engine",
+                        "text": f"🕐 {timestamp} | ADs Growth System Trust Engine",
                     }
                 ],
             },
@@ -325,7 +325,7 @@ class SlackNotificationService:
                 "elements": [
                     {
                         "type": "mrkdwn",
-                        "text": f"🕐 {timestamp} | Stratum AI Anomaly Detection",
+                        "text": f"🕐 {timestamp} | ADs Growth System Anomaly Detection",
                     }
                 ],
             },
@@ -409,7 +409,7 @@ class SlackNotificationService:
                 "elements": [
                     {
                         "type": "mrkdwn",
-                        "text": "📈 Stratum AI - Trust-Gated Revenue Operations",
+                        "text": "📈 ADs Growth System - Trust-Gated Revenue Operations",
                     }
                 ],
             },
@@ -435,7 +435,7 @@ class SlackNotificationService:
                 "type": "section",
                 "text": {
                     "type": "mrkdwn",
-                    "text": "✅ *Stratum AI Connected!*\n\nYour Slack integration is working. You'll receive Trust Gate alerts and reports in this channel.",
+                    "text": "✅ *ADs Growth System Connected!*\n\nYour Slack integration is working. You'll receive Trust Gate alerts and reports in this channel.",
                 },
             },
             {
@@ -450,7 +450,7 @@ class SlackNotificationService:
         ]
 
         return await self.send_message(
-            text="Stratum AI Slack Integration Test",
+            text="ADs Growth System Slack Integration Test",
             blocks=blocks,
             webhook_url=webhook_url,
         )

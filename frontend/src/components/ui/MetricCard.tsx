@@ -1,7 +1,7 @@
 /**
  * Metric Card Component
  * Colored shiny cards with status-based styling
- * Part of Stratum AI Dashboard Enhancement
+ * Part of ADs Growth System Dashboard Enhancement
  */
 
 import { memo, ReactNode } from 'react';

@@ -1,5 +1,5 @@
 # =============================================================================
-# Stratum AI - Audience Auto-Sync Task
+# ADs Growth System - Audience Auto-Sync Task
 # =============================================================================
 """
 Celery task executing scheduled audience syncs.

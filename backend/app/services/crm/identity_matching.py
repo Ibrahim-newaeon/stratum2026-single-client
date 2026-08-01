@@ -1,5 +1,5 @@
 # =============================================================================
-# Stratum AI - Identity Matching Service
+# ADs Growth System - Identity Matching Service
 # =============================================================================
 """
 Identity matching for attribution across CRM contacts and ad touchpoints.

@@ -1,5 +1,5 @@
 # =============================================================================
-# Stratum AI - ML Model Integrity (ML-002)
+# ADs Growth System - ML Model Integrity (ML-002)
 # =============================================================================
 """
 Checksum-based integrity verification for model .pkl files.

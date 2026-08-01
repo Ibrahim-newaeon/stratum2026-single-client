@@ -1,5 +1,5 @@
 # =============================================================================
-# Stratum AI - Google Ads OAuth Service
+# ADs Growth System - Google Ads OAuth Service
 # =============================================================================
 """
 OAuth implementation for Google Ads API.

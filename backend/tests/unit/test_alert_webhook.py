@@ -1,5 +1,5 @@
 # =============================================================================
-# Stratum AI - P0 alert webhook tests (MON-002)
+# ADs Growth System - P0 alert webhook tests (MON-002)
 # =============================================================================
 """
 Critical pipeline-health failures must escalate to the configured on-call

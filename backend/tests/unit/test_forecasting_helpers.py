@@ -1,5 +1,5 @@
 # =============================================================================
-# Stratum AI - Pacing Forecasting Helpers Unit Tests
+# ADs Growth System - Pacing Forecasting Helpers Unit Tests
 # =============================================================================
 """Unit tests for the pure helpers of ``ForecastingService`` in
 app.services.pacing.forecasting: EWMA and end-of-month math. The

@@ -1,5 +1,5 @@
 # =============================================================================
-# Stratum AI - Report Generator Deep Integration Tests (#342 Batch 4)
+# ADs Growth System - Report Generator Deep Integration Tests (#342 Batch 4)
 # =============================================================================
 """Deep integration coverage for ``app.services.reporting.report_generator``.
 

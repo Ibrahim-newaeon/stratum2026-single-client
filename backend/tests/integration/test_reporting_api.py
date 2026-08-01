@@ -1,5 +1,5 @@
 # =============================================================================
-# Stratum AI - Reporting Endpoint Integration Tests
+# ADs Growth System - Reporting Endpoint Integration Tests
 # =============================================================================
 """Integration tests for the reporting surface under ``/api/v1/reporting/...``:
 report-template CRUD and scheduled-report CRUD + lifecycle (pause/resume).

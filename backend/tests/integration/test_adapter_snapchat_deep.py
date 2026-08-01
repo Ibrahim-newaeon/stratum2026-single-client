@@ -1,5 +1,5 @@
 # =============================================================================
-# Stratum AI - Snapchat Adapter Deep Integration Tests
+# ADs Growth System - Snapchat Adapter Deep Integration Tests
 # =============================================================================
 """Deep coverage tests for ``app.stratum.adapters.snapchat_adapter``.
 

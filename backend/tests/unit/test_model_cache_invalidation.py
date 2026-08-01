@@ -1,5 +1,5 @@
 # =============================================================================
-# Stratum AI - Model cache invalidation tests (ML-005)
+# ADs Growth System - Model cache invalidation tests (ML-005)
 # =============================================================================
 """
 ModelRegistry is a process-wide singleton, so a model cached in memory was

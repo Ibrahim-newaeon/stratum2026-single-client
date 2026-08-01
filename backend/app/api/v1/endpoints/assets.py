@@ -1,5 +1,5 @@
 # =============================================================================
-# Stratum AI - Digital Asset Management Endpoints
+# ADs Growth System - Digital Asset Management Endpoints
 # =============================================================================
 """
 Creative asset management for DAM functionality.

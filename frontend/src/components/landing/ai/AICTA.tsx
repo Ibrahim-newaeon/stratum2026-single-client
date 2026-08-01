@@ -90,7 +90,7 @@ export default function AICTA() {
           transition={{ delay: 0.2, duration: 0.6 }}
           className="text-lg max-w-2xl mx-auto mb-10 text-center text-foreground/50"
         >
-          Join 500+ revenue teams using Stratum AI to predict outcomes, automate safely, and scale
+          Join 500+ revenue teams using ADs Growth System to predict outcomes, automate safely, and scale
           with confidence.
         </motion.p>
 

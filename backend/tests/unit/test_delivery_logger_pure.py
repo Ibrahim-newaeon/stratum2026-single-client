@@ -1,5 +1,5 @@
 # =============================================================================
-# Stratum AI - CAPI DeliveryLogger Pure-Logic Unit Tests
+# ADs Growth System - CAPI DeliveryLogger Pure-Logic Unit Tests
 # =============================================================================
 """
 Unit tests for the DB-free logic in ``app.services.capi.delivery_logger``:

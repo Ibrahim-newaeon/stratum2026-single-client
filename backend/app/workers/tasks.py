@@ -1,5 +1,5 @@
 # =============================================================================
-# Stratum AI - Celery Tasks (Legacy Compatibility Shim)
+# ADs Growth System - Celery Tasks (Legacy Compatibility Shim)
 # =============================================================================
 """
 Legacy compatibility layer for Celery task imports.

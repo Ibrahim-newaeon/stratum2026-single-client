@@ -1,5 +1,5 @@
 # =============================================================================
-# Stratum AI - OAuth Credential Injection Tests
+# ADs Growth System - OAuth Credential Injection Tests
 # =============================================================================
 """Factory injects resolved credentials; authorize returns typed 400."""
 

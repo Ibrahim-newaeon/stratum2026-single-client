@@ -1,5 +1,5 @@
 /**
- * Stratum AI - Newsletter / Email Campaign API
+ * ADs Growth System - Newsletter / Email Campaign API
  *
  * React Query hooks for campaign management, templates,
  * subscriber management, and analytics.

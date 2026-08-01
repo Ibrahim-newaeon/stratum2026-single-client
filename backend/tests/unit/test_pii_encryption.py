@@ -1,5 +1,5 @@
 # =============================================================================
-# Stratum AI - PII Encryption Unit Tests [STRAT-SC-001]
+# ADs Growth System - PII Encryption Unit Tests [STRAT-SC-001]
 # =============================================================================
 """
 Covers the single-key PII encryption primitives in ``app.core.security``.

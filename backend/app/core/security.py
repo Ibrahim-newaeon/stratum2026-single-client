@@ -1,5 +1,5 @@
 # =============================================================================
-# Stratum AI - Security Module
+# ADs Growth System - Security Module
 # =============================================================================
 """
 Security utilities including JWT handling, password hashing, and PII encryption.

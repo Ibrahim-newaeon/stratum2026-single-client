@@ -1,5 +1,5 @@
 # =============================================================================
-# Stratum AI - Autopilot Rule Engine unit tests
+# ADs Growth System - Autopilot Rule Engine unit tests
 # =============================================================================
 """Unit tests for app.stratum.core.autopilot.
 

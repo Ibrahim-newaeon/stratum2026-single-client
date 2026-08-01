@@ -1,5 +1,5 @@
 # =============================================================================
-# Stratum AI - Webhooks Module
+# ADs Growth System - Webhooks Module
 # =============================================================================
 """
 FastAPI-based webhook server that receives real-time updates from all platforms.
@@ -118,7 +118,7 @@ config = WebhookConfig()
 # =============================================================================
 
 app = FastAPI(
-    title="Stratum AI Webhook Server",
+    title="ADs Growth System Webhook Server",
     description="Receives real-time updates from advertising platforms",
     version="1.0.0",
 )

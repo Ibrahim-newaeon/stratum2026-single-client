@@ -2,7 +2,7 @@
 
 ## Overview
 
-The Onboarding Wizard guides new tenants through initial configuration of the Stratum AI platform. It collects business profile information, platform connections, goals, automation preferences, and trust gate settings.
+The Onboarding Wizard guides new tenants through initial configuration of the ADs Growth System platform. It collects business profile information, platform connections, goals, automation preferences, and trust gate settings.
 
 ---
 

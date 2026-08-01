@@ -1,4 +1,4 @@
-# Stratum AI — Feature Reference
+# ADs Growth System — Feature Reference
 
 > **Complete technical reference for all 14 platform features.**  
 > For user-facing guides, see `docs/04-features/{feature}/user-flows.md`.  

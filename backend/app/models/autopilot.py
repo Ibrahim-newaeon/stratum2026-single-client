@@ -1,5 +1,5 @@
 # =============================================================================
-# Stratum AI - Autopilot Database Models
+# ADs Growth System - Autopilot Database Models
 # =============================================================================
 """
 Database models for Autopilot Enforcement settings and audit logging.

@@ -1,5 +1,5 @@
 /**
- * Stratum AI - Dead Letter Queue Page
+ * ADs Growth System - Dead Letter Queue Page
  *
  * Dedicated view for managing CAPI failed events with retry capabilities.
  */

@@ -1,5 +1,5 @@
 # =============================================================================
-# Stratum AI - PII Hasher
+# ADs Growth System - PII Hasher
 # =============================================================================
 """
 Automatic PII detection and SHA256 hashing for Conversion APIs.

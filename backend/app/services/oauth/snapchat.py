@@ -1,5 +1,5 @@
 # =============================================================================
-# Stratum AI - Snapchat Ads OAuth Service
+# ADs Growth System - Snapchat Ads OAuth Service
 # =============================================================================
 """
 OAuth implementation for Snapchat Marketing API.

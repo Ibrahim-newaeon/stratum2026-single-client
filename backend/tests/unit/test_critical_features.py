@@ -1,5 +1,5 @@
 # =============================================================================
-# Stratum AI - Critical Features Unit Tests
+# ADs Growth System - Critical Features Unit Tests
 # =============================================================================
 """
 Unit tests for critical audit items:

@@ -1,5 +1,5 @@
 # =============================================================================
-# Stratum AI - High Priority Features Tests
+# ADs Growth System - High Priority Features Tests
 # =============================================================================
 """
 Tests for high priority features:

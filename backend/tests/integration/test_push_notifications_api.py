@@ -1,5 +1,5 @@
 # =============================================================================
-# Stratum AI - Push Notifications API Integration Tests
+# ADs Growth System - Push Notifications API Integration Tests
 # =============================================================================
 """Integration tests for the web-push notifications API.
 

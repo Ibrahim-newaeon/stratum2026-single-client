@@ -1,5 +1,5 @@
 # =============================================================================
-# Stratum AI - Knowledge Graph Shelving Tests
+# ADs Growth System - Knowledge Graph Shelving Tests
 # =============================================================================
 """
 Tests for shelving the Knowledge Graph behind a feature flag (P1-6).

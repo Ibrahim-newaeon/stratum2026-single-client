@@ -1,5 +1,5 @@
 # =============================================================================
-# Stratum AI - Deep Endpoint Tests for Features 1-3
+# ADs Growth System - Deep Endpoint Tests for Features 1-3
 # =============================================================================
 """
 Deep endpoint tests exercising the FULL request/response cycle via

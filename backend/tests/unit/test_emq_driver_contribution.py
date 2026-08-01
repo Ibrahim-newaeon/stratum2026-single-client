@@ -1,5 +1,5 @@
 # =============================================================================
-# Stratum AI - EMQ driver contribution tests (TRUST-005)
+# ADs Growth System - EMQ driver contribution tests (TRUST-005)
 # =============================================================================
 """
 Each EMQ driver exposes its contribution (value * weight) — the points it adds

@@ -1,5 +1,5 @@
 # =============================================================================
-# Stratum AI - EMQ Mode Gating Tests
+# ADs Growth System - EMQ Mode Gating Tests
 # =============================================================================
 """
 Unit tests for EMQ mode gating rules (autopilot mode restrictions based on

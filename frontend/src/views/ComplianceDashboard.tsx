@@ -1,5 +1,5 @@
 // =============================================================================
-// Stratum AI — Compliance Dashboard (Gap #5)
+// ADs Growth System — Compliance Dashboard (Gap #5)
 // =============================================================================
 
 import { useState } from 'react';

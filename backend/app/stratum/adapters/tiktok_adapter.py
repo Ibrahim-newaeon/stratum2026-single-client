@@ -1,5 +1,5 @@
 """
-Stratum AI: TikTok Business API Adapter
+ADs Growth System: TikTok Business API Adapter
 =======================================
 
 This adapter provides bi-directional integration with TikTok's Business API (also known

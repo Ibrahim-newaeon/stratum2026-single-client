@@ -1,5 +1,5 @@
 # =============================================================================
-# Stratum AI - Analytics Module
+# ADs Growth System - Analytics Module
 # =============================================================================
 """
 AI-powered analytics engine for campaign optimization.

@@ -1,5 +1,5 @@
 # =============================================================================
-# Stratum AI - Data-Driven Attribution Endpoint Integration Tests
+# ADs Growth System - Data-Driven Attribution Endpoint Integration Tests
 # =============================================================================
 """Integration tests for the data-driven attribution surface under
 ``/api/v1/attribution/data-driven/...``: model-type catalog, training-data

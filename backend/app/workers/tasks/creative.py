@@ -1,5 +1,5 @@
 # =============================================================================
-# Stratum AI - Creative Fatigue Tasks
+# ADs Growth System - Creative Fatigue Tasks
 # =============================================================================
 """
 Background tasks for creative fatigue analysis and alerting.

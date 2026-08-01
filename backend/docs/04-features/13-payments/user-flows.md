@@ -346,7 +346,7 @@ Step-by-step user journeys for subscription management and billing.
 │  Hi John,                                                   │
 │                                                             │
 │  We were unable to process your payment of $299.00 for     │
-│  your Stratum AI Growth subscription.                       │
+│  your ADs Growth System Growth subscription.                       │
 │                                                             │
 │  Reason: Card declined (insufficient funds)                 │
 │                                                             │
@@ -358,7 +358,7 @@ Step-by-step user journeys for subscription management and billing.
 │  If you have any questions, our support team is here       │
 │  to help.                                                   │
 │                                                             │
-│  - The Stratum AI Team                                      │
+│  - The ADs Growth System Team                                      │
 │                                                             │
 └─────────────────────────────────────────────────────────────┘
 ```

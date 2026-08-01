@@ -1,5 +1,5 @@
 /**
- * Stratum AI - Webhooks API
+ * ADs Growth System - Webhooks API
  *
  * Webhook management and delivery logs.
  */

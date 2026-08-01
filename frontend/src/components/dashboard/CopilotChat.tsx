@@ -181,7 +181,7 @@ export function CopilotChat() {
           id: 'welcome',
           role: 'assistant',
           content:
-            "Hi! I'm your Stratum AI Copilot. I can help you understand your campaigns, signal health, anomalies, and more. What would you like to know?",
+            "Hi! I'm your ADs Growth System Copilot. I can help you understand your campaigns, signal health, anomalies, and more. What would you like to know?",
           timestamp: new Date().toISOString(),
           suggestions: [
             'How are my campaigns doing?',

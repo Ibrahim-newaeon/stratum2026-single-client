@@ -1,5 +1,5 @@
 /**
- * Stratum AI - Console (Owner) Analytics API Hooks
+ * ADs Growth System - Console (Owner) Analytics API Hooks
  *
  * React Query hooks for platform-owner console analytics:
  * - Platform overview

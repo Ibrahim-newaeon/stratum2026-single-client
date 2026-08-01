@@ -1,5 +1,5 @@
 # =============================================================================
-# Stratum AI - Churn Prevention unit tests
+# ADs Growth System - Churn Prevention unit tests
 # =============================================================================
 """Unit tests for app.analytics.logic.churn_prevention.
 

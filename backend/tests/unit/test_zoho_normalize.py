@@ -1,5 +1,5 @@
 # =============================================================================
-# Stratum AI - Zoho CRM Normalization Unit Tests
+# ADs Growth System - Zoho CRM Normalization Unit Tests
 # =============================================================================
 """Unit tests for the pure module-level helpers in
 ``app.services.crm.zoho_client``:

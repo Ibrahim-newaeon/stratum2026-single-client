@@ -1,5 +1,5 @@
 /**
- * Stratum AI - Profit ROAS API
+ * ADs Growth System - Profit ROAS API
  *
  * Handles products, COGS, margins, and profit calculations.
  */

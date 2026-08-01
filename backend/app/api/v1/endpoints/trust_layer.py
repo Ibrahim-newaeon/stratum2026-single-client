@@ -1,5 +1,5 @@
 # =============================================================================
-# Stratum AI - Trust Layer API Router
+# ADs Growth System - Trust Layer API Router
 # =============================================================================
 """
 API endpoints for Trust Layer features:

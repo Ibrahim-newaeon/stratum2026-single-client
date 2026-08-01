@@ -1,5 +1,5 @@
 # =============================================================================
-# Stratum AI - Onboarding Models
+# ADs Growth System - Onboarding Models
 # =============================================================================
 """
 Database models for the onboarding flow.

@@ -1,5 +1,5 @@
 # =============================================================================
-# Stratum AI - Analytics & Dashboard Endpoints
+# ADs Growth System - Analytics & Dashboard Endpoints
 # =============================================================================
 """
 Analytics endpoints for dashboard data and KPI calculations.

@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """
-Stratum AI - Multiple Load Test Users Seed Script
+ADs Growth System - Multiple Load Test Users Seed Script
 
 Creates multiple test users for k6 load testing to avoid rate limiting.
 Each user has their own rate limit bucket (100 req/min).
@@ -48,7 +48,7 @@ async def seed_load_test_users(count: int = 25):
     async_session = sessionmaker(engine, class_=AsyncSession, expire_on_commit=False)
 
     print("=" * 60)
-    print("  Stratum AI - Multiple Load Test Users Setup")
+    print("  ADs Growth System - Multiple Load Test Users Setup")
     print("=" * 60)
     print(f"\n  Creating {count} load test users...")
 

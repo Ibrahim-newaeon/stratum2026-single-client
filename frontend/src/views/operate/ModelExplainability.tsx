@@ -1,5 +1,5 @@
 /**
- * Stratum AI - Model Explainability Page
+ * ADs Growth System - Model Explainability Page
  *
  * SHAP/LIME-based model explanations for ML predictions.
  */

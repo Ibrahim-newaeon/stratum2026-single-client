@@ -1,5 +1,5 @@
 # =============================================================================
-# Stratum AI - Deep Unit Test Fixtures
+# ADs Growth System - Deep Unit Test Fixtures
 # =============================================================================
 """
 Fixtures for deep endpoint testing without a real database.
@@ -79,7 +79,7 @@ async def test_app():
     from app.core.config import settings
     from app.middleware.auth_context import AuthContextMiddleware
 
-    application = FastAPI(title="Stratum AI (deep-test)")
+    application = FastAPI(title="ADs Growth System (deep-test)")
     application.add_middleware(AuthContextMiddleware)
     application.include_router(api_router, prefix=settings.api_v1_prefix)
 

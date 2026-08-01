@@ -1,5 +1,5 @@
 # =============================================================================
-# Stratum AI - Push Notifications Persistence Integration Tests
+# ADs Growth System - Push Notifications Persistence Integration Tests
 # =============================================================================
 """Integration tests for the DB-backed push-notification behavior.
 

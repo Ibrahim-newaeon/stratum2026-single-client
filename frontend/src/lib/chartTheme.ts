@@ -2,7 +2,7 @@ import type { TooltipProps } from 'recharts'
 
 /**
  * Centralized Chart Theme Configuration
- * Analytics Design System + Stratum AI Brand
+ * Analytics Design System + ADs Growth System Brand
  *
  * Colors reference CSS custom properties so charts adapt to light/dark mode.
  * Platform colors are brand identities and remain static.

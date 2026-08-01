@@ -1,5 +1,5 @@
 # =============================================================================
-# Stratum AI - Task Helpers
+# ADs Growth System - Task Helpers
 # =============================================================================
 """
 Shared helper functions for Celery tasks.

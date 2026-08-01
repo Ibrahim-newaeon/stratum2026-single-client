@@ -1,5 +1,5 @@
 # =============================================================================
-# Stratum AI - OAuth App Credential Resolution
+# ADs Growth System - OAuth App Credential Resolution
 # =============================================================================
 """
 Resolve per-platform OAuth *application* credentials.

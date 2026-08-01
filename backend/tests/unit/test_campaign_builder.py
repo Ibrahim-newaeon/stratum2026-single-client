@@ -1,5 +1,5 @@
 # =============================================================================
-# Stratum AI - Campaign Builder Unit Tests
+# ADs Growth System - Campaign Builder Unit Tests
 # =============================================================================
 """
 Comprehensive unit tests for the Campaign Builder feature.

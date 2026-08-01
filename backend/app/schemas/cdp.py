@@ -1,5 +1,5 @@
 # =============================================================================
-# Stratum AI - CDP Pydantic Schemas
+# ADs Growth System - CDP Pydantic Schemas
 # =============================================================================
 """
 Pydantic schemas for CDP API request/response validation.

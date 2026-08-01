@@ -2,7 +2,7 @@
 
 ## Overview
 
-The Content Management System (CMS) enables managing blog posts, static pages, authors, categories, tags, and contact form submissions for the Stratum AI platform. All CMS content is global (platform-level, not tenant-scoped) and managed by superadmins.
+The Content Management System (CMS) enables managing blog posts, static pages, authors, categories, tags, and contact form submissions for the ADs Growth System platform. All CMS content is global (platform-level, not tenant-scoped) and managed by superadmins.
 
 ---
 

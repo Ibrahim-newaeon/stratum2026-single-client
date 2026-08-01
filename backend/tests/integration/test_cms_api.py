@@ -1,5 +1,5 @@
 # =============================================================================
-# Stratum AI - CMS Admin API Integration Tests
+# ADs Growth System - CMS Admin API Integration Tests
 # =============================================================================
 """Integration tests for the CMS admin API.
 

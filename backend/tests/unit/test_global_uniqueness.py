@@ -1,5 +1,5 @@
 # =============================================================================
-# Stratum AI - Global Uniqueness Tests [STRAT-SC-001 / Task C1]
+# ADs Growth System - Global Uniqueness Tests [STRAT-SC-001 / Task C1]
 # =============================================================================
 """
 One positive+negative pair per §4.9 constraint conversion.

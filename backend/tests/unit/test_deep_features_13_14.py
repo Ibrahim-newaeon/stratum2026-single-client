@@ -1,5 +1,5 @@
 # =============================================================================
-# Stratum AI - Deep Endpoint Tests: Features 13 & 14
+# ADs Growth System - Deep Endpoint Tests: Features 13 & 14
 # =============================================================================
 """
 Deep endpoint tests for:

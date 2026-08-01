@@ -1,5 +1,5 @@
 # =============================================================================
-# Stratum AI - Multi-Touch Attribution Service
+# ADs Growth System - Multi-Touch Attribution Service
 # =============================================================================
 """
 Multi-Touch Attribution (MTA) calculations and reporting.

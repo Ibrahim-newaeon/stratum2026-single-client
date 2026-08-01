@@ -1,5 +1,5 @@
 # =============================================================================
-# Stratum AI - Salesforce API Client
+# ADs Growth System - Salesforce API Client
 # =============================================================================
 """
 Salesforce REST API client with OAuth 2.0 authentication.

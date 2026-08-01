@@ -40,7 +40,7 @@ const content_json: ComparisonPageContent = {
       category: 'Trust Engine',
       stratum: 'yes',
       competitors: { segment: 'no', braze: 'no', mparticle: 'no', amplitude: 'no' },
-      tooltip: 'Unique to Stratum AI',
+      tooltip: 'Unique to ADs Growth System',
     },
     {
       feature: 'Signal Health Monitoring',
@@ -169,9 +169,9 @@ const entry: MarketingSeedEntry = {
   slug: 'compare',
   title: 'Compare',
   template: 'comparison',
-  meta_title: 'Compare — How Stratum AI Compares',
+  meta_title: 'Compare — How ADs Growth System Compares',
   meta_description:
-    'See how Stratum AI stacks up against other marketing platforms. Trust-gated automation is our unique differentiator.',
+    'See how ADs Growth System stacks up against other marketing platforms. Trust-gated automation is our unique differentiator.',
   content_json,
 };
 

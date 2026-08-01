@@ -1,5 +1,5 @@
 # =============================================================================
-# Stratum AI - Live Predictions API
+# ADs Growth System - Live Predictions API
 # =============================================================================
 """
 API endpoints for live predictions, ROAS optimization, and alerts.

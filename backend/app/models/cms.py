@@ -1,5 +1,5 @@
 # =============================================================================
-# Stratum AI - CMS (Content Management System) Database Models
+# ADs Growth System - CMS (Content Management System) Database Models
 # =============================================================================
 """
 Database models for the Stratum CMS module.

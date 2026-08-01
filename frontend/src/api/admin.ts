@@ -1,5 +1,5 @@
 /**
- * Stratum AI - Admin API
+ * ADs Growth System - Admin API
  *
  * User and tenant management endpoints (Super Admin)
  */

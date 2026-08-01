@@ -1,5 +1,5 @@
 /**
- * Stratum AI - Newsletter Campaign Editor
+ * ADs Growth System - Newsletter Campaign Editor
  *
  * Create / Edit page for newsletter campaigns.
  * Two-column layout: campaign details + rich text editor on the left,
@@ -456,7 +456,7 @@ export default function NewsletterCampaignEditor() {
                   type="text"
                   value={fromName}
                   onChange={(e) => setFromName(e.target.value)}
-                  placeholder="Stratum AI"
+                  placeholder="ADs Growth System"
                   className={INPUT_CLASS}
                 />
               </div>

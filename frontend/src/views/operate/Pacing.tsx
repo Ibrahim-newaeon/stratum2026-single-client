@@ -1,5 +1,5 @@
 /**
- * Stratum AI - Pacing & Forecasting Page
+ * ADs Growth System - Pacing & Forecasting Page
  *
  * Manages targets, pacing status, forecasts, and alerts.
  */

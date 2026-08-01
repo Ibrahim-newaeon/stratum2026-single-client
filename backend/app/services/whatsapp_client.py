@@ -1,5 +1,5 @@
 # =============================================================================
-# Stratum AI - WhatsApp Business API Client
+# ADs Growth System - WhatsApp Business API Client
 # =============================================================================
 """
 WhatsApp Business API client for sending messages, managing templates,

@@ -1,5 +1,5 @@
 # =============================================================================
-# Stratum AI - Meta CAPI Endpoint Integration Tests
+# ADs Growth System - Meta CAPI Endpoint Integration Tests
 # =============================================================================
 """Integration tests for the Meta Conversions API surface under
 ``/api/v1/meta-capi/...``: health, event-payload validation (no external send),

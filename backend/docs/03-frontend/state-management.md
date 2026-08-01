@@ -2,7 +2,7 @@
 
 ## Overview
 
-Stratum AI uses a hybrid state management approach:
+ADs Growth System uses a hybrid state management approach:
 
 | Type | Technology | Use Case |
 |------|------------|----------|

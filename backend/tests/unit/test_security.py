@@ -1,5 +1,5 @@
 # =============================================================================
-# Stratum AI - Security Module Test Suite
+# ADs Growth System - Security Module Test Suite
 # =============================================================================
 """
 Security-focused tests verifying:

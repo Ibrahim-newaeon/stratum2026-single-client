@@ -1,5 +1,5 @@
 # =============================================================================
-# Stratum AI - Embed Security Service
+# ADs Growth System - Embed Security Service
 # =============================================================================
 """
 Security utilities for embed widgets.

@@ -1,5 +1,5 @@
 # =============================================================================
-# Stratum AI - AI Intelligence Endpoint Integration Tests
+# ADs Growth System - AI Intelligence Endpoint Integration Tests
 # =============================================================================
 """Integration tests for the AI-intelligence surface under
 ``/api/v1/analytics/insights/...``: natural-language query (NLQ),

@@ -1,5 +1,5 @@
 # =============================================================================
-# Stratum AI - Report Date-Range Parsing Unit Tests
+# ADs Growth System - Report Date-Range Parsing Unit Tests
 # =============================================================================
 """Unit tests for ``ReportGenerator.parse_date_range`` in
 ``app.services.reporting.report_generator`` — the pure relative-to-absolute

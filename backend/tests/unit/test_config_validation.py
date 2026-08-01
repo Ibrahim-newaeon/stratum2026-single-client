@@ -1,5 +1,5 @@
 # =============================================================================
-# Stratum AI - Configuration Validation Test Suite
+# ADs Growth System - Configuration Validation Test Suite
 # =============================================================================
 """
 Tests verifying that the Settings class correctly validates configuration:

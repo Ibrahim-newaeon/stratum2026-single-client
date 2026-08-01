@@ -1,5 +1,5 @@
 # =============================================================================
-# Stratum AI - Platform Sync Services
+# ADs Growth System - Platform Sync Services
 # =============================================================================
 """
 Services for syncing campaign data from ad platforms (Meta, TikTok).

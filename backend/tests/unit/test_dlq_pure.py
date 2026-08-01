@@ -1,5 +1,5 @@
 # =============================================================================
-# Stratum AI - Dead Letter Queue Pure-Logic Unit Tests
+# ADs Growth System - Dead Letter Queue Pure-Logic Unit Tests
 # =============================================================================
 """Unit tests for the pure logic in
 ``app.services.capi.dead_letter_queue``:

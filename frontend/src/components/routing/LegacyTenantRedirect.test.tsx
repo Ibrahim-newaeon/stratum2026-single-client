@@ -1,5 +1,5 @@
 /**
- * Stratum AI - LegacyTenantRedirect Tests
+ * ADs Growth System - LegacyTenantRedirect Tests
  *
  * The old multi-tenant shell lived at /app/:tenantId/*. Bookmarks and
  * external links to those URLs should still land on the single-client

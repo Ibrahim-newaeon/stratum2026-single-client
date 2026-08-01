@@ -1,5 +1,5 @@
 # =============================================================================
-# Stratum AI - ROAS Optimizer
+# ADs Growth System - ROAS Optimizer
 # =============================================================================
 """
 Automated ROAS optimization engine.

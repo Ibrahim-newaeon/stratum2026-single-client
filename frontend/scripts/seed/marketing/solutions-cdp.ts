@@ -61,7 +61,7 @@ const entry: MarketingSeedEntry = {
   slug: 'solutions-cdp',
   title: 'Customer Data Platform',
   template: 'solution',
-  meta_title: 'Customer Data Platform — Stratum AI',
+  meta_title: 'Customer Data Platform — ADs Growth System',
   meta_description:
     'Unify customer profiles across every touchpoint. Build powerful segments and sync them to all your ad platforms instantly.',
   content_json,

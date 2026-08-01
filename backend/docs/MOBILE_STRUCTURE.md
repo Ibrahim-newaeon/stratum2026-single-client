@@ -327,4 +327,4 @@ WebSocket: backend/app/api/v1/endpoints/ws.py (assumed)
 
 ---
 
-*This memory node serves as the reference architecture for building native mobile applications that consume the Stratum AI platform API.*
+*This memory node serves as the reference architecture for building native mobile applications that consume the ADs Growth System platform API.*

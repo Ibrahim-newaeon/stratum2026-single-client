@@ -1,5 +1,5 @@
 # =============================================================================
-# Stratum AI - Readiness probe tests (INF-002)
+# ADs Growth System - Readiness probe tests (INF-002)
 # =============================================================================
 """
 The Railway healthcheck targets /health/ready, which must report ready only

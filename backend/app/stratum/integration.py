@@ -1,5 +1,5 @@
 # =============================================================================
-# Stratum AI - Integration Bridge
+# ADs Growth System - Integration Bridge
 # =============================================================================
 """
 Integration bridge between Stratum multiplatform module and existing services.

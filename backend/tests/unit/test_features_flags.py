@@ -1,5 +1,5 @@
 # =============================================================================
-# Stratum AI - Feature Flags unit tests
+# ADs Growth System - Feature Flags unit tests
 # =============================================================================
 """Unit tests for app.features.flags.
 

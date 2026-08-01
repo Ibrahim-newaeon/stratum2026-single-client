@@ -44,7 +44,7 @@ const entry: MarketingSeedEntry = {
   slug: 'solutions-trust-engine',
   title: 'Trust Engine',
   template: 'solution',
-  meta_title: 'Trust Engine — Stratum AI',
+  meta_title: 'Trust Engine — ADs Growth System',
   meta_description:
     'Signal health monitoring and trust-gated automation. Ensure your automations only execute when data is reliable.',
   content_json,

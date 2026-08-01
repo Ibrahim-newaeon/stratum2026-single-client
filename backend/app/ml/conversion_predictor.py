@@ -1,5 +1,5 @@
 # =============================================================================
-# Stratum AI - Conversion Predictor
+# ADs Growth System - Conversion Predictor
 # =============================================================================
 """
 ML-based conversion prediction for campaign optimization.

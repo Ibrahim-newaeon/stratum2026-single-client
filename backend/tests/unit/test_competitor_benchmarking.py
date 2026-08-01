@@ -1,5 +1,5 @@
 # =============================================================================
-# Stratum AI - Competitor Benchmarking Service unit tests
+# ADs Growth System - Competitor Benchmarking Service unit tests
 # =============================================================================
 """Unit tests for app.services.competitor_benchmarking_service.
 

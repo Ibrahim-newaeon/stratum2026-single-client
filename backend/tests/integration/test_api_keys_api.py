@@ -1,5 +1,5 @@
 # =============================================================================
-# Stratum AI - API Keys Endpoint Integration Tests
+# ADs Growth System - API Keys Endpoint Integration Tests
 # =============================================================================
 """Integration tests for the ``/api-keys`` CRUD endpoints.
 

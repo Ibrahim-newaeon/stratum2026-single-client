@@ -1,5 +1,5 @@
 # =============================================================================
-# Stratum AI - Zoho Lead->Contact Conversion Unit Tests
+# ADs Growth System - Zoho Lead->Contact Conversion Unit Tests
 # =============================================================================
 """Unit tests for the pure ``ZohoSyncService._convert_lead_to_contact``
 transform in ``app.services.crm.zoho_sync`` — reshaping a Zoho lead record

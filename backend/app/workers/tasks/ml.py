@@ -1,5 +1,5 @@
 # =============================================================================
-# Stratum AI - ML Prediction Tasks
+# ADs Growth System - ML Prediction Tasks
 # =============================================================================
 """
 Background tasks for ML predictions and ROAS alerts.

@@ -1,5 +1,5 @@
 # =============================================================================
-# Stratum AI - Adapter Registry Wiring Tests
+# ADs Growth System - Adapter Registry Wiring Tests
 # =============================================================================
 """
 Tests for wiring the platform adapter registry (P1-5).

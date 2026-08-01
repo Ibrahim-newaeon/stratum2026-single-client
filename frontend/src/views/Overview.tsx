@@ -1,6 +1,6 @@
 /**
  * Overview — COMMAND CENTER DESIGN SYSTEM
- * Premium dashboard overview for Stratum AI
+ * Premium dashboard overview for ADs Growth System
  */
 
 import { useState, useEffect, useCallback, useMemo, useRef } from 'react'
@@ -469,7 +469,7 @@ export function Overview() {
         <div>
           <h1 className="text-2xl lg:text-3xl font-bold text-foreground">{t('overview.title')}</h1>
           <p className="mt-1 text-sm text-muted-foreground">
-            Last updated: {simulation.lastUpdated.toLocaleString()} · <span className="text-success">Stratum AI</span>
+            Last updated: {simulation.lastUpdated.toLocaleString()} · <span className="text-success">ADs Growth System</span>
           </p>
         </div>
         <div className="flex items-center gap-3">

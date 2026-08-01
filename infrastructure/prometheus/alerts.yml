@@ -1,5 +1,5 @@
 # =============================================================================
-# Stratum AI - Prometheus Alert Rules
+# ADs Growth System - Prometheus Alert Rules
 # =============================================================================
 groups:
   - name: stratum-api

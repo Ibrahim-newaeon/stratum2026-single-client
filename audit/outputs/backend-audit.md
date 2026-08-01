@@ -1,4 +1,4 @@
-# Stratum AI — Backend Production Audit
+# ADs Growth System — Backend Production Audit
 
 **Date:** 2026-04-16
 **Auditor:** Claude (Automated)

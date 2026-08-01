@@ -1,5 +1,5 @@
 # =============================================================================
-# Stratum AI - GDPR / Compliance API Integration Tests
+# ADs Growth System - GDPR / Compliance API Integration Tests
 # =============================================================================
 """Integration tests for the GDPR compliance API.
 

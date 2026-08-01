@@ -1,5 +1,5 @@
 # =============================================================================
-# Stratum AI - CRM Integration Database Models
+# ADs Growth System - CRM Integration Database Models
 # =============================================================================
 """
 Database models for CRM integrations (HubSpot, Salesforce, etc.).

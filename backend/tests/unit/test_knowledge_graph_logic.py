@@ -1,5 +1,5 @@
 # =============================================================================
-# Stratum AI - Knowledge Graph (analytics logic) unit tests
+# ADs Growth System - Knowledge Graph (analytics logic) unit tests
 # =============================================================================
 """Unit tests for app.analytics.logic.knowledge_graph.
 

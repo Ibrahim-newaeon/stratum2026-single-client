@@ -5,7 +5,7 @@
 **Plan:** `docs/superpowers/plans/2026-07-13-single-client-conversion.md`
 **Full ledger:** `.superpowers/sdd/progress.md` (task-by-task detail, review verdicts, fix loops)
 
-Stratum AI was converted from a multi-tenant SaaS platform (per-tenant
+ADs Growth System was converted from a multi-tenant SaaS platform (per-tenant
 data isolation, subscription tiers, Stripe billing, a superadmin
 cross-tenant console) to a **single-client deployment**: one
 `Organization` row, no tenant dimension anywhere in the schema, no

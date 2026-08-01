@@ -1,5 +1,5 @@
 # =============================================================================
-# Stratum AI - Report Scheduler Deep Integration Tests (#342 Batch 4)
+# ADs Growth System - Report Scheduler Deep Integration Tests (#342 Batch 4)
 # =============================================================================
 """DB-backed integration tests for ``app.services.reporting.scheduler``.
 

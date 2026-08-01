@@ -1,5 +1,5 @@
 # =============================================================================
-# Stratum AI - CAPI Service Deep Integration Tests (#342 Batch 5)
+# ADs Growth System - CAPI Service Deep Integration Tests (#342 Batch 5)
 # =============================================================================
 """Deep integration tests for ``app.services.capi.capi_service.CAPIService``.
 

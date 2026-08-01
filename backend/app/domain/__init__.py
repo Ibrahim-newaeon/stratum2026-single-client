@@ -1,5 +1,5 @@
 # =============================================================================
-# Stratum AI - Domain Package (Legacy)
+# ADs Growth System - Domain Package (Legacy)
 # =============================================================================
 # Domain models have been consolidated into app.models.
 # Re-export from canonical locations for backwards compatibility.

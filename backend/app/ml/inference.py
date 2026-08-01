@@ -1,5 +1,5 @@
 # =============================================================================
-# Stratum AI - Model Inference Strategy
+# ADs Growth System - Model Inference Strategy
 # =============================================================================
 """
 Implements the ModelInferenceStrategy pattern for hybrid ML deployment.

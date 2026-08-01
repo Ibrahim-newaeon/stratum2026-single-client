@@ -1,5 +1,5 @@
 # =============================================================================
-# Stratum AI - Client Schemas
+# ADs Growth System - Client Schemas
 # =============================================================================
 """
 Pydantic schemas for Client CRUD, assignments, and portal invitations.

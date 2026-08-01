@@ -1,5 +1,5 @@
 # =============================================================================
-# Stratum AI - Attribution Variance Daily Rollup Task
+# ADs Growth System - Attribution Variance Daily Rollup Task
 # =============================================================================
 """
 Celery task for daily attribution variance rollup.

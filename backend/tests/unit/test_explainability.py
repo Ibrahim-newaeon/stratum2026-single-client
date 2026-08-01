@@ -1,5 +1,5 @@
 # =============================================================================
-# Stratum AI - ML Explainability unit tests
+# ADs Growth System - ML Explainability unit tests
 # =============================================================================
 """Unit tests for app.ml.explainability.
 

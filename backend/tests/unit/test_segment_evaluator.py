@@ -1,5 +1,5 @@
 # =============================================================================
-# Stratum AI - CDP Segment Evaluator Unit Tests
+# ADs Growth System - CDP Segment Evaluator Unit Tests
 # =============================================================================
 """Unit tests for the pure rule-evaluation logic in
 ``app.services.cdp.segment_service``:

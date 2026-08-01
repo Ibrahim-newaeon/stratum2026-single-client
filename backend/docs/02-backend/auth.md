@@ -2,7 +2,7 @@
 
 ## Overview
 
-Stratum AI uses JWT-based authentication with optional MFA (Multi-Factor Authentication).
+ADs Growth System uses JWT-based authentication with optional MFA (Multi-Factor Authentication).
 
 > **STALE — 2026-07 (STRAT-SC-001)**: JWT payloads, role names, and the
 > `get_tenant_id` dependency below describe the pre-conversion

@@ -2,7 +2,7 @@
 
 ## Overview
 
-Stratum AI uses a component library built on Radix UI primitives with Tailwind CSS styling.
+ADs Growth System uses a component library built on Radix UI primitives with Tailwind CSS styling.
 
 ---
 

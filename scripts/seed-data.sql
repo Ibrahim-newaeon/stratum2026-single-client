@@ -1,4 +1,4 @@
--- Stratum AI Seed Data
+-- ADs Growth System Seed Data
 -- Single-client conversion (STRAT-SC-001): seeds the Organization singleton
 -- (id=1) and a small set of demo campaigns. The owner user is NOT seeded
 -- here — use `python backend/scripts/seed_owner.py` (reads
@@ -12,7 +12,7 @@
 INSERT INTO organization (id, name, slug, branding, settings, feature_flags, enforcement_mode, onboarding_state, is_onboarded, created_at, updated_at)
 VALUES (
     1,
-    'Stratum AI',
+    'ADs Growth System',
     'stratum-ai',
     '{}'::jsonb,
     '{"timezone": "UTC", "currency": "USD"}'::jsonb,

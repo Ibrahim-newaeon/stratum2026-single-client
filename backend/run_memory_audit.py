@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """
-Standalone memory audit runner for Stratum AI.
+Standalone memory audit runner for ADs Growth System.
 
 Runs the full memory audit engine directly — no FastAPI server,
 no PostgreSQL, no Redis required. Simulates real workload patterns,
@@ -26,7 +26,7 @@ from app.monitoring.visualizations import generate_html_report
 
 
 def simulate_workload() -> dict:
-    """Simulate typical Stratum AI workload patterns to generate real memory data."""
+    """Simulate typical ADs Growth System workload patterns to generate real memory data."""
     print("  [1/5] Importing heavy modules (simulating app boot)...")
     import collections
     import datetime
@@ -143,7 +143,7 @@ def simulate_workload() -> dict:
 def run_audit() -> str:
     """Run the full memory audit with snapshots and report generation."""
     print("=" * 70)
-    print("  STRATUM AI - FULL MEMORY AUDIT")
+    print("  ADS GROWTH SYSTEM - FULL MEMORY AUDIT")
     print("=" * 70)
 
     auditor = MemoryAuditor()
@@ -157,7 +157,7 @@ def run_audit() -> str:
     auditor.take_snapshot(label="baseline")
     time.sleep(0.3)
 
-    print("\n[PHASE 3] Simulating Stratum AI workload...")
+    print("\n[PHASE 3] Simulating ADs Growth System workload...")
     workload_data = simulate_workload()
     auditor.record_point("workload_complete")
     time.sleep(0.2)

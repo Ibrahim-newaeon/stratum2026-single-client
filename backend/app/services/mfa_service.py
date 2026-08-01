@@ -1,5 +1,5 @@
 # =============================================================================
-# Stratum AI - Multi-Factor Authentication (MFA/2FA) Service
+# ADs Growth System - Multi-Factor Authentication (MFA/2FA) Service
 # =============================================================================
 """
 Two-Factor Authentication using TOTP (Time-based One-Time Password).
@@ -35,7 +35,7 @@ logger = get_logger(__name__)
 # =============================================================================
 
 # TOTP Configuration
-TOTP_ISSUER = "Stratum AI"
+TOTP_ISSUER = "ADs Growth System"
 TOTP_DIGITS = 6
 TOTP_INTERVAL = 30  # seconds
 TOTP_VALID_WINDOW = 1  # Allow 1 step before/after for clock drift

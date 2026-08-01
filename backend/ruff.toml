@@ -1,5 +1,5 @@
 # =============================================================================
-# Ruff Configuration - Stratum AI Backend
+# Ruff Configuration - ADs Growth System Backend
 # =============================================================================
 # Balanced config: catches real bugs while allowing existing patterns
 # to be cleaned up incrementally.

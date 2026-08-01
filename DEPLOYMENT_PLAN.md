@@ -1,4 +1,4 @@
-# Stratum AI - Deployment Plan
+# ADs Growth System - Deployment Plan
 
 ## Current State
 

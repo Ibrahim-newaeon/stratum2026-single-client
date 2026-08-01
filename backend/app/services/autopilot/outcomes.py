@@ -1,5 +1,5 @@
 # =============================================================================
-# Stratum AI — Autopilot Outcomes Service
+# ADs Growth System — Autopilot Outcomes Service
 # =============================================================================
 """
 Outcome estimation + rollup for autopilot decisions.

@@ -1,5 +1,5 @@
 # =============================================================================
-# Stratum AI - Journey Mapping unit tests
+# ADs Growth System - Journey Mapping unit tests
 # =============================================================================
 """Unit tests for app.analytics.logic.journey_mapping.
 

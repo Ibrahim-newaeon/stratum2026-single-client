@@ -1,5 +1,5 @@
 # =============================================================================
-# Stratum AI - Landing Page CMS Endpoints
+# ADs Growth System - Landing Page CMS Endpoints
 # =============================================================================
 """
 Landing Page CMS endpoints for multi-language content management.

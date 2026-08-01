@@ -211,7 +211,7 @@ NEXT STEPS
 If you have questions, please contact support@stratum.ai.
 
 Sincerely,
-The Stratum AI Team
+The ADs Growth System Team
 ```
 
 ---

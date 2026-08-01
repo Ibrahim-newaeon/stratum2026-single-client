@@ -1,5 +1,5 @@
 # =============================================================================
-# Stratum AI - Memory Profiling Middleware
+# ADs Growth System - Memory Profiling Middleware
 # =============================================================================
 """
 FastAPI middleware that tracks memory consumption per API endpoint.

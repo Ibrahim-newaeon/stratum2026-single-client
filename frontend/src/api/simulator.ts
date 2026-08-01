@@ -1,5 +1,5 @@
 /**
- * Stratum AI - Simulator API
+ * ADs Growth System - Simulator API
  *
  * What-If simulator, ROAS forecasting, and conversion predictions.
  */

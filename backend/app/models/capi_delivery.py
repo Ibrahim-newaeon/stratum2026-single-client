@@ -1,5 +1,5 @@
 # =============================================================================
-# Stratum AI - CAPI Delivery Database Models (P0 Gap Fix)
+# ADs Growth System - CAPI Delivery Database Models (P0 Gap Fix)
 # =============================================================================
 """
 Database models for CAPI delivery logging and Dead Letter Queue.

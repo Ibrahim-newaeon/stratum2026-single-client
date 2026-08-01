@@ -1,5 +1,5 @@
 # =============================================================================
-# Stratum AI - Application Configuration
+# ADs Growth System - Application Configuration
 # =============================================================================
 """
 Centralized configuration management using Pydantic Settings.
@@ -56,7 +56,7 @@ class Settings(BaseSettings):
     # -------------------------------------------------------------------------
     # Application Settings
     # -------------------------------------------------------------------------
-    app_name: str = Field(default="Stratum AI", description="Application name")
+    app_name: str = Field(default="ADs Growth System", description="Application name")
     app_env: Literal["development", "staging", "production", "test"] = Field(
         default="development"
     )
@@ -322,7 +322,7 @@ class Settings(BaseSettings):
         description="Secret token for verifying SendGrid inbound webhooks",
     )
     email_from_name: str = Field(
-        default="Stratum AI", description="Sender display name"
+        default="ADs Growth System", description="Sender display name"
     )
     email_from_address: str = Field(
         default="noreply@stratumai.app", description="Sender email address"

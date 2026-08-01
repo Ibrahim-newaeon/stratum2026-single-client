@@ -1,5 +1,5 @@
 # =============================================================================
-# Stratum AI - API Key Authentication
+# ADs Growth System - API Key Authentication
 # =============================================================================
 """
 Inbound API-key authentication.

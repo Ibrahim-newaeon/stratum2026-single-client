@@ -1,5 +1,5 @@
 # =============================================================================
-# Stratum AI - CSRF Protection Middleware
+# ADs Growth System - CSRF Protection Middleware
 # =============================================================================
 """
 Cross-Site Request Forgery protection for state-changing requests.

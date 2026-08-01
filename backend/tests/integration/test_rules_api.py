@@ -1,5 +1,5 @@
 # =============================================================================
-# Stratum AI - Automation Rules API Integration Tests
+# ADs Growth System - Automation Rules API Integration Tests
 # =============================================================================
 """Integration tests for the automation rules engine API.
 

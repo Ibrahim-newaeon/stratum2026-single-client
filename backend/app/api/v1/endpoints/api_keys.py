@@ -1,5 +1,5 @@
 # =============================================================================
-# Stratum AI - API Keys Management Endpoints
+# ADs Growth System - API Keys Management Endpoints
 # =============================================================================
 """
 CRUD operations for API keys:

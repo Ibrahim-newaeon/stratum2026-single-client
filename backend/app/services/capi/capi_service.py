@@ -1,5 +1,5 @@
 # =============================================================================
-# Stratum AI - CAPI Service
+# ADs Growth System - CAPI Service
 # =============================================================================
 """
 Main Conversion API service that orchestrates platform connections,

@@ -1,5 +1,5 @@
 # =============================================================================
-# Stratum AI - Audit Services Database Models
+# ADs Growth System - Audit Services Database Models
 # =============================================================================
 """
 Database models for audit-recommended services:

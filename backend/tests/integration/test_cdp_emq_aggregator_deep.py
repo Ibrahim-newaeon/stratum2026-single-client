@@ -1,5 +1,5 @@
 # =============================================================================
-# Stratum AI - CDP EMQ Aggregator Deep Integration Tests
+# ADs Growth System - CDP EMQ Aggregator Deep Integration Tests
 # =============================================================================
 """DB-backed integration tests for ``app.services.cdp_emq_aggregator``.
 

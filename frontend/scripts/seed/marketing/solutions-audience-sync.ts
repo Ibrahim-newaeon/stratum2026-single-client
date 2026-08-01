@@ -68,7 +68,7 @@ const entry: MarketingSeedEntry = {
   slug: 'solutions-audience-sync',
   title: 'Audience Sync',
   template: 'solution',
-  meta_title: 'Audience Sync — Stratum AI',
+  meta_title: 'Audience Sync — ADs Growth System',
   meta_description:
     'Sync CDP segments to Meta, Google, TikTok, and Snapchat in real-time. Unified audience management across all ad platforms.',
   content_json,

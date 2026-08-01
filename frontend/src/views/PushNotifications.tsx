@@ -1,5 +1,5 @@
 // =============================================================================
-// Stratum AI — Push Notifications Manager
+// ADs Growth System — Push Notifications Manager
 // =============================================================================
 
 import { useState, useEffect } from 'react';

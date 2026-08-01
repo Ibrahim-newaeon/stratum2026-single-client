@@ -1,5 +1,5 @@
 # =============================================================================
-# Stratum AI - Automated Budget Reallocation Service
+# ADs Growth System - Automated Budget Reallocation Service
 # =============================================================================
 """
 Service for intelligent automated budget reallocation across campaigns and platforms.

@@ -1,5 +1,5 @@
 # =============================================================================
-# Stratum AI - Slack Integration Config Endpoint Integration Tests
+# ADs Growth System - Slack Integration Config Endpoint Integration Tests
 # =============================================================================
 """Integration tests for the DB-backed Slack-integration config CRUD under
 ``/slack`` (get / configure-upsert / toggle / disconnect). The ``/test`` and

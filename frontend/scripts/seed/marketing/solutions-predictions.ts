@@ -47,7 +47,7 @@ const entry: MarketingSeedEntry = {
   slug: 'solutions-predictions',
   title: 'Predictive Analytics',
   template: 'solution',
-  meta_title: 'Predictive Analytics — Stratum AI',
+  meta_title: 'Predictive Analytics — ADs Growth System',
   meta_description:
     'ML-powered predictions for ROAS, churn risk, and budget optimization. Make data-driven decisions with confidence.',
   content_json,

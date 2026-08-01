@@ -1,5 +1,5 @@
 # =============================================================================
-# Stratum AI - DB connection pool config test (DB-001)
+# ADs Growth System - DB connection pool config test (DB-001)
 # =============================================================================
 """
 Both the async (API) and sync (Celery/migrations) engines must apply a bounded

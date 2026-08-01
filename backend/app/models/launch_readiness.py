@@ -1,5 +1,5 @@
 # =============================================================================
-# Stratum AI - Launch Readiness Models
+# ADs Growth System - Launch Readiness Models
 # =============================================================================
 """
 Persistence for the Launch Readiness go-live wizard (owner-only).

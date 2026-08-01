@@ -1,5 +1,5 @@
 # =============================================================================
-# Stratum AI - PII Hasher unit tests
+# ADs Growth System - PII Hasher unit tests
 # =============================================================================
 """Unit tests for app.services.capi.pii_hasher (pure logic, no I/O)."""
 

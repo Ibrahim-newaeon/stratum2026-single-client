@@ -42,7 +42,7 @@ const entry: MarketingSeedEntry = {
   template: 'default',
   meta_title: 'Security',
   meta_description:
-    'Enterprise-grade security at Stratum AI. SOC 2 Type II certified, GDPR compliant, with encryption at rest and in transit.',
+    'Enterprise-grade security at ADs Growth System. SOC 2 Type II certified, GDPR compliant, with encryption at rest and in transit.',
   content,
 };
 

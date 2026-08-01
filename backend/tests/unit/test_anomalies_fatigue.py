@@ -1,5 +1,5 @@
 # =============================================================================
-# Stratum AI - Anomaly Detection + Creative Fatigue unit tests
+# ADs Growth System - Anomaly Detection + Creative Fatigue unit tests
 # =============================================================================
 """Unit tests for app.analytics.logic.anomalies and .fatigue.
 

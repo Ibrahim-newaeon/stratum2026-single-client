@@ -1,5 +1,5 @@
 # =============================================================================
-# Stratum AI — copilot_llm bridge tests (Phase D PR2)
+# ADs Growth System — copilot_llm bridge tests (Phase D PR2)
 # =============================================================================
 """
 Verifies the copilot_llm bridge wires Anthropic + RAG retrieval together

@@ -1,8 +1,8 @@
 # =============================================================================
-# Stratum AI - Prometheus Metrics Configuration
+# ADs Growth System - Prometheus Metrics Configuration
 # =============================================================================
 """
-Prometheus metrics for Stratum AI backend.
+Prometheus metrics for ADs Growth System backend.
 
 Exposes:
 - Standard HTTP metrics (request count, latency histograms)

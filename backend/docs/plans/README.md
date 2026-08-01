@@ -1,4 +1,4 @@
-# Stratum AI - Pricing Plans Documentation
+# ADs Growth System - Pricing Plans Documentation
 
 **Version:** 1.0.0
 **Last Updated:** January 2026
@@ -7,7 +7,7 @@
 
 ## Overview
 
-Stratum AI offers three pricing tiers designed to meet the needs of businesses at every stage:
+ADs Growth System offers three pricing tiers designed to meet the needs of businesses at every stage:
 
 | Plan | Best For | Starting At |
 |------|----------|-------------|

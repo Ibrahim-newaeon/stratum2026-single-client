@@ -1,5 +1,5 @@
 # =============================================================================
-# Stratum AI - Competitor Intel unit tests
+# ADs Growth System - Competitor Intel unit tests
 # =============================================================================
 """Unit tests for app.analytics.logic.competitor_intel.
 

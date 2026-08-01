@@ -1,4 +1,4 @@
-# Stratum AI - Starter Plan Tutorial
+# ADs Growth System - Starter Plan Tutorial
 
 > **REMOVED (historical) — 2026-07**: subscription tiers/plans were
 > removed in the single-client conversion (STRAT-SC-001) — there is no
@@ -11,7 +11,7 @@
 
 ---
 
-## Welcome to Stratum AI Starter Plan
+## Welcome to ADs Growth System Starter Plan
 
 This tutorial will guide you through setting up and using all features available in the **Starter Plan**. By the end, you'll be able to:
 
@@ -41,7 +41,7 @@ This tutorial will guide you through setting up and using all features available
 
 ### 1.1 Logging In
 
-1. Navigate to your Stratum AI login page
+1. Navigate to your ADs Growth System login page
 2. Enter your email and password
 3. Complete two-factor authentication (if enabled)
 4. You'll land on the **Overview Dashboard**
@@ -282,7 +282,7 @@ Receive important alerts directly in Slack.
 5. Select the channel for notifications
 6. Copy the webhook URL
 
-**Step 2: Configure in Stratum AI**
+**Step 2: Configure in ADs Growth System**
 1. Navigate to **Settings > Integrations > Slack**
 2. Paste your webhook URL
 3. Click **Test Connection**
@@ -357,7 +357,7 @@ Ready for more? The **Professional Plan** adds:
 
 ---
 
-**Congratulations!** You've completed the Starter Plan tutorial. You're now ready to get value from Stratum AI.
+**Congratulations!** You've completed the Starter Plan tutorial. You're now ready to get value from ADs Growth System.
 
 ---
 

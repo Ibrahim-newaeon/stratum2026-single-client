@@ -1,5 +1,5 @@
 """
-Stratum AI: Conversions API Module
+ADs Growth System: Conversions API Module
 ==================================
 
 This module handles server-side conversion event passing to advertising platforms.

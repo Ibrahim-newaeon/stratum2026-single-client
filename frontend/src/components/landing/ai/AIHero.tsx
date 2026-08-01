@@ -241,7 +241,7 @@ export default function AIHero() {
               <div className="w-3 h-3 rounded-full bg-red-500/80" />
               <div className="w-3 h-3 rounded-full bg-yellow-500/80" />
               <div className="w-3 h-3 rounded-full bg-green-500/80" />
-              <div className="flex-1 text-center text-sm text-muted-foreground">Stratum AI Dashboard</div>
+              <div className="flex-1 text-center text-sm text-muted-foreground">ADs Growth System Dashboard</div>
             </div>
 
             {/* Dashboard Content Mock */}

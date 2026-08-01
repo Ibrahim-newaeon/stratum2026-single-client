@@ -1,5 +1,5 @@
 /**
- * Stratum AI - Campaigns API
+ * ADs Growth System - Campaigns API
  *
  * Campaign management endpoints for CRUD operations and metrics
  */

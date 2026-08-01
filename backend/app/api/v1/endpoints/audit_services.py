@@ -1,5 +1,5 @@
 # =============================================================================
-# Stratum AI - Audit Services API Endpoints
+# ADs Growth System - Audit Services API Endpoints
 # =============================================================================
 """
 API endpoints for all audit-recommended services:
@@ -1784,7 +1784,7 @@ async def get_audit_services_info():
     Public endpoint for API discovery.
     """
     return {
-        "name": "Stratum AI Audit Services",
+        "name": "ADs Growth System Audit Services",
         "version": "1.0.0",
         "services": [
             {

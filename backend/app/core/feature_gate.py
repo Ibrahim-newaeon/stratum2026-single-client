@@ -1,5 +1,5 @@
 # =============================================================================
-# Stratum AI - Feature Gate System
+# ADs Growth System - Feature Gate System
 # =============================================================================
 """
 Environment-driven feature gating.

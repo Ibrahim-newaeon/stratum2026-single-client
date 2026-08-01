@@ -1,8 +1,8 @@
 #!/usr/bin/env bash
 # =============================================================================
-# Stratum AI - Client Installer
+# ADs Growth System - Client Installer
 # -----------------------------------------------------------------------------
-# One-command installer for a single-client Stratum AI deployment. Run this
+# One-command installer for a single-client ADs Growth System deployment. Run this
 # from inside the extracted deploy kit (the directory containing this script,
 # docker-compose.client.yml, Caddyfile, init-db.sql, and .env.client.example).
 #
@@ -341,7 +341,7 @@ print_success_box() {
     fi
     printf "\n"
     printf "%b\n" "${c_green}============================================================${c_reset}"
-    printf "%b\n" "${c_green}  Stratum AI is installed${c_reset}"
+    printf "%b\n" "${c_green}  ADs Growth System is installed${c_reset}"
     printf "%b\n" "${c_green}============================================================${c_reset}"
     printf "  URL:           https://%s\n" "$domain"
     printf "  Admin email:   %s\n" "$email"

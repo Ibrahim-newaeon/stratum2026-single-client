@@ -1,5 +1,5 @@
 """
-Stratum AI - ML Dataset Generator
+ADs Growth System - ML Dataset Generator
 =================================
 Generates synthetic datasets for machine learning models:
 1. Churn Prediction
@@ -944,7 +944,7 @@ def generate_data_dictionary():
 def main():
     """Generate all ML datasets."""
     print("=" * 60)
-    print("Stratum AI - ML Dataset Generator")
+    print("ADs Growth System - ML Dataset Generator")
     print("=" * 60)
     print()
 

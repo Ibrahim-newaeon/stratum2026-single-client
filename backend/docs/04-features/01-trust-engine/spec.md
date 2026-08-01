@@ -2,7 +2,7 @@
 
 ## Overview
 
-The Trust Engine is Stratum AI's core decision-making component that evaluates signal health before allowing automation execution. It implements the "Trust-Gated Autopilot" philosophy: automated actions only execute when data quality meets safety thresholds.
+The Trust Engine is ADs Growth System's core decision-making component that evaluates signal health before allowing automation execution. It implements the "Trust-Gated Autopilot" philosophy: automated actions only execute when data quality meets safety thresholds.
 
 ---
 

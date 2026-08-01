@@ -1,5 +1,5 @@
 # =============================================================================
-# Stratum AI - Meta CAPI QA Endpoints
+# ADs Growth System - Meta CAPI QA Endpoints
 # =============================================================================
 """
 Meta Conversion API (CAPI) Quality Assurance endpoints.

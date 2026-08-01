@@ -1,5 +1,5 @@
 # =============================================================================
-# Stratum AI - Coverage Configuration
+# ADs Growth System - Coverage Configuration
 # =============================================================================
 # Run with: pytest --cov=app --cov-config=.coveragerc
 
@@ -284,7 +284,7 @@ precision = 2
 
 [html]
 directory = htmlcov
-title = Stratum AI Backend Coverage Report
+title = ADs Growth System Backend Coverage Report
 
 [xml]
 output = coverage.xml

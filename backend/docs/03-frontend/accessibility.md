@@ -2,7 +2,7 @@
 
 ## Overview
 
-Stratum AI is built with accessibility in mind, following WCAG 2.1 AA guidelines.
+ADs Growth System is built with accessibility in mind, following WCAG 2.1 AA guidelines.
 
 ---
 

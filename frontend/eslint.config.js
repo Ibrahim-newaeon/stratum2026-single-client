@@ -1,5 +1,5 @@
 // =============================================================================
-// Stratum AI - ESLint Configuration (Flat Config for ESLint 9+)
+// ADs Growth System - ESLint Configuration (Flat Config for ESLint 9+)
 // =============================================================================
 // Strict linting for TypeScript React codebase
 

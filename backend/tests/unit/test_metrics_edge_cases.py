@@ -1,5 +1,5 @@
 # =============================================================================
-# Stratum AI - Negative & Edge-Case Metric Value Tests
+# ADs Growth System - Negative & Edge-Case Metric Value Tests
 # =============================================================================
 """
 Tests for edge cases in analytics logic:

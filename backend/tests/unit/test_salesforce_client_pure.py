@@ -1,5 +1,5 @@
 # =============================================================================
-# Stratum AI - Salesforce Client Pure-Logic Unit Tests
+# ADs Growth System - Salesforce Client Pure-Logic Unit Tests
 # =============================================================================
 """Unit tests for the pure helpers in ``app.services.crm.salesforce_client``:
 

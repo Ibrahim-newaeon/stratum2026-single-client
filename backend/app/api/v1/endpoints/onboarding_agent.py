@@ -1,5 +1,5 @@
 # =============================================================================
-# Stratum AI - Conversational Onboarding Agent API
+# ADs Growth System - Conversational Onboarding Agent API
 # =============================================================================
 """
 REST API endpoints for the conversational onboarding agent.

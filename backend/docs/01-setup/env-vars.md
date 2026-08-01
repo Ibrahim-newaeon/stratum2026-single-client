@@ -1,6 +1,6 @@
 # Environment Variables Reference
 
-Complete reference for all environment variables used in Stratum AI.
+Complete reference for all environment variables used in ADs Growth System.
 
 ---
 
@@ -8,14 +8,14 @@ Complete reference for all environment variables used in Stratum AI.
 
 | Variable | Type | Default | Description |
 |----------|------|---------|-------------|
-| `APP_NAME` | string | "Stratum AI" | Application name displayed in UI |
+| `APP_NAME` | string | "ADs Growth System" | Application name displayed in UI |
 | `APP_ENV` | enum | "development" | Environment: `development`, `staging`, `production` |
 | `DEBUG` | bool | true | Enable debug mode (detailed errors, docs) |
 | `API_V1_PREFIX` | string | "/api/v1" | API route prefix |
 
 ### Example
 ```env
-APP_NAME=Stratum AI
+APP_NAME=ADs Growth System
 APP_ENV=development
 DEBUG=true
 API_V1_PREFIX=/api/v1
@@ -254,7 +254,7 @@ MARKET_INTEL_PROVIDER=mock
 | `SMTP_PASSWORD` | string | - | SMTP password |
 | `SMTP_TLS` | bool | true | Use TLS |
 | `SMTP_SSL` | bool | false | Use SSL |
-| `EMAIL_FROM_NAME` | string | "Stratum AI" | Sender name |
+| `EMAIL_FROM_NAME` | string | "ADs Growth System" | Sender name |
 | `EMAIL_FROM_ADDRESS` | string | "noreply@stratum.ai" | Sender email |
 
 ### Example
@@ -264,7 +264,7 @@ SMTP_PORT=587
 SMTP_USER=your-email@gmail.com
 SMTP_PASSWORD=your-app-password
 SMTP_TLS=true
-EMAIL_FROM_NAME=Stratum AI
+EMAIL_FROM_NAME=ADs Growth System
 EMAIL_FROM_ADDRESS=noreply@yourdomain.com
 ```
 

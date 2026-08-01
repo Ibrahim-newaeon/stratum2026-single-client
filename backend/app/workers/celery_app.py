@@ -1,5 +1,5 @@
 # =============================================================================
-# Stratum AI - Celery Application Configuration
+# ADs Growth System - Celery Application Configuration
 # =============================================================================
 """
 Celery application setup with Redis broker and result backend.

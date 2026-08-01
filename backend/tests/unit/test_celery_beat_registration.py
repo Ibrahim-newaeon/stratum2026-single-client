@@ -1,5 +1,5 @@
 # =============================================================================
-# Stratum AI - Celery Beat Registration Tests
+# ADs Growth System - Celery Beat Registration Tests
 # =============================================================================
 """Guard against beat-schedule entries that dispatch to nothing.
 

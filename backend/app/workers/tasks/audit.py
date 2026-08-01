@@ -1,5 +1,5 @@
 # =============================================================================
-# Stratum AI - Audit Logging Tasks
+# ADs Growth System - Audit Logging Tasks
 # =============================================================================
 """
 Background tasks for processing audit log queues and compliance.

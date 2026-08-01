@@ -1,5 +1,5 @@
 # =============================================================================
-# Stratum AI - MFA (TOTP) Endpoint Integration Tests
+# ADs Growth System - MFA (TOTP) Endpoint Integration Tests
 # =============================================================================
 """Integration tests for the DB-backed MFA endpoints under ``/mfa``:
 status, verify-and-enable, and disable. The QR-generating ``/setup`` route

@@ -454,7 +454,7 @@ User            Frontend           API              Redis        Email
 │     └─► Send via WhatsApp template                             │
 │                                                                 │
 │  4. User receives WhatsApp message:                             │
-│     "Your Stratum AI verification code is: 123456"             │
+│     "Your ADs Growth System verification code is: 123456"             │
 │                                                                 │
 │  5. Enter OTP code                                              │
 │     └─► POST /api/v1/auth/whatsapp/verify-otp                  │

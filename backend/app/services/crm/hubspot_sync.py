@@ -1,8 +1,8 @@
 # =============================================================================
-# Stratum AI - HubSpot Sync Service
+# ADs Growth System - HubSpot Sync Service
 # =============================================================================
 """
-Synchronizes contacts and deals from HubSpot to Stratum AI.
+Synchronizes contacts and deals from HubSpot to ADs Growth System.
 Supports scheduled syncs and real-time webhook updates.
 """
 
@@ -54,7 +54,7 @@ HUBSPOT_STAGE_MAPPING = {
 
 class HubSpotSyncService:
     """
-    Handles synchronization of HubSpot data to Stratum AI.
+    Handles synchronization of HubSpot data to ADs Growth System.
 
     Features:
     - Incremental sync (only updated records)

@@ -1,5 +1,5 @@
 # =============================================================================
-# Stratum AI - Signal Health Calculator unit tests
+# ADs Growth System - Signal Health Calculator unit tests
 # =============================================================================
 """Unit tests for app.stratum.core.signal_health.
 

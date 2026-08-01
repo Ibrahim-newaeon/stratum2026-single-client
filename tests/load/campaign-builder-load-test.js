@@ -1,5 +1,5 @@
 /**
- * Stratum AI - Campaign Builder Load Test
+ * ADs Growth System - Campaign Builder Load Test
  *
  * Tests the Campaign Builder endpoints under load.
  *

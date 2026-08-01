@@ -1,5 +1,5 @@
 # =============================================================================
-# Stratum AI - Push Notification Models
+# ADs Growth System - Push Notification Models
 # =============================================================================
 """SQLAlchemy models for web-push notifications.
 

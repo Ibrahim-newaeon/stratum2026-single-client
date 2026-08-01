@@ -1,5 +1,5 @@
 # =============================================================================
-# Stratum AI - Signal Recovery unit tests
+# ADs Growth System - Signal Recovery unit tests
 # =============================================================================
 """Unit tests for app.analytics.logic.signal_recovery.
 

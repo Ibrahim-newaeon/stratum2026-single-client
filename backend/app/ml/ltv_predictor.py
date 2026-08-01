@@ -1,5 +1,5 @@
 # =============================================================================
-# Stratum AI - Customer Lifetime Value (LTV) Prediction Model
+# ADs Growth System - Customer Lifetime Value (LTV) Prediction Model
 # =============================================================================
 """
 Machine learning model for predicting customer lifetime value.

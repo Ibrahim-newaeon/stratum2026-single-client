@@ -1,5 +1,5 @@
 # =============================================================================
-# Stratum AI - User Management Endpoints
+# ADs Growth System - User Management Endpoints
 # =============================================================================
 """
 User profile and management endpoints.

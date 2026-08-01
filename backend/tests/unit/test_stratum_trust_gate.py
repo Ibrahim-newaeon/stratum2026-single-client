@@ -1,5 +1,5 @@
 # =============================================================================
-# Stratum AI - Trust Gate unit tests
+# ADs Growth System - Trust Gate unit tests
 # =============================================================================
 """Unit tests for app.stratum.core.trust_gate.
 

@@ -1,5 +1,5 @@
 # =============================================================================
-# Stratum AI - Attribution Models (Shapley + Markov) Unit Tests
+# ADs Growth System - Attribution Models (Shapley + Markov) Unit Tests
 # =============================================================================
 """Unit tests for the pure, deterministic attribution models embedded in
 ``app.services.attribution.attribution_service``:

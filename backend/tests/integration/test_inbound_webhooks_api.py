@@ -1,5 +1,5 @@
 # =============================================================================
-# Stratum AI - Inbound Webhook Endpoint Integration Tests
+# ADs Growth System - Inbound Webhook Endpoint Integration Tests
 # =============================================================================
 """Integration tests for the unauthenticated inbound webhook receiver:
 

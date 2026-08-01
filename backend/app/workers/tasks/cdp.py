@@ -1,5 +1,5 @@
 # =============================================================================
-# Stratum AI - CDP (Customer Data Platform) Tasks
+# ADs Growth System - CDP (Customer Data Platform) Tasks
 # =============================================================================
 """
 Background tasks for CDP segment computation, RFM analysis, and funnels.
