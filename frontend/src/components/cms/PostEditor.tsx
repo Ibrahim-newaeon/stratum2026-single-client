@@ -432,7 +432,7 @@ export function PostEditor({
                     {formData.meta_title || formData.title || 'Post Title'}
                   </div>
                   <div className="text-green-500 text-sm">
-                    stratum.ai/blog/{formData.slug || 'post-slug'}
+                    adsgrowthsystem.com/blog/{formData.slug || 'post-slug'}
                   </div>
                   <div className="text-neutral-400 text-sm">
                     {formData.meta_description || formData.excerpt || 'Post description...'}

@@ -31,11 +31,11 @@ let _demoCreds: Record<string, { email: string; password: string; user: User }> 
 function getDemoCredentials(): Record<string, { email: string; password: string; user: User }> {
   if (!_demoCreds) {
     _demoCreds = {
-      owner: { email: 'demo-owner@stratum.ai', password: 'demo-only-not-real', user: { id: 'demo-sa-001', email: 'demo-owner@stratum.ai', name: 'Demo Owner', role: 'owner', organization: 'Demo Organization', permissions: ['all'], user_type: 'agency', cms_role: 'super_admin' } },
-      admin: { email: 'demo-admin@stratum.ai', password: 'demo-only-not-real', user: { id: 'demo-admin-001', email: 'demo-admin@stratum.ai', name: 'Demo Admin', role: 'admin', organization: 'Demo Commerce', permissions: ['all'], user_type: 'agency', cms_role: 'admin' } },
-      manager: { email: 'demo-manager@stratum.ai', password: 'demo-only-not-real', user: { id: 'demo-mgr-001', email: 'demo-manager@stratum.ai', name: 'Demo Manager', role: 'manager', organization: 'Demo Commerce', permissions: ['read'], user_type: 'agency' } },
-      analyst: { email: 'demo-analyst@stratum.ai', password: 'demo-only-not-real', user: { id: 'demo-analyst-001', email: 'demo-analyst@stratum.ai', name: 'Demo Analyst', role: 'analyst', organization: 'Demo Commerce', permissions: ['read'], user_type: 'agency' } },
-      viewer: { email: 'demo-viewer@stratum.ai', password: 'demo-only-not-real', user: { id: 'demo-viewer-001', email: 'demo-viewer@stratum.ai', name: 'Demo Client Viewer', role: 'viewer', organization: 'Demo Commerce', permissions: ['read'], user_type: 'portal', client_id: 1 } },
+      owner: { email: 'demo-owner@adsgrowthsystem.com', password: 'demo-only-not-real', user: { id: 'demo-sa-001', email: 'demo-owner@adsgrowthsystem.com', name: 'Demo Owner', role: 'owner', organization: 'Demo Organization', permissions: ['all'], user_type: 'agency', cms_role: 'super_admin' } },
+      admin: { email: 'demo-admin@adsgrowthsystem.com', password: 'demo-only-not-real', user: { id: 'demo-admin-001', email: 'demo-admin@adsgrowthsystem.com', name: 'Demo Admin', role: 'admin', organization: 'Demo Commerce', permissions: ['all'], user_type: 'agency', cms_role: 'admin' } },
+      manager: { email: 'demo-manager@adsgrowthsystem.com', password: 'demo-only-not-real', user: { id: 'demo-mgr-001', email: 'demo-manager@adsgrowthsystem.com', name: 'Demo Manager', role: 'manager', organization: 'Demo Commerce', permissions: ['read'], user_type: 'agency' } },
+      analyst: { email: 'demo-analyst@adsgrowthsystem.com', password: 'demo-only-not-real', user: { id: 'demo-analyst-001', email: 'demo-analyst@adsgrowthsystem.com', name: 'Demo Analyst', role: 'analyst', organization: 'Demo Commerce', permissions: ['read'], user_type: 'agency' } },
+      viewer: { email: 'demo-viewer@adsgrowthsystem.com', password: 'demo-only-not-real', user: { id: 'demo-viewer-001', email: 'demo-viewer@adsgrowthsystem.com', name: 'Demo Client Viewer', role: 'viewer', organization: 'Demo Commerce', permissions: ['read'], user_type: 'portal', client_id: 1 } },
     };
   }
   return _demoCreds;

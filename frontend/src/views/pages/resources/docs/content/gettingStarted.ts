@@ -30,8 +30,8 @@ export const gettingStartedArticles: DocArticle[] = [
         ordered: true,
         items: [
           'Open Integrations and choose a provider.',
-          'Complete the OAuth consent flow — Stratum never sees your password; we store only an encrypted refresh token.',
-          'Select the ad accounts you want Stratum to read.',
+          'Complete the OAuth consent flow — ADs Growth System never sees your password; we store only an encrypted refresh token.',
+          'Select the ad accounts you want ADs Growth System to read.',
         ],
       },
       {
@@ -51,7 +51,7 @@ export const gettingStartedArticles: DocArticle[] = [
       { type: 'heading', text: 'Step 4 — Arm your first automation' },
       {
         type: 'paragraph',
-        text: 'Create a simple budget-pacing or bid automation and leave it in Advisory mode at first. Advisory surfaces the action Stratum would take without executing it, so you can build trust in the recommendations before handing over control.',
+        text: 'Create a simple budget-pacing or bid automation and leave it in Advisory mode at first. Advisory surfaces the action ADs Growth System would take without executing it, so you can build trust in the recommendations before handing over control.',
       },
       { type: 'heading', text: 'Next steps' },
       {
@@ -69,12 +69,12 @@ export const gettingStartedArticles: DocArticle[] = [
     category: 'Getting Started',
     title: 'Installation',
     description:
-      'Add the Stratum tag and server-side events so the platform can measure and act on your traffic.',
+      'Add the ADs Growth System tag and server-side events so the platform can measure and act on your traffic.',
     readTime: '6 min',
     blocks: [
       {
         type: 'paragraph',
-        text: 'Stratum measures two complementary streams: client-side events from the browser tag and server-side events from the Conversions API (CAPI). Using both maximizes Event Match Quality and keeps signal health resilient to browser limitations.',
+        text: 'ADs Growth System measures two complementary streams: client-side events from the browser tag and server-side events from the Conversions API (CAPI). Using both maximizes Event Match Quality and keeps signal health resilient to browser limitations.',
       },
       { type: 'heading', text: 'Install the web tag' },
       {
@@ -109,7 +109,7 @@ export const gettingStartedArticles: DocArticle[] = [
         type: 'callout',
         tone: 'warning',
         title: 'Hash PII before it leaves your servers',
-        text: 'Email and phone identifiers should be lower-cased, trimmed, and SHA-256 hashed before being sent. Stratum never requires raw PII for matching.',
+        text: 'Email and phone identifiers should be lower-cased, trimmed, and SHA-256 hashed before being sent. ADs Growth System never requires raw PII for matching.',
       },
       { type: 'heading', text: 'Verify the install' },
       {
@@ -128,12 +128,12 @@ export const gettingStartedArticles: DocArticle[] = [
     category: 'Getting Started',
     title: 'Authentication',
     description:
-      'How API keys, OAuth, JWT sessions, and MFA work together to secure access to Stratum.',
+      'How API keys, OAuth, JWT sessions, and MFA work together to secure access to ADs Growth System.',
     readTime: '5 min',
     blocks: [
       {
         type: 'paragraph',
-        text: 'Stratum supports three authentication paths: interactive sessions for the dashboard, API keys for server-to-server calls, and OAuth for connecting external ad platforms. All three are scoped to a single tenant.',
+        text: 'ADs Growth System supports three authentication paths: interactive sessions for the dashboard, API keys for server-to-server calls, and OAuth for connecting external ad platforms. All three are scoped to a single tenant.',
       },
       { type: 'heading', text: 'API keys' },
       {
@@ -158,7 +158,7 @@ export const gettingStartedArticles: DocArticle[] = [
       { type: 'heading', text: 'OAuth for platform connections' },
       {
         type: 'paragraph',
-        text: 'When you connect Meta, Google, TikTok, or Snapchat, Stratum runs the provider OAuth flow and stores only an encrypted refresh token. We request the minimum scopes needed to read performance data and manage the entities your automations control.',
+        text: 'When you connect Meta, Google, TikTok, or Snapchat, ADs Growth System runs the provider OAuth flow and stores only an encrypted refresh token. We request the minimum scopes needed to read performance data and manage the entities your automations control.',
       },
       {
         type: 'list',
@@ -185,7 +185,7 @@ export const gettingStartedArticles: DocArticle[] = [
       { type: 'heading', text: '1. Define the objective' },
       {
         type: 'paragraph',
-        text: 'Pick a measurable goal such as maintaining ROAS above a target while spending the day’s budget evenly. Stratum frames every automation around a metric it can verify from signal data.',
+        text: 'Pick a measurable goal such as maintaining ROAS above a target while spending the day’s budget evenly. ADs Growth System frames every automation around a metric it can verify from signal data.',
       },
       { type: 'heading', text: '2. Choose an enforcement mode' },
       {
@@ -200,7 +200,7 @@ export const gettingStartedArticles: DocArticle[] = [
         type: 'callout',
         tone: 'success',
         title: 'Build trust before you delegate',
-        text: 'Run in Advisory for a few days and compare Stratum’s recommendations against your own decisions. Graduate to Soft-Block once the recommendations consistently match your intent.',
+        text: 'Run in Advisory for a few days and compare ADs Growth System’s recommendations against your own decisions. Graduate to Soft-Block once the recommendations consistently match your intent.',
       },
       { type: 'heading', text: '3. Set the trust gate' },
       {

@@ -1,0 +1,361 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Integration Requirements — ADs Growth System</title>
+<meta name="robots" content="noindex" />
+<!--
+  Standalone reference page. Deliberately NOT part of the React app:
+  no auth, no router, no build step — open the file directly or serve it
+  statically. Values are transcribed from the implementation, not vendor
+  marketing pages:
+    scopes            backend/app/services/oauth/{meta,google,tiktok,snapchat}.py
+    credential fields backend/app/services/oauth/credentials.py (AppCredentials)
+    WhatsApp settings backend/app/core/config.py (whatsapp_*)
+    CRM clients       backend/app/services/crm/
+  If a scope changes in a provider, update it here in the same commit.
+-->
+<style>
+  :root{
+    --page:#0A0E1A; --surface:#141B2D; --elevated:#1C2438;
+    --line:#1F2937; --line-strong:#2D3748;
+    --text:#F8FAFC; --soft:#CBD5E1; --muted:#94A3B8; --micro:#64748B;
+    --accent:#3B82F6; --accent-2:#60A5FA; --cyan:#06B6D4;
+    --purple:#8B5CF6; --warn:#F97316; --ok:#10B981;
+    --sans:'Inter',system-ui,-apple-system,'Segoe UI',sans-serif;
+    --display:'Space Grotesk','Inter',sans-serif;
+    --mono:'JetBrains Mono','SF Mono',ui-monospace,Menlo,monospace;
+  }
+  @media (prefers-color-scheme: light){
+    :root{
+      --page:#F8FAFC; --surface:#FFFFFF; --elevated:#FFFFFF;
+      --line:#E2E8F0; --line-strong:#CBD5E1;
+      --text:#0F172A; --soft:#334155; --muted:#64748B; --micro:#94A3B8;
+      --accent-2:#2563EB;
+    }
+  }
+  *{box-sizing:border-box}
+  body{
+    margin:0; background:var(--page); color:var(--text);
+    font-family:var(--sans); font-size:15px; line-height:1.6;
+    -webkit-font-smoothing:antialiased;
+    padding:clamp(1.5rem,5vw,3.5rem) clamp(1rem,5vw,2rem) 5rem;
+  }
+  .wrap{max-width:1100px;margin:0 auto;display:flex;flex-direction:column;gap:2.5rem}
+  header h1{
+    font-family:var(--display); font-size:clamp(1.7rem,4vw,2.3rem);
+    line-height:1.15; letter-spacing:-.02em; margin:0 0 .5rem;
+  }
+  header p{margin:0;color:var(--muted);max-width:65ch}
+  .kicker{
+    font-family:var(--mono); font-size:.7rem; letter-spacing:.14em;
+    text-transform:uppercase; color:var(--muted); margin-bottom:.6rem;
+  }
+  h2{
+    font-family:var(--mono); font-size:.72rem; letter-spacing:.16em;
+    text-transform:uppercase; color:var(--muted); font-weight:500;
+    margin:0 0 1rem; display:flex; align-items:center; gap:.85rem;
+  }
+  h2::after{content:"";flex:1;height:1px;background:var(--line)}
+  .grid{display:grid;gap:1rem;grid-template-columns:repeat(auto-fit,minmax(330px,1fr))}
+  article{
+    background:var(--surface); border:1px solid var(--line);
+    border-radius:16px; padding:1.4rem; display:flex; flex-direction:column; gap:1.1rem;
+  }
+  .head{display:flex;flex-wrap:wrap;gap:.6rem;justify-content:space-between;align-items:flex-start}
+  .head h3{font-family:var(--display);font-size:1.05rem;margin:0;letter-spacing:-.01em}
+  .head p{margin:.3rem 0 0;color:var(--muted);font-size:.87rem;max-width:46ch}
+  .auth{
+    font-family:var(--mono); font-size:.65rem; letter-spacing:.06em;
+    text-transform:uppercase; color:var(--muted); white-space:nowrap;
+    border:1px solid var(--line-strong); border-radius:999px; padding:.2rem .55rem;
+  }
+  h4{
+    font-family:var(--mono); font-size:.65rem; letter-spacing:.13em;
+    text-transform:uppercase; color:var(--muted); font-weight:500; margin:0 0 .55rem;
+  }
+  dl{margin:0;display:flex;flex-direction:column;gap:.55rem}
+  .row{display:flex;flex-direction:column;gap:.15rem}
+  @media(min-width:560px){.row{flex-direction:row;gap:.8rem}
+    dt{width:9.5rem;flex-shrink:0}}
+  dt{font-weight:600;font-size:.87rem;margin:0}
+  dd{margin:0;color:var(--muted);font-size:.87rem}
+  code{
+    font-family:var(--mono); font-size:.78em; background:var(--elevated);
+    border:1px solid var(--line); border-radius:5px; padding:.05em .38em;
+    color:var(--soft); white-space:nowrap;
+  }
+  ul.scopes{list-style:none;margin:0;padding:0;display:flex;flex-wrap:wrap;gap:.35rem}
+  ul.scopes li{
+    font-family:var(--mono); font-size:.74rem; background:var(--elevated);
+    border:1px solid var(--line); border-radius:6px; padding:.2rem .45rem;
+    color:var(--soft); word-break:break-all;
+  }
+  ul.pre{margin:0;padding-left:1.1rem;display:flex;flex-direction:column;gap:.4rem}
+  ul.pre li{color:var(--muted);font-size:.87rem}
+  ul.pre li::marker{color:var(--warn)}
+  a.doc{color:var(--accent);text-decoration:none;font-size:.87rem;font-weight:500;width:fit-content}
+  a.doc:hover{text-decoration:underline;text-underline-offset:3px}
+  a:focus-visible{outline:2px solid var(--accent);outline-offset:3px;border-radius:4px}
+  footer{border-top:1px solid var(--line);padding-top:1.1rem;color:var(--micro);
+    font-family:var(--mono);font-size:.72rem}
+  @media print{
+    body{background:#fff;color:#000;padding:0}
+    article{break-inside:avoid;border-color:#ccc}
+  }
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <header>
+    <div class="kicker">ADs Growth System · Reference</div>
+    <h1>Integration requirements</h1>
+    <p>
+      What each platform needs before it can be connected. Scopes and credential
+      names match what the backend actually requests, so this is the list to
+      gather against — not the vendor marketing page. The
+      <strong>Before you connect</strong> notes are the failures that only show
+      up after a connection has already been attempted.
+    </p>
+  </header>
+
+  <section>
+    <h2>Ad platforms</h2>
+    <div class="grid">
+
+      <article>
+        <div class="head">
+          <div><h3>Meta Ads</h3><p>Business Manager ad accounts — campaign sync, insights, Conversions API.</p></div>
+          <span class="auth">OAuth 2.0</span>
+        </div>
+        <div>
+          <h4>Credentials</h4>
+          <dl>
+            <div class="row"><dt>App ID</dt><dd>App the OAuth dialog runs against. <code>META_APP_ID</code></dd></div>
+            <div class="row"><dt>App Secret</dt><dd>Token exchange + webhook signature verification. <code>META_APP_SECRET</code></dd></div>
+            <div class="row"><dt>Ad account IDs</dt><dd>Comma-separated. <code>META_AD_ACCOUNT_IDS</code></dd></div>
+          </dl>
+        </div>
+        <div>
+          <h4>Scopes requested</h4>
+          <ul class="scopes"><li>ads_management</li><li>ads_read</li><li>business_management</li><li>pages_read_engagement</li></ul>
+        </div>
+        <div>
+          <h4>Before you connect</h4>
+          <ul class="pre">
+            <li>App must be in <strong>Live</strong> mode — Development mode returns data only for app admins.</li>
+            <li>Connecting user needs an admin role on the Business Manager owning the ad account.</li>
+            <li>Advanced Access for <code>ads_management</code> is required to serve non-admin users.</li>
+          </ul>
+        </div>
+        <a class="doc" href="https://developers.facebook.com/docs/marketing-apis/get-started" target="_blank" rel="noopener noreferrer">Provider setup guide →</a>
+      </article>
+
+      <article>
+        <div class="head">
+          <div><h3>Google Ads</h3><p>Campaign structure, spend and conversion metrics.</p></div>
+          <span class="auth">OAuth 2.0</span>
+        </div>
+        <div>
+          <h4>Credentials</h4>
+          <dl>
+            <div class="row"><dt>Client ID</dt><dd>Google Cloud OAuth 2.0 <em>Web application</em> credential. <code>GOOGLE_ADS_CLIENT_ID</code></dd></div>
+            <div class="row"><dt>Client Secret</dt><dd>Paired with the client ID. <code>GOOGLE_ADS_CLIENT_SECRET</code></dd></div>
+            <div class="row"><dt>Developer token</dt><dd><strong>Separate from OAuth.</strong> Every call fails without it — the field most often missed. <code>GOOGLE_ADS_DEVELOPER_TOKEN</code></dd></div>
+            <div class="row"><dt>Customer ID</dt><dd>10 digits, no dashes. <code>GOOGLE_ADS_CUSTOMER_ID</code></dd></div>
+          </dl>
+        </div>
+        <div>
+          <h4>Scopes requested</h4>
+          <ul class="scopes"><li>https://www.googleapis.com/auth/adwords</li></ul>
+        </div>
+        <div>
+          <h4>Before you connect</h4>
+          <ul class="pre">
+            <li>Developer token needs <strong>Basic Access</strong> or higher — a Test-Access token only reaches test accounts.</li>
+            <li>Reading through a manager account requires <code>login-customer-id</code> set to that MCC.</li>
+          </ul>
+        </div>
+        <a class="doc" href="https://developers.google.com/google-ads/api/docs/first-call/overview" target="_blank" rel="noopener noreferrer">Provider setup guide →</a>
+      </article>
+
+      <article>
+        <div class="head">
+          <div><h3>TikTok Ads</h3><p>Advertiser accounts, campaigns and reporting via the Marketing API.</p></div>
+          <span class="auth">OAuth 2.0</span>
+        </div>
+        <div>
+          <h4>Credentials</h4>
+          <dl>
+            <div class="row"><dt>App ID</dt><dd>TikTok for Business developer portal. <code>TIKTOK_APP_ID</code></dd></div>
+            <div class="row"><dt>App Secret</dt><dd>Paired with the app ID. <code>TIKTOK_SECRET</code></dd></div>
+            <div class="row"><dt>Advertiser ID</dt><dd>Account to sync. <code>TIKTOK_ADVERTISER_ID</code></dd></div>
+          </dl>
+        </div>
+        <div>
+          <h4>Scopes requested</h4>
+          <ul class="scopes"><li>advertiser.read</li><li>advertiser.write</li><li>campaign.read</li><li>campaign.write</li><li>report.read</li></ul>
+        </div>
+        <div>
+          <h4>Before you connect</h4>
+          <ul class="pre">
+            <li>App must be <strong>approved for the Marketing API</strong> — an unapproved app authorises successfully and then returns empty advertiser lists.</li>
+            <li>Redirect URI must match the portal entry exactly, including trailing slash.</li>
+          </ul>
+        </div>
+        <a class="doc" href="https://business-api.tiktok.com/portal/docs?id=1738373164380162" target="_blank" rel="noopener noreferrer">Provider setup guide →</a>
+      </article>
+
+      <article>
+        <div class="head">
+          <div><h3>Snapchat Ads</h3><p>Ad accounts and campaign performance from the Snap Marketing API.</p></div>
+          <span class="auth">OAuth 2.0</span>
+        </div>
+        <div>
+          <h4>Credentials</h4>
+          <dl>
+            <div class="row"><dt>Client ID</dt><dd>Snap Business OAuth app. <code>SNAPCHAT_CLIENT_ID</code></dd></div>
+            <div class="row"><dt>Client Secret</dt><dd>Paired with the client ID. <code>SNAPCHAT_CLIENT_SECRET</code></dd></div>
+            <div class="row"><dt>Ad account ID</dt><dd>Account to sync. <code>SNAPCHAT_AD_ACCOUNT_ID</code></dd></div>
+          </dl>
+        </div>
+        <div>
+          <h4>Scopes requested</h4>
+          <ul class="scopes"><li>snapchat-marketing-api</li></ul>
+        </div>
+        <div>
+          <h4>Before you connect</h4>
+          <ul class="pre">
+            <li>Connecting user needs a member role on the Snap Business account.</li>
+            <li>Snap issues one coarse scope — access is governed by the role, not by scope selection.</li>
+          </ul>
+        </div>
+        <a class="doc" href="https://developers.snap.com/api/marketing-api/Ads-API/introduction" target="_blank" rel="noopener noreferrer">Provider setup guide →</a>
+      </article>
+
+    </div>
+  </section>
+
+  <section>
+    <h2>Messaging</h2>
+    <div class="grid">
+      <article>
+        <div class="head">
+          <div><h3>WhatsApp Business</h3><p>Cloud API messaging. Not an OAuth flow — credentials are configured directly.</p></div>
+          <span class="auth">Access token</span>
+        </div>
+        <div>
+          <h4>Credentials</h4>
+          <dl>
+            <div class="row"><dt>Phone number ID</dt><dd>Sending number registered on the Cloud API. <code>WHATSAPP_PHONE_NUMBER_ID</code></dd></div>
+            <div class="row"><dt>Access token</dt><dd>System user token. <strong>Short-lived tokens expire in 24h</strong> — use a permanent one. <code>WHATSAPP_ACCESS_TOKEN</code></dd></div>
+            <div class="row"><dt>Business account ID</dt><dd>The WABA owning the number. <code>WHATSAPP_BUSINESS_ACCOUNT_ID</code></dd></div>
+            <div class="row"><dt>Verify token</dt><dd>A string you choose; Meta echoes it during webhook verification. Required whenever a phone number ID is set. <code>WHATSAPP_VERIFY_TOKEN</code></dd></div>
+            <div class="row"><dt>App secret</dt><dd>Validates inbound webhook signatures. <code>WHATSAPP_APP_SECRET</code></dd></div>
+          </dl>
+        </div>
+        <div>
+          <h4>Before you connect</h4>
+          <ul class="pre">
+            <li>Number must be <strong>registered on the Cloud API</strong> — an app-linked number alone is not enough.</li>
+            <li>Messages outside the 24-hour service window require a pre-approved template.</li>
+          </ul>
+        </div>
+        <a class="doc" href="https://developers.facebook.com/docs/whatsapp/cloud-api/get-started" target="_blank" rel="noopener noreferrer">Provider setup guide →</a>
+      </article>
+    </div>
+  </section>
+
+  <section>
+    <h2>CRM</h2>
+    <div class="grid">
+
+      <article>
+        <div class="head">
+          <div><h3>HubSpot</h3><p>Two-way contact and company sync, with trait write-back.</p></div>
+          <span class="auth">OAuth 2.0 / API key</span>
+        </div>
+        <div>
+          <h4>Credentials</h4>
+          <dl>
+            <div class="row"><dt>Client ID</dt><dd>HubSpot developer app. <code>HUBSPOT_CLIENT_ID</code></dd></div>
+            <div class="row"><dt>Client Secret</dt><dd>Paired with the client ID. <code>HUBSPOT_CLIENT_SECRET</code></dd></div>
+            <div class="row"><dt>API key</dt><dd>Alternative to OAuth for private apps. <code>HUBSPOT_API_KEY</code></dd></div>
+          </dl>
+        </div>
+        <div>
+          <h4>Before you connect</h4>
+          <ul class="pre"><li>Scopes must include CRM object read <em>and</em> write for the objects being synced.</li></ul>
+        </div>
+        <a class="doc" href="https://developers.hubspot.com/docs/api/private-apps" target="_blank" rel="noopener noreferrer">Provider setup guide →</a>
+      </article>
+
+      <article>
+        <div class="head">
+          <div><h3>Salesforce</h3><p>Contact and lead sync with write-back, via a Connected App.</p></div>
+          <span class="auth">OAuth 2.0</span>
+        </div>
+        <div>
+          <h4>Credentials</h4>
+          <dl>
+            <div class="row"><dt>Consumer key</dt><dd>Connected App client ID.</dd></div>
+            <div class="row"><dt>Consumer secret</dt><dd>Connected App client secret.</dd></div>
+            <div class="row"><dt>Instance URL</dt><dd>Org domain — sandbox and production differ.</dd></div>
+          </dl>
+        </div>
+        <div>
+          <h4>Before you connect</h4>
+          <ul class="pre"><li>API access must be enabled on the user profile — off by default on some editions.</li></ul>
+        </div>
+        <a class="doc" href="https://developer.salesforce.com/docs/atlas.en-us.api_rest.meta/api_rest/intro_oauth_and_connected_apps.htm" target="_blank" rel="noopener noreferrer">Provider setup guide →</a>
+      </article>
+
+      <article>
+        <div class="head">
+          <div><h3>Zoho CRM</h3><p>Contact synchronisation and write-back against Zoho modules.</p></div>
+          <span class="auth">OAuth 2.0</span>
+        </div>
+        <div>
+          <h4>Credentials</h4>
+          <dl>
+            <div class="row"><dt>Client ID</dt><dd>Zoho API console.</dd></div>
+            <div class="row"><dt>Client Secret</dt><dd>Paired with the client ID.</dd></div>
+            <div class="row"><dt>Data centre</dt><dd>Region-scoped — <code>.com</code>, <code>.eu</code> and <code>.in</code> are different hosts.</dd></div>
+          </dl>
+        </div>
+        <div>
+          <h4>Before you connect</h4>
+          <ul class="pre"><li>Tokens issued in one data centre are <strong>rejected by the others</strong>.</li></ul>
+        </div>
+        <a class="doc" href="https://www.zoho.com/crm/developer/docs/api/v3/oauth-overview.html" target="_blank" rel="noopener noreferrer">Provider setup guide →</a>
+      </article>
+
+      <article>
+        <div class="head">
+          <div><h3>Pipedrive</h3><p>Deal and person sync with write-back.</p></div>
+          <span class="auth">OAuth 2.0 / API key</span>
+        </div>
+        <div>
+          <h4>Credentials</h4>
+          <dl>
+            <div class="row"><dt>Client ID</dt><dd>Pipedrive app.</dd></div>
+            <div class="row"><dt>Client Secret</dt><dd>Paired with the client ID.</dd></div>
+            <div class="row"><dt>API token</dt><dd>Alternative to OAuth for a single account.</dd></div>
+          </dl>
+        </div>
+        <a class="doc" href="https://developers.pipedrive.com/docs/api/v1" target="_blank" rel="noopener noreferrer">Provider setup guide →</a>
+      </article>
+
+    </div>
+  </section>
+
+  <footer>
+    Values transcribed from backend/app/services/oauth/*, credentials.py and core/config.py ·
+    update here whenever a provider scope changes
+  </footer>
+
+</div>
+</body>
+</html>

@@ -180,7 +180,7 @@ export const platformCredentials: PlatformCredentialConfig[] = [
         placeholder: '1//xxxxxxxxxxxxxxxxxx',
         helpText: 'Long-lived refresh token for persistent API access.',
         whereToFind:
-          'Generated during OAuth consent flow — Stratum handles this automatically after first connection.',
+          'Generated during OAuth consent flow — ADs Growth System handles this automatically after first connection.',
         required: true,
       },
       {
@@ -251,7 +251,7 @@ export const platformCredentials: PlatformCredentialConfig[] = [
         type: 'password',
         placeholder: 'xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx',
         helpText: 'OAuth access token (valid 24 hours, auto-refreshed).',
-        whereToFind: 'Generated during OAuth flow — Stratum handles this automatically.',
+        whereToFind: 'Generated during OAuth flow — ADs Growth System handles this automatically.',
         required: true,
       },
       {
@@ -767,7 +767,7 @@ export const platformCredentials: PlatformCredentialConfig[] = [
       },
     ],
     notes: [
-      'Install the GTM snippet on your website to use with Stratum.',
+      'Install the GTM snippet on your website to use with ADs Growth System.',
       'Server-side GTM containers can be used for enhanced data control.',
     ],
   },

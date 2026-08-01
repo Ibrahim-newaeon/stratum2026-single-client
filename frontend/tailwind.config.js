@@ -59,18 +59,23 @@ export default {
         // 50–500 anchor directly on XML swatches; 600–950 are derived shades
         // (no darker golds exist in the XML) kept so existing stratum-N
         // utilities keep resolving.
+        // Brand ramp. The KEY is legacy ("stratum") and is referenced by ~96
+        // utility classes across src/, so renaming it is a separate refactor —
+        // but the VALUES are theme colours and were still the Opal gold scale
+        // after the SuperAds swap, which is why `bg-stratum-500` kept
+        // rendering a gold CTA on a blue page.
         stratum: {
-          50: '#FFFCF3', // logo card-background cream
-          100: '#F5F5DC', // cream (verified palette)
-          200: '#EFDFBC', // cream-2 (extended strip)
-          300: '#C2A670', // palette gold (verified)
-          400: '#C1A15A', // strip gold
-          500: '#BB8B41', // live-site / deployed UI gold
-          600: '#9A7335', // derived
-          700: '#7A5B2A', // derived
-          800: '#5B441F', // derived
-          900: '#3D2D15', // derived
-          950: '#241A0C', // derived
+          50: '#EFF6FF',
+          100: '#DBEAFE',
+          200: '#BFDBFE',
+          300: '#93C5FD',
+          400: '#60A5FA', // brand-accent-hover (dark)
+          500: '#3B82F6', // brand-accent — matches --primary
+          600: '#2563EB', // brand-accent-hover (light)
+          700: '#1D4ED8',
+          800: '#1E40AF',
+          900: '#1E3A8A',
+          950: '#172554',
         },
 
         // XML gold-family — all four documented golds, by XML id
@@ -128,6 +133,13 @@ export default {
         success: 'hsl(var(--success))',
         warning: 'hsl(var(--warning))',
         danger: 'hsl(var(--danger))',
+        // Primary marketing CTA. Deliberately its own token rather than
+        // reusing `warning` — that one means "hold / degraded" in the Trust
+        // Engine UI, and a CTA sharing it would make status colour unreadable.
+        cta: {
+          DEFAULT: '#F97316',
+          hover: '#EA580C',
+        },
         info: 'hsl(var(--info))',
         insight: 'hsl(var(--insight))',
       },

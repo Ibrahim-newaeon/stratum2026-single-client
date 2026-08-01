@@ -65,20 +65,7 @@ export function Footer() {
           {/* Brand */}
           <div className="col-span-2">
             <Link to="/" className="inline-flex items-center gap-2 mb-4">
-              {/* Two files rather than one: the wordmark is text, so it needs
-                  a light variant on dark surfaces and a dark one on light.
-                  Swapped by the `dark` class rather than at runtime, so there
-                  is no flash while a JS theme check resolves. */}
-              <img
-                src="/images/wordmark-light.svg"
-                alt="ADs Growth System"
-                className="h-7 hidden dark:block"
-              />
-              <img
-                src="/images/wordmark-dark.svg"
-                alt="ADs Growth System"
-                className="h-7 dark:hidden"
-              />
+              <span className="font-display font-semibold text-lg tracking-tight text-foreground">ADs Growth <span className="text-primary">System</span></span>
             </Link>
             <p className="text-body text-muted-foreground mb-6 max-w-xs">
               Your AI Partner for Ad Growth. Unify, optimize, and scale with

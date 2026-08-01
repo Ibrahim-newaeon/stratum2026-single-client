@@ -1,5 +1,5 @@
 /**
- * ThemeProvider — Stratum figma theme system.
+ * ThemeProvider — ADs Growth System figma theme system.
  *
  * Contract:
  * - Theme = 'dark' | 'light' | 'system'.

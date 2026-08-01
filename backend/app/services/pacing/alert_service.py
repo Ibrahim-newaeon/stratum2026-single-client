@@ -948,7 +948,9 @@ class AlertNotificationService:
                 f"{context_rows}</table>"
             )
 
-        subject = f"[ADs Growth System] {severity_val.upper()} Pacing Alert: {alert.title}"
+        subject = (
+            f"[ADs Growth System] {severity_val.upper()} Pacing Alert: {alert.title}"
+        )
 
         html_content = f"""<!DOCTYPE html>
 <html>

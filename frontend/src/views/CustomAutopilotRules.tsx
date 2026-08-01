@@ -463,7 +463,7 @@ export default function CustomAutopilotRules() {
           <div>
             <h4 className="font-medium">Trust-Gated Automation</h4>
             <p className="text-sm text-muted-foreground mt-1">
-              Custom rules respect Stratum's Trust Gate. Actions are only executed when signal
+              Custom rules respect ADs Growth System's Trust Gate. Actions are only executed when signal
               health meets your configured threshold, protecting against automation during data
               quality issues.
             </p>
