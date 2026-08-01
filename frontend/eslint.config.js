@@ -29,6 +29,23 @@ export default tseslint.config(
   },
 
   // =========================================================================
+  // 1b. Node-side tooling
+  // =========================================================================
+  // Everything else here is browser code, so `console` and `process` are
+  // correctly undefined globals. scripts/ runs under Node in CI (see the
+  // "Dependency audit (npm)" step), where they are legitimate — without this
+  // block, `npm run lint` fails with 13 no-undef errors on a file that is
+  // perfectly valid. Linted rather than ignored: it is a CI gate, and a gate
+  // nobody lints is a gate that silently rots.
+  {
+    files: ['scripts/**/*.{js,mjs,cjs}'],
+    languageOptions: {
+      globals: globals.node,
+      sourceType: 'module',
+    },
+  },
+
+  // =========================================================================
   // 2. Linter options
   // =========================================================================
   {
