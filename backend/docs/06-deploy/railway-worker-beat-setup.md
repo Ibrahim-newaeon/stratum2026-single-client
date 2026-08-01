@@ -69,12 +69,15 @@ After both services deploy:
    — the worker heartbeat (INF-003) should report the worker alive within ~1 min.
 
    > This host was previously documented as
-   > `backend-production-81fa.up.railway.app`. That host is **a different
-   > Railway project** (`stratum-ai`, `e6b39ffd`), not the one this repository
-   > deploys to (`stratum2026-single-client`, `ac74ba43`). It is still live and
-   > still answers `/health` with 200 while running an older build, so an
-   > operator following the old instruction during an incident would read a
-   > healthy status off a service this repo never updates.
+   > `backend-production-81fa.up.railway.app`. That belongs to **a separate
+   > product with its own repository** (Railway project `stratum-ai`) — not to
+   > this one (`stratum2026-single-client`, `ac74ba43`). It is unrelated, not
+   > a stale copy of this service, and nothing merged here will ever change it.
+   >
+   > It matters only because it is also live and also answers `/health` with
+   > 200: an operator following the old instruction mid-incident would read a
+   > healthy status off a completely different product and conclude this
+   > deployment was fine. Always verify against the host above.
 2. **Beat is scheduling:** check the Beat service logs for
    `Scheduler: Sending due task worker-heartbeat` (fires every minute) and
    `process-audit-logs` (every minute).
