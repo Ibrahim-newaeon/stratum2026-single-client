@@ -515,6 +515,11 @@ jobs:
           # .trivyignore in the working directory — the action runs Trivy in
           # its own context, so cwd auto-discovery is not guaranteed.
           trivyignores: ".trivyignore"
+          # Required whenever format is sarif. Without it the action logs
+          # "Building SARIF report with all severities" and DISCARDS the
+          # severity filter above — so `exit-code: 1` then fails the job on any
+          # finding at any severity, including LOW and MEDIUM.
+          limit-severities-for-sarif: true
           exit-code: "1"
 
       - name: Build Docker image for scanning
@@ -534,6 +539,11 @@ jobs:
           # absent from a linux/arm64 build — so a local arm64 scan passes
           # whether or not the ignore file is applied, and cannot confirm it is.
           trivyignores: ".trivyignore"
+          # Required whenever format is sarif. Without it the action logs
+          # "Building SARIF report with all severities" and DISCARDS the
+          # severity filter above — so `exit-code: 1` then fails the job on any
+          # finding at any severity, including LOW and MEDIUM.
+          limit-severities-for-sarif: true
           exit-code: "1"
 
       - name: Upload Trivy scan results
