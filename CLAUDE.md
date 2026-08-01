@@ -15,49 +15,6 @@ Signal Health Check → Trust Gate → Automation Decision
    [UNHEALTHY]       [BLOCK]        [MANUAL REQUIRED]
 ```
 
-## Project Structure
-
-```
-/
-├── backend/
-│   ├── app/
-│   │   ├── api/v1/endpoints/   # FastAPI routes (50+ endpoints)
-│   │   ├── analytics/logic/    # Signal health, EMQ, attribution, anomalies
-│   │   ├── autopilot/          # Trust gate enforcement engine
-│   │   ├── auth/               # JWT, MFA, permissions
-│   │   ├── core/               # Config, security, logging, websocket
-│   │   ├── db/                 # Database session management
-│   │   ├── middleware/         # Audit, rate limiting, security headers
-│   │   ├── models/             # SQLAlchemy models (23 files)
-│   │   ├── schemas/            # Pydantic schemas
-│   │   ├── services/           # External integrations & business logic
-│   │   │   ├── oauth/          # OAuth provider factory
-│   │   │   ├── pacing/         # Budget forecasting
-│   │   │   ├── profit/         # COGS & profit tracking
-│   │   │   ├── reporting/      # Report generation & scheduling
-│   │   │   └── crm/            # CRM integrations
-│   │   ├── stratum/            # Core domain models
-│   │   └── workers/            # Celery tasks
-│   ├── migrations/             # Alembic — fresh single-client chain (1 revision)
-│   ├── tests/                  # pytest suite (unit/ + integration/)
-│   ├── Makefile                # Build automation
-│   └── requirements.txt        # Python dependencies
-├── frontend/
-│   ├── src/
-│   │   ├── api/                # API client wrappers
-│   │   ├── components/         # React components (50+ TSX files)
-│   │   ├── contexts/           # React context providers
-│   │   ├── hooks/              # Custom React hooks
-│   │   ├── stores/             # Zustand stores
-│   │   ├── views/              # Page views & routes
-│   │   └── styles/             # Tailwind CSS + custom styles
-│   ├── package.json
-│   └── vite.config.ts
-├── docker-compose.yml          # 7 services (db, redis, api, worker, scheduler, frontend, flower)
-├── backend/docs/               # 60+ documentation files (curated subset is shipped in the backend image for the Copilot RAG indexer)
-└── CLAUDE.md
-```
-
 ## Key Features (12)
 
 | #   | Feature               | Key Files                                                        |
@@ -77,26 +34,12 @@ Signal Health Check → Trust Gate → Automation Decision
 
 ## Key Commands
 
+Backend targets are in `backend/Makefile`; frontend scripts are in
+`frontend/package.json`. Two that aren't obvious from either:
+
 ```bash
-# Backend
-make dev              # Start FastAPI with hot reload (port 8000)
-make test             # Run pytest
-make test-all         # Run all tests with verbose output
-make test-cov         # Tests with coverage report
-make lint             # Ruff + mypy
-make format           # Auto-format with ruff, black, isort
-make migrate          # Run Alembic migrations
-make migration msg="description"  # Create new migration
-make check            # Lint + type check + test
-
-# Docker
-docker compose up -d              # Full stack (7 services)
-docker compose --profile monitoring up -d  # Include Flower
-
-# Frontend
-cd frontend && npm run dev        # Vite dev server (port 5173)
-cd frontend && npm run build      # Production build
-cd frontend && npm run test       # Vitest
+make migration msg="description"           # Alembic autogenerate wrapper
+docker compose --profile monitoring up -d  # Flower is behind a profile
 ```
 
 ## Code Standards
@@ -114,17 +57,9 @@ cd frontend && npm run test       # Vitest
 
 ## Domain Terminology
 
-| Term             | Definition                                     |
-| ---------------- | ---------------------------------------------- |
-| Signal           | Input data point (metric, event, webhook)      |
-| Signal Health    | Composite score (0-100) of signal reliability  |
-| Trust Gate       | Decision checkpoint before automation          |
-| Autopilot        | Automated action when trust passes             |
-| EMQ              | Event Match Quality - signal fidelity score    |
-| CDP              | Customer Data Platform - profile & event store |
-| Enforcement Mode | Advisory / Soft-Block / Hard-Block             |
-| ROAS             | Return on Ad Spend                             |
-| Pacing           | Budget spend velocity tracking                 |
+See the imported `backend/docs/00-overview/glossary.md` below — it
+defines every term (Signal, Signal Health, Trust Gate, Autopilot, EMQ,
+CDP, Enforcement Mode, ROAS, Pacing) at greater length.
 
 ## Trust Engine Rules
 
@@ -173,66 +108,9 @@ Coverage target: 90%+ for `core/`, `autopilot/`, `analytics/`
 
 ## Design Context
 
-### Users
-
-Marketing agencies managing multiple client accounts across ad platforms. Extended sessions, professional setting, data-heavy workflows.
-
-### Brand Personality
-
-**Bold, intelligent, premium.** Sophisticated power through restraint. Bloomberg terminal meets luxury brand.
-
-### Aesthetic Direction
-
-- **Theme**: SuperAds — dual mode, dark default. Source of truth
-  `design-system-template/themes/superads.xml`. See
-  `backend/docs/03-frontend/figma-theme.md` for the full token table.
-- **Palette**: Navy-slate surfaces + SuperAds blue.
-  - Dark: page `#0A0E1A` · surface `#141B2D` · elevated `#1C2438` · line `#1F2937` · accent `#3B82F6`.
-  - Light: page `#F8FAFC` · surface `#FFFFFF` · line `#E2E8F0` · accent `#3B82F6`.
-  - Data series: blue `#3B82F6` · purple `#8B5CF6` · pink `#EC4899` · green `#10B981` · cyan `#06B6D4`.
-- **Typography**: Inter (body) + Space Grotesk (display) + JetBrains Mono
-  (labels, status, tabular). Noto Sans Arabic for RTL surfaces.
-- **Surfaces**: Elevation by drop-shadow across a three-tier stack
-  (page → surface → elevated). `--bg-glass` translucency is available for
-  overlay surfaces.
-
-> **Grounding.** The template extracted fonts, accents, gradients and the
-> light/dark structure from the real source, but its README flags
-> **surfaces, radii, spacing, shadows and motion timings as inferred** —
-> the upstream `shared/styles.css` was never provided. Those values are a
-> best estimate, not measured, and should be corrected if the original
-> stylesheet turns up.
-
-**History**: this replaced an Opal Hotel gold theme (`#C2A670` on black),
-which had itself replaced the original ink + ember figma theme
-(`#FF5A1F`). Earlier revisions of this file described ember long after the
-code had moved to gold — check `frontend/src/index.css` before trusting any
-palette documented here.
-
-### Design Principles
-
-1. **Quiet authority** — Power through precision, not noise
-2. **Information density without clutter** — Strong hierarchy, not hidden data
-3. **Premium materiality** — Tinted neutrals, subtle depth, no flat gray
-4. **Decisive contrast** — Bold type hierarchy, 1.5x+ ratio between steps
-5. **Earn every pixel** — Every element serves the user's task
-6. **Action-first home** — The dashboard is a triage queue, not a dashboard. Sort by intervention required.
-
-### Component contract
-
-The dashboard composes from typed primitives, not bespoke surfaces. Reuse before building:
-
-- `frontend/src/components/primitives/Card.tsx` — surface (default / elevated / glow variants)
-- `frontend/src/components/primitives/KPI.tsx` — composed Card + label + value + delta + status
-- `frontend/src/components/primitives/StatusPill.tsx` — figma signature pill
-- `frontend/src/components/primitives/Chart.tsx` — themed recharts wrapper (LineChart / AreaChart)
-- `frontend/src/components/primitives/DataTable.tsx` — headless table with sort / loading / empty
-- `frontend/src/components/primitives/ConfirmDrawer.tsx` — destructive-action gate
-- `frontend/src/components/primitives/nav/Sidebar.tsx` — collapsible-group nav
-- `frontend/src/components/primitives/nav/Topbar.tsx` — search + theme toggle + profile
-- `frontend/src/components/primitives/theme/ThemeProvider.tsx` — dark/light/system
-
-Each ships with a vitest. ARIA + keyboard support are first-class, not afterthoughts.
+Frontend design guidance (users, brand, aesthetic direction, principles,
+component contract) lives in `frontend/CLAUDE.md`, which loads only when
+working under `frontend/`.
 
 ## Imports
 
