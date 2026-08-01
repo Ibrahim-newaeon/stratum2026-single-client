@@ -16,7 +16,6 @@ interface PageLayoutProps {
 const navLinks = [
   { name: 'Product', href: '/features' },
   { name: 'Solutions', href: '/solutions/cdp' },
-  { name: 'Pricing', href: '/pricing' },
   { name: 'Docs', href: '/docs' },
 ];
 
@@ -98,17 +97,7 @@ export function PageLayout({ children }: PageLayoutProps) {
           <nav className="flex items-center justify-between">
             {/* Logo */}
             <Link to="/" className="flex items-center gap-3 group">
-              {/* Light/dark wordmark pair — see Footer.tsx for the rationale. */}
-              <img
-                src="/images/wordmark-light.svg"
-                alt="ADs Growth System"
-                className="h-8 hidden dark:block"
-              />
-              <img
-                src="/images/wordmark-dark.svg"
-                alt="ADs Growth System"
-                className="h-8 dark:hidden"
-              />
+              <span className="font-display font-semibold text-lg tracking-tight text-foreground">ADs Growth <span className="text-primary">System</span></span>
             </Link>
 
             {/* Desktop Navigation Links */}
@@ -186,7 +175,7 @@ export function PageLayout({ children }: PageLayoutProps) {
               </Link>
               <Link
                 to="/signup"
-                className="px-5 py-2.5 rounded-full text-sm font-semibold text-primary-foreground bg-stratum-500 hover:brightness-110 hover:shadow-glow transition-shadow duration-200"
+                className="px-5 py-2.5 rounded-full text-sm font-semibold text-primary-foreground bg-cta hover:bg-cta-hover hover:shadow-glow transition-shadow duration-200"
               >
                 Start Partnering
               </Link>
@@ -283,7 +272,7 @@ export function PageLayout({ children }: PageLayoutProps) {
                 </Link>
                 <Link
                   to="/signup"
-                  className="py-3 px-4 rounded-full text-sm font-semibold text-primary-foreground text-center bg-stratum-500 hover:brightness-110 transition-opacity"
+                  className="py-3 px-4 rounded-full text-sm font-semibold text-primary-foreground text-center bg-cta hover:bg-cta-hover transition-colors"
                   onClick={() => setIsMobileMenuOpen(false)}
                 >
                   Start Partnering
@@ -307,11 +296,9 @@ export function PageLayout({ children }: PageLayoutProps) {
             {/* Brand */}
             <div className="col-span-2">
               <Link to="/" className="inline-flex items-center gap-3 mb-4">
-                <img
-                  src="/images/logo.png"
-                  alt="ADs Growth System"
-                  className="h-7"
-                />
+                <span className="font-display font-semibold text-lg tracking-tight text-foreground">
+                  ADs Growth <span className="text-primary">System</span>
+                </span>
               </Link>
               <p className="text-sm text-muted-foreground mb-6 max-w-xs">
                 Your AI Partner for Ad Growth. Unify, optimize, and scale with

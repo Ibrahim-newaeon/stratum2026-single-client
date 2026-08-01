@@ -82,7 +82,7 @@ export default function CMSLogin() {
               <PencilSquareIcon className="w-6 h-6 text-foreground" />
             </div>
             <div>
-              <span className="text-xl font-bold text-foreground">Stratum</span>
+              <span className="text-xl font-bold text-foreground">ADs Growth System</span>
               <span className="text-xl font-light text-purple-400 ml-1">CMS</span>
             </div>
           </div>
@@ -149,7 +149,7 @@ export default function CMSLogin() {
               <PencilSquareIcon className="w-6 h-6 text-foreground" />
             </div>
             <div>
-              <span className="text-xl font-bold text-foreground">Stratum</span>
+              <span className="text-xl font-bold text-foreground">ADs Growth System</span>
               <span className="text-xl font-light text-purple-400 ml-1">CMS</span>
             </div>
           </div>
@@ -179,7 +179,7 @@ export default function CMSLogin() {
                 type="email"
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
-                placeholder="admin@stratum.ai"
+                placeholder="admin@adsgrowthsystem.com"
                 required
                 autoComplete="email"
                 className="bg-foreground/5 border-foreground/10 text-foreground placeholder:text-foreground/30 focus:border-purple-500 focus:ring-purple-500/20"
@@ -251,7 +251,7 @@ export default function CMSLogin() {
           <div className="mt-8 text-center space-y-4">
             <p className="text-sm text-foreground/40">
               Need access?{' '}
-              <a href="mailto:admin@stratum.ai" className="text-purple-400 hover:underline">
+              <a href="mailto:admin@adsgrowthsystem.com" className="text-purple-400 hover:underline">
                 Contact your administrator
               </a>
             </p>

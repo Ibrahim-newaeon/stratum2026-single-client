@@ -420,34 +420,9 @@
       "mission": "We're on a mission to help growth teams make smarter decisions with AI-powered intelligence and trust-gated automation.",
       "team": [
         {
-          "name": "Sarah Chen",
-          "role": "CEO & Co-Founder",
-          "image": "SC"
-        },
-        {
-          "name": "Marcus Rodriguez",
-          "role": "CTO & Co-Founder",
-          "image": "MR"
-        },
-        {
-          "name": "Emily Watson",
-          "role": "VP of Product",
-          "image": "EW"
-        },
-        {
-          "name": "David Kim",
-          "role": "VP of Engineering",
-          "image": "DK"
-        },
-        {
-          "name": "Lisa Thompson",
-          "role": "VP of Sales",
-          "image": "LT"
-        },
-        {
-          "name": "James Park",
-          "role": "VP of Customer Success",
-          "image": "JP"
+          "name": "Ibrahim M. Abed Rabboh",
+          "role": "Owner & Executer",
+          "image": "IA"
         }
       ],
       "values": [

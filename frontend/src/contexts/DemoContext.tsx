@@ -20,7 +20,7 @@ export const DEMO_TENANT = {
 export const DEMO_USER = {
   id: 'demo-user-001',
   name: 'Demo User',
-  email: 'demo@stratum.ai',
+  email: 'demo@adsgrowthsystem.com',
   role: 'admin',
   avatar: null,
 };

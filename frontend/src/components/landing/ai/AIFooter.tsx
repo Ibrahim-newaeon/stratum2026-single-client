@@ -84,7 +84,7 @@ export default function AIFooter() {
           {/* Brand Column */}
           <div className="col-span-2 md:col-span-1">
             <a href="/" className="flex items-center gap-3 mb-6">
-              <img src="/images/logo.png" alt="ADs Growth System" className="h-7" loading="lazy" decoding="async" />
+              <span className="font-display font-semibold text-lg tracking-tight text-foreground">ADs Growth <span className="text-primary">System</span></span>
             </a>
             <p className="text-sm text-muted-foreground mb-6">
               AI-Powered Revenue Operating System with Trust-Gated Autopilot.

@@ -169,7 +169,7 @@ const fallbackFaqs: FAQItem[] = [
     id: '18',
     question: 'How can I contact the team?',
     answer:
-      'Email us at support@stratum.ai for support, sales@stratum.ai for sales inquiries, or use the in-app chat. Enterprise customers have direct Slack channels with our team.',
+      'Email us at support@adsgrowthsystem.com for support, sales@adsgrowthsystem.com for sales inquiries, or use the in-app chat. Enterprise customers have direct Slack channels with our team.',
     category: 'support',
   },
 ];
@@ -321,7 +321,7 @@ export default function FAQ() {
                 Contact Support
               </a>
               <a
-                href="mailto:sales@stratum.ai"
+                href="mailto:sales@adsgrowthsystem.com"
                 className="inline-flex items-center justify-center px-7 py-3.5 rounded-full bg-card border border-border text-foreground font-semibold text-body hover:bg-foreground/5 transition-colors duration-200"
               >
                 Email Us

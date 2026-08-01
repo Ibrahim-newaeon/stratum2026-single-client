@@ -104,7 +104,7 @@ describe('Sidebar', () => {
       <Sidebar
         groups={groups}
         currentPath="/"
-        brand={<span data-testid="brand">stratum.ai</span>}
+        brand={<span data-testid="brand">adsgrowthsystem.com</span>}
         footer={<span data-testid="footer">jane@co.com</span>}
       />,
       '/'

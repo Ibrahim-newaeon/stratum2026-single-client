@@ -88,7 +88,7 @@ export function Hero() {
                   </div>
                   <div className="flex-1 flex justify-center">
                     <div className="px-4 py-1 rounded-md bg-background text-meta text-muted-foreground">
-                      app.stratum.ai
+                      app.adsgrowthsystem.com
                     </div>
                   </div>
                 </div>

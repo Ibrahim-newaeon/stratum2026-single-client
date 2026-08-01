@@ -33,7 +33,6 @@ export default function Landing() {
     return [
       { name: 'Product', href: '#product' },
       { name: 'Solutions', href: '#solutions' },
-      { name: 'Pricing', href: '/pricing' },
       { name: 'Docs', href: '/docs' },
     ];
   }, [pagesData]);
@@ -52,11 +51,7 @@ export default function Landing() {
           <nav className="flex items-center justify-between h-16 lg:h-20">
             {/* Logo */}
             <Link to="/" className="flex items-center gap-3">
-              <img
-                src="/images/logo.png"
-                alt="ADs Growth System"
-                className="h-7"
-              />
+              <span className="font-display font-semibold text-lg tracking-tight text-foreground">ADs Growth <span className="text-primary">System</span></span>
             </Link>
 
             {/* Desktop Links */}
@@ -82,7 +77,7 @@ export default function Landing() {
               </Link>
               <Link
                 to="/signup"
-                className="inline-flex items-center px-5 py-2.5 rounded-lg bg-stratum-500 text-primary-foreground text-sm font-semibold hover:brightness-110 transition-opacity duration-200"
+                className="inline-flex items-center px-5 py-2.5 rounded-lg bg-cta text-white text-sm font-semibold hover:bg-cta-hover transition-opacity duration-200"
               >
                 Start Partnering
               </Link>
@@ -126,7 +121,7 @@ export default function Landing() {
                 </Link>
                 <Link
                   to="/signup"
-                  className="py-3 px-4 rounded-lg text-sm font-semibold text-primary-foreground bg-stratum-500 text-center hover:brightness-110 transition-opacity duration-200"
+                  className="py-3 px-4 rounded-lg text-sm font-semibold text-primary-foreground bg-cta text-center hover:bg-cta-hover transition-colors duration-200"
                   onClick={() => setIsMobileMenuOpen(false)}
                 >
                   Start Partnering

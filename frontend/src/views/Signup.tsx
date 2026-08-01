@@ -1,5 +1,5 @@
 /**
- * Signup Page — Stratum figma theme
+ * Signup Page — ADs Growth System figma theme
  * Split-screen: trial pitch + ember-accented signup form (with OTP flow)
  */
 
@@ -644,7 +644,7 @@ export default function Signup() {
           {/* Mobile wordmark */}
           <div className="lg:hidden mb-8 self-start">
             <a href="/landing.html" className="text-[18px] font-medium tracking-tight text-white">
-              stratum.ai
+              adsgrowthsystem.com
             </a>
           </div>
 
