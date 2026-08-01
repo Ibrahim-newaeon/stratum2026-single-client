@@ -5,11 +5,14 @@
 Tests for shelving Drip Campaigns and Campaign Publish off for launch (Tier 2).
 
 Drip has no execution engine (no drip Celery task; activate only flips a flag,
-manual_trigger writes a "simulated" record), and campaign publish marks a draft
-PUBLISHED with no platform call / no platform_campaign_id — a data-integrity
-risk. Both are gated: the whole /drip-campaigns router 503s, and the single
-publish endpoint 503s (draft CRUD stays available), while the flags are off
-(the default).
+manual_trigger writes a "simulated" record), and campaign publish has no
+platform adapter. Both are gated: the whole /drip-campaigns router 503s, and
+the single publish endpoint 503s (draft CRUD stays available), while the flags
+are off (the default).
+
+These tests cover the gate only. What happens once the flag is turned *on* —
+publish must refuse rather than fabricate a PUBLISHED draft — is pinned
+separately in test_campaign_publish_no_fake_success.py.
 """
 
 import pytest

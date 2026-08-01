@@ -51,11 +51,16 @@ async def require_campaign_publish_enabled() -> None:
     """
     Gate campaign publish behind a feature flag.
 
-    Publishing currently marks a draft PUBLISHED with no platform call and no
-    ``platform_campaign_id`` (hardcoded SUCCESS, dispatch commented out) — it
-    records campaigns as live that don't exist on-platform, a data-integrity
-    risk. Gated off until a real publish adapter lands. Only publish is 503'd;
-    draft CRUD stays available.
+    There is no publish adapter for any platform yet, so the endpoint behind
+    this gate raises 501 unconditionally. The flag and the 501 answer two
+    different questions, and both are worth keeping: 503 means "this
+    deployment has publishing switched off", 501 means "publishing is not
+    built". Only publish is gated; draft CRUD stays available.
+
+    Until STRAT-CB-001 P0 this endpoint marked drafts PUBLISHED and wrote
+    PublishResult.SUCCESS with no platform call, so the flag was the only
+    thing preventing a fictional audit trail. It no longer carries that
+    weight alone. See docs/architecture/campaign-publish-plan.md.
     """
     if not settings.enable_campaign_publish:
         raise HTTPException(
@@ -728,14 +733,13 @@ async def reject_campaign_draft(
     dependencies=[Depends(require_campaign_publish_enabled)],
 )
 async def publish_campaign_draft(
-    request: Request,
     draft_id: UUID,
-    background_tasks: BackgroundTasks,
     db: AsyncSession = Depends(get_async_session),
 ):
-    """Publish an approved campaign draft to the platform."""
-    user_id = getattr(request.state, "user_id", None)
+    """Publish an approved campaign draft to the platform.
 
+    Currently always raises 501 — validation runs, publishing does not.
+    """
     result = await db.execute(
         select(CampaignDraft)
         .options(selectinload(CampaignDraft.ad_account))
@@ -763,37 +767,27 @@ async def publish_campaign_draft(
                 detail=f"Budget {budget_amount} exceeds account cap {draft.ad_account.daily_budget_cap}",
             )
 
-    # Update status to publishing
-    draft.status = DraftStatus.PUBLISHING
-    await db.commit()
-
-    # Create publish log entry
-    publish_log = CampaignPublishLog(
-        draft_id=draft_id,
-        platform=draft.platform,
-        platform_account_id=(
-            draft.ad_account.platform_account_id if draft.ad_account else ""
+    # There is no publish adapter. Everything above this line is real
+    # validation worth keeping; everything that used to follow it was not.
+    #
+    # This endpoint previously wrote a CampaignPublishLog row with
+    # result_status=SUCCESS, moved the draft to PUBLISHED and stamped
+    # published_at — all without making a single network call. It did not even
+    # dispatch the Celery task; the task's own publish step was likewise a
+    # mock. The result was that enabling the feature flag produced green
+    # checkmarks, no ads, and an audit table that could not be trusted.
+    #
+    # Refusing is the honest response. The draft is deliberately left in
+    # APPROVED with no log row: nothing was attempted, so nothing should be
+    # recorded as attempted, and the draft stays publishable for when the
+    # adapter lands. See docs/architecture/campaign-publish-plan.md.
+    raise HTTPException(
+        status_code=501,
+        detail=(
+            f"Publishing to '{draft.platform}' is not implemented. "
+            "The draft remains approved and will be publishable once a "
+            "platform publish adapter is available."
         ),
-        published_by_user_id=user_id,
-        request_json=draft.draft_json,
-        result_status=PublishResult.SUCCESS,  # Will be updated by background task
-    )
-    db.add(publish_log)
-    await db.commit()
-
-    # In production, trigger async publish task and await platform API response
-    # background_tasks.add_task(publish_campaign_task, draft_id, publish_log.id)
-
-    # Mark as published — platform_campaign_id will be set by the background task
-    # when the platform API returns the real campaign ID.
-    draft.status = DraftStatus.PUBLISHED
-    draft.published_at = datetime.now(timezone.utc)
-    await db.commit()
-    await db.refresh(draft)
-
-    return APIResponse(
-        success=True,
-        data=CampaignDraftResponse.model_validate(draft),
     )
 
 

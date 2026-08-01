@@ -90,46 +90,49 @@ def sync_ad_accounts(self, platform: str):
             logger.warning(f"No active connection for platform {platform}")
             return {"status": "skipped", "reason": "no active connection"}
 
-        try:
-            # Fetch ad accounts from platform API
-            # In production: accounts = fetch_ad_accounts_from_platform(platform, connection.access_token_encrypted)
+        if not connection.access_token_encrypted:
+            connection.last_error = "No access token stored; re-authorization required"
+            db.commit()
+            logger.warning(f"No access token for platform {platform}")
+            return {"status": "error", "reason": "no access token"}
 
-            # Mock data for development
-            mock_accounts = [
-                {
-                    "id": f"act_{platform}_001",
-                    "name": "Main Business Account",
-                    "currency": "SAR",
-                    "timezone": "Asia/Riyadh",
-                    "status": "active",
-                },
-                {
-                    "id": f"act_{platform}_002",
-                    "name": "E-commerce Store",
-                    "currency": "SAR",
-                    "timezone": "Asia/Riyadh",
-                    "status": "active",
-                },
-            ]
+        try:
+            # Real sync: decrypt the stored access token and ask the provider
+            # service for the accounts this token can actually see. Every
+            # OAuthService subclass implements fetch_ad_accounts (meta, google,
+            # tiktok, snapchat), and like refresh_access_token above it uses its
+            # own aiohttp session, so asyncio.run carries no event-loop-pool
+            # hazard.
+            #
+            # This previously wrote two invented accounts — "Main Business
+            # Account" and "E-commerce Store", act_{platform}_001/002, SAR,
+            # Asia/Riyadh — straight into the AdAccount table on every run,
+            # for every platform, indistinguishable from real rows. Campaign
+            # drafts could then be attached to ad accounts that do not exist.
+            credentials = asyncio.run(_resolve_platform_credentials(platform))
+            service = get_oauth_service(platform, credentials=credentials)
+            access_token = service.decrypt_token(connection.access_token_encrypted)
+            accounts = asyncio.run(service.fetch_ad_accounts(access_token))
 
             synced_count = 0
-            for account_data in mock_accounts:
+            for account in accounts:
                 # Check if account exists
                 existing = db.execute(
                     select(AdAccount).where(
                         and_(
                             AdAccount.platform == AdPlatform(platform),
-                            AdAccount.platform_account_id == account_data["id"],
+                            AdAccount.platform_account_id == account.account_id,
                         )
                     )
                 ).scalar_one_or_none()
 
                 if existing:
                     # Update existing
-                    existing.name = account_data["name"]
-                    existing.currency = account_data["currency"]
-                    existing.timezone = account_data["timezone"]
-                    existing.account_status = account_data["status"]
+                    existing.name = account.name
+                    existing.business_name = account.business_name
+                    existing.currency = account.currency
+                    existing.timezone = account.timezone
+                    existing.account_status = account.status
                     existing.last_synced_at = datetime.now(timezone.utc)
                     existing.sync_error = None
                 else:
@@ -137,11 +140,12 @@ def sync_ad_accounts(self, platform: str):
                     new_account = AdAccount(
                         connection_id=connection.id,
                         platform=AdPlatform(platform),
-                        platform_account_id=account_data["id"],
-                        name=account_data["name"],
-                        currency=account_data["currency"],
-                        timezone=account_data["timezone"],
-                        account_status=account_data["status"],
+                        platform_account_id=account.account_id,
+                        name=account.name,
+                        business_name=account.business_name,
+                        currency=account.currency,
+                        timezone=account.timezone,
+                        account_status=account.status,
                         is_enabled=False,  # Disabled by default
                         last_synced_at=datetime.now(timezone.utc),
                     )
@@ -149,6 +153,8 @@ def sync_ad_accounts(self, platform: str):
 
                 synced_count += 1
 
+            connection.last_error = None
+            connection.error_count = 0
             db.commit()
             logger.info(f"Synced {synced_count} ad accounts for platform {platform}")
 
@@ -342,28 +348,31 @@ def publish_campaign(self, draft_id: str, publish_log_id: str):
             if not connection or connection.status != ConnectionStatus.CONNECTED:
                 raise Exception("Platform not connected")
 
-            # Publish to platform API
-            # In production: result = publish_to_platform(draft.platform, connection, draft.draft_json)
-
-            # Mock success
-            platform_campaign_id = f"camp_{draft_id[:8]}"
-
-            # Update draft
-            draft.status = DraftStatus.PUBLISHED
-            draft.platform_campaign_id = platform_campaign_id
-            draft.published_at = datetime.now(timezone.utc)
-
-            # Update publish log
-            publish_log.result_status = PublishResult.SUCCESS
-            publish_log.platform_campaign_id = platform_campaign_id
-            publish_log.response_json = {"campaign_id": platform_campaign_id}
-
-            db.commit()
-            logger.info(
-                f"Successfully published campaign {draft_id} as {platform_campaign_id}"
+            # No publish adapter exists yet. This previously synthesised a
+            # campaign id and recorded PublishResult.SUCCESS without making a
+            # single network call, which meant CampaignPublishLog — the record
+            # of what was spent and by whom — filled with fiction the moment
+            # anyone enabled the feature flag to smoke-test it. Failing loudly
+            # is the only honest behaviour until publish_to_platform lands.
+            # See docs/architecture/campaign-publish-plan.md (Phase 4).
+            raise NotImplementedError(
+                f"No publish adapter implemented for platform '{draft.platform}'. "
+                "Campaign publishing is not yet operational."
             )
 
-            return {"status": "success", "platform_campaign_id": platform_campaign_id}
+        except NotImplementedError as e:
+            # Permanent, not transient: retrying cannot make an unimplemented
+            # adapter exist. Record the failure and stop, rather than burning
+            # three retries and reporting a retry exhaustion that misdescribes
+            # the cause.
+            logger.error(f"Publish unavailable for draft {draft_id}: {e}")
+
+            draft.status = DraftStatus.FAILED
+            publish_log.result_status = PublishResult.FAILURE
+            publish_log.error_message = str(e)
+
+            db.commit()
+            return {"status": "error", "reason": "not implemented"}
 
         except Exception as e:
             logger.error(f"Error publishing campaign: {e}")
