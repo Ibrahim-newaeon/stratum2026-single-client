@@ -1427,7 +1427,12 @@ class TestSyncAdAccountsTask:
 
         mock_db = MagicMock()
         # First call returns connection, subsequent calls return None (no existing accounts)
-        mock_db.execute.return_value.scalar_one_or_none.side_effect = [conn, None, None, None]
+        mock_db.execute.return_value.scalar_one_or_none.side_effect = [
+            conn,
+            None,
+            None,
+            None,
+        ]
 
         accounts = [
             AdAccountInfo(account_id="act_111", name="Real Account One"),

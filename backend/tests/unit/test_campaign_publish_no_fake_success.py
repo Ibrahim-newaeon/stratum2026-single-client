@@ -36,9 +36,7 @@ def _approved_draft():
         published_at=None,
         platform_campaign_id=None,
         draft_json={"campaign": {"budget": {"amount": 10}}},
-        ad_account=SimpleNamespace(
-            daily_budget_cap=None, platform_account_id="act_1"
-        ),
+        ad_account=SimpleNamespace(daily_budget_cap=None, platform_account_id="act_1"),
     )
 
 
@@ -58,7 +56,9 @@ async def test_publish_endpoint_refuses_with_501():
     db = _db_returning(_approved_draft())
 
     with pytest.raises(HTTPException) as exc:
-        await publish_campaign_draft(draft_id="00000000-0000-0000-0000-000000000001", db=db)
+        await publish_campaign_draft(
+            draft_id="00000000-0000-0000-0000-000000000001", db=db
+        )
 
     assert exc.value.status_code == 501
     assert "not implemented" in str(exc.value.detail).lower()
@@ -70,10 +70,14 @@ async def test_publish_endpoint_leaves_draft_approved_and_unpublished():
     db = _db_returning(draft)
 
     with pytest.raises(HTTPException):
-        await publish_campaign_draft(draft_id="00000000-0000-0000-0000-000000000001", db=db)
+        await publish_campaign_draft(
+            draft_id="00000000-0000-0000-0000-000000000001", db=db
+        )
 
     assert draft.status is DraftStatus.APPROVED, "draft was mutated toward published"
-    assert draft.published_at is None, "published_at was stamped without a platform call"
+    assert (
+        draft.published_at is None
+    ), "published_at was stamped without a platform call"
     assert draft.platform_campaign_id is None, "a campaign id was synthesised"
     db.commit.assert_not_awaited()
 
@@ -83,7 +87,9 @@ async def test_publish_endpoint_writes_no_publish_log():
     db = _db_returning(_approved_draft())
 
     with pytest.raises(HTTPException):
-        await publish_campaign_draft(draft_id="00000000-0000-0000-0000-000000000001", db=db)
+        await publish_campaign_draft(
+            draft_id="00000000-0000-0000-0000-000000000001", db=db
+        )
 
     db.add.assert_not_called()
 
@@ -93,7 +99,9 @@ async def test_publish_endpoint_still_validates_before_refusing():
     db = _db_returning(None)
 
     with pytest.raises(HTTPException) as exc:
-        await publish_campaign_draft(draft_id="00000000-0000-0000-0000-000000000001", db=db)
+        await publish_campaign_draft(
+            draft_id="00000000-0000-0000-0000-000000000001", db=db
+        )
 
     assert exc.value.status_code == 404
 
@@ -117,9 +125,11 @@ def test_publish_task_records_failure_not_success(monkeypatch):
         platform_campaign_id=None,
         response_json=None,
     )
-    connection = SimpleNamespace(status=__import__(
-        "app.models.campaign_builder", fromlist=["ConnectionStatus"]
-    ).ConnectionStatus.CONNECTED)
+    connection = SimpleNamespace(
+        status=__import__(
+            "app.models.campaign_builder", fromlist=["ConnectionStatus"]
+        ).ConnectionStatus.CONNECTED
+    )
 
     # execute() is called for draft, log, ad_account, connection in that order.
     returns = [draft, log, SimpleNamespace(id="acc"), connection]
@@ -134,9 +144,7 @@ def test_publish_task_records_failure_not_success(monkeypatch):
         return r
 
     db.execute.side_effect = _execute
-    monkeypatch.setattr(
-        "app.workers.campaign_builder_tasks.SessionLocal", lambda: db
-    )
+    monkeypatch.setattr("app.workers.campaign_builder_tasks.SessionLocal", lambda: db)
 
     # bind=True, so __wrapped__ already has `self` bound to the task instance.
     # The NotImplementedError branch must not call self.retry at all — retrying
