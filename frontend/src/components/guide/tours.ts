@@ -31,7 +31,7 @@ export const ownerTour: TourConfig = {
       target: 'body',
       content: 'Welcome to the Owner Control Tower! This tour will show you how to monitor platform health and manage tenants.',
       placement: 'center',
-      disableBeacon: true,
+      skipBeacon: true,
     },
     {
       target: '[data-tour="portfolio-kpis"]',
@@ -80,7 +80,7 @@ export const accountManagerTour: TourConfig = {
       target: 'body',
       content: 'Welcome to your Account Manager Portfolio! This tour will help you manage clients and explain performance to stakeholders.',
       placement: 'center',
-      disableBeacon: true,
+      skipBeacon: true,
     },
     {
       target: '[data-tour="portfolio-list"]',
@@ -124,7 +124,7 @@ export const tenantAdminTour: TourConfig = {
       target: 'body',
       content: 'Welcome to your Trust Dashboard! This tour will help you understand when you can trust your data and make confident decisions.',
       placement: 'center',
-      disableBeacon: true,
+      skipBeacon: true,
     },
     {
       target: '[data-tour="trust-header"]',
@@ -168,7 +168,7 @@ export const mediaBuyerTour: TourConfig = {
       target: 'body',
       content: 'Welcome to your Daily Console! This tour will show you how to optimize campaigns while staying within safe limits.',
       placement: 'center',
-      disableBeacon: true,
+      skipBeacon: true,
     },
     {
       target: '[data-tour="console-header"]',
@@ -212,7 +212,7 @@ export const dataTeamTour: TourConfig = {
       target: 'body',
       content: 'Welcome to the Signal Hub! This tour will help you diagnose signal issues and recover data quality fast.',
       placement: 'center',
-      disableBeacon: true,
+      skipBeacon: true,
     },
     {
       target: '[data-tour="platform-signals"]',
@@ -260,7 +260,7 @@ export const generalTour: TourConfig = {
       target: 'body',
       content: 'Welcome to ADs Growth System! Let\'s take a quick tour of the platform.',
       placement: 'center',
-      disableBeacon: true,
+      skipBeacon: true,
     },
     {
       target: '[data-tour="sidebar"]',

@@ -1,5 +1,8 @@
 import { createContext, useContext, useState, useCallback, ReactNode, useEffect } from 'react'
-import Joyride, { CallBackProps, STATUS, ACTIONS, EVENTS } from 'react-joyride'
+// v3 dropped the default export and renamed the callback payload type
+// (CallBackProps -> EventData). See the migration notes in this file's
+// handleJoyrideEvent.
+import { Joyride, type EventData, STATUS, ACTIONS, EVENTS } from 'react-joyride'
 import {
   TourRole,
   TourConfig,
@@ -69,8 +72,16 @@ export function JoyrideProvider({ children, userRole = 'general', autoStart = fa
     }
   }, [autoStart, userRole])
 
-  const handleJoyrideCallback = useCallback((data: CallBackProps) => {
+  const handleJoyrideEvent = useCallback((data: EventData) => {
     const { action, index, status, type } = data
+
+    // REQUIRED in v3 controlled mode. A replay re-emits step:after for the
+    // step the user is already on, so without this guard the handler below
+    // would advance stepIndex and silently skip the next step. Called out
+    // explicitly in the 3.1.0 release notes.
+    if (type === EVENTS.STEP_AFTER && action === ACTIONS.REPLAY) {
+      return
+    }
 
     if ([EVENTS.STEP_AFTER, EVENTS.TARGET_NOT_FOUND].includes(type as typeof EVENTS.STEP_AFTER)) {
       setStepIndex(index + (action === ACTIONS.PREV ? -1 : 1))
@@ -144,19 +155,31 @@ export function JoyrideProvider({ children, userRole = 'general', autoStart = fa
           run={run}
           stepIndex={stepIndex}
           continuous
-          showProgress
-          showSkipButton
           scrollToFirstStep
-          spotlightClicks
-          callback={handleJoyrideCallback}
+          onEvent={handleJoyrideEvent}
+          // v3 moved per-step theme and behaviour settings out of
+          // styles.options into this `options` prop, which supplies defaults
+          // for every step. Three of the old boolean props are gone and are
+          // expressed here instead:
+          //   showProgress    -> options.showProgress
+          //   showSkipButton  -> options.buttons includes 'skip'
+          //   spotlightClicks -> options.blockTargetInteraction (inverted;
+          //                      false is the default, so clicks already pass
+          //                      through to the target)
+          // spotlightRadius replaces styles.spotlight.borderRadius, since the
+          // spotlight is now an SVG path — 12px preserves the previous 0.75rem
+          // cutout at a 16px root.
+          options={{
+            primaryColor: '#a855f7',
+            backgroundColor: '#0A0A0A',
+            textColor: '#ffffff',
+            overlayColor: 'rgba(0, 0, 0, 0.75)',
+            zIndex: 10000,
+            showProgress: true,
+            spotlightRadius: 12,
+            buttons: ['back', 'primary', 'skip'],
+          }}
           styles={{
-            options: {
-              primaryColor: '#a855f7', // ADs Growth System purple
-              zIndex: 10000,
-              backgroundColor: '#0A0A0A',
-              textColor: '#ffffff',
-              overlayColor: 'rgba(0, 0, 0, 0.75)',
-            },
             tooltip: {
               borderRadius: '1rem',
               padding: '1.5rem',
@@ -166,7 +189,9 @@ export function JoyrideProvider({ children, userRole = 'general', autoStart = fa
             tooltipContent: {
               padding: 0,
             },
-            buttonNext: {
+            // v3 renamed buttonNext -> buttonPrimary (it styles both the
+            // Next and the Last button).
+            buttonPrimary: {
               borderRadius: '0.5rem',
               padding: '0.75rem 1.5rem',
               backgroundColor: '#a855f7',
@@ -181,18 +206,14 @@ export function JoyrideProvider({ children, userRole = 'general', autoStart = fa
               borderRadius: '0.5rem',
               color: '#6b7280',
             },
-            spotlight: {
-              borderRadius: '0.75rem',
-            },
             beacon: {
               display: 'none',
             },
-          }}
-          floaterProps={{
-            styles: {
-              floater: {
-                filter: 'drop-shadow(0 4px 20px rgba(168, 85, 247, 0.3))',
-              },
+            // v3 dropped floaterProps; the floater is styled through the
+            // regular styles object now, so the purple drop-shadow moves here
+            // rather than being lost.
+            floater: {
+              filter: 'drop-shadow(0 4px 20px rgba(168, 85, 247, 0.3))',
             },
           }}
           locale={{
