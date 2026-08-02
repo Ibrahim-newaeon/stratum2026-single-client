@@ -78,6 +78,23 @@ updates:
       - "frontend"
     commit-message:
       prefix: "chore(deps)"
+    ignore:
+      # typescript 7.x cannot be linted. typescript-eslint refuses to load
+      # against it and throws outright rather than degrading:
+      #   Error: typescript-eslint does not support TS 7.0.
+      # `eslint --max-warnings 0` then fails for the whole frontend, so the
+      # bump breaks CI regardless of whether the code itself typechecks — and
+      # it does: tsc --noEmit, the production build and 935/935 vitest all
+      # pass on TS 7.0.2. Verified in a node:22 container while splitting the
+      # npm-major group; see PR #26, closed rather than merged, and its
+      # replacements #69 #70 #71.
+      # Upstream tracking: typescript-eslint/typescript-eslint#10940, which
+      # targets support for TS >= 7.1.
+      # REMOVE THIS ENTRY once that ships, then take the major deliberately.
+      # Ignoring the update-type rather than a version range, on the lesson
+      # from boto3 above: a bounded ignore just invites the next number down.
+      - dependency-name: "typescript"
+        update-types: ["version-update:semver-major"]
     groups:
       npm-minor:
         patterns:
