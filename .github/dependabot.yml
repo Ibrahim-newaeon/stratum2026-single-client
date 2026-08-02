@@ -72,7 +72,10 @@ updates:
     schedule:
       interval: "weekly"
       day: "monday"
-    open-pull-requests-limit: 5
+    # Raised from 5 alongside ungrouping majors below: each major now gets its
+    # own PR, so the cap has to leave room for several plus the minor group.
+    # At the cap Dependabot silently withholds the surplus rather than warning.
+    open-pull-requests-limit: 10
     labels:
       - "dependencies"
       - "frontend"
@@ -102,12 +105,28 @@ updates:
         update-types:
           - "minor"
           - "patch"
-      # Majors land as ONE bundled PR (see python-major note above).
-      npm-major:
-        patterns:
-          - "*"
-        update-types:
-          - "major"
+      # NPM majors are deliberately NOT grouped, unlike python-major above.
+      # Ungrouped update-types arrive as one PR per dependency.
+      #
+      # They were bundled, for the reason python-major still gives: triage them
+      # together rather than fielding 5+ separate major-bump PRs. In practice
+      # that traded a little noise for two worse problems.
+      #
+      # One blocked package holds the rest hostage. #26 bundled four majors;
+      # typescript could not merge because typescript-eslint refuses to load
+      # against TS 7, so a Node bump, a react-joyride migration and two
+      # test-dep majors sat unmergeable behind it for weeks. Splitting it by
+      # hand into #69 #70 #71 was the only way to land any of them.
+      #
+      # And a bundle reads as one small change. #26's diff looked like four
+      # version numbers. react-joyride 2->3 alone needed eleven API changes
+      # plus a guard for v3 re-emitting step:after on replay — without which
+      # the product tour silently skips a step. That is invisible in a PR
+      # titled "bump the npm-major group with 4 updates", and no reviewer
+      # would have gone looking for it.
+      #
+      # Majors are migrations. One per PR, each with its own CI run and its
+      # own verdict via the upgrade-dependency skill.
 
   # GitHub Actions
   - package-ecosystem: "github-actions"
