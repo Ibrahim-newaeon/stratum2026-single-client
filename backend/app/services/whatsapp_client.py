@@ -492,11 +492,14 @@ class WhatsAppNotConfiguredError(Exception):
 # this module-level dict and refreshed at: API startup (main.py lifespan),
 # every save/delete via /platform-credentials/whatsapp, and worker task entry.
 _db_credential_override: Optional[Dict[str, Optional[str]]] = None
+# Webhook secrets (verify_token / app_secret) from the row's extra_secrets
+# JSON — cached alongside the client credentials.
+_db_webhook_secrets: Dict[str, str] = {}
 
 
 def _apply_credential_row(row: Any) -> bool:
-    """Map a PlatformAppCredential row onto the override cache."""
-    global _db_credential_override
+    """Map a PlatformAppCredential row onto the override caches."""
+    global _db_credential_override, _db_webhook_secrets
     if row is not None and row.client_id and row.client_secret:
         _db_credential_override = {
             "phone_number_id": row.client_id,
@@ -505,7 +508,29 @@ def _apply_credential_row(row: Any) -> bool:
         }
     else:
         _db_credential_override = None
+
+    _db_webhook_secrets = {}
+    if row is not None and row.extra_secrets:
+        import json
+
+        try:
+            parsed = json.loads(row.extra_secrets)
+            if isinstance(parsed, dict):
+                _db_webhook_secrets = {
+                    k: str(v)
+                    for k, v in parsed.items()
+                    if k in ("verify_token", "app_secret") and v
+                }
+        except (ValueError, TypeError):
+            _db_webhook_secrets = {}
     return _db_credential_override is not None
+
+
+def get_whatsapp_webhook_secret(name: str) -> Optional[str]:
+    """Webhook secret ("verify_token" | "app_secret"): DB-saved wins, env falls back."""
+    if _db_webhook_secrets.get(name):
+        return _db_webhook_secrets[name]
+    return getattr(settings, f"whatsapp_{name}", None)
 
 
 async def refresh_whatsapp_credentials(db: Any) -> bool:
