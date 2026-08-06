@@ -501,3 +501,151 @@ class TestRateLimitMiddleware:
         middleware._maybe_cleanup()
 
         assert "ip:idle-client" not in middleware._buckets
+
+
+# =============================================================================
+# Redis fixed-window counter
+# =============================================================================
+
+
+class _FakePipeline:
+    """Records INCR/EXPIRE calls and returns a monotonic count per key."""
+
+    def __init__(self, counts: dict[str, int], expire_calls: list[tuple[str, int]]):
+        self._counts = counts
+        self._expire_calls = expire_calls
+        self._queued: list[tuple[str, str, int]] = []
+
+    def incr(self, key: str) -> None:
+        self._queued.append(("incr", key, 0))
+
+    def expire(self, key: str, ttl: int) -> None:
+        self._queued.append(("expire", key, ttl))
+
+    async def execute(self) -> list:
+        results = []
+        for op, key, ttl in self._queued:
+            if op == "incr":
+                self._counts[key] = self._counts.get(key, 0) + 1
+                results.append(self._counts[key])
+            else:
+                self._expire_calls.append((key, ttl))
+                results.append(True)
+        self._queued = []
+        return results
+
+
+class _FakeRedis:
+    def __init__(self):
+        self.counts: dict[str, int] = {}
+        self.expire_calls: list[tuple[str, int]] = []
+
+    def pipeline(self) -> _FakePipeline:
+        return _FakePipeline(self.counts, self.expire_calls)
+
+
+class TestRedisFixedWindow:
+    """The Redis counter must reset on its own once a window elapses.
+
+    Regression guard: the counter key used to be a bare ``rl:<client>`` whose
+    TTL was refreshed by an unconditional EXPIRE on every request. Any caller
+    polling faster than the window (notably the container healthcheck, every
+    30s against a 60s window) kept the key alive indefinitely, so its count
+    accumulated without bound and the caller was throttled permanently.
+    """
+
+    @pytest.mark.asyncio
+    async def test_window_is_encoded_in_the_key(self):
+        """Each window gets its own key, so counts cannot carry across."""
+        app = MagicMock()
+        middleware = RateLimitMiddleware(app, requests_per_minute=100)
+        fake = _FakeRedis()
+        middleware._get_redis = AsyncMock(return_value=fake)
+
+        with patch("app.middleware.rate_limit.time.time", return_value=1_000_000.0):
+            await middleware._check_redis("ip:1.2.3.4")
+        with patch("app.middleware.rate_limit.time.time", return_value=1_000_061.0):
+            await middleware._check_redis("ip:1.2.3.4")
+
+        assert set(fake.counts) == {
+            "rl:ip:1.2.3.4:999960",
+            "rl:ip:1.2.3.4:1000020",
+        }
+        # Two distinct windows, each counted once — not one key counted twice.
+        assert all(c == 1 for c in fake.counts.values())
+
+    @pytest.mark.asyncio
+    async def test_counter_resets_across_windows(self):
+        """A client at the limit in one window is allowed again in the next."""
+        app = MagicMock()
+        middleware = RateLimitMiddleware(app, requests_per_minute=3)
+        fake = _FakeRedis()
+        middleware._get_redis = AsyncMock(return_value=fake)
+
+        with patch("app.middleware.rate_limit.time.time", return_value=1_000_000.0):
+            for _ in range(3):
+                allowed, _ = await middleware._check_redis("ip:5.6.7.8")
+                assert allowed
+            allowed, remaining = await middleware._check_redis("ip:5.6.7.8")
+            assert allowed is False
+            assert remaining == 0
+
+        # Next window: budget is restored without any TTL having to lapse.
+        with patch("app.middleware.rate_limit.time.time", return_value=1_000_060.0):
+            allowed, remaining = await middleware._check_redis("ip:5.6.7.8")
+            assert allowed is True
+            assert remaining == 2
+
+    @pytest.mark.asyncio
+    async def test_frequent_poller_is_never_throttled(self):
+        """The healthcheck pattern: one call every 30s must never hit 429.
+
+        This is the exact scenario that marked the API unhealthy after ~50
+        minutes while /health itself still returned 200.
+        """
+        app = MagicMock()
+        middleware = RateLimitMiddleware(app, requests_per_minute=100)
+        fake = _FakeRedis()
+        middleware._get_redis = AsyncMock(return_value=fake)
+
+        now = 1_000_000.0
+        for _ in range(240):  # 240 probes x 30s = 2 hours
+            with patch("app.middleware.rate_limit.time.time", return_value=now):
+                allowed, _ = await middleware._check_redis("ip:127.0.0.1")
+            assert allowed, "healthcheck probe was rate-limited"
+            now += 30
+
+        # At most 2 probes land in any single 60s window.
+        assert max(fake.counts.values()) <= 2
+
+    @pytest.mark.asyncio
+    async def test_health_endpoints_bypass_the_limiter(self):
+        """/health* must not consume budget or ever return 429."""
+        app = MagicMock()
+        middleware = RateLimitMiddleware(app, requests_per_minute=1, burst_size=1)
+        middleware._redis_available = False
+
+        for path in ("/health", "/health/live", "/health/ready"):
+            for _ in range(5):
+                resp = await middleware.dispatch(
+                    _make_request(path, client_host="10.0.0.9"), _ok_call_next
+                )
+                assert resp.status_code == 200
+
+        # Exempt paths never allocate a bucket.
+        assert middleware._buckets == {}
+
+    @pytest.mark.asyncio
+    async def test_reset_header_points_at_the_real_window_boundary(self):
+        """X-RateLimit-Reset must be the window end, not 'now + 60'."""
+        app = MagicMock()
+        middleware = RateLimitMiddleware(app, requests_per_minute=100)
+        middleware._redis_available = False
+
+        with patch("app.middleware.rate_limit.time.time", return_value=1_000_030.0):
+            resp = await middleware.dispatch(
+                _make_request("/api/v1/data", client_host="10.0.0.10"), _ok_call_next
+            )
+
+        # Window began at 1_000_020 and ends at 1_000_080 — not 1_000_090.
+        assert resp.headers["X-RateLimit-Reset"] == "1000080"

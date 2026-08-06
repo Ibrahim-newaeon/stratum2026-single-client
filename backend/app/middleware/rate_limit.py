@@ -2,11 +2,11 @@
 # ADs Growth System - Rate Limiting Middleware
 # =============================================================================
 """
-Sliding-window rate limiting using Redis (distributed) with in-memory fallback.
+Fixed-window rate limiting using Redis (distributed) with in-memory fallback.
 
-Uses Redis INCR + EXPIRE for accurate, distributed counting across multiple
-API workers. Falls back to a local in-memory token bucket when Redis is
-unavailable so the middleware never blocks startup.
+Uses Redis INCR + EXPIRE against a per-window key for accurate, distributed
+counting across multiple API workers. Falls back to a local in-memory token
+bucket when Redis is unavailable so the middleware never blocks startup.
 """
 
 import time
@@ -63,8 +63,8 @@ class RateLimitMiddleware(BaseHTTPMiddleware):
     Distributed rate limiting middleware.
 
     Strategy:
-    - **Redis available** → sliding-window counter via INCR + EXPIRE.
-      Shared across all workers / containers.
+    - **Redis available** → fixed-window counter via INCR + EXPIRE on a
+      per-window key. Shared across all workers / containers.
     - **Redis unavailable** → per-process token bucket (graceful degradation).
 
     Features:
@@ -93,6 +93,12 @@ class RateLimitMiddleware(BaseHTTPMiddleware):
             "/api/v1/auth/refresh": {"rpm": 20, "burst": 10},
             "/api/v1/auth/forgot-password": {"rpm": 5, "burst": 3},
         }
+
+        # Liveness/readiness probes must never be throttled: a 429 marks a
+        # healthy API as unhealthy, and `depends_on: condition: service_healthy`
+        # then blocks dependent services from starting. These endpoints are
+        # cheap and already unauthenticated, so they carry no useful budget.
+        self._exempt_prefixes = ("/health",)
 
         # Redis client (lazy-init on first request)
         self._redis: Optional[aioredis.Redis] = None
@@ -133,11 +139,28 @@ class RateLimitMiddleware(BaseHTTPMiddleware):
 
         return self._redis
 
+    def _window_start(self, now: float) -> int:
+        """Epoch second at which the current fixed window began."""
+        return int(now) // self.window_seconds * self.window_seconds
+
     async def _check_redis(
         self, client_id: str, auth_limit: dict | None = None
     ) -> tuple[bool, int]:
         """
-        Sliding-window counter in Redis.
+        Fixed-window counter in Redis.
+
+        The window is encoded in the key (``rl:<client>:<window-start>``)
+        rather than maintained by a TTL. Previously this issued an
+        unconditional ``EXPIRE`` on every request, which reset the countdown
+        each time — so the key never lapsed for any client calling more often
+        than ``window_seconds``, and its counter accumulated without bound.
+        Once such a client crossed the limit it was throttled permanently.
+
+        The container healthcheck hit exactly that: it probes every 30s
+        against a 60s window, so ``rl:ip:127.0.0.1`` climbed forever and
+        started returning 429 after roughly 50 minutes of uptime, marking a
+        perfectly healthy API as unhealthy while ``/health`` still answered
+        200. Minting a new key per window makes the counter reset on its own.
 
         Returns (allowed: bool, remaining: int).
         """
@@ -146,10 +169,13 @@ class RateLimitMiddleware(BaseHTTPMiddleware):
             raise ConnectionError("Redis not available")
 
         rpm = auth_limit["rpm"] if auth_limit else self.requests_per_minute
-        key = f"rl:{client_id}"
+        key = f"rl:{client_id}:{self._window_start(time.time())}"
         pipe = redis_client.pipeline()
         pipe.incr(key)
-        pipe.expire(key, self.window_seconds)
+        # Unconditional EXPIRE is safe here: a fresh key is minted each window,
+        # so refreshing the TTL cannot extend the window being counted. The 2x
+        # margin keeps a bucket alive across minor clock skew between workers.
+        pipe.expire(key, self.window_seconds * 2)
         results = await pipe.execute()
 
         current_count: int = results[0]
@@ -195,6 +221,10 @@ class RateLimitMiddleware(BaseHTTPMiddleware):
     async def dispatch(self, request: Request, call_next: Callable) -> Response:
         """Apply rate limiting to the request."""
         path = request.url.path
+
+        if path.startswith(self._exempt_prefixes):
+            return await call_next(request)
+
         auth_limit = self._get_auth_limit(path)
         client_id = self._get_client_identifier(request)
 
@@ -228,8 +258,11 @@ class RateLimitMiddleware(BaseHTTPMiddleware):
         limit_val = auth_limit["rpm"] if auth_limit else self.requests_per_minute
         response.headers["X-RateLimit-Limit"] = str(limit_val)
         response.headers["X-RateLimit-Remaining"] = str(remaining)
+        # The real boundary of the current window, not "now + 60" — the latter
+        # slid forward on every request and never matched when the count
+        # actually resets.
         response.headers["X-RateLimit-Reset"] = str(
-            int(time.time()) + self.window_seconds
+            self._window_start(time.time()) + self.window_seconds
         )
 
         return response
