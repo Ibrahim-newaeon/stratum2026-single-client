@@ -116,7 +116,7 @@ interface ChartCompetitorEntry {
 // ── Constants ──────────────────────────────────────────────────────
 
 // Colors for competitors in charts
-const COMPETITOR_COLORS = ['#8b5cf6', '#f59e0b', '#10b981', '#ef4444', '#6366f1', '#ec4899']
+const COMPETITOR_COLORS = ['#8b5cf6', '#f59e0b', '#5EEAD3', '#FF6F59', '#6366f1', '#ec4899']
 
 export function Benchmarks() {
   const { t } = useTranslation()
@@ -179,7 +179,7 @@ export function Benchmarks() {
 
   // Build competitor data for charts
   const chartCompetitors: ChartCompetitorEntry[] = [
-    { name: 'Your Brand', roas: 3.5, ctr: 2.8, cpc: 1.2, share: 18, color: '#0ea5e9', isYou: true },
+    { name: 'Your Brand', roas: 3.5, ctr: 2.8, cpc: 1.2, share: 18, color: '#29D6C7', isYou: true },
     ...(competitorsData?.items || []).slice(0, 5).map((comp: Competitor, index: number) => ({
       name: comp.name,
       domain: comp.domain,
@@ -487,7 +487,7 @@ export function Benchmarks() {
                   {chartCompetitors.map((entry: ChartCompetitorEntry, index: number) => (
                     <Cell
                       key={`cell-${index}`}
-                      fill={entry.isYou ? '#0ea5e9' : entry.isAvg ? '#6b7280' : entry.color || '#94a3b8'}
+                      fill={entry.isYou ? '#29D6C7' : entry.isAvg ? '#6b7280' : entry.color || '#A9A6BD'}
                     />
                   ))}
                 </Bar>
@@ -508,8 +508,8 @@ export function Benchmarks() {
                 <Radar
                   name="You"
                   dataKey="you"
-                  stroke="#0ea5e9"
-                  fill="#0ea5e9"
+                  stroke="#29D6C7"
+                  fill="#29D6C7"
                   fillOpacity={0.3}
                 />
                 <Radar

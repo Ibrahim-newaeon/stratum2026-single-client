@@ -56,15 +56,15 @@ export function ChartWidget({ type, className }: ChartWidgetProps) {
             <XAxis dataKey="name" tick={chartStyle.axis} tickLine={false} axisLine={false} />
             <YAxis tick={chartStyle.axis} tickLine={false} axisLine={false} />
             <Tooltip contentStyle={chartStyle.tooltip} />
-            <Bar dataKey="clicks" fill="#a855f7" radius={[4, 4, 0, 0]} />
-            <Bar dataKey="conversions" fill="#22C55E" radius={[4, 4, 0, 0]} />
+            <Bar dataKey="clicks" fill="#A78BFA" radius={[4, 4, 0, 0]} />
+            <Bar dataKey="conversions" fill="#5EEAD3" radius={[4, 4, 0, 0]} />
           </BarChart>
         </ResponsiveContainer>
       </div>
     )
   }
 
-  const color = type === 'revenue' ? '#22C55E' : '#a855f7'
+  const color = type === 'revenue' ? '#5EEAD3' : '#A78BFA'
 
   return (
     <div className={cn('h-full p-4 motion-chart-sweep', className)}>

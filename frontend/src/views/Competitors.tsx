@@ -5,7 +5,7 @@
  * Integrates with Meta Ads Library and Google Ads Transparency Center
  */
 
-const COMPETITOR_COLORS = ['#ef4444', '#f59e0b', '#10b981', '#6366f1']
+const COMPETITOR_COLORS = ['#FF6F59', '#f59e0b', '#5EEAD3', '#6366f1']
 
 import { useState, useEffect } from 'react'
 import { useTranslation } from 'react-i18next'
@@ -300,7 +300,7 @@ export function Competitors() {
                 className="h-full"
                 style={{
                   width: `${c.share}%`,
-                  backgroundColor: ['#ef4444', '#f59e0b', '#10b981', '#6366f1'][i % 4],
+                  backgroundColor: ['#FF6F59', '#f59e0b', '#5EEAD3', '#6366f1'][i % 4],
                 }}
                 title={`${c.name}: ${c.share}%`}
               />

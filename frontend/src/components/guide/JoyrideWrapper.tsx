@@ -170,7 +170,7 @@ export function JoyrideProvider({ children, userRole = 'general', autoStart = fa
           // spotlight is now an SVG path — 12px preserves the previous 0.75rem
           // cutout at a 16px root.
           options={{
-            primaryColor: '#a855f7',
+            primaryColor: '#A78BFA',
             backgroundColor: '#0A0A0A',
             textColor: '#ffffff',
             overlayColor: 'rgba(0, 0, 0, 0.75)',
@@ -194,7 +194,7 @@ export function JoyrideProvider({ children, userRole = 'general', autoStart = fa
             buttonPrimary: {
               borderRadius: '0.5rem',
               padding: '0.75rem 1.5rem',
-              backgroundColor: '#a855f7',
+              backgroundColor: '#A78BFA',
               fontWeight: 500,
             },
             buttonBack: {

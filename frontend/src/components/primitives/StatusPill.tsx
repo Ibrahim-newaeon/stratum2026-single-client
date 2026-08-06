@@ -37,6 +37,15 @@ const DOT_COLOR: Record<StatusPillVariant, string> = {
   neutral: 'bg-primary',
 };
 
+/* Sculpted clay badge fills — pale celadon PASS, pale yellow-gold WARNING,
+   soft terracotta CRITICAL, mineral teal neutral. */
+const BADGE_COLOR: Record<StatusPillVariant, string> = {
+  healthy: 'bg-success/20 text-success border-success/40',
+  degraded: 'bg-warning/20 text-warning border-warning/40',
+  unhealthy: 'bg-danger/20 text-danger border-danger/40',
+  neutral: 'bg-primary/20 text-primary border-primary/40',
+};
+
 const DOT_GLOW: Record<StatusPillVariant, string> = {
   healthy: '0 0 8px hsl(var(--success))',
   degraded: '0 0 8px hsl(var(--warning))',
@@ -65,8 +74,9 @@ export const StatusPill = forwardRef<HTMLSpanElement, StatusPillProps>(function 
       aria-live="polite"
       className={cn(
         'inline-flex items-center rounded-full',
-        'border border-border bg-card',
-        'font-medium uppercase tracking-[0.06em] text-foreground',
+        'border clay-raised-sm text-embossed',
+        'font-medium uppercase tracking-[0.06em]',
+        BADGE_COLOR[variant],
         SIZE_CLASS[size],
         className
       )}

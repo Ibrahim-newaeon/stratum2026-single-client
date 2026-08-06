@@ -87,21 +87,24 @@ export function SignalStrip({
   }
 
   return (
-    <Card className="px-5 py-3 flex flex-wrap items-center gap-3">
-      <Bell
-        className={cn(
-          'w-4 h-4 flex-shrink-0',
-          totalCount > 0 ? 'text-primary' : 'text-muted-foreground'
-        )}
+    <Card className="px-5 py-3.5 flex items-center gap-3 flex-wrap">
+      {/* Bell in a sunken clay well — anchors the strip visually */}
+      <span
         aria-hidden="true"
-      />
+        className={cn(
+          'flex-shrink-0 inline-flex items-center justify-center w-8 h-8 rounded-full clay-inset',
+          totalCount > 0 ? 'bg-primary/10 text-primary' : 'bg-muted/40 text-muted-foreground'
+        )}
+      >
+        <Bell className="w-4 h-4" />
+      </span>
 
-      <div className="flex flex-wrap items-center gap-2 flex-1 min-w-0">
+      <div className="flex flex-wrap items-center gap-2 min-w-0">
         {loading
           ? Array.from({ length: 3 }).map((_, i) => (
               <div
                 key={i}
-                className="h-6 w-24 rounded-full bg-muted/50 animate-pulse"
+                className="h-7 w-28 rounded-full bg-muted/50 animate-pulse"
                 aria-hidden="true"
               />
             ))
@@ -113,11 +116,11 @@ export function SignalStrip({
               >
                 <StatusPill
                   variant={SEVERITY_VARIANT[s.severity]}
-                  size="sm"
+                  size="md"
                   pulse={s.severity === 'critical'}
                 >
-                  <span className="tabular-nums">{s.count}</span>
-                  <span className="ml-1.5 normal-case tracking-normal">{s.label}</span>
+                  <span className="tabular-nums font-semibold text-[13px]">{s.count}</span>
+                  <span className="ml-1.5 normal-case tracking-normal font-medium">{s.label}</span>
                 </StatusPill>
               </ChipButton>
             ))}
@@ -128,12 +131,14 @@ export function SignalStrip({
           type="button"
           onClick={onAcknowledgeAll}
           className={cn(
-            'flex-shrink-0 inline-flex items-center gap-1 px-3 py-1.5 rounded-full',
-            'text-meta font-medium border border-border',
-            'text-foreground hover:bg-muted transition-colors',
+            'ml-auto flex-shrink-0 inline-flex items-center gap-1.5 px-4 py-2 rounded-full',
+            'text-meta font-semibold whitespace-nowrap border border-primary/30',
+            'bg-primary/15 text-primary clay-raised-sm clay-pressable text-embossed',
+            'hover:bg-primary/25 hover:border-primary/45 transition-colors',
             'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring'
           )}
         >
+          <CheckCircle2 className="w-3.5 h-3.5" aria-hidden="true" />
           Acknowledge all
         </button>
       )}

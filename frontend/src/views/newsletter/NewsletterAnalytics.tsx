@@ -35,9 +35,9 @@ const EVENT_BADGE_STYLES: Record<string, string> = {
 
 const FUNNEL_COLORS: Record<string, string> = {
   sent: 'hsl(var(--primary))',
-  delivered: '#3b82f6',
-  opened: '#22c55e',
-  clicked: '#a855f7',
+  delivered: '#29D6C7',
+  opened: '#5EEAD3',
+  clicked: '#A78BFA',
 };
 
 // ---------------------------------------------------------------------------
@@ -456,7 +456,7 @@ export default function NewsletterAnalytics() {
                       className="h-full rounded-full transition-[width] duration-500"
                       style={{
                         width: `${barPct}%`,
-                        backgroundColor: '#a855f7',
+                        backgroundColor: '#A78BFA',
                         opacity: 0.8,
                       }}
                     />

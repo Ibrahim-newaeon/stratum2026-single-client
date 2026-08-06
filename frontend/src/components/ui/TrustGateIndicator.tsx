@@ -31,28 +31,28 @@ interface TrustState {
 }
 
 function getTrustState(score: number): TrustState {
-  const root = document.documentElement;
-  const style = getComputedStyle(root);
-
+  // Semantic status tokens directly — the old `--teal` / `--coral` custom
+  // props never existed, so the fallbacks always won; PASS must read as
+  // success (mint), not as the accent hue (now violet).
   if (score >= HEALTHY_THRESHOLD) {
     return {
       score,
       status: 'PASS',
-      color: style.getPropertyValue('--teal').trim() || 'hsl(var(--accent))',
-      bgColor: style.getPropertyValue('--teal-light').trim() || 'hsl(var(--accent) / 0.15)',
+      color: 'hsl(var(--success))',
+      bgColor: 'hsl(var(--success) / 0.15)',
     };
   } else if (score >= DEGRADED_THRESHOLD) {
     return {
       score,
       status: 'HOLD',
-      color: style.getPropertyValue('--status-warning').trim() || 'hsl(var(--warning))',
-      bgColor: style.getPropertyValue('--status-warning-bg').trim() || 'hsl(var(--warning) / 0.15)',
+      color: 'hsl(var(--warning))',
+      bgColor: 'hsl(var(--warning) / 0.15)',
     };
   } else {
     return {
       score,
       status: 'BLOCK',
-      color: style.getPropertyValue('--coral').trim() || 'hsl(var(--destructive))',
+      color: 'hsl(var(--destructive))',
       bgColor: 'hsl(var(--destructive) / 0.15)',
     };
   }
@@ -125,7 +125,7 @@ export const TrustGateIndicator = memo(function TrustGateIndicator({
       )}
       style={{
         border: `2px solid ${state.color}`,
-        boxShadow: `0 0 20px ${state.color}40, 0 8px 32px rgba(0, 0, 0, 0.3)`,
+        boxShadow: `0 0 20px ${state.color.replace(')', ' / 0.25)')}, var(--clay-shadow-sm)`,
       }}
     >
       {/* Close button — dismisses for the rest of the session */}
@@ -167,7 +167,7 @@ export const TrustGateIndicator = memo(function TrustGateIndicator({
                   style={{
                     backgroundColor:
                       comp.value >= 70
-                        ? 'hsl(var(--accent))'
+                        ? 'hsl(var(--success))'
                         : comp.value >= 40
                           ? 'hsl(var(--warning))'
                           : 'hsl(var(--destructive))',
@@ -183,7 +183,7 @@ export const TrustGateIndicator = memo(function TrustGateIndicator({
                   style={{
                     color:
                       comp.value >= 70
-                        ? 'hsl(var(--accent))'
+                        ? 'hsl(var(--success))'
                         : comp.value >= 40
                           ? 'hsl(var(--warning))'
                           : 'hsl(var(--destructive))',

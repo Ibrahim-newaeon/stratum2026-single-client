@@ -177,21 +177,23 @@ export function Sidebar({
 
       const linkClasses = cn(
         'group flex items-center gap-3',
-        depth === 0 ? 'px-3 py-2' : 'px-3 py-1.5',
-        'rounded-lg text-body',
+        depth === 0 ? 'px-4 py-2.5' : 'px-4 py-1.5',
+        // Pill-shaped clay buttons; active pills sit proud of the obsidian
+        // base with a mineral-teal fill and embossed cream text.
+        'rounded-full text-body clay-pressable',
         'transition-colors duration-150',
         'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring',
         visualActive
-          ? 'text-foreground bg-muted/50'
-          : 'text-muted-foreground hover:text-foreground hover:bg-muted/30'
+          ? 'text-foreground text-embossed bg-primary/15 clay-raised-sm'
+          : 'text-muted-foreground hover:text-foreground hover:bg-muted/40'
       );
 
       const accentBar = (
         <span
           aria-hidden="true"
           className={cn(
-            'h-4 w-0.5 rounded-full -ml-3 mr-1',
-            visualActive ? 'bg-primary' : 'bg-transparent'
+            'h-4 w-0.5 rounded-full -ml-2 mr-1',
+            visualActive ? 'bg-secondary' : 'bg-transparent'
           )}
         />
       );
@@ -209,9 +211,9 @@ export function Sidebar({
       const badgeEl = item.badge ? (
         <span
           className={cn(
-            'text-[10px] px-1.5 py-0.5 rounded-full',
+            'text-[10px] px-1.5 py-0.5 rounded-full clay-raised-sm',
             'font-mono uppercase tracking-[0.06em]',
-            visualActive ? 'bg-primary/15 text-primary' : 'bg-muted text-muted-foreground'
+            visualActive ? 'bg-secondary/20 text-secondary' : 'bg-muted text-muted-foreground'
           )}
         >
           {item.badge}
@@ -333,7 +335,7 @@ export function Sidebar({
   const aside = (
     <aside
       className={cn(
-        'flex flex-col h-full w-60 bg-card border-r border-border',
+        'flex flex-col h-full w-60 bg-card border-r border-border/60 clay-raised',
         isMobileMode &&
           cn(
             'fixed inset-y-0 left-0 z-50 transition-transform duration-300 ease-[cubic-bezier(0.16,1,0.3,1)]',

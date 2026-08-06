@@ -27,9 +27,9 @@ interface CardProps extends HTMLAttributes<HTMLDivElement> {
 }
 
 const VARIANT_CLASS: Record<CardVariant, string> = {
-  default: 'bg-card',
-  elevated: 'bg-surface-tier2',
-  glow: 'bg-card',
+  default: 'bg-card clay-raised-sm',
+  elevated: 'bg-surface-tertiary clay-raised',
+  glow: 'bg-card clay-raised',
 };
 
 const Card = forwardRef<HTMLDivElement, CardProps>(function Card(
@@ -40,10 +40,10 @@ const Card = forwardRef<HTMLDivElement, CardProps>(function Card(
     <div
       ref={ref}
       className={cn(
-        'relative rounded-2xl border border-border',
+        'relative rounded-2xl border border-border/60',
         'transition-colors duration-200',
         VARIANT_CLASS[variant],
-        interactive && 'hover:border-primary/30',
+        interactive && 'hover:border-secondary/40',
         className
       )}
       {...rest}

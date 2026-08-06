@@ -87,7 +87,7 @@ export async function generateClientReport(data: ReportData): Promise<void> {
   pdf.rect(0, 0, pageWidth, pdf.internal.pageSize.getHeight(), 'F')
 
   // Header
-  addText('ADS GROWTH SYSTEM', 24, '#a855f7', true)
+  addText('ADS GROWTH SYSTEM', 24, '#A78BFA', true)
   addText('Performance Report', 14, '#9ca3af')
   y += 5
 
@@ -104,7 +104,7 @@ export async function generateClientReport(data: ReportData): Promise<void> {
   y += 2
 
   // EMQ Score badge
-  const emqColor = data.emqScore >= 80 ? '#22c55e' : data.emqScore >= 60 ? '#eab308' : '#ef4444'
+  const emqColor = data.emqScore >= 80 ? '#5EEAD3' : data.emqScore >= 60 ? '#eab308' : '#FF6F59'
   pdf.setFillColor(emqColor)
   pdf.roundedRect(margin, y, 30, 15, 3, 3, 'F')
   pdf.setTextColor('#ffffff')
@@ -114,9 +114,9 @@ export async function generateClientReport(data: ReportData): Promise<void> {
 
   // Confidence band
   const bandColors: Record<string, string> = {
-    reliable: '#22c55e',
+    reliable: '#5EEAD3',
     directional: '#eab308',
-    unsafe: '#ef4444',
+    unsafe: '#FF6F59',
   }
   pdf.setFillColor(bandColors[data.confidenceBand] || '#9ca3af')
   pdf.roundedRect(margin + 35, y, 40, 15, 3, 3, 'F')
@@ -158,7 +158,7 @@ export async function generateClientReport(data: ReportData): Promise<void> {
 
     // Trend
     if (kpi.trend !== undefined) {
-      const trendColor = kpi.trend >= 0 ? '#22c55e' : '#ef4444'
+      const trendColor = kpi.trend >= 0 ? '#5EEAD3' : '#FF6F59'
       const trendText = `${kpi.trend >= 0 ? '+' : ''}${kpi.trend}%`
       pdf.setTextColor(trendColor)
       pdf.setFontSize(8)
@@ -258,7 +258,7 @@ export async function exportDashboardPDF(accountName: string): Promise<void> {
   // Add header
   pdf.setFillColor('#060606')
   pdf.rect(0, 0, 210, 20, 'F')
-  pdf.setTextColor('#a855f7')
+  pdf.setTextColor('#A78BFA')
   pdf.setFontSize(12)
   pdf.setFont('helvetica', 'bold')
   pdf.text('ADS GROWTH SYSTEM', 10, 12)

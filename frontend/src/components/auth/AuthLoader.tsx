@@ -7,7 +7,7 @@
 export default function AuthLoader() {
   return (
     <div
-      className="min-h-screen flex items-center justify-center bg-[#0A0E1A] text-white"
+      className="min-h-screen flex items-center justify-center bg-[#0D0C13] text-white"
       style={{ fontFamily: 'Geist, system-ui, sans-serif' }}
     >
       <div
@@ -20,12 +20,12 @@ export default function AuthLoader() {
       />
       <div className="flex flex-col items-center gap-4 relative z-10">
         <div
-          className="w-10 h-10 rounded-full border-2 border-[#1F2937] border-t-[#3B82F6] animate-spin"
+          className="w-10 h-10 rounded-full border-2 border-[#282531] border-t-[#29D6C7] animate-spin"
           role="status"
           aria-label="Loading"
         />
         <span
-          className="text-[11px] uppercase tracking-[0.12em] text-[#64748B]"
+          className="text-[11px] uppercase tracking-[0.12em] text-[#7B7791]"
           style={{ fontFamily: 'Geist Mono, monospace' }}
         >
           Loading

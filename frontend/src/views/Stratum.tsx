@@ -346,9 +346,9 @@ function InsightDetailModal({
                     <Line
                       type="monotone"
                       dataKey="performance"
-                      stroke={insight.type === 'warning' ? '#ef4444' : '#10b981'}
+                      stroke={insight.type === 'warning' ? '#FF6F59' : '#5EEAD3'}
                       strokeWidth={2}
-                      dot={{ fill: insight.type === 'warning' ? '#ef4444' : '#10b981', strokeWidth: 0, r: 4 }}
+                      dot={{ fill: insight.type === 'warning' ? '#FF6F59' : '#5EEAD3', strokeWidth: 0, r: 4 }}
                     />
                   </LineChart>
                 </ResponsiveContainer>
@@ -586,8 +586,8 @@ function AnomalyDetailModal({
                   <AreaChart data={anomaly.historicalData}>
                     <defs>
                       <linearGradient id={`gradient-${anomaly.id}`} x1="0" y1="0" x2="0" y2="1">
-                        <stop offset="5%" stopColor={isPositive ? '#10b981' : '#ef4444'} stopOpacity={0.3} />
-                        <stop offset="95%" stopColor={isPositive ? '#10b981' : '#ef4444'} stopOpacity={0} />
+                        <stop offset="5%" stopColor={isPositive ? '#5EEAD3' : '#FF6F59'} stopOpacity={0.3} />
+                        <stop offset="95%" stopColor={isPositive ? '#5EEAD3' : '#FF6F59'} stopOpacity={0} />
                       </linearGradient>
                     </defs>
                     <CartesianGrid strokeDasharray="3 3" className="stroke-muted" />
@@ -603,7 +603,7 @@ function AnomalyDetailModal({
                     <Area
                       type="monotone"
                       dataKey="value"
-                      stroke={isPositive ? '#10b981' : '#ef4444'}
+                      stroke={isPositive ? '#5EEAD3' : '#FF6F59'}
                       strokeWidth={2}
                       fill={`url(#gradient-${anomaly.id})`}
                     />
@@ -1477,8 +1477,8 @@ export function Stratum() {
                 }))}>
                   <defs>
                     <linearGradient id="colorPredicted" x1="0" y1="0" x2="0" y2="1">
-                      <stop offset="5%" stopColor="#10b981" stopOpacity={0.2} />
-                      <stop offset="95%" stopColor="#10b981" stopOpacity={0} />
+                      <stop offset="5%" stopColor="#5EEAD3" stopOpacity={0.2} />
+                      <stop offset="95%" stopColor="#5EEAD3" stopOpacity={0} />
                     </linearGradient>
                   </defs>
                   <CartesianGrid strokeDasharray="3 3" className="stroke-muted" />
@@ -1507,7 +1507,7 @@ export function Stratum() {
                     type="monotone"
                     dataKey="upperBound"
                     stroke="transparent"
-                    fill="#10b981"
+                    fill="#5EEAD3"
                     fillOpacity={0.1}
                   />
                   <Area
@@ -1521,7 +1521,7 @@ export function Stratum() {
                   <Line
                     type="monotone"
                     dataKey="predicted"
-                    stroke="#10b981"
+                    stroke="#5EEAD3"
                     strokeWidth={2}
                     strokeDasharray="5 5"
                     dot={false}
@@ -1530,9 +1530,9 @@ export function Stratum() {
                   <Line
                     type="monotone"
                     dataKey="actual"
-                    stroke="#0ea5e9"
+                    stroke="#29D6C7"
                     strokeWidth={2}
-                    dot={{ fill: '#0ea5e9', strokeWidth: 0, r: 3 }}
+                    dot={{ fill: '#29D6C7', strokeWidth: 0, r: 3 }}
                     connectNulls={false}
                   />
                 </AreaChart>
