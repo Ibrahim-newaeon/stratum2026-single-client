@@ -43,6 +43,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 # Import services
 from app.auth.deps import get_current_user
+from app.core.config import settings
 from app.core.logging import get_logger
 from app.db.session import get_db
 from app.ml.ab_testing import ModelABTestingService
