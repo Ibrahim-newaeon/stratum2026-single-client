@@ -177,7 +177,36 @@ describe('AuthContext', () => {
   // Session restore from localStorage
   // -------------------------------------------------------------------------
 
-  it('restores session from localStorage on mount', async () => {
+  it('restores session from localStorage on mount when the tab holds a token', async () => {
+    const storedUser = {
+      id: '1',
+      email: 'test@example.com',
+      name: 'Test User',
+      role: 'admin',
+      permissions: ['all'],
+      user_type: 'agency',
+    };
+    mockStore['stratum_auth'] = JSON.stringify(storedUser);
+    mockSessionStore['access_token'] = 'tok_abc';
+
+    const onRender = vi.fn();
+    renderAuthConsumer(onRender);
+
+    await waitFor(() => {
+      const lastCall = onRender.mock.calls[onRender.mock.calls.length - 1][0];
+      expect(lastCall.isLoading).toBe(false);
+    });
+
+    const lastAuth = onRender.mock.calls[onRender.mock.calls.length - 1][0];
+    expect(lastAuth.isAuthenticated).toBe(true);
+    expect(lastAuth.user?.email).toBe('test@example.com');
+    expect(lastAuth.user?.role).toBe('admin');
+  });
+
+  it('does NOT restore the session when the tab has no token (fresh tab)', async () => {
+    // Profile in localStorage is shared across tabs, but tokens are per-tab
+    // (sessionStorage). A fresh tab must be treated as logged out — restoring
+    // here used to admit the tab past the route guard and 401 on every call.
     const storedUser = {
       id: '1',
       email: 'test@example.com',
@@ -197,13 +226,13 @@ describe('AuthContext', () => {
     });
 
     const lastAuth = onRender.mock.calls[onRender.mock.calls.length - 1][0];
-    expect(lastAuth.isAuthenticated).toBe(true);
-    expect(lastAuth.user?.email).toBe('test@example.com');
-    expect(lastAuth.user?.role).toBe('admin');
+    expect(lastAuth.isAuthenticated).toBe(false);
+    expect(lastAuth.user).toBeNull();
   });
 
   it('handles corrupted localStorage gracefully', async () => {
     mockStore['stratum_auth'] = 'not-valid-json{{{';
+    mockSessionStore['access_token'] = 'tok_abc';
 
     const onRender = vi.fn();
     renderAuthConsumer(onRender);
@@ -434,6 +463,7 @@ describe('AuthContext', () => {
       user_type: 'agency',
     };
     mockStore['stratum_auth'] = JSON.stringify(storedUser);
+    mockSessionStore['access_token'] = 'tok_abc';
 
     const onRender = vi.fn();
     renderAuthConsumer(onRender);
