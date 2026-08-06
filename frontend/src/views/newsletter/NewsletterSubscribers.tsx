@@ -52,11 +52,11 @@ const STATUS_OPTIONS = [
 ] as const;
 
 const PLATFORM_COLORS: Record<string, { bg: string; text: string }> = {
-  meta: { bg: 'rgba(59, 130, 246, 0.15)', text: '#60a5fa' },
-  google: { bg: 'rgba(239, 68, 68, 0.15)', text: '#f87171' },
+  meta: { bg: 'rgba(41, 214, 199, 0.15)', text: '#53E0D4' },
+  google: { bg: 'rgba(255, 111, 89, 0.15)', text: '#FF8B78' },
   tiktok: { bg: 'rgba(236, 72, 153, 0.15)', text: '#f472b6' },
   snapchat: { bg: 'rgba(234, 179, 8, 0.15)', text: '#facc15' },
-  organic: { bg: 'rgba(34, 197, 94, 0.15)', text: '#4ade80' },
+  organic: { bg: 'rgba(34, 197, 94, 0.15)', text: '#7CEFDD' },
 };
 
 // ---------------------------------------------------------------------------
@@ -79,9 +79,9 @@ function formatRelativeDate(dateString: string | null): string {
 }
 
 function getScoreColor(score: number): string {
-  if (score >= 80) return '#4ade80';
+  if (score >= 80) return '#7CEFDD';
   if (score >= 50) return '#fbbf24';
-  return '#f87171';
+  return '#FF8B78';
 }
 
 // ---------------------------------------------------------------------------
@@ -296,9 +296,9 @@ function SubscriberRow({
               className="px-3 py-1 text-xs font-medium rounded-lg transition-colors"
               style={{
                 background: subscriber.subscribed_to_newsletter
-                  ? 'rgba(239, 68, 68, 0.15)'
+                  ? 'rgba(255, 111, 89, 0.15)'
                   : 'rgba(34, 197, 94, 0.15)',
-                color: subscriber.subscribed_to_newsletter ? '#f87171' : '#4ade80',
+                color: subscriber.subscribed_to_newsletter ? '#FF8B78' : '#7CEFDD',
               }}
             >
               Yes
@@ -317,9 +317,9 @@ function SubscriberRow({
             className="px-3 py-1.5 text-xs font-medium rounded-lg transition-colors"
             style={{
               background: subscriber.subscribed_to_newsletter
-                ? 'rgba(239, 68, 68, 0.1)'
+                ? 'rgba(255, 111, 89, 0.1)'
                 : 'rgba(34, 197, 94, 0.1)',
-              color: subscriber.subscribed_to_newsletter ? '#f87171' : '#4ade80',
+              color: subscriber.subscribed_to_newsletter ? '#FF8B78' : '#7CEFDD',
             }}
           >
             {subscriber.subscribed_to_newsletter ? 'Unsubscribe' : 'Resubscribe'}
@@ -462,14 +462,14 @@ export default function NewsletterSubscribers() {
           title="Active"
           value={stats?.active ?? 0}
           icon={CheckCircleIcon}
-          accentColor="#4ade80"
+          accentColor="#7CEFDD"
           loading={statsLoading}
         />
         <StatCard
           title="Unsubscribed"
           value={stats?.unsubscribed ?? 0}
           icon={UserMinusIcon}
-          accentColor="#f87171"
+          accentColor="#FF8B78"
           loading={statsLoading}
         />
       </div>

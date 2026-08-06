@@ -139,21 +139,21 @@ export function OTPInput({
           style={{
             background: 'rgba(255, 255, 255, 0.06)',
             borderColor: error
-              ? '#ef4444'
+              ? '#FF6F59'
               : digit
                 ? 'rgba(252, 100, 35, 0.5)'
                 : 'rgba(255, 255, 255, 0.12)',
           }}
           onFocus={(e) => {
             e.target.select();
-            e.target.style.borderColor = error ? '#ef4444' : '#FC6423';
+            e.target.style.borderColor = error ? '#FF6F59' : '#FC6423';
             e.target.style.boxShadow = error
-              ? '0 0 0 3px rgba(239, 68, 68, 0.1)'
+              ? '0 0 0 3px rgba(255, 111, 89, 0.1)'
               : '0 0 0 3px rgba(252, 100, 35, 0.1)';
           }}
           onBlur={(e) => {
             e.target.style.borderColor = error
-              ? '#ef4444'
+              ? '#FF6F59'
               : digit
                 ? 'rgba(252, 100, 35, 0.5)'
                 : 'rgba(255, 255, 255, 0.12)';

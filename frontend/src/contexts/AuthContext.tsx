@@ -98,7 +98,14 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     setIsDemoSession(isDemo);
 
     const stored = localStorage.getItem(AUTH_STORAGE_KEY);
-    if (stored) {
+    // Tokens live in sessionStorage and are per-tab; the profile in
+    // localStorage is shared across tabs. Only restore the session when THIS
+    // tab actually holds a token — otherwise a fresh tab looks authenticated,
+    // passes the route guard, and every API call 401s.
+    const hasToken =
+      !!sessionStorage.getItem(ACCESS_TOKEN_KEY) ||
+      !!sessionStorage.getItem(REFRESH_TOKEN_KEY);
+    if (stored && hasToken) {
       try {
         const parsedUser = JSON.parse(stored) as User;
 

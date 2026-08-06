@@ -60,6 +60,7 @@ const VerifyEmail = lazyWithRetry(() => import('./views/VerifyEmail'));
 const Onboarding = lazyWithRetry(() => import('./views/Onboarding'));
 const OAuthConnectResult = lazyWithRetry(() => import('./views/OAuthConnectResult'));
 const Overview = lazyWithRetry(() => import('./views/dashboard/Overview'));
+const IntegrationsHub = lazyWithRetry(() => import('./views/operate/IntegrationsHub'));
 const CustomDashboard = lazyWithRetry(() => import('./views/CustomDashboard'));
 const Campaigns = lazyWithRetry(() => import('./views/Campaigns'));
 const CampaignDetail = lazyWithRetry(() => import('./views/CampaignDetail'));
@@ -834,13 +835,9 @@ function App() {
                           path="autopilot"
                           element={<Navigate to="/dashboard/rules" replace />}
                         />
-                        {/* Linked by OnboardingChecklist/OnboardingChat/demo
-                            banner; the live integrations surface is the
-                            Settings tab. */}
-                        <Route
-                          path="integrations"
-                          element={<Navigate to="/dashboard/settings/integrations" replace />}
-                        />
+                        {/* Standalone Integrations hub (was a redirect into
+                            the Settings tab). */}
+                        <Route path="integrations" element={<IntegrationsHub />} />
                         <Route
                           path="audiences"
                           element={<Navigate to="/dashboard/cdp/audience-sync" replace />}

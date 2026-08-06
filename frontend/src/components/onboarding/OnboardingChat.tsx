@@ -481,7 +481,7 @@ export function OnboardingChatButton({
         pulse && 'animate-pulse'
       )}
       style={{
-        background: 'linear-gradient(135deg, #8B5CF6 0%, #3B82F6 100%)',
+        background: 'linear-gradient(135deg, #8B5CF6 0%, #29D6C7 100%)',
         boxShadow: '0 0 30px rgba(139, 92, 246, 0.4)'
       }}
     >

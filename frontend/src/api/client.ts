@@ -100,6 +100,12 @@ apiClient.interceptors.response.use(
 
       try {
         const refreshToken = sessionStorage.getItem('refresh_token');
+        if (!refreshToken) {
+          // No refresh token in this tab (tokens are per-tab in sessionStorage).
+          // Without this throw, isRefreshing stays true forever and every later
+          // 401 queues on a refresh that never happens — infinite spinner.
+          throw new Error('No refresh token available');
+        }
         if (refreshToken) {
           const response = await axios.post(`${API_BASE_URL}/auth/refresh`, {
             refresh_token: refreshToken,

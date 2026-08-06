@@ -111,7 +111,7 @@ export function KPI({
       );
     }
     return (
-      <span className="text-display-xs font-medium tabular-nums tracking-tight text-foreground">
+      <span className="text-display-xs font-medium tabular-nums tracking-tight text-foreground text-embossed">
         {value}
       </span>
     );
@@ -139,7 +139,7 @@ export function KPI({
   return (
     <Card variant={cardVariant} className={cn('p-6', className)}>
       <div className="flex items-start justify-between gap-3 mb-6">
-        <span className="min-w-0 text-meta uppercase tracking-[0.06em] text-muted-foreground font-mono">
+        <span className="min-w-0 text-meta uppercase tracking-[0.06em] text-muted-foreground font-mono text-debossed">
           {label}
         </span>
         <div className="flex flex-shrink-0 items-center gap-2">

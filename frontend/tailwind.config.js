@@ -68,11 +68,11 @@ export default {
           50: '#EFF6FF',
           100: '#DBEAFE',
           200: '#BFDBFE',
-          300: '#93C5FD',
-          400: '#60A5FA', // brand-accent-hover (dark)
-          500: '#3B82F6', // brand-accent — matches --primary
-          600: '#2563EB', // brand-accent-hover (light)
-          700: '#1D4ED8',
+          300: '#8FEAE1',
+          400: '#53E0D4', // brand-accent-hover (dark)
+          500: '#29D6C7', // brand-accent — matches --primary
+          600: '#1FB8AB', // brand-accent-hover (light)
+          700: '#17948A',
           800: '#1E40AF',
           900: '#1E3A8A',
           950: '#172554',
@@ -80,14 +80,14 @@ export default {
 
         // XML gold-family — all four documented golds, by XML id
         gold: {
-          DEFAULT: '#BB8B41', // live-site
+          DEFAULT: '#F5B942', // live-site
           logo: '#BD8C41', // figma logo master (pixel-sampled)
-          palette: '#C2A670', // figma palette board (verified)
-          strip: '#C1A15A', // brand-guide extended strip
+          palette: '#FFD37A', // figma palette board (verified)
+          strip: '#F5B942', // brand-guide extended strip
         },
 
         // XML brand palette — verified primary board + extended strip
-        charcoal: '#2C2C2C',
+        charcoal: '#282531',
         cream: {
           DEFAULT: '#F5F5DC', // verified palette
           2: '#EFDFBC', // extended strip cream-2
@@ -101,8 +101,8 @@ export default {
         // Named dark-surface tokens (kept hard-coded for static landing/auth html parity)
         ink: '#000000', // reversed-logo background (was #0B0B0B)
         surface: {
-          DEFAULT: '#1A1A1A', // was #141414
-          tier2: '#2C2C2C', // was #1A1A1A
+          DEFAULT: '#1A1821', // was #16141C
+          tier2: '#282531', // was #1A1821
           // Theme-aware surface tiers
           primary: 'hsl(var(--surface-primary))',
           secondary: 'hsl(var(--surface-secondary))',
@@ -110,14 +110,14 @@ export default {
           elevated: 'hsl(var(--surface-elevated))',
         },
         line: {
-          DEFAULT: '#2C2C2C', // was #1F1F1F
-          2: '#3D3D3D', // gray-dark, extended strip (was #262626)
+          DEFAULT: '#282531', // was #1E1C24
+          2: '#3A3648', // gray-dark, extended strip (was #24212C)
         },
         // Legacy alias — key kept so existing `ember-*` utilities resolve;
         // values now point at the Opal golds.
         ember: {
-          DEFAULT: '#BB8B41',
-          2: '#C2A670',
+          DEFAULT: '#F5B942',
+          2: '#FFD37A',
         },
 
         // Platform colors (not theme-driven)
@@ -137,8 +137,8 @@ export default {
         // reusing `warning` — that one means "hold / degraded" in the Trust
         // Engine UI, and a CTA sharing it would make status colour unreadable.
         cta: {
-          DEFAULT: '#F97316',
-          hover: '#EA580C',
+          DEFAULT: '#FBBF24',
+          hover: '#F59E0B',
         },
         info: 'hsl(var(--info))',
         insight: 'hsl(var(--insight))',
@@ -177,11 +177,11 @@ export default {
         'display-lg': ['72px', { lineHeight: '1.1', fontWeight: '400' }], // retained, no XML source
       },
       boxShadow: {
-        'glow-sm': '0 0 12px rgba(187, 139, 65, 0.18)',
-        glow: '0 0 24px rgba(187, 139, 65, 0.22)',
-        'glow-lg': '0 0 40px rgba(187, 139, 65, 0.28)',
+        'glow-sm': '0 0 12px rgba(245, 185, 66, 0.18)',
+        glow: '0 0 24px rgba(245, 185, 66, 0.22)',
+        'glow-lg': '0 0 40px rgba(245, 185, 66, 0.28)',
         'glow-cyan': '0 0 24px rgba(57, 78, 108, 0.20)', // key kept for compat — now slate-blue
-        'glow-orange': '0 0 24px rgba(194, 166, 112, 0.22)', // key kept for compat — now palette gold
+        'glow-orange': '0 0 24px rgba(255, 211, 122, 0.22)', // key kept for compat — now palette gold
         card: '0 1px 0 0 rgba(255, 255, 255, 0.04) inset, 0 1px 3px rgba(0, 0, 0, 0.25)',
         'card-hover': '0 1px 0 0 rgba(255, 255, 255, 0.06) inset, 0 8px 32px rgba(0, 0, 0, 0.4)',
         glass: '0 2px 8px rgba(0, 0, 0, 0.18)',
@@ -203,13 +203,13 @@ export default {
       },
       backgroundImage: {
         'gradient-radial': 'radial-gradient(var(--tw-gradient-stops))',
-        'gradient-primary': 'linear-gradient(135deg, #C2A670 0%, #BB8B41 50%, #C1A15A 100%)',
+        'gradient-primary': 'linear-gradient(135deg, #FFD37A 0%, #F5B942 50%, #F5B942 100%)',
         'gradient-primary-soft':
-          'linear-gradient(135deg, rgba(194, 166, 112, 0.10) 0%, rgba(187, 139, 65, 0.06) 100%)',
-        'gradient-ember': 'linear-gradient(95deg, #BB8B41 0%, #C2A670 50%, #BB8B41 100%)',
-        'gradient-void': 'linear-gradient(180deg, #000000 0%, #1A1A1A 100%)',
+          'linear-gradient(135deg, rgba(255, 211, 122, 0.10) 0%, rgba(245, 185, 66, 0.06) 100%)',
+        'gradient-ember': 'linear-gradient(95deg, #F5B942 0%, #FFD37A 50%, #F5B942 100%)',
+        'gradient-void': 'linear-gradient(180deg, #000000 0%, #1A1821 100%)',
         // Legacy aliases — kept until Phase 4 sweep completes
-        'gradient-cyber': 'linear-gradient(135deg, #C2A670 0%, #BB8B41 50%, #C1A15A 100%)',
+        'gradient-cyber': 'linear-gradient(135deg, #FFD37A 0%, #F5B942 50%, #F5B942 100%)',
       },
       keyframes: {
         'accordion-down': {
@@ -250,7 +250,7 @@ export default {
         },
         'glow-pulse': {
           '0%': { boxShadow: '0 0 0 rgba(0, 0, 0, 0)' },
-          '60%': { boxShadow: '0 0 32px rgba(187, 139, 65, 0.25)' },
+          '60%': { boxShadow: '0 0 32px rgba(245, 185, 66, 0.25)' },
           '100%': { boxShadow: '0 0 0 rgba(0, 0, 0, 0)' },
         },
         shimmer: {

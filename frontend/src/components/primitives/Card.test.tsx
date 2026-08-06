@@ -15,7 +15,7 @@ describe('Card', () => {
 
   it('applies the elevated variant background', () => {
     render(<Card variant="elevated" data-testid="card" />);
-    expect(screen.getByTestId('card')).toHaveClass('bg-surface-tier2');
+    expect(screen.getByTestId('card')).toHaveClass('bg-surface-tertiary');
   });
 
   it('renders the ember glow layer for variant="glow"', () => {
@@ -33,7 +33,7 @@ describe('Card', () => {
 
   it('adds hover-border class when interactive', () => {
     render(<Card interactive data-testid="card" />);
-    expect(screen.getByTestId('card').className).toContain('hover:border-primary/30');
+    expect(screen.getByTestId('card').className).toContain('hover:border-secondary/40');
   });
 
   it('forwards arbitrary classes', () => {

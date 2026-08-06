@@ -53,20 +53,20 @@ export const chartTheme = {
   // Regional breakdown colors — superads.xml data series, cycled.
   // data-1 blue, data-2 purple, data-3 pink, data-4 green, data-5 cyan,
   // then state-warning orange to reach six without repeating a hue.
-  regionColors: ['#3b82f6', '#8b5cf6', '#ec4899', '#10b981', '#06b6d4', '#f97316'],
+  regionColors: ['#29D6C7', '#8b5cf6', '#ec4899', '#5EEAD3', '#F5B942', '#FBBF24'],
 
   // Chart series colors (for multi-series) — the same five data-* tokens in
   // order, then the state colors, so a 6th+ series stays inside the theme
   // palette instead of introducing hues the design system never declares.
   seriesColors: [
-    '#3b82f6', // data-1
+    '#29D6C7', // data-1
     '#8b5cf6', // data-2
     '#ec4899', // data-3
-    '#10b981', // data-4
-    '#06b6d4', // data-5
-    '#f97316', // state-warning
-    '#ef4444', // state-error
-    '#60a5fa', // brand-accent-hover
+    '#5EEAD3', // data-4
+    '#F5B942', // data-5
+    '#FBBF24', // state-warning
+    '#FF6F59', // state-error
+    '#53E0D4', // brand-accent-hover
   ],
 
   // Tooltip styling — theme-aware surface

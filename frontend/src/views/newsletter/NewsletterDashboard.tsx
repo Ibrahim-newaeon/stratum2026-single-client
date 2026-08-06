@@ -122,7 +122,7 @@ function StatCard({
 // ---------------------------------------------------------------------------
 const statusColors: Record<CampaignStatus, { bg: string; text: string }> = {
   draft: { bg: 'rgba(156, 163, 175, 0.2)', text: 'rgb(156, 163, 175)' },
-  scheduled: { bg: 'rgba(96, 165, 250, 0.2)', text: 'rgb(96, 165, 250)' },
+  scheduled: { bg: 'rgba(83, 224, 212, 0.2)', text: 'rgb(83, 224, 212)' },
   sending: { bg: 'rgba(251, 191, 36, 0.2)', text: 'rgb(251, 191, 36)' },
   sent: { bg: 'rgba(74, 222, 128, 0.2)', text: 'rgb(74, 222, 128)' },
   paused: { bg: 'rgba(251, 146, 60, 0.2)', text: 'rgb(251, 146, 60)' },
@@ -162,8 +162,8 @@ function SubscriberOverviewChart({
 }) {
   const total = active + unsubscribed;
   const segments = [
-    { label: 'Active', count: active, color: '#4ade80' },
-    { label: 'Unsubscribed', count: unsubscribed, color: '#f87171' },
+    { label: 'Active', count: active, color: '#7CEFDD' },
+    { label: 'Unsubscribed', count: unsubscribed, color: '#FF8B78' },
   ];
 
   return (

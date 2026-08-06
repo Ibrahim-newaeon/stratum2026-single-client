@@ -1,69 +1,71 @@
-# SuperAds Theme — ADs Growth System
+# Claymorphism Theme — ADs Growth System
 
-The dashboard, auth flow, and marketing surfaces all read from the SuperAds
-theme, dual-mode with semantic CSS variables in `frontend/src/index.css` and
-Tailwind aliases in `frontend/tailwind.config.js`.
+The dashboard, auth flow, and marketing surfaces read a claymorphism theme
+("vivid jewel clay", 2026-08): plush dark clay surfaces with layered inner/
+outer shadows, embossed type, pill-shaped controls, and a jewel accent
+palette. Dual-mode via semantic CSS variables in `frontend/src/index.css`
+and Tailwind aliases in `frontend/tailwind.config.js`.
 
-Source of truth: `design-system-template/themes/superads.xml`
-(`lib/theme/themes/superads.ts`).
-
-> **Grounding.** Fonts, accents, gradients and the light/dark structure are
-> **extracted** from the real source. Surfaces, radii, spacing, shadows and
-> motion timings are **inferred** — the upstream `shared/styles.css` was never
-> provided. Treat the surface hexes below as a best estimate and correct them
-> if the original stylesheet surfaces.
-
-> **This file has been wrong before.** It described the ink + ember theme long
-> after the code had moved to Opal Hotel gold. `frontend/src/index.css` is the
-> only authority; this table is a convenience copy.
+> **This file has been wrong before.** It described ink + ember long after
+> the code moved to Opal gold, and SuperAds blue long after the move to
+> clay. `frontend/src/index.css` is the only authority; these tables are a
+> convenience copy.
 
 ## Tokens
 
 ### Surfaces
 
-| Token                  | Dark                 | Light                | Use              |
-| ---------------------- | -------------------- | -------------------- | ---------------- |
-| `--background`         | `#0A0E1A` page       | `#F8FAFC`            | Page bg          |
-| `--card`               | `#141B2D` surface    | `#FFFFFF`            | Card / panel bg  |
-| `--popover`            | `#1C2438` elevated   | `#FFFFFF`            | Overlays         |
-| `--surface-tertiary`   | `#1C2438`            | `#F1F5F9` sunken     | Elevated card    |
-| `--muted`              | `#1F2937` line       | `#F1F5F9`            | Subtle fills     |
-| `--border` / `--input` | `#1F2937` line       | `#E2E8F0`            | Borders          |
+| Token                  | Dark                        | Light                      | Use             |
+| ---------------------- | --------------------------- | -------------------------- | --------------- |
+| `--background`         | `#0D0C13` indigo obsidian   | `#EFEEF7` lavender porcelain | Page bg       |
+| `--card`               | `#1A1821` raised clay       | `#F9F9FC`                  | Card / panel bg |
+| `--popover`            | `#24212C` elevated clay     | `#FFFFFF`                  | Overlays        |
+| `--surface-tertiary`   | `#24212C`                   | sunken porcelain           | Elevated card   |
+| `--muted`              | `#282531` sunken fill       | sunken porcelain           | Subtle fills    |
+| `--border` / `--input` | clay seam                   | porcelain seam             | Borders         |
 
 ### Typography
 
 | Token                     | Dark             | Light            | Use                     |
 | ------------------------- | ---------------- | ---------------- | ----------------------- |
-| `--foreground`            | `#F8FAFC`        | `#0F172A`        | Primary text            |
-| `--muted-foreground`      | `#94A3B8`        | `#64748B`        | Secondary text          |
+| `--foreground`            | `#EFEFF7` porcelain white | `#201D2B` | Primary text            |
+| `--muted-foreground`      | `#A9A6BD` cool putty | `#625E76`    | Secondary text          |
 | Font family `font-sans`   | Inter            | Inter            | Body                    |
 | Font family `font-display`| Space Grotesk    | Space Grotesk    | Headings                |
 | Font family `font-mono`   | JetBrains Mono   | JetBrains Mono   | Labels, status, tabular |
 | `font-sans-arabic`        | Noto Sans Arabic | Noto Sans Arabic | RTL surfaces            |
 
-### Brand & status
+### Brand & status (jewel palette)
 
-| Token                        | Dark               | Light              | Use                                |
-| ---------------------------- | ------------------ | ------------------ | ---------------------------------- |
-| `--primary`                  | `#3B82F6` blue     | `#3B82F6`          | CTA, accent, focus ring            |
-| `--secondary`                | `#60A5FA` hover    | `#2563EB` hover    | Gradient stop, hover               |
-| `--accent`                   | `#06B6D4` cyan     | `#06B6D4`          | Multi-series chart, neutral signal |
-| `--insight`                  | `#8B5CF6` purple   | `#8B5CF6`          | Insight / secondary series         |
-| `--success`                  | `#10B981`          | `#10B981`          | Healthy / pass                     |
-| `--warning`                  | `#F97316`          | `#F97316`          | Hold / degraded                    |
-| `--danger` / `--destructive` | `#EF4444`          | `#EF4444`          | Block / unhealthy                  |
+| Token                        | Dark                    | Light (deepened) | Use                          |
+| ---------------------------- | ----------------------- | ---------------- | ---------------------------- |
+| `--primary`                  | `#29D6C7` turquoise     | `#148F85`        | CTA, active nav, focus ring  |
+| `--secondary`                | `#F5B942` radiant gold  | `#D5910B`        | Accent bars, badges, hovers  |
+| `--accent`                   | `#8B5CF6` electric violet | `#7C4FE0`      | Insight surfaces, series-2   |
+| `--insight`                  | `#A78BFA` violet glow   | `#7C4FE0`        | Secondary insight            |
+| `--success`                  | `#5EEAD3` bright mint   | deep mint        | Healthy / PASS               |
+| `--warning`                  | `#FBBF24` bright amber  | deep amber       | Hold / degraded              |
+| `--danger` / `--destructive` | `#FF6F59` vivid coral   | deep coral       | Block / unhealthy / CRITICAL |
+
+### Clay depth & type utilities
+
+Defined in `index.css` `@layer components`, driven by per-mode shadow vars:
+
+| Utility            | Effect                                            |
+| ------------------ | ------------------------------------------------- |
+| `.clay-raised`     | Large molded-clay depth (outer drop + inner emboss) |
+| `.clay-raised-sm`  | Small clay depth — pills, badges, compact cards   |
+| `.clay-inset`      | Sunken well (inputs, tables, icon wells)          |
+| `.clay-pressable`  | Tactile press-down on `:active`                   |
+| `.text-embossed`   | Type raised off the clay                          |
+| `.text-debossed`   | Type carved into the clay (mono labels)           |
+| `.bg-clay-ambient` | Studio-lighting backdrop (turquoise/violet/gold radials), fixed attachment |
 
 ### Data series
 
 Used by `lib/chartTheme.ts` for multi-series charts, in order:
-
-| Slot     | Hex       |
-| -------- | --------- |
-| `data-1` | `#3B82F6` |
-| `data-2` | `#8B5CF6` |
-| `data-3` | `#EC4899` |
-| `data-4` | `#10B981` |
-| `data-5` | `#06B6D4` |
+turquoise `#29D6C7` · violet `#8B5CF6` · pink `#EC4899` · mint `#5EEAD3` ·
+gold `#F5B942`.
 
 Platform badge colours (Meta, Google, TikTok, Snapchat, LinkedIn, WhatsApp)
 are **not** theme tokens — they are external brand identities and stay fixed
@@ -73,8 +75,8 @@ across themes.
 
 | Token           | Value                    | Use                          |
 | --------------- | ------------------------ | ---------------------------- |
-| `--radius`      | `1rem` (16px)            | `rounded-2xl` cards, default |
-| Radii           | 8 / 12 / 14 / 16 / 18 px | Sm → 2xl                     |
+| `--radius`      | `1.25rem` (20px)         | Plush clay corners, default  |
+| Radii           | 8 / 12 / 14 / 16 / 25 px | Sm → 2xl                     |
 | Card padding    | `p-6` minimum            | Surfaces                     |
 | Buttons / pills | `rounded-full`           | All clickable affordances    |
 
@@ -161,7 +163,7 @@ reconciles by splitting the routes into 3 collapsible groups:
 
 ```
 Operate       Overview · Custom Dashboard · Campaigns · Autopilot ·
-              Audiences · Trust Engine · Pacing · Rules · AB Testing ·
+              Audiences · Trust Engine · Pacing · AB Testing ·
               Profit & ROAS
 Intelligence  CDP · Attribution · Reporting · Knowledge Graph ·
               AI Insights · AI Recommendations · Cohort/Funnel Analysis ·
@@ -191,12 +193,13 @@ persists per-user via `localStorage('stratum-sidebar-groups')`.
 
 ## Migrations
 
-The legacy "Nebula Aurora" theme (cyber-pink `#FF1F6D`, midnight
-`#080C14`, Satoshi + Clash Display) is fully retired across the
-codebase via the 6-phase commit chain
-`a189ff6 → 36a86c0`. The `frontend/scripts/sweep-hex.sh` script remains
-in the repo for catching future palette stragglers. The doc
-`nebula-aurora-design.md` is now historical reference only.
+Theme lineage: Nebula Aurora (cyber-pink) → ink + ember → Opal Hotel gold →
+SuperAds blue → **claymorphism vivid-jewel (current, 2026-08)**. The SuperAds
+palette was mechanically remapped to the jewel equivalents across all views
+and components (old blues → turquoise, greens → mint, reds → coral,
+oranges → amber; platform brand colours untouched). The
+`frontend/scripts/sweep-hex.sh` script remains in the repo for catching
+future palette stragglers.
 
 ## When in doubt
 

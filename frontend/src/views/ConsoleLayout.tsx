@@ -105,7 +105,7 @@ export default function ConsoleLayout() {
   );
 
   return (
-    <div className="flex h-screen overflow-hidden bg-background font-sans">
+    <div className="flex h-screen overflow-hidden bg-clay-ambient font-sans">
       <div className="flex flex-1 overflow-hidden relative z-10">
         <Sidebar
           brand={brand}
@@ -118,7 +118,7 @@ export default function ConsoleLayout() {
         />
 
         <main className="flex flex-1 flex-col overflow-hidden">
-          <header className="flex h-16 items-center justify-between px-6 bg-background border-b border-border">
+          <header className="flex h-16 items-center justify-between px-6 bg-background/60 backdrop-blur-md border-b border-border/60">
             <div className="flex items-center gap-4">
               <button
                 className={cn(

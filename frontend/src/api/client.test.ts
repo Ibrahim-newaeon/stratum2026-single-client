@@ -129,7 +129,7 @@ describe('API Client - Response Interceptor (401 Handling)', () => {
     resetClientState();
   });
 
-  it('rejects 401 when no refresh token is available (no redirect without refresh attempt)', async () => {
+  it('rejects 401 and clears session when no refresh token is available', async () => {
     const errorHandler = (apiClient.interceptors.response as any).handlers[0].rejected;
 
     const error = {
@@ -137,7 +137,11 @@ describe('API Client - Response Interceptor (401 Handling)', () => {
       config: { headers: {} },
     };
 
-    // When no refresh_token in localStorage, it skips refresh and just rejects
+    // With no refresh_token in this tab (per-tab sessionStorage), the handler
+    // must NOT leave the refresh mutex locked — it logs the user out (redirect
+    // to /login?reason=session_expired) and rejects with the original error.
+    // Leaving the mutex locked deadlocked every subsequent 401 behind a
+    // refresh that never happened (infinite "Loading..." in fresh tabs).
     await expect(errorHandler(error)).rejects.toEqual(error);
   });
 

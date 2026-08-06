@@ -96,6 +96,11 @@ export default defineConfig({
   },
   test: {
     environment: 'jsdom',
+    // Vitest 4's jsdom environment defaults to an opaque origin, and jsdom
+    // throws "localStorage is not available for opaque origins" — leaving
+    // window.localStorage undefined for every test that uses the real
+    // (unmocked) storage. Pin a URL so the origin is concrete.
+    environmentOptions: { jsdom: { url: 'http://localhost:3000/' } },
     globals: true,
     setupFiles: ['./src/test/setup.ts'],
     exclude: ['**/node_modules/**', '**/dist/**', '**/e2e/**'],

@@ -49,8 +49,8 @@ function ScoreGauge({ score, size = 120 }: { score: number; size?: number }) {
   const circumference = 2 * Math.PI * radius
   const strokeDashoffset = circumference - (score / 100) * circumference
 
-  const color = band === 'reliable' ? '#22c55e' :
-                band === 'directional' ? '#f59e0b' : '#ef4444'
+  const color = band === 'reliable' ? '#5EEAD3' :
+                band === 'directional' ? '#f59e0b' : '#FF6F59'
 
   return (
     <div className="relative" style={{ width: size, height: size }}>

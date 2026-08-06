@@ -195,10 +195,11 @@ function TrustHoldsView({ rows, loading }: { rows: TrustHoldRow[]; loading?: boo
                 onClick={() => setPending(r)}
                 disabled={approve.isPending && pending?.id === r.id}
                 className={cn(
-                  'inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full',
-                  'text-meta font-medium',
-                  'bg-card border border-border text-foreground',
-                  'hover:border-primary/50 hover:bg-muted transition-colors',
+                  'inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-full',
+                  'text-meta font-medium text-embossed',
+                  'bg-primary/15 border border-primary/25 text-primary',
+                  'clay-raised-sm clay-pressable',
+                  'hover:bg-primary/25 hover:border-primary/40 transition-colors',
                   'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring',
                   'disabled:opacity-50 disabled:cursor-not-allowed'
                 )}
@@ -386,14 +387,14 @@ function SignalDropsView({ loading }: { loading?: boolean }) {
       <div className="flex flex-wrap items-center gap-2">
         <button
           type="button"
-          className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-primary text-primary-foreground text-meta font-medium hover:brightness-110 transition-all"
+          className="inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-full bg-primary text-primary-foreground text-meta font-medium text-embossed clay-raised-sm clay-pressable hover:brightness-110 transition-all"
         >
           View pipeline
           <ArrowRight className="w-3.5 h-3.5" />
         </button>
         <button
           type="button"
-          className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full border border-border bg-card text-foreground text-meta font-medium hover:bg-muted transition-colors"
+          className="inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-full border border-border bg-card text-foreground text-meta font-medium clay-raised-sm clay-pressable hover:bg-muted transition-colors"
         >
           Rerun diagnostics
         </button>

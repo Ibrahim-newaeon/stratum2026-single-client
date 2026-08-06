@@ -137,7 +137,9 @@ export function DataTable<T>({
   }
 
   return (
-    <div className={cn('rounded-2xl border border-border bg-card overflow-hidden', className)}>
+    <div
+      className={cn('rounded-2xl border border-border/60 bg-card clay-raised overflow-hidden', className)}
+    >
       <div className="overflow-x-auto">
         <table
           className="w-full border-collapse text-sm"

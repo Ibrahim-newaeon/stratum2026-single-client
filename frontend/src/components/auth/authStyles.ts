@@ -54,7 +54,7 @@ export const authStyles = `
 
   /* CTA button — spectral pink-to-red gradient */
   .auth-gradient-btn {
-    background: linear-gradient(135deg, #3B82F6 0%, #3B82F6 100%);
+    background: linear-gradient(135deg, #29D6C7 0%, #29D6C7 100%);
     box-shadow: 0 0 20px rgba(255, 90, 31, 0.4);
   }
   .auth-gradient-btn:hover {
@@ -70,11 +70,11 @@ export const authStyles = `
   .auth-shimmer-btn {
     background: linear-gradient(
       110deg,
-      #3B82F6 0%,
-      #3B82F6 40%,
-      #60A5FA 50%,
-      #3B82F6 60%,
-      #3B82F6 100%
+      #29D6C7 0%,
+      #29D6C7 40%,
+      #53E0D4 50%,
+      #29D6C7 60%,
+      #29D6C7 100%
     );
     background-size: 200% 100%;
   }

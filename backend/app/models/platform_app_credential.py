@@ -32,4 +32,11 @@ class PlatformAppCredential(Base, TimestampMixin):
     developer_token: Mapped[str | None] = mapped_column(
         EncryptedString(1024), nullable=True
     )
+    # JSON dict of platform-specific extra fields (e.g. WhatsApp webhook
+    # verify token / app secret, Meta pixel + ad-account ids, Google login
+    # customer id). Encrypted as one blob; keys are exposed by the API,
+    # values never are.
+    extra_secrets: Mapped[str | None] = mapped_column(
+        EncryptedString(4096), nullable=True
+    )
     updated_by_user_id: Mapped[int | None] = mapped_column(Integer, nullable=True)

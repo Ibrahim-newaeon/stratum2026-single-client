@@ -132,7 +132,7 @@ export function PhoneInput({
         )}
         style={{
           background: 'rgba(255, 255, 255, 0.06)',
-          border: error ? '1px solid #ef4444' : '1px solid rgba(255, 255, 255, 0.12)',
+          border: error ? '1px solid #FF6F59' : '1px solid rgba(255, 255, 255, 0.12)',
         }}
       >
         {/* Country selector */}

@@ -68,7 +68,7 @@ export default function AIHero() {
           ))}
           <defs>
             <linearGradient id="line-gradient" x1="0%" y1="0%" x2="100%" y2="100%">
-              <stop offset="0%" stopColor="#a855f7" />
+              <stop offset="0%" stopColor="#A78BFA" />
               <stop offset="100%" stopColor="hsl(var(--accent))" />
             </linearGradient>
           </defs>

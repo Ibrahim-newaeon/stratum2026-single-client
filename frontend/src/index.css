@@ -34,61 +34,81 @@
        values. Treat them as provisional.
        ═══════════════════════════════════════════════════════════════ */
 
-    /* Surfaces — navy-slate stack (page → surface → elevated) */
-    --background: 225 44% 7%; /* #0A0E1A page */
-    --foreground: 210 40% 98%; /* #F8FAFC text-primary */
+    /* Surfaces — polished obsidian clay stack (page → surface → elevated).
+       Claymorphism pass 2026-08, vivid-jewel revision: deep indigo-tinted
+       obsidian base with bright turquoise / radiant gold / electric violet
+       accents, vivid coral alerts, bright mint pass states. */
+    --background: 250 21% 6%; /* #0D0C13 indigo obsidian page */
+    --foreground: 240 24% 95%; /* #EFEFF7 cool porcelain white */
 
-    --card: 223 38% 13%; /* #141B2D surface */
-    --card-foreground: 210 40% 98%;
+    --card: 250 16% 11%; /* #1A1821 raised clay */
+    --card-foreground: 240 24% 95%;
 
-    --popover: 223 33% 16%; /* #1C2438 surface-elevated */
-    --popover-foreground: 210 40% 98%;
+    --popover: 250 15% 15%; /* #24212C elevated clay */
+    --popover-foreground: 240 24% 95%;
 
-    /* Primary — SuperAds blue. Single accent across both modes; only the
-       hover step differs (lighter on dark, darker on light). */
-    --primary: 217 91% 60%; /* #3B82F6 brand-accent */
-    --primary-foreground: 0 0% 100%; /* #FFFFFF on-accent */
+    /* Primary — vivid turquoise (jewel clay). */
+    --primary: 176 68% 50%; /* #29D6C7 turquoise */
+    --primary-foreground: 200 35% 8%; /* deep ink on bright turquoise */
 
-    /* Secondary — the dark-mode hover step, reused as gradient stop */
-    --secondary: 213 94% 68%; /* #60A5FA brand-accent-hover (dark) */
-    --secondary-foreground: 222 47% 11%;
+    /* Secondary — radiant amber gold. */
+    --secondary: 41 89% 61%; /* #F5B942 radiant gold */
+    --secondary-foreground: 250 20% 8%;
 
-    /* Muted — line-tier fill for subtle surfaces */
-    --muted: 215 28% 17%; /* #1F2937 line */
-    --muted-foreground: 215 20% 65%; /* #94A3B8 text-muted */
+    /* Muted — sunken clay fill */
+    --muted: 250 12% 17%; /* #282531 */
+    --muted-foreground: 245 14% 70%; /* #A9A6BD cool putty */
 
-    /* Accent — cyan from the data series; multi-series charts and
-       neutral signals, matching the template's data-5. */
-    --accent: 189 94% 43%; /* #06B6D4 data-5 */
-    --accent-foreground: 0 0% 100%;
+    /* Accent — electric violet, the high-energy secondary series. */
+    --accent: 258 90% 66%; /* #8B5CF6 electric violet */
+    --accent-foreground: 240 24% 97%;
 
-    /* Destructive */
-    --destructive: 0 84% 60%; /* #EF4444 state-error */
-    --destructive-foreground: 0 0% 100%;
+    /* Destructive — vivid coral */
+    --destructive: 8 100% 67%; /* #FF6F59 vivid coral */
+    --destructive-foreground: 240 24% 97%;
 
     /* Borders / inputs / focus ring */
-    --border: 215 28% 17%; /* #1F2937 line */
-    --input: 215 28% 17%;
-    --ring: 217 91% 60%; /* brand-accent */
+    --border: 250 12% 20%; /* clay seam */
+    --input: 250 12% 20%;
+    --ring: 176 68% 50%; /* turquoise */
 
-    --radius: 1rem; /* 16px — template radius.2xl (was 25px Opal) */
+    --radius: 1.25rem; /* 20px — plush clay corners */
 
-    /* Status — semantic, all present in the template palette */
-    --success: 160 84% 39%; /* #10B981 state-success */
-    --warning: 25 95% 53%; /* #F97316 state-warning */
-    --danger: 0 84% 60%; /* #EF4444 state-error */
-    --info: 217 91% 60%; /* #3B82F6 state-info */
-    --insight: 258 90% 66%; /* #8B5CF6 data-2 purple */
+    /* Status — jewel palette: coral critical, bright amber warning,
+       bright mint pass */
+    --success: 166 76% 64%; /* #5EEAD3 bright mint */
+    --warning: 45 97% 56%; /* #FBBF24 bright amber */
+    --danger: 8 100% 67%; /* #FF6F59 vivid coral */
+    --info: 176 68% 50%; /* turquoise */
+    --insight: 255 92% 76%; /* #A78BFA violet glow */
 
     /* Status (legacy aliases used by widgets) */
-    --status-healthy: 160 84% 39%;
-    --status-critical: 0 84% 60%;
+    --status-healthy: 166 76% 64%;
+    --status-critical: 8 100% 67%;
 
     /* Surface tier (cards, panels, elevated surfaces) */
-    --surface-primary: 225 44% 7%; /* #0A0E1A page */
-    --surface-secondary: 223 38% 13%; /* #141B2D surface */
-    --surface-tertiary: 223 33% 16%; /* #1C2438 surface-elevated */
-    --surface-elevated: 218 23% 23%; /* #2D3748 line-strong */
+    --surface-primary: 250 21% 6%; /* indigo obsidian page */
+    --surface-secondary: 250 16% 11%; /* raised clay */
+    --surface-tertiary: 250 15% 15%; /* elevated clay */
+    --surface-elevated: 250 14% 19%; /* topmost clay */
+
+    /* Clay depth — layered outer drop + inner emboss. The inner top
+       highlight and bottom shade are what sell the molded-clay read. */
+    --clay-shadow:
+      0 22px 34px -16px rgba(0, 0, 0, 0.6),
+      0 6px 12px -6px rgba(0, 0, 0, 0.45),
+      inset 0 1.5px 1px rgba(255, 255, 255, 0.07),
+      inset 0 -8px 14px -8px rgba(0, 0, 0, 0.5);
+    --clay-shadow-sm:
+      0 10px 18px -10px rgba(0, 0, 0, 0.55),
+      0 3px 6px -3px rgba(0, 0, 0, 0.4),
+      inset 0 1px 1px rgba(255, 255, 255, 0.08),
+      inset 0 -4px 8px -5px rgba(0, 0, 0, 0.45);
+    --clay-shadow-inset:
+      inset 0 3px 7px rgba(0, 0, 0, 0.45),
+      inset 0 -1px 1px rgba(255, 255, 255, 0.05);
+    --emboss-hi: rgba(255, 255, 255, 0.09);
+    --emboss-lo: rgba(0, 0, 0, 0.65);
 
     /* Platform colors — kept for ad-platform badges (not theme-driven) */
     --meta: 214 89% 52%;
@@ -97,87 +117,106 @@
     --snapchat: 54 100% 50%;
     --whatsapp: 142 70% 45%;
 
-    /* Glow tokens — blue radial bleed for primary surfaces */
-    --glow-brand: 217 91% 60% / 0.16;
-    --glow-insight: 258 90% 66% / 0.14;
+    /* Glow tokens — turquoise / violet radial bleed for primary surfaces */
+    --glow-brand: 176 68% 50% / 0.18;
+    --glow-insight: 258 90% 66% / 0.16;
 
     /* Landing / marketing tokens (used by figma static HTML in /public).
        Kept as literal hex because the static HTML cannot read Tailwind. */
-    --landing-bg: #0a0e1a; /* page (was #000000) */
-    --landing-card: #141b2d; /* surface (was #1a1a1a) */
-    --landing-border: #1f2937; /* line (was #2c2c2c) */
-    --landing-text: #cbd5e1; /* text-soft (was #cccccc) */
+    --landing-bg: #0D0C13; /* page (was #000000) */
+    --landing-card: #1A1821; /* surface (was #1A1821) */
+    --landing-border: #282531; /* line (was #282531) */
+    --landing-text: #C9C7D8; /* text-soft (was #cccccc) */
     --landing-text-dim: rgba(203, 213, 225, 0.7);
     --landing-text-faint: rgba(203, 213, 225, 0.5);
-    --landing-accent-primary: #3b82f6; /* brand-accent (was gold #c2a670) */
-    --landing-accent-primary-light: #60a5fa; /* brand-accent-hover (was #c1a15a) */
-    --landing-accent-cyan: #06b6d4; /* data-5 cyan — key now matches its name again */
-    --landing-accent-blue: #3b82f6; /* brand-accent (was slate-blue #394e6c) */
+    --landing-accent-primary: #29D6C7; /* brand-accent (was gold #FFD37A) */
+    --landing-accent-primary-light: #53E0D4; /* brand-accent-hover (was #F5B942) */
+    --landing-accent-cyan: #F5B942; /* data-5 cyan — key now matches its name again */
+    --landing-accent-blue: #29D6C7; /* brand-accent (was slate-blue #394e6c) */
     --landing-surface-glass: rgba(255, 255, 255, 0.02);
     --landing-border-glass: rgba(255, 255, 255, 0.08);
     --landing-text-white-soft: rgba(255, 255, 255, 0.5);
     --landing-text-white-mid: rgba(255, 255, 255, 0.8);
     --landing-border-white-dim: rgba(255, 255, 255, 0.06);
-    --landing-bg-deep: #0d1117; /* surface-sunken (was #000000) */
-    --landing-glow-primary: 0 4px 24px rgba(59, 130, 246, 0.25);
-    --landing-status-green: #10b981;
-    --landing-status-red: #ef4444; /* state-error (was burgundy #800020) */
-    --landing-status-yellow: #f97316; /* state-warning (was #f59e0b) */
+    --landing-bg-deep: #0D0C13; /* surface-sunken (was #000000) */
+    --landing-glow-primary: 0 4px 24px rgba(41, 214, 199, 0.25);
+    --landing-status-green: #5EEAD3;
+    --landing-status-red: #FF6F59; /* state-error (was burgundy #800020) */
+    --landing-status-yellow: #FBBF24; /* state-warning (was #f59e0b) */
   }
 
   .light {
     /* ═══════════════════════════════════════════════════════════════
        SUPERADS — DASHBOARD THEME (LIGHT)
-       Slate surfaces · slate-900 text · SuperAds blue #3B82F6
+       Slate surfaces · slate-900 text · SuperAds blue #29D6C7
        Source of truth: design-system-template/themes/superads.xml
        Same GROUNDING caveat as the dark block: surfaces are the
        template's inferred values, not measured ones.
        ═══════════════════════════════════════════════════════════════ */
 
-    --background: 210 40% 98%; /* #F8FAFC page */
-    --foreground: 222 47% 11%; /* #0F172A text-primary */
+    /* Porcelain-clay light mode — cool lavender porcelain with the same
+       turquoise / gold / violet / coral jewels, deepened for contrast. */
+    --background: 245 30% 95%; /* #EFEEF7 lavender porcelain page */
+    --foreground: 250 20% 14%; /* #201D2B dark indigo clay text */
 
-    --card: 0 0% 100%; /* #FFFFFF surface */
-    --card-foreground: 222 47% 11%;
+    --card: 240 33% 98%; /* #F9F9FC raised porcelain */
+    --card-foreground: 250 20% 14%;
 
-    --popover: 0 0% 100%; /* #FFFFFF surface-elevated */
-    --popover-foreground: 222 47% 11%;
+    --popover: 0 0% 100%;
+    --popover-foreground: 250 20% 14%;
 
-    --primary: 217 91% 60%; /* #3B82F6 brand-accent */
-    --primary-foreground: 0 0% 100%; /* #FFFFFF on-accent */
+    --primary: 175 75% 32%; /* #148F85 deep turquoise */
+    --primary-foreground: 0 0% 100%;
 
-    --secondary: 221 83% 53%; /* #2563EB brand-accent-hover (light) */
+    --secondary: 38 90% 44%; /* #D5910B amber gold (deepened) */
     --secondary-foreground: 0 0% 100%;
 
-    --muted: 210 40% 96%; /* #F1F5F9 surface-sunken */
-    --muted-foreground: 215 16% 47%; /* #64748B text-muted */
+    --muted: 245 20% 89%; /* sunken porcelain */
+    --muted-foreground: 250 10% 42%; /* #625E76 */
 
-    --accent: 189 94% 43%; /* #06B6D4 data-5 cyan */
+    --accent: 258 70% 56%; /* #7C4FE0 violet (deepened) */
     --accent-foreground: 0 0% 100%;
 
-    --destructive: 0 84% 60%; /* #EF4444 state-error */
+    --destructive: 8 78% 52%; /* #E44A2F coral (deepened) */
     --destructive-foreground: 0 0% 100%;
 
-    --border: 214 32% 91%; /* #E2E8F0 line */
-    --input: 214 32% 91%;
-    --ring: 217 91% 60%;
+    --border: 245 18% 84%; /* porcelain seam */
+    --input: 245 18% 84%;
+    --ring: 175 75% 32%;
 
-    --success: 160 84% 39%; /* #10B981 state-success */
-    --warning: 25 95% 53%; /* #F97316 state-warning */
-    --danger: 0 84% 60%; /* #EF4444 state-error */
-    --info: 217 91% 60%; /* #3B82F6 state-info */
-    --insight: 258 90% 66%; /* #8B5CF6 data-2 purple */
+    --success: 163 70% 33%; /* deep mint-emerald */
+    --warning: 42 92% 42%; /* deep amber */
+    --danger: 8 78% 52%; /* coral */
+    --info: 175 75% 32%; /* turquoise */
+    --insight: 258 70% 56%; /* violet */
 
-    --status-healthy: 160 84% 39%;
-    --status-critical: 0 84% 60%;
+    --status-healthy: 163 70% 33%;
+    --status-critical: 8 78% 52%;
 
-    --surface-primary: 210 40% 98%; /* #F8FAFC page */
-    --surface-secondary: 0 0% 100%; /* #FFFFFF surface */
-    --surface-tertiary: 210 40% 96%; /* #F1F5F9 surface-sunken */
+    --surface-primary: 245 30% 95%;
+    --surface-secondary: 240 33% 98%;
+    --surface-tertiary: 245 20% 89%;
     --surface-elevated: 0 0% 100%;
 
-    --glow-brand: 217 91% 60% / 0.1;
-    --glow-insight: 258 90% 66% / 0.1;
+    --glow-brand: 175 75% 32% / 0.12;
+    --glow-insight: 258 70% 56% / 0.12;
+
+    /* Clay depth — cool indigo shadows on lavender porcelain */
+    --clay-shadow:
+      0 18px 30px -16px rgba(66, 60, 102, 0.35),
+      0 5px 10px -6px rgba(66, 60, 102, 0.22),
+      inset 0 1.5px 1px rgba(255, 255, 255, 0.85),
+      inset 0 -8px 14px -10px rgba(66, 60, 102, 0.22);
+    --clay-shadow-sm:
+      0 8px 16px -9px rgba(66, 60, 102, 0.3),
+      0 2px 5px -2px rgba(66, 60, 102, 0.18),
+      inset 0 1px 1px rgba(255, 255, 255, 0.9),
+      inset 0 -4px 8px -6px rgba(66, 60, 102, 0.18);
+    --clay-shadow-inset:
+      inset 0 3px 6px rgba(66, 60, 102, 0.22),
+      inset 0 -1px 1px rgba(255, 255, 255, 0.8);
+    --emboss-hi: rgba(255, 255, 255, 0.9);
+    --emboss-lo: rgba(66, 60, 102, 0.35);
   }
 
   * {
@@ -248,11 +287,59 @@
 }
 
 @layer components {
-  /* Card surface with subtle border and hover lift */
+  /* ── Claymorphism utilities ─────────────────────────────────────
+     Molded-clay depth: outer drop shadow + inner top highlight +
+     inner bottom shade. Values live in --clay-shadow* per mode. */
+  .clay-raised {
+    box-shadow: var(--clay-shadow);
+  }
+  .clay-raised-sm {
+    box-shadow: var(--clay-shadow-sm);
+  }
+  .clay-inset {
+    box-shadow: var(--clay-shadow-inset);
+  }
+  /* Tactile press affordance for clay buttons/pills */
+  .clay-pressable {
+    transition:
+      transform 150ms ease,
+      box-shadow 150ms ease,
+      background-color 200ms ease,
+      color 200ms ease;
+  }
+  .clay-pressable:active {
+    transform: translateY(1px);
+    box-shadow: var(--clay-shadow-inset);
+  }
+  /* Raised (embossed) type — sits proud of the clay surface */
+  .text-embossed {
+    text-shadow: 0 1px 1px var(--emboss-lo);
+  }
+  /* Carved (debossed) type — pressed into the clay surface */
+  .text-debossed {
+    text-shadow:
+      0 -1px 0 var(--emboss-lo),
+      0 1px 0 var(--emboss-hi);
+  }
+
+  /* Ambient clay backdrop — diffused studio lighting over the obsidian
+     base: violet wash top-right, turquoise top-left, faint gold rising
+     from below. Fixed attachment so the light doesn't scroll with content. */
+  .bg-clay-ambient {
+    background-color: hsl(var(--background));
+    background-image:
+      radial-gradient(1100px 700px at 85% -10%, hsl(var(--accent) / 0.13), transparent 60%),
+      radial-gradient(900px 650px at -8% 15%, hsl(var(--primary) / 0.1), transparent 55%),
+      radial-gradient(1000px 800px at 55% 115%, hsl(var(--secondary) / 0.07), transparent 60%);
+    background-attachment: fixed;
+  }
+
+  /* Card surface with clay depth and hover lift */
   .surface-card {
-    @apply bg-card border border-border rounded-2xl;
+    @apply bg-card border border-border/60 rounded-2xl;
     @apply transition-colors duration-200;
-    @apply hover:border-primary/30;
+    @apply hover:border-secondary/30;
+    box-shadow: var(--clay-shadow-sm);
   }
 
   /* Primary button — XML <button id="primary" style="outline/ghost">:
@@ -314,7 +401,7 @@
      from the source, not inferred. */
   .text-gradient-primary {
     @apply bg-clip-text text-transparent;
-    background-image: linear-gradient(135deg, #3b82f6 0%, #8b5cf6 100%);
+    background-image: linear-gradient(135deg, #29D6C7 0%, #8b5cf6 100%);
   }
 
   /* Subtle grid background pattern */
