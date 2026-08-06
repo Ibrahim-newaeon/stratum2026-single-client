@@ -483,17 +483,75 @@ class WhatsAppNotConfiguredError(Exception):
     pass
 
 
+# -----------------------------------------------------------------------------
+# DB-backed credential override
+# -----------------------------------------------------------------------------
+# Credentials saved on the Integrations page (PlatformAppCredential row with
+# platform="whatsapp") take precedence over env vars. Because the factory
+# below is sync and called from many sync call-sites, the DB row is cached in
+# this module-level dict and refreshed at: API startup (main.py lifespan),
+# every save/delete via /platform-credentials/whatsapp, and worker task entry.
+_db_credential_override: Optional[Dict[str, Optional[str]]] = None
+
+
+def _apply_credential_row(row: Any) -> bool:
+    """Map a PlatformAppCredential row onto the override cache."""
+    global _db_credential_override
+    if row is not None and row.client_id and row.client_secret:
+        _db_credential_override = {
+            "phone_number_id": row.client_id,
+            "access_token": row.client_secret,
+            "business_account_id": row.developer_token or None,
+        }
+    else:
+        _db_credential_override = None
+    return _db_credential_override is not None
+
+
+async def refresh_whatsapp_credentials(db: Any) -> bool:
+    """Reload the override cache from an AsyncSession. Returns True if set."""
+    from sqlalchemy import select
+
+    from app.models.platform_app_credential import PlatformAppCredential
+
+    result = await db.execute(
+        select(PlatformAppCredential).where(
+            PlatformAppCredential.platform == "whatsapp"
+        )
+    )
+    return _apply_credential_row(result.scalar_one_or_none())
+
+
+def refresh_whatsapp_credentials_sync(db: Any) -> bool:
+    """Sync-session variant for Celery tasks. Returns True if override set."""
+    from sqlalchemy import select
+
+    from app.models.platform_app_credential import PlatformAppCredential
+
+    row = db.execute(
+        select(PlatformAppCredential).where(
+            PlatformAppCredential.platform == "whatsapp"
+        )
+    ).scalar_one_or_none()
+    return _apply_credential_row(row)
+
+
 # Singleton instance for convenience
 def get_whatsapp_client() -> WhatsAppClient:
     """Get a configured WhatsApp client instance.
 
+    DB-saved credentials (Integrations page) win over env vars.
+
     Raises:
         WhatsAppNotConfiguredError: If required WhatsApp credentials are missing.
     """
+    if _db_credential_override is not None:
+        return WhatsAppClient(**_db_credential_override)
     if not settings.whatsapp_phone_number_id or not settings.whatsapp_access_token:
         raise WhatsAppNotConfiguredError(
-            "WhatsApp is not configured. Set WHATSAPP_PHONE_NUMBER_ID and "
-            "WHATSAPP_ACCESS_TOKEN environment variables."
+            "WhatsApp is not configured. Save credentials on the Integrations "
+            "page, or set WHATSAPP_PHONE_NUMBER_ID and WHATSAPP_ACCESS_TOKEN "
+            "environment variables."
         )
     return WhatsAppClient()
 

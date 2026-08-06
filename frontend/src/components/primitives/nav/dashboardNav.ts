@@ -61,7 +61,6 @@ import {
   UserMinus,
   Users,
   Workflow,
-  Zap,
 } from 'lucide-react';
 import type { SidebarGroup, SidebarItem } from './Sidebar';
 import type { AppRole } from '@/components/auth/ProtectedRoute';
@@ -251,7 +250,6 @@ const navConfig: NavGroup[] = [
         ],
       },
       { label: 'Pacing', href: '/dashboard/pacing', icon: Target, section: 'pacing' },
-      { label: 'Rules', href: '/dashboard/rules', icon: Zap, section: 'rules' },
       {
         label: 'AB Testing',
         href: '/dashboard/ab-testing',
@@ -409,12 +407,11 @@ const navConfig: NavGroup[] = [
     label: 'Workspace',
     items: [
       {
-        // Canonical Integrations surface lives inside Settings → Integrations
-        // (single deep-linkable URL). The hub itself surfaces buttons that
-        // navigate to Connect Platforms / Ad Accounts / CAPI Setup /
-        // Developer Portal — no need to duplicate those as sidebar children.
+        // Standalone Integrations hub: per-platform credential forms with
+        // Save → Test connection, plus the OAuth connect launcher. The old
+        // Settings → Integrations tab remains for ad-account/CAPI tooling.
         label: 'Integrations',
-        href: '/dashboard/settings/integrations',
+        href: '/dashboard/integrations',
         icon: Plug,
         section: 'integrations',
       },

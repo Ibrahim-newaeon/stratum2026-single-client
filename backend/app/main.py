@@ -240,6 +240,18 @@ async def lifespan(app: FastAPI) -> AsyncGenerator:
     except Exception as e:
         logger.warning("owner_seed_failed", error=str(e))
 
+    # Load DB-saved WhatsApp credentials into the sync client factory's cache
+    # (Integrations page overrides env vars; see services/whatsapp_client.py).
+    try:
+        from app.db.session import AsyncSessionLocal
+        from app.services.whatsapp_client import refresh_whatsapp_credentials
+
+        async with AsyncSessionLocal() as _wa_db:
+            _wa_loaded = await refresh_whatsapp_credentials(_wa_db)
+        logger.info("whatsapp_credentials_loaded", from_database=_wa_loaded)
+    except Exception as e:
+        logger.warning("whatsapp_credentials_load_failed", error=str(e))
+
     # Startup assert: the single global PII Fernet key must derive and be
     # usable before we accept traffic (single-key model).
     from app.core.security import decrypt_pii, encrypt_pii

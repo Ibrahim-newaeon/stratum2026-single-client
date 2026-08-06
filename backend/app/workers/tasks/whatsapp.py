@@ -269,8 +269,17 @@ def _send_via_client(
     when a template name is present; otherwise a plain text send is used. The
     client is pure HTTP, so ``asyncio.run`` from this sync task is safe.
     """
-    from app.services.whatsapp_client import get_whatsapp_client
+    from app.services.whatsapp_client import (
+        get_whatsapp_client,
+        refresh_whatsapp_credentials_sync,
+    )
 
+    # Pick up credentials saved via the Integrations page — the worker
+    # process has no other refresh trigger.
+    try:
+        refresh_whatsapp_credentials_sync(db)
+    except Exception:  # pragma: no cover - cache refresh must never block sends
+        pass
     client = get_whatsapp_client()
 
     if template_name:
