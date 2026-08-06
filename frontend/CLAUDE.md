@@ -17,27 +17,24 @@ Bloomberg terminal meets luxury brand.
 
 ## Aesthetic Direction
 
-- **Theme**: SuperAds — dual mode, dark default. Source of truth
-  `design-system-template/themes/superads.xml`. Palette hexes,
-  data-series slots and geometry are in
-  `backend/docs/03-frontend/figma-theme.md`; that file is the copy to
-  read, and `frontend/src/index.css` outranks it.
-- **Surfaces**: Elevation by drop-shadow across a three-tier stack
-  (page → surface → elevated). `--bg-glass` translucency is available
-  for overlay surfaces.
+- **Theme**: Claymorphism "vivid jewel clay" (2026-08) — dual mode, dark
+  default. Indigo-obsidian clay surfaces with turquoise / radiant-gold /
+  electric-violet accents and coral/amber/mint statuses; light mode is
+  lavender porcelain. Token tables and the clay utility list live in
+  `backend/docs/03-frontend/figma-theme.md`; `frontend/src/index.css`
+  outranks everything.
+- **Surfaces**: Molded-clay depth — layered outer drop shadow + inner
+  top highlight + inner bottom shade (`.clay-raised`, `.clay-raised-sm`,
+  `.clay-inset`), plush 20px+ radii, pill-shaped controls with a
+  tactile press state (`.clay-pressable`), embossed/debossed type.
+  Dashboard and console shells sit on `.bg-clay-ambient` (fixed
+  studio-lighting radials) with glassy translucent topbars.
 
-> **Grounding.** The template extracted fonts, accents, gradients and the
-> light/dark structure from the real source, but its README flags
-> **surfaces, radii, spacing, shadows and motion timings as inferred** —
-> the upstream `shared/styles.css` was never provided. Those values are a
-> best estimate, not measured, and should be corrected if the original
-> stylesheet turns up.
-
-**History**: this replaced an Opal Hotel gold theme (`#C2A670` on black),
-which had itself replaced the original ink + ember figma theme
-(`#FF5A1F`). Earlier revisions described ember long after the code had
-moved to gold — check `frontend/src/index.css` before trusting any
-palette documented anywhere.
+**History**: claymorphism replaced SuperAds blue (`#3B82F6`), which
+replaced Opal Hotel gold (`#C2A670`), which replaced ink + ember
+(`#FF5A1F`). Every predecessor's docs outlived its code — check
+`frontend/src/index.css` before trusting any palette documented
+anywhere, including this file.
 
 ## Design Principles
 
