@@ -1,120 +1,51 @@
-# ADs Growth System Platform
+# Stratum Single-Client Project Guide
 
-## Overview
+This repository is the single-client conversion of the Stratum/ADs Growth System. It retains the Trust-Gated Autopilot and analytics platform, but tenant isolation, subscription tiers, licensing, and payment processing were deliberately removed.
 
-Revenue Operating System with Trust-Gated Autopilot architecture.
-Automation executes ONLY when signal health passes safety thresholds.
+Do not copy multi-tenant or Paddle billing behavior from **Stratum-AI-Final-Meta** or **Stratum-AI-Final-Updates-Dec-2025** into this repository. Historical Stripe references remain in audits and older feature documents; live source is protected by the removed-scope CI gate.
 
-## Core Concept
+## Safety model
 
-```
-Signal Health Check → Trust Gate → Automation Decision
-       ↓                  ↓              ↓
-   [HEALTHY]         [PASS]         [EXECUTE]
-   [DEGRADED]        [HOLD]         [ALERT ONLY]
-   [UNHEALTHY]       [BLOCK]        [MANUAL REQUIRED]
-```
+Automation may execute only when signal health is at least 70 and every authorization, policy, limit, idempotency, and audit check passes. Scores from 40–69 hold; scores below 40 block. Missing or stale data must fail closed.
 
-## Key Features (12)
+Threshold logic has multiple consumers. Trace the active implementation and tests before changing it; do not add another hardcoded copy.
 
-| #   | Feature               | Key Files                                                        |
-| --- | --------------------- | ---------------------------------------------------------------- |
-| 1   | Trust Engine          | `analytics/logic/signal_health.py`, `stratum/core/trust_gate.py` |
-| 2   | CDP                   | `models/cdp.py`, `analytics/logic/emq_calculation.py`            |
-| 3   | Autopilot Enforcement | `autopilot/enforcer.py`, `autopilot/service.py`                  |
-| 4   | Campaign Builder      | `models/campaign_builder.py`                                     |
-| 5   | Audience Sync         | `services/cdp/audience_sync/`                                    |
-| 6   | Authentication        | `auth/`, `core/security.py`, `services/mfa_service.py`           |
-| 7   | Analytics             | `analytics/logic/` (8 modules)                                   |
-| 8   | Integrations          | `services/oauth/` (Meta, Google, TikTok, Snapchat)               |
-| 9   | CMS                   | `models/cms.py`, frontend CMS editor                             |
-| 10  | WhatsApp              | `services/whatsapp_service.py`                                   |
-| 11  | Reporting             | `services/reporting/` (PDF, Slack, email)                        |
-| 12  | Console / Owner       | `endpoints/console.py`                                           |
+## Sources of truth
 
-## Key Commands
+Prefer registered code and tests, then **.github/workflows/ci.yml**, Makefiles, Docker/Compose, current environment examples, and **docs/single-client-conversion.md**. Dated audits and pre-conversion feature documents are historical evidence.
 
-Backend targets are in `backend/Makefile`; frontend scripts are in
-`frontend/package.json`. Two that aren't obvious from either:
+## Repository map
 
-```bash
-make migration msg="description"           # Alembic autogenerate wrapper
-docker compose --profile monitoring up -d  # Flower is behind a profile
-```
+- **backend/app/** — FastAPI API, trust/autopilot, analytics, auth, services, and Celery workers
+- **backend/migrations/** — fresh single-client Alembic chain
+- **backend/tests/** — unit and integration tests
+- **frontend/src/** — React/Vite application
+- **docs/single-client-conversion.md** — removal ledger and conversion boundaries
 
-## Code Standards
+## Commands
 
-- Type hints REQUIRED on all functions
-- Pydantic models for all API I/O
-- Async/await for all I/O operations
-- 90%+ test coverage for core/
-- Docstrings on public functions
-- Use `datetime.now(timezone.utc)` (NOT `datetime.utcnow()`)
-- Use `secrets` module for security tokens (NOT `random`)
-- Use `hmac.compare_digest()` for constant-time comparisons
-- Encrypt PII with Fernet before storage
-- Structured logging via structlog (JSON format)
+~~~bash
+make dev
+make test
+make test-all
+make test-cov
+make lint
+make format
+make migrate
+make migration msg="description"
+make check
+~~~
 
-## Domain Terminology
+From **frontend/** run npm CI, lint, TypeScript checks, coverage tests, build, and Playwright using the scripts in its package manifest.
 
-See the imported `backend/docs/00-overview/glossary.md` below — it
-defines every term (Signal, Signal Health, Trust Gate, Autopilot, EMQ,
-CDP, Enforcement Mode, ROAS, Pacing) at greater length.
+## Engineering rules
 
-## Trust Engine Rules
+- Preserve the single-client model. Do not reintroduce tenant IDs, tenant middleware, subscription gates, Stripe, Paddle, licensing, or plan limits.
+- Never bypass the trust gate or report a successful data sync when no metrics were written.
+- Keep authentication, role checks, enforcement limits, and audit logging around mutations.
+- Use Pydantic API models, established async SQLAlchemy patterns, timezone-aware UTC, and encrypted credential storage.
+- Append Alembic migrations; never rewrite applied history.
+- Keep secrets and PII out of source, JWT claims, browser code, and logs.
+- Treat CI’s final aggregator as the release gate, including checks that collect earlier nonfatal step results.
 
-```python
-# Thresholds are org-configurable (Organization settings; see TrustGateConfig)
-HEALTHY_THRESHOLD = 70      # Green - autopilot enabled
-DEGRADED_THRESHOLD = 40     # Yellow - alert + hold
-# Never auto-execute when signal_health < 70
-
-# Signal Health Component weights (stratum/core/signal_health.py HealthConfig):
-# EMQ: 40%, Freshness: 25%, Attribution Variance: 20%, Anomaly: 15%.
-# When CDP data is available the four base weights scale by 0.9 and
-# CDP contributes the remaining 10%.
-# The dashboard overview card uses a separate lightweight heuristic
-# (Freshness 40% / EMQ 35% / Connectivity 25%) in endpoints/dashboard.py.
-```
-
-## Do NOT
-
-- Skip trust gate checks for "quick fixes"
-- Hardcode thresholds (use config)
-- Execute automations without audit logging
-- Merge without passing CI
-- Use `random` for security tokens (use `secrets`)
-- Put PII in JWT claims (use encrypted DB fields)
-- Store plaintext credentials in frontend code
-- Commit `.env` files or API credentials
-
-## Testing
-
-```bash
-make test                    # Quick test run
-make test-cov                # With coverage
-pytest tests/unit/           # Unit tests only
-pytest tests/integration/    # Integration tests only
-```
-
-Test files: `backend/tests/unit/` and `backend/tests/integration/`
-Coverage target: 90%+ for `core/`, `autopilot/`, `analytics/`
-
-## Git Workflow
-
-- Branch: `feature/STRAT-123-description`
-- Commit: `feat(signals): add anomaly detection [STRAT-123]`
-- Conventional commits: `feat|fix|refactor|test|docs(scope): message`
-
-## Design Context
-
-Frontend design guidance (users, brand, aesthetic direction, principles,
-component contract) lives in `frontend/CLAUDE.md`, which loads only when
-working under `frontend/`.
-
-## Imports
-
-@backend/docs/architecture/trust-engine.md
-@backend/docs/integrations/README.md
-@backend/docs/00-overview/glossary.md
-@backend/docs/03-frontend/figma-theme.md
+Keep frontend behavior bilingual, RTL-safe, accessible, and aligned with backend schemas.
