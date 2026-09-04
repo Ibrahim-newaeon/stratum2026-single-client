@@ -89,13 +89,13 @@ case "${file_path}" in
     # tenant_id in Pydantic request body — almost certainly wrong
     if match_in_file 'class[[:space:]]+\w+(Create|Update|Patch|Request)[[:space:]]*\([^)]*BaseModel'; then
       if match_in_file 'tenant_id[[:space:]]*:[[:space:]]*(int|str|UUID|uuid\.UUID)'; then
-        add_warn "tenant_id field in Pydantic request schema in ${file_path} — must come from auth, not body. Invoke api-endpoint-reviewer + tenancy-auditor"
+        add_warn "tenant_id field in live single-client code in ${file_path} — tenant scope was removed; delete the field or document why this historical fixture is excluded"
       fi
     fi
 
     # Mutating route without an auth dependency — WARN
     if match_in_file '@(router|app)\.(post|put|patch|delete)' && \
-       ! match_in_file 'Depends\([[:space:]]*(get_current_user|get_current_tenant|require_auth|require_admin)' && \
+       ! match_in_file 'Depends\([[:space:]]*(get_current_user|require_auth|require_admin)' && \
        ! match_in_file '#[[:space:]]*PUBLIC:'; then
       add_warn "mutating route in ${file_path} without auth Depends and no '# PUBLIC:' marker — invoke api-endpoint-reviewer"
     fi
